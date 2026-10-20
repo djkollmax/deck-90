@@ -52,7 +52,8 @@ function buildGraph(source) {
   const shelf = actx.createBiquadFilter();
   shelf.type = 'highshelf'; shelf.frequency.value = 1681.97; shelf.gain.value = 3.9998;
   const rlb = actx.createBiquadFilter();
-  rlb.type = 'highpass'; rlb.frequency.value = 38.135; rlb.Q.value = 0.5003;
+  rlb.type = 'highpass'; rlb.frequency.value = 38.135;
+  rlb.Q.value = 20 * Math.log10(0.5003);   // Web Audio takes a high-pass Q in dB: this is BS.1770's linear Q of 0.5003
   upmix.connect(shelf); shelf.connect(rlb);
   const kSplit = actx.createChannelSplitter(2);
   rlb.connect(kSplit);
@@ -105,7 +106,23 @@ class OnsetEnergy extends AudioWorkletProcessor {
   }
 }
 registerProcessor('onset-energy', OnsetEnergy);
+// L/R correlation sums, sample-aligned (two analysers read one after the other can be a render quantum apart)
+class StereoCorr extends AudioWorkletProcessor {
+  constructor() { super(); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; }
+  process(inputs) {
+    const inp = inputs[0];
+    if (inp && inp.length) {
+      const l = inp[0], r = inp[1] || inp[0];
+      for (let i = 0; i < l.length; i++) { this.ll += l[i] * l[i]; this.rr += r[i] * r[i]; this.lr += l[i] * r[i]; }
+      this.n += l.length;
+      if (this.n >= 1024) { this.port.postMessage([this.ll, this.rr, this.lr]); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; }
+    }
+    return true;
+  }
+}
+registerProcessor('stereo-corr', StereoCorr);
 `;
+let corrNode = null, corrLL = 0, corrRR = 0, corrLR = 0, corrFresh = false;
 let onsetPrevLow = -100, onsetPrevHigh = -100;
 function onsetBlock(msLow, msHigh, block, sampleRate) {
   const dl = 10 * Math.log10(msLow + 1e-10), dh = 10 * Math.log10(msHigh + 1e-10);
@@ -141,6 +158,12 @@ function attachOnsetDetector(ctx, bands) {
     node.port.onmessage = e => onsetBlock(e.data[0], e.data[1], e.data[2], sr);
     bands.connect(node); node.connect(mute);
     scriptNode = node;
+    if (upmix) {
+      const c = new AudioWorkletNode(ctx, 'stereo-corr', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
+      c.port.onmessage = e => { corrLL += e.data[0]; corrRR += e.data[1]; corrLR += e.data[2]; corrFresh = true; };
+      upmix.connect(c); c.connect(mute);
+      corrNode = c;
+    }
   }).catch(fallback);
 }
 
@@ -152,11 +175,20 @@ function resetMeters() {
   lastFrame = 0;
 }
 
+let srcGen = 0;   // bumps on every start: a slower, older start gives up instead of running alongside
 async function startAudio(mode) {
-  if (running) await stopAudio();
+  const gen = ++srcGen;
+  if (running || actx) await stopAudio();
+  if (gen !== srcGen) return;
   try {
     if (mode === 'sys' && IS_LINUX) stream = await linuxMonitorStream();
-    if (mode === 'sys' && !stream) {
+    if (mode === 'sys' && stream) {
+      // Linux monitor source found: that's the system mix, nothing else to ask for
+    } else if (mode === 'sys' && IS_LINUX && typeof IS_APP !== 'undefined' && IS_APP) {
+      // The program can't share the screen's audio on Linux: without a monitor source there's nothing to capture.
+      toast('⚠ NO HAY FUENTE "MONITOR"<br><span>PulseAudio/PipeWire no muestra el audio del sistema como entrada. Usá <b>MIC</b> o revisá <b>pavucontrol</b>.</span>', 9000);
+      return;
+    } else if (mode === 'sys') {
       stream = await navigator.mediaDevices.getDisplayMedia({
         video: { width: 1, height: 1, frameRate: 1 },
         audio: RAW_AUDIO,
@@ -174,6 +206,7 @@ async function startAudio(mode) {
       stream = await navigator.mediaDevices.getUserMedia({ audio: RAW_AUDIO, video: false });
     }
 
+    if (gen !== srcGen) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }
     // No forced sample rate: v4 forced 48 kHz, which breaks (Firefox) or resamples when the device runs at 44.1 kHz.
     actx = new (window.AudioContext || window.webkitAudioContext)();
     if (actx.state === 'suspended') await actx.resume();
@@ -197,8 +230,10 @@ async function startAudio(mode) {
 }
 
 // Demo signal: a built-in groove (124 BPM kick + bass + hats + pad) so the interface can be checked without capturing anything.
-function startDemo() {
-  if (running) stopAudio();
+async function startDemo() {
+  const gen = ++srcGen;
+  if (running || actx) await stopAudio();
+  if (gen !== srcGen) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
   if (actx.state === 'suspended') actx.resume();
   const out = actx.createGain(); out.gain.value = 0.5;
@@ -261,10 +296,15 @@ async function stopAudio() {
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   // v4 never stopped the tracks: Chrome kept "sharing your screen / mic" until the tab was closed.
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (corrNode) { corrNode.port.onmessage = null; try { corrNode.disconnect(); } catch (_) {} corrNode = null; }
+  corrLL = corrRR = corrLR = 0; corrFresh = false;
   if (scriptNode) { scriptNode.onaudioprocess = null; if (scriptNode.port) scriptNode.port.onmessage = null; try { scriptNode.disconnect(); } catch (_) {} scriptNode = null; }
   if (srcNode) { try { srcNode.disconnect(); } catch(_){} srcNode = null; }
-  if (actx)   { try { await actx.close(); }   catch(_){} actx = null; }
+  // Detach before awaiting: a new source may already be starting, and it must not lose its context.
+  const old = actx; actx = null;
   aL = aR = aKL = aKR = aMain = aBeat = null;
+  if (old) { try { await old.close(); } catch(_){} }
+  if (running) return;                       // something new started meanwhile: leave its UI alone
   setUI('off');
   document.body.classList.remove('audio-active');
   drawIdle();

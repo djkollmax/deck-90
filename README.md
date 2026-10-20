@@ -40,7 +40,7 @@ Grab the zip for your system from **Releases**, unzip it anywhere and run the pr
 - **Windows 10/11 (x64):** `Deck 90.exe`
 - **Linux (x64):** `deck-90`
 
-Nothing needs to be installed. Settings and the log (`media.log`) are kept in your user folder:
+Nothing needs to be installed on Windows. Settings and the log (`media.log`) are kept in your user folder:
 
 - Windows: `%APPDATA%\Deck 90`
 - Linux: `~/.config/Deck 90`
@@ -53,7 +53,14 @@ Nothing needs to be installed. Settings and the log (`media.log`) are kept in yo
 | Now playing + transport keys | System Media Transport Controls ✅ | MPRIS over D-Bus via `gdbus` ✅ |
 | Window, modules, all displays | ✅ | ✅ |
 
-On Linux, if no monitor source is found, the app asks for a screen/audio share instead. `gdbus` ships with GLib and is present on practically every desktop.
+On Linux the app needs a *Monitor* source (PulseAudio and PipeWire create one per output); without it, use the microphone input. `gdbus` ships with GLib and is present on practically every desktop.
+
+If the Linux build closes right away with a message about the *SUID sandbox helper* (Ubuntu 23.10+ and others that restrict user namespaces), give Electron's sandbox helper the permissions it expects, once:
+
+```sh
+cd "Deck 90-linux-x64"
+sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
+```
 
 `src/index.html` also opens in a browser, but browsers capture system audio poorly: on Chrome for Windows you must tick "share system audio", and Linux browsers can't capture it at all. The microphone input and DEMO work everywhere.
 
@@ -81,9 +88,10 @@ The deck keys (◀◀ ▶ ■ ▶▶ ❚❚) control the player that is playing.
 The meters were checked against generated test signals:
 
 - Peak, VU and crest are exact.
-- LUFS is within ±0.3 dB of BS.1770.
-- BPM is exact for steady beats from 70 to 180. Very fast tracks (around 170) may read at half tempo, as with most beat trackers.
-- What you measure is the system mix *after* the Windows/Linux volume control. The readings are true to that signal, but absolute levels depend on the volume slider.
+- LUFS (momentary, short-term, integrated) is within ±0.3 dB of ITU-R BS.1770 from 30 Hz to 5 kHz, K-weighting included.
+- Phase correlation is computed sample-aligned on the audio thread: mono reads +1.00, inverted −1.00.
+- BPM: steady beats at 97, 124 and 140 read exactly. Fast tracks (above ~160) may read at half tempo, as with most beat trackers.
+- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings.
 
 ## Build from source
 

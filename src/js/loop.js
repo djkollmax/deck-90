@@ -44,7 +44,12 @@ function guard(where, fn) {
   try { fn(); }
   catch (e) {
     report(where, e);
-    [xVL, xVR, xSP, xOS, xDK, xTP].forEach(c => { try { while (c.getTransform().a !== (window.devicePixelRatio || 1) || 0) { c.restore(); if (c.getTransform().a === 1) break; } c.shadowBlur = 0; c.globalAlpha = 1; } catch (_) {} });
+    // A drawing function that threw may have left save()s open: unwind them (bounded) and reset the state.
+    const dpr = window.devicePixelRatio || 1;
+    [xVL, xVR, xSP, xOS, xDK, xTP].forEach(c => { try {
+      for (let i = 0; i < 32; i++) c.restore();
+      c.setTransform(dpr, 0, 0, dpr, 0, 0); c.shadowBlur = 0; c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+    } catch (_) {} });
   }
 }
 

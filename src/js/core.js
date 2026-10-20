@@ -50,13 +50,15 @@ let loudBlocks = [];            // {t, ms}
 let peakHoldDb = -90, peakHoldT = 0;
 const lufsHist = []; let lufsHistT = 0;
 let gateBlocks = [];          // mean-square of 400 ms blocks, one every 100 ms (75 % overlap)
+const ABS_GATE = Math.pow(10, (-70 + 0.691) / 10);   // -70 LUFS as block power
 function integratedLufs(){
-  const L = ms => -0.691 + 10 * Math.log10(ms);
-  const abs = gateBlocks.filter(ms => L(ms) > -70);
-  if (abs.length < 5) return -Infinity;
-  const rel = L(abs.reduce((a, b) => a + b, 0) / abs.length) - 10;
-  const g = abs.filter(ms => L(ms) > rel);
-  return g.length ? L(g.reduce((a, b) => a + b, 0) / g.length) : -Infinity;
+  let n = 0, sum = 0;
+  for (const ms of gateBlocks) if (ms > ABS_GATE) { n++; sum += ms; }
+  if (n < 5) return -Infinity;
+  const relGate = sum / n * 0.1;                        // -10 LU below the absolutely-gated mean
+  let n2 = 0, sum2 = 0;
+  for (const ms of gateBlocks) if (ms > ABS_GATE && ms > relGate) { n2++; sum2 += ms; }
+  return n2 ? -0.691 + 10 * Math.log10(sum2 / n2) : -Infinity;
 }
 let phaseSm = 1, crestSm = 0;
 
@@ -162,6 +164,8 @@ function updateMasterMeters(now){
   const k300 = 1 - Math.exp(-dtMs / 300);
   if(isFinite(rmsDb) && rmsDb > -70) crestSm += ((peakDb - rmsDb) - crestSm) * k300;
   const crest = crestSm;
+  // Phase: sample-aligned sums from the audio thread when available, else this frame's buffers.
+  if (corrFresh) { sumL = corrLL; sumR = corrRR; cross = corrLR; corrLL = corrRR = corrLR = 0; corrFresh = false; }
   const den = Math.sqrt(sumL * sumR);
   if(den > 1e-9) phaseSm += (cross / den - phaseSm) * k300;
 

@@ -8,7 +8,7 @@ const { spawn } = require('child_process');
 const { createMpris } = require('./mpris');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-if (!app.requestSingleInstanceLock()) { app.quit(); }
+if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 let win;
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
@@ -21,8 +21,11 @@ app.whenReady().then(() => {
       .then(sources => callback({ video: sources[0], audio: 'loopback' }))
       .catch(() => callback({}));
   });
-  ses.setPermissionRequestHandler((wc, permission, cb) => cb(['media', 'display-capture', 'fullscreen'].includes(permission)));
-  ses.setPermissionCheckHandler((wc, permission) => ['media', 'display-capture', 'fullscreen'].includes(permission));
+  // Capture and full screen only for our own local page.
+  const ours = wc => !!wc && !!win && wc === win.webContents && wc.getURL().startsWith('file://');
+  const ALLOWED = ['media', 'display-capture', 'fullscreen'];
+  ses.setPermissionRequestHandler((wc, permission, cb) => cb(ALLOWED.includes(permission) && ours(wc)));
+  ses.setPermissionCheckHandler((wc, permission) => ALLOWED.includes(permission) && ours(wc));
 
   Menu.setApplicationMenu(null);
   // No Windows frame: the rack is the window. It still resizes from its edges and snaps (Win+arrows).
@@ -56,17 +59,29 @@ app.whenReady().then(() => {
     else if (what === 'close') win.close();
   });
   win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
-  win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
+  // Links open in the real browser (https only); dropping a file or link on the window must not replace the rack.
+  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//i.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+  win.webContents.on('will-navigate', e => e.preventDefault());
   win.webContents.on('before-input-event', (e, input) => {
     if (input.type === 'keyDown' && input.key === 'F11') { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
-    if (input.type === 'keyDown' && input.key === 'Escape' && win.isFullScreen()) { win.setFullScreen(false); }
+    if (input.type === 'keyDown' && input.key === 'Escape' && win.isFullScreen()) { win.setFullScreen(false); e.preventDefault(); }
   });
 });
 
 // ── "now playing" bridge: a hidden PowerShell process reading Windows' media sessions ──
 let media = null, mediaRestarts = 0, mediaBuf = '', lastStatus = '';
 let LOG = null;   // %APPDATA%\\Deck 90\\media.log once the app is ready
-function mlog(msg) { if (!LOG) return; try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + msg + '\n'); } catch (_) {} }
+let lastLog = '', logRepeats = 0, logBytes = 0;
+function mlog(msg) {
+  if (!LOG) return;
+  if (msg === lastLog) { logRepeats++; return; }               // a stuck error repeats every 400 ms: log it once
+  let out = '';
+  if (logRepeats) out += new Date().toISOString() + ' (previous line repeated ' + logRepeats + ' times)\n';
+  lastLog = msg; logRepeats = 0;
+  out += new Date().toISOString() + ' ' + msg + '\n';
+  if ((logBytes += out.length) > 1000000) return;              // never let one session fill the disk
+  try { fs.appendFileSync(LOG, out); } catch (_) {}
+}
 let mpris = null;
 function sendMedia(info) {
   const st = info.none ? 'none' : (info.app || '?') + ' · ' + (info.status || '?') + ' · ' + (info.title || '');
@@ -83,8 +98,11 @@ function startMedia() {
     return;
   }
   if (process.platform !== 'win32') return;
+  mediaBuf = '';
   media = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'media.ps1')],
                 { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  media.on('error', e => { mlog('bridge error: ' + e.message); });   // e.g. powershell.exe missing or blocked
+  media.stdin.on('error', () => {});                                    // writing to a bridge that is exiting
   mlog('bridge started pid ' + media.pid);
   media.stdout.setEncoding('utf8');
   media.stdout.on('data', chunk => {
@@ -95,7 +113,7 @@ function startMedia() {
       if (!line) continue;
       try {
         const info = JSON.parse(line);
-        if (info.ready) mlog('bridge ready');
+        if (info.ready) { mlog('bridge ready'); mediaRestarts = 0; }
         sendMedia(info);
       } catch (e) { mlog('bad line: ' + line.slice(0, 200)); }
     }
@@ -110,7 +128,7 @@ function startMedia() {
 }
 ipcMain.on('app-log', (e, msg) => mlog('page: ' + msg));
 ipcMain.on('media-cmd', (e, cmd) => {
-  if (media && ['toggle', 'play', 'pause', 'stop', 'next', 'prev'].includes(cmd)) media.stdin.write(cmd + '\n');
+  if (media && media.stdin.writable && ['toggle', 'play', 'pause', 'stop', 'next', 'prev'].includes(cmd)) media.stdin.write(cmd + '\n');
   if (mpris) mpris.command(cmd);
 });
 app.whenReady().then(startMedia);

@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Everything is local. data: is for the onset AudioWorklet and Windows cover art; file:/https: for MPRIS cover art. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+
 <title>DECK 90</title>
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -83,7 +86,7 @@
         <button data-v="COLUMNS">COLUMNS</button>
         <button data-v="FL90">FL 90s</button>
       </div>
-      <div class="seg mods" data-group="mods" title="Prender / apagar módulos (1–5)">
+      <div class="seg mods" data-group="mods" title="Prender / apagar módulos (1–7)">
         <span class="seg-label">VER</span>
         <button data-v="vu">VU</button>
         <button data-v="bpm">BPM</button>

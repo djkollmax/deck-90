@@ -160,7 +160,7 @@ function drawOpenReel(ctx, cx, cy, rFlange, rPack, rMinPack, ang, tint) {
   // engraved legend on the flange
   ctx.fillStyle = 'rgba(40,30,15,.55)'; ctx.font = `bold ${Math.max(6, Math.round(rFlange * 0.11))}px Arial, sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.save(); ctx.rotate(-0.15); ctx.fillText('SPECTRUM', 0, -rFlange * 0.93 + rFlange * 0.06); ctx.restore();
+  ctx.save(); ctx.rotate(-0.15); ctx.fillText('DECK 90', 0, -rFlange * 0.93 + rFlange * 0.06); ctx.restore();
   // hub: machined silver ring with teeth
   const hr = rFlange * 0.34;
   const hg = ctx.createRadialGradient(-hr * .3, -hr * .3, 0, 0, 0, hr);

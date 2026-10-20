@@ -19,13 +19,19 @@ const OBJ = '/org/mpris/MediaPlayer2';
 const IFACE = 'org.mpris.MediaPlayer2.Player';
 
 function createMpris(onInfo, log) {
-  let player = null, lastKey = '', lastList = 0, timer = null, stopped = false;
+  let player = null, lastKey = '', lastArt = '', lastList = 0, timer = null, stopped = false;
 
   async function pickPlayer() {
     const out = await gdbus(['--dest', 'org.freedesktop.DBus', '--object-path', '/org/freedesktop/DBus', '--method', 'org.freedesktop.DBus.ListNames']);
     if (!out) return null;
     const names = (out.match(/'org\.mpris\.MediaPlayer2\.[^']+'/g) || []).map(s => s.slice(1, -1));
-    return names.find(n => /spotless/i.test(n)) || names[0] || null;
+    const spot = names.find(n => /spotless/i.test(n));
+    if (spot || names.length < 2) return spot || names[0] || null;
+    for (const n of names) {                         // no Spotless: take whichever player is playing
+      const st = await gdbus(['--dest', n, '--object-path', OBJ, '--method', 'org.freedesktop.DBus.Properties.Get', IFACE, 'PlaybackStatus']);
+      if (st && /Playing/.test(st)) return n;
+    }
+    return names[0];
   }
 
   async function poll() {
@@ -53,7 +59,10 @@ function createMpris(onInfo, log) {
           };
           const art = field(meta, 'mpris:artUrl');
           const key = [info.app, info.title, info.artist, info.album, info.status].join('|');
-          if (art && key.split('|').slice(0, 3).join('|') !== lastKey.split('|').slice(0, 3).join('|')) info.cover = art;
+          // Send the art with every new track (the page clears the old cover then) and whenever it changes:
+          // players often publish the art a moment after the title.
+          const newTrack = key.split('|').slice(0, 3).join('|') !== lastKey.split('|').slice(0, 3).join('|');
+          if (art && (newTrack || art !== lastArt)) { info.cover = art; lastArt = art; }
           if (key !== lastKey || (poll.n = (poll.n || 0) + 1) % 5 === 0) { onInfo(info); lastKey = key; }
         }
       }

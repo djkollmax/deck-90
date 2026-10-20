@@ -34,7 +34,7 @@ await download(base + zipName, zip);
 const sums = fs.readFileSync(path.join(cache, `SHASUMS256-${version}.txt`), 'utf8');
 const expected = (sums.split('\n').find(l => l.endsWith('*' + zipName)) || '').split(' ')[0];
 const actual = crypto.createHash('sha256').update(fs.readFileSync(zip)).digest('hex');
-if (!expected || expected !== actual) throw new Error(`checksum mismatch for ${zipName}`);
+if (!expected || expected !== actual) { fs.rmSync(zip, { force: true }); throw new Error(`checksum mismatch for ${zipName} (cached copy deleted, run again)`); }
 console.log('checksum ok', actual.slice(0, 16) + '…');
 
 fs.rmSync(outDir, { recursive: true, force: true });

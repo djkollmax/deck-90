@@ -338,7 +338,9 @@ function drawSpectrum(canvas, ctx) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H - PA);
     ctx.strokeStyle = '#0e0e1c'; ctx.lineWidth = 1; ctx.stroke();
     ctx.font = '8px Courier New'; ctx.fillStyle = '#4a4a78';
-    ctx.textAlign = 'center'; ctx.fillText(lbl, x, H - 4);
+    // keep the edge labels (20k) inside the panel instead of half cut off
+    const half = ctx.measureText(lbl).width / 2 + 2;
+    ctx.textAlign = 'center'; ctx.fillText(lbl, Math.min(W - half, Math.max(half, x)), H - 4);
   });
 
   // Bars
