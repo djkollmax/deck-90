@@ -7,8 +7,21 @@
   "license": "MIT",
   "author": "Damián Koll (https://github.com/djkollmax)",
   "homepage": "https://github.com/djkollmax/deck-90",
-  "repository": { "type": "git", "url": "https://github.com/djkollmax/deck-90.git" },
-  "keywords": ["audio", "vu-meter", "loudness", "lufs", "spectrum-analyzer", "bpm", "cassette", "electron", "spotless"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/djkollmax/deck-90.git"
+  },
+  "keywords": [
+    "audio",
+    "vu-meter",
+    "loudness",
+    "lufs",
+    "spectrum-analyzer",
+    "bpm",
+    "cassette",
+    "electron",
+    "spotless"
+  ],
   "scripts": {
     "start": "electron .",
     "package:win": "node scripts/package.mjs win32",
@@ -16,5 +29,11 @@
   },
   "devDependencies": {
     "electron": "33.4.11"
-  }
+  },
+  "contributors": [
+    {
+      "name": "Claude (Anthropic)",
+      "url": "https://claude.ai"
+    }
+  ]
 }

@@ -109,7 +109,9 @@ scripts/    packaging
 
 ## Credits
 
-- Made by Damián Koll.
+- Made by **Damián Koll** and **[Claude](https://claude.ai)** (Anthropic).
+  - Damián came up with the idea and the look, tested every version on real music and decided what stayed.
+  - Claude wrote the code: the audio engine, the meters and their calibration, the drawing, the cassette decks, the Windows/Linux now-playing bridges and the packaging.
 - Built for and alongside [Spotless](https://github.com/nix-codes/spotless) by Nico (nix-codes).
 - Runs on [Electron](https://www.electronjs.org/) (MIT). Release builds include Electron's and Chromium's license files (`LICENSE`, `LICENSES.chromium.html`).
 
@@ -131,6 +133,8 @@ Deck 90 es un analizador de audio de escritorio con estética hi-fi retro. Escuc
 - Caseteras cuya cinta gira mientras hay música.
 
 También muestra el tema que está sonando y controla el reproductor (ideal con Spotless).
+
+Hecho por Damián Koll junto con Claude (Anthropic), que escribió el código.
 
 Para usarlo, bajá el zip de **Releases**, descomprimilo y abrí el programa.
 
