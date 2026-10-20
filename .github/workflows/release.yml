@@ -1,0 +1,60 @@
+# Builds the Windows and Linux zips and publishes them as a GitHub Release
+# whenever a version tag (v6.0.1, v6.1.0, ...) is pushed.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)publish, e.g. v6.0.1'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check that the tag matches package.json
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION=$(node -p "require('./package.json').version")
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          if [ "$TAG" != "v$VERSION" ]; then echo "Tag $TAG does not match package.json $VERSION"; exit 1; fi
+
+      - name: Build the Windows and Linux zips
+        run: |
+          node scripts/package.mjs win32
+          node scripts/package.mjs linux
+          ls -la dist/*.zip
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="$VERSION" '
+            $0 ~ "^## "v" " || $0 == "## "v { on=1; next }
+            on && /^## / { exit }
+            on { print }' CHANGELOG.md > notes.md
+          printf '\n**Download, unzip, run:** Windows → `Deck 90.exe`, Linux → `deck-90`.\n' >> notes.md
+          cat notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip --clobber
+          else
+            gh release create "$TAG" dist/*.zip --title "Deck 90 $TAG" --notes-file notes.md --latest
+          fi
