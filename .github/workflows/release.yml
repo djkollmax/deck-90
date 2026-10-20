@@ -40,7 +40,9 @@ jobs:
             NEEDED=yes
           else
             TAG="v$VERSION"
-            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then NEEDED=no; else NEEDED=yes; fi
+            # a draft (e.g. left over from an upload through the website) still needs publishing
+            DRAFT=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null || echo missing)
+            if [ "$DRAFT" = "false" ]; then NEEDED=no; else NEEDED=yes; fi
           fi
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
@@ -71,6 +73,7 @@ jobs:
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/*.zip --clobber
+            gh release edit "$TAG" --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --draft=false --latest
           else
             gh release create "$TAG" dist/*.zip --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --latest
           fi
