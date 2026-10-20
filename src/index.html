@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DECK 90</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- SPLASH OVERLAY -->
+<div id="splash">
+  <div style="position:relative;display:flex;align-items:center;justify-content:center;width:170px;height:170px;margin-bottom:-8px">
+    <div class="splash-ring"></div>
+    <div class="splash-ring"></div>
+    <div class="splash-ring"></div>
+    <div style="position:relative;z-index:1;text-align:center">
+      <div style="font-size:32px;color:#c8a84b;text-shadow:0 0 20px rgba(200,168,75,.5)">◈</div>
+    </div>
+  </div>
+  <div class="splash-logo">
+    <div class="splash-title">DECK 90</div>
+    <div class="splash-sub">VU · LOUDNESS · SPECTRUM · BPM</div>
+  </div>
+  <div class="splash-divider"></div>
+  <div class="splash-btns">
+    <button class="splash-btn" id="splashSys">◉ &nbsp;AUDIO DEL SISTEMA</button>
+    <button class="splash-btn alt" id="splashMic">♪ &nbsp;MICRÓFONO</button>
+    <button class="splash-btn demo" id="splashDemo">◇ &nbsp;DEMO 124 BPM</button>
+  </div>
+  <div class="splash-tip">
+    <span>PARA VER LO QUE SUENA EN SPOTLESS</span><br>
+    Audio del sistema → en el diálogo de Chrome elegí <span>“Pantalla completa”</span><br>
+    y tildá <span>“Compartir audio del sistema”</span>. Spotless puede estar minimizado.<br>
+    <span>S</span> sistema · <span>M</span> micrófono · <span>D</span> demo · <span>ESPACIO</span> detener · <span>F</span> pantalla completa<br>
+    <span>T</span> spectrum · <span>V</span> VU · <span>C</span> calibración · <span>K</span> sens · <span>N</span> tono
+  </div>
+</div>
+
+<div class="rack-unit">
+  <div class="glass-sheen"></div>
+  <div class="screw s-tl"></div>
+  <div class="screw s-tr"></div>
+  <div class="screw s-bl"></div>
+  <div class="screw s-br"></div>
+
+  <!-- TITLE BAR -->
+  <div class="title-bar">
+    <div class="brand">
+      <div class="led amber" id="ledPower"></div>
+      <div class="brand-name">DECK 90</div>
+    </div>
+    <div class="np" id="np" title="Lo que está sonando (según Windows)">
+      <img id="npCover" alt="">
+      <div class="np-text"><span id="npTitle"></span><span id="npArtist"></span></div>
+    </div>
+    <div class="title-right">
+      <span id="statusText">STANDBY</span>
+      <div class="led-group"><div class="led-label">SIG</div><div class="led" id="ledSig"></div></div>
+      <div class="led-group"><div class="led-label">CLIP</div><div class="led" id="ledClip"></div></div>
+      <div class="win-ctl">
+        <button data-w="min" title="Minimizar">&#8212;</button>
+        <button data-w="max" title="Maximizar">&#9633;</button>
+        <button data-w="close" class="close" title="Cerrar">&#10005;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS: one row for what you use all the time, a drawer for fine settings -->
+  <div class="console" id="console">
+    <div class="console-row">
+      <div class="seg src" data-group="src">
+        <span class="seg-label">FUENTE</span>
+        <button data-v="sys" title="Audio del sistema (S)">◉ SISTEMA</button>
+        <button data-v="mic" title="Micrófono (M)">♪ MIC</button>
+        <button data-v="demo" title="Señal de prueba 124 BPM (D)">◇ DEMO</button>
+        <button data-v="stop" class="stop" title="Detener (Espacio)">■</button>
+      </div>
+      <div class="seg" data-group="skin" title="Estilo del spectrum (T)">
+        <span class="seg-label">SPECTRUM</span>
+        <button data-v="MODERN">MODERN</button>
+        <button data-v="RETRO">RETRO 97</button>
+        <button data-v="COLUMNS">COLUMNS</button>
+        <button data-v="FL90">FL 90s</button>
+      </div>
+      <div class="seg mods" data-group="mods" title="Prender / apagar módulos (1–5)">
+        <span class="seg-label">VER</span>
+        <button data-v="vu">VU</button>
+        <button data-v="bpm">BPM</button>
+        <button data-v="meters">LUFS</button>
+        <button data-v="spectrum">SPECTRUM</button>
+        <button data-v="osc">OSC</button>
+        <button data-v="deck">DECK</button>
+        <button data-v="tape">CINTA</button>
+      </div>
+      <div class="seg tools" data-group="tools">
+        <button data-v="drawer" title="Ajustes: VU, calibración, sensibilidad, tono (A)">⚙</button>
+        <button data-v="tapeonly" title="Solo la cinta grande / volver (Z)">◎◎</button>
+        <button data-v="hide" title="Esconder controles (H)">▴</button>
+        <button data-v="fs" title="Pantalla completa (F)">⛶</button>
+      </div>
+    </div>
+    <div class="console-drawer" id="drawer">
+      <div class="seg" data-group="vu">
+        <span class="seg-label">VU</span>
+        <button data-v="MODERN">STUDIO</button>
+        <button data-v="HIFI90">HI-FI 90s</button>
+      </div>
+      <div class="seg" data-group="cal" title="Calibración del VU: dónde cae el 0 (C)">
+        <span class="seg-label">0 VU</span>
+        <button data-v="AUTO">AUTO</button>
+        <button data-v="18">−18</button>
+        <button data-v="14">−14</button>
+        <button data-v="10">−10</button>
+      </div>
+      <div class="seg" data-group="sens" title="Sensibilidad del FL 90s (K)">
+        <span class="seg-label">SENS</span>
+        <button data-v="0">N</button>
+        <button data-v="1">H</button>
+        <button data-v="2">MAX</button>
+      </div>
+      <div class="seg" data-group="deckmode" title="Casetera simple o doble">
+        <span class="seg-label">DECK</span>
+        <button data-v="single">SIMPLE</button>
+        <button data-v="double">DOBLE</button>
+      </div>
+      <div class="seg" data-group="tapestyle" title="Cassette de la CINTA">
+        <span class="seg-label">CINTA</span>
+        <button data-v="REEL">REEL</button>
+        <button data-v="CLEAR">CLEAR</button>
+      </div>
+      <div class="seg" data-group="mode" title="Tono de pantalla (N)">
+        <span class="seg-label">TONO</span>
+        <button data-v="0">STD</button>
+        <button data-v="1">ANALOG</button>
+        <button data-v="2">CRT</button>
+        <button data-v="3">OLED</button>
+      </div>
+    </div>
+  </div>
+  <div class="console-tab" id="consoleTab" title="Mostrar controles (H)">▾ CONTROLES</div>
+
+  <!-- MAIN ROW -->
+  <div class="main-row">
+    <div class="panel" data-mod="vu">
+      <div class="panel-label">L</div>
+      <canvas id="vuL" width="320" height="272"></canvas>
+    </div>
+    <div class="panel" data-mod="vu">
+      <div class="panel-label">R</div>
+      <canvas id="vuR" width="320" height="272"></canvas>
+    </div>
+    <div class="panel bpm-panel" data-mod="bpm">
+      <div class="panel-label">BPM</div>
+      <div class="bpm-display-wrap"><div class="beat-ring" id="beatRing"></div><div id="bpmValue">--</div></div>
+      <div class="beat-leds">
+        <div class="led" id="bl0"></div><div class="led" id="bl1"></div>
+        <div class="led" id="bl2"></div><div class="led" id="bl3"></div>
+      </div>
+      <div class="bpm-conf" id="bpmConf">NO SIGNAL</div>
+    </div>
+  </div>
+
+  <!-- MASTERING METERS -->
+  <div class="master-strip" data-mod="meters">
+    <div class="panel metric-card">
+      <div class="metric-title">Loudness</div>
+      <div class="metric-value blue" id="mLufs">--.-</div>
+      <canvas id="lufsHist" class="spark" width="200" height="22" title="Últimos 30 s · líneas en −14 (nivel típico de streaming) y −9 LUFS"></canvas>
+      <div class="metric-unit">LUFS-M · <span id="mLufsS">S --.-</span> · <span id="mLufsI" title="Integrado del tema (BS.1770, con gating)">I --.-</span></div>
+    </div>
+    <div class="panel metric-card">
+      <div class="metric-title">Peak</div>
+      <div class="metric-value" id="mPeak">--.-</div>
+      <div class="metric-unit">dBFS</div>
+    </div>
+    <div class="panel metric-card">
+      <div class="metric-title">Crest</div>
+      <div class="metric-value warn" id="mCrest">--.-</div>
+      <div class="metric-unit">dB</div>
+    </div>
+    <div class="panel metric-card">
+      <div class="metric-title">Phase</div>
+      <div class="metric-value good" id="mPhase">--</div>
+      <div class="metric-unit">L/R</div>
+    </div>
+  </div>
+
+  <!-- SPECTRUM -->
+  <div class="panel spectrum-panel" data-mod="spectrum">
+    <canvas id="spectrum" width="944" height="196"></canvas>
+  </div>
+
+  <!-- OSCILLOSCOPE -->
+  <div class="panel osc-panel" data-mod="osc">
+    <canvas id="oscilloscope" width="944" height="116"></canvas>
+  </div>
+
+  <!-- CASSETTE DECK -->
+  <div class="panel deck-panel" data-mod="deck">
+    <canvas id="deck" width="944" height="160"></canvas>
+  </div>
+
+  <!-- BIG CLEAR CASSETTE -->
+  <div class="panel tape-panel" data-mod="tape">
+    <canvas id="tape" width="944" height="320"></canvas>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/core.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/draw-vu.js"></script>
+<script src="js/draw-spectrum.js"></script>
+<script src="js/draw-osc.js"></script>
+<script src="js/deck.js"></script>
+<script src="js/tape.js"></script>
+<script src="js/nowplaying.js"></script>
+<script src="js/loop.js"></script>
+<script src="js/idle.js"></script>
+<script src="js/controls.js"></script>
+
+</body>
+</html>
