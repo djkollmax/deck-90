@@ -28,7 +28,7 @@ function miniReel(ctx, x, y, r, a) {
 }
 
 function miniBar(ctx, x, y, w, h, lvl, peak, label) {
-  const gap = 2, sw = (w - gap * (MINI_SEGS - 1)) / MINI_SEGS;
+  const gap = w < 200 ? 1 : 2, sw = Math.max(1, (w - gap * (MINI_SEGS - 1)) / MINI_SEGS);
   const lit = (lvl - MINI_MIN) / (MINI_MAX - MINI_MIN) * MINI_SEGS;
   const pk = Math.round((peak - MINI_MIN) / (MINI_MAX - MINI_MIN) * MINI_SEGS) - 1;
   for (let i = 0; i < MINI_SEGS; i++) {
@@ -51,7 +51,7 @@ function drawMini(canvas, ctx, live) {
 
   // reels in a little tape window
   const r = Math.min(H * 0.34, 26), wy = H / 2;
-  const showReels = W > 330;
+  const showReels = W > 470;
   let x0 = 8;
   if (showReels) {
     const ww = r * 5.2;

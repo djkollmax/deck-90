@@ -118,7 +118,7 @@ document.addEventListener('keydown', e => {
     a: () => setDrawer(!drawerOpen),
     h: () => setControlsHidden(!controlsHidden),
     1: () => toggleModule('vu'), 2: () => toggleModule('bpm'), 3: () => toggleModule('meters'),
-    4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), z: () => toggleTapeOnly(), p: () => toggleMini(),
+    4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), z: () => toggleTapeOnly(), p: () => { if (!e.repeat) toggleMini(); },
     c: () => { const o = ['AUTO', 18, 14, 10]; vuCal = o[(o.indexOf(vuCal) + 1) % o.length]; savePrefs(); syncConsole(); },
   }[k];
   if (act) { e.preventDefault(); act(); }
@@ -133,6 +133,7 @@ setSpectrumSkin(['MODERN','RETRO','FL90','COLUMNS'].includes(prefs.spectrumSkin)
 if ([18, 14, 10].includes(prefs.cal)) vuCal = prefs.cal;
 if (prefs.mods && typeof prefs.mods === 'object') {
   for (const k in mods) if (typeof prefs.mods[k] === 'boolean') mods[k] = prefs.mods[k];
+  if (typeof prefs.mods.gonio !== 'boolean') mods.gonio = false;   // settings from before 6.1: the goniometer starts off
   if (!Object.values(mods).some(Boolean)) for (const k in mods) mods[k] = true;
 }
 if (typeof prefs.deckDouble === 'boolean') deckDouble = prefs.deckDouble;

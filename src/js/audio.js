@@ -148,7 +148,7 @@ class StereoCorr extends AudioWorkletProcessor {
 registerProcessor('stereo-corr', StereoCorr);
 `;
 let corrNode = null, corrLL = 0, corrRR = 0, corrLR = 0, corrFresh = false;
-let tpBlock = 0, tpAvailable = false;   // largest true peak (linear) since the last frame
+let tpBlock = 0, tpAvailable = false, tpFresh = false;   // largest true peak (linear) since the last frame
 let onsetPrevLow = -100, onsetPrevHigh = -100;
 function onsetBlock(msLow, msHigh, block, sampleRate) {
   const dl = 10 * Math.log10(msLow + 1e-10), dh = 10 * Math.log10(msHigh + 1e-10);
@@ -186,17 +186,18 @@ function attachOnsetDetector(ctx, bands) {
     scriptNode = node;
     if (upmix) {
       const c = new AudioWorkletNode(ctx, 'stereo-corr', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
-      c.port.onmessage = e => { corrLL += e.data[0]; corrRR += e.data[1]; corrLR += e.data[2]; if (e.data[3] > tpBlock) tpBlock = e.data[3]; corrFresh = true; tpAvailable = true; };
+      c.port.onmessage = e => { corrLL += e.data[0]; corrRR += e.data[1]; corrLR += e.data[2]; if (e.data[3] > tpBlock) tpBlock = e.data[3]; corrFresh = true; tpFresh = true; tpAvailable = true; };
       upmix.connect(c); c.connect(mute);
       corrNode = c;
     }
   }).catch(fallback);
 }
 
+function resetPeakLabels() { el('mPeakTitle').textContent = 'Peak'; el('mPeakUnit').textContent = 'dBFS'; }
 function resetMeters() {
   spPeak.fill(-Infinity); spPeakTm.fill(0); spLvl.fill(-120); lufsHist.length = 0; gateBlocks = [];
   vu.L = mkVU(); vu.R = mkVU();
-  loudBlocks = []; lraBlocks = []; tpMaxDb = -Infinity; tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
+  loudBlocks = []; lraReset(); resetPeakLabels(); tpMaxDb = -Infinity; tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
   bpmVal = 0; bpmConfidence = 0; lastBeat = 0;
   lastFrame = 0;
 }
@@ -323,7 +324,7 @@ async function stopAudio() {
   // v4 never stopped the tracks: Chrome kept "sharing your screen / mic" until the tab was closed.
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   if (corrNode) { corrNode.port.onmessage = null; try { corrNode.disconnect(); } catch (_) {} corrNode = null; }
-  corrLL = corrRR = corrLR = 0; corrFresh = false; tpBlock = 0; tpAvailable = false;
+  corrLL = corrRR = corrLR = 0; corrFresh = false; tpBlock = 0; tpAvailable = false; tpFresh = false;
   if (scriptNode) { scriptNode.onaudioprocess = null; if (scriptNode.port) scriptNode.port.onmessage = null; try { scriptNode.disconnect(); } catch (_) {} scriptNode = null; }
   if (srcNode) { try { srcNode.disconnect(); } catch(_){} srcNode = null; }
   // Detach before awaiting: a new source may already be starting, and it must not lose its context.
@@ -363,6 +364,7 @@ function setUI(state, mode) {
     el('bpmValue').textContent = '--';
     el('bpmConf').textContent  = 'NO SIGNAL';
     ['mLufs','mPeak','mCrest'].forEach(id => el(id).textContent = '--.-');
+    resetPeakLabels(); el('mLra').textContent = 'LRA --';
     el('mPhase').textContent = '--';
     el('mLufsS').textContent = 'S --.-';
   }

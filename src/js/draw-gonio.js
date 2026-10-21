@@ -45,10 +45,10 @@ function drawGonio(canvas, ctx, live) {
     let mx = 1e-6;
     const n = 2048, from = FFT - n;
     for (let i = from; i < FFT; i++) {
-      const a = Math.abs(bufL[i]) + Math.abs(bufR[i]);
+      const a = bufL[i] * bufL[i] + bufR[i] * bufR[i];       // a dot sits √(L²+R²)·R·gain from the centre
       if (a > mx) mx = a;
     }
-    const target = Math.min(40, 0.85 / (mx * Math.SQRT1_2));
+    const target = Math.min(40, 0.85 / Math.sqrt(mx));
     gonioGain += (target - gonioGain) * (target < gonioGain ? 0.5 : 1 - Math.exp(-dtMs / 1500));
     const k = R * gonioGain * Math.SQRT1_2;
     ctx.save();

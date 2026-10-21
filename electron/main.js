@@ -52,31 +52,41 @@ app.whenReady().then(() => {
   // Mini mode: a small strip that stays on top of other windows. Its size and place are remembered.
   const STATE = path.join(app.getPath('userData'), 'window.json');
   let saved = {}; try { saved = JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch (_) {}
-  let miniOn = false, normalBounds = null;
+  let miniOn = false, miniBusy = false, normalBounds = null, wasMax = false;
+  const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, 900, wa.width), height: Math.min(b.height, 300) });
   const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
     return b.x < a.x + a.width - 40 && b.x + b.width > a.x + 40 && b.y >= a.y - 10 && b.y < a.y + a.height - 40; });
+  const saveMini = () => { if (!win.isMaximized()) saved.mini = win.getBounds(); try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {} };
   async function setMini(on) {
-    if (on === miniOn) return;
-    if (on) {
-      if (win.isFullScreen()) await leaveFullScreen();
-      if (win.isMaximized()) win.unmaximize();
-      normalBounds = win.getBounds();
-      const wa = screen.getDisplayMatching(normalBounds).workArea;
-      win.setMinimumSize(300, 96);
-      win.setMaximizable(false); win.setFullScreenable(false);
-      win.setBounds(onScreen(saved.mini) ? saved.mini : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 });
-      win.setAlwaysOnTop(true, 'floating');
-    } else {
-      saved.mini = win.getBounds();
-      try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {}
-      win.setAlwaysOnTop(false);
-      win.setMaximizable(true); win.setFullScreenable(true);
-      win.setMinimumSize(760, 600);
-      if (normalBounds) win.setBounds(normalBounds);
-    }
-    miniOn = on;
-    win.webContents.send('mini', on);
+    if (on === miniOn || miniBusy) return;
+    miniBusy = true;
+    try {
+      if (on) {
+        if (win.isFullScreen()) await leaveFullScreen();
+        wasMax = win.isMaximized();
+        normalBounds = wasMax ? win.getNormalBounds() : win.getBounds();
+        if (wasMax) win.unmaximize();
+        const wa = screen.getDisplayMatching(normalBounds).workArea;
+        win.setMinimumSize(300, 96);
+        win.setMaximizable(false); win.setFullScreenable(false);
+        win.setBounds(onScreen(saved.mini) ? clampMini(saved.mini, wa) : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 });
+        win.setAlwaysOnTop(true, 'floating');
+      } else {
+        if (win.isMaximized()) win.unmaximize();
+        saveMini();
+        win.setAlwaysOnTop(false);
+        win.setMaximizable(true); win.setFullScreenable(true);
+        win.setMinimumSize(760, 600);
+        if (normalBounds) win.setBounds(normalBounds);
+        if (wasMax) win.maximize();
+      }
+      miniOn = on;
+      win.webContents.send('mini', on);
+    } finally { miniBusy = false; }
   }
+  // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
+  win.on('maximize', () => { if (miniOn) win.unmaximize(); });
+  win.on('close', () => { if (miniOn) saveMini(); });
   ipcMain.on('win', async (e, what) => {
     if (what === 'mini') return setMini(!miniOn);
     if (what === 'min') { await leaveFullScreen(); win.minimize(); }

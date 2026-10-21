@@ -23,7 +23,7 @@ function onNowPlaying(info){
     if (np && np.title) trackHistory.unshift(np);
     trackHistory.length = Math.min(trackHistory.length, 5);
     npKey = key; trackStart = performance.now();
-    gateBlocks = []; lraBlocks = []; tpMaxDb = -Infinity;   // integrated loudness, LRA and TP max are per track
+    gateBlocks = []; lraReset(trackStart); tpMaxDb = -Infinity;   // integrated loudness, LRA and TP max are per track
     decks[0].title = short(info.artist ? info.artist + ' – ' + info.title : info.title, 34);
     decks[0].counter = 0;
     const prev = trackHistory[0];

@@ -62,18 +62,29 @@ function integratedLufs(){
 }
 // Loudness range (EBU Tech 3342): short-term loudness every 100 ms, gated at -70 LUFS and 20 LU under the
 // gated mean, LRA = 95th - 10th percentile. Per track, like the integrated loudness.
-let lraBlocks = [];             // short-term block powers
-let lraValue = NaN, lraT = 0;
+// Kept as a 0.1 LU histogram (-70 … +30 LUFS) plus the power sum above the absolute gate, so a long
+// track or mix costs the same as a short one.
+const LRA_MIN = -70, LRA_STEP = 0.1, LRA_BINS = 1000;
+const lraHist = new Uint32Array(LRA_BINS);
+let lraN = 0, lraPow = 0, lraValue = NaN, lraT = 0, lraFrom = 0;
+function lraReset(now) { lraHist.fill(0); lraN = 0; lraPow = 0; lraValue = NaN; lraT = 0; lraFrom = (now || performance.now()) + 3000; }
+function lraAdd(lufsS) {
+  if (!(lufsS > LRA_MIN)) return;                            // absolute gate
+  const b = Math.min(LRA_BINS - 1, Math.floor((lufsS - LRA_MIN) / LRA_STEP));
+  lraHist[b]++; lraN++; lraPow += Math.pow(10, (lufsS + 0.691) / 10);
+}
 function loudnessRange() {
-  let n = 0, sum = 0;
-  for (const p of lraBlocks) if (p > ABS_GATE) { n++; sum += p; }
-  if (n < 50) return NaN;                                  // a few seconds before it means anything
-  const rel = sum / n * 0.01;                              // -20 LU
-  const vals = [];
-  for (const p of lraBlocks) if (p > ABS_GATE && p > rel) vals.push(-0.691 + 10 * Math.log10(p));
-  if (vals.length < 50) return NaN;
-  vals.sort((a, b) => a - b);
-  const pct = q => { const x = q * (vals.length - 1), i = Math.floor(x); return vals[i] + (vals[Math.min(i + 1, vals.length - 1)] - vals[i]) * (x - i); };
+  if (lraN < 50) return NaN;                                 // a few seconds before it means anything
+  const relGate = -0.691 + 10 * Math.log10(lraPow / lraN) - 20;
+  const first = Math.max(0, Math.ceil((relGate - LRA_MIN) / LRA_STEP));
+  let n = 0;
+  for (let b = first; b < LRA_BINS; b++) n += lraHist[b];
+  if (n < 50) return NaN;
+  const pct = q => {                                         // value at quantile q, bin centres
+    const target = q * (n - 1); let c = 0;
+    for (let b = first; b < LRA_BINS; b++) { c += lraHist[b]; if (c > target) return LRA_MIN + (b + 0.5) * LRA_STEP; }
+    return LRA_MIN + (LRA_BINS - 0.5) * LRA_STEP;
+  };
   return pct(0.95) - pct(0.10);
 }
 // True peak: hold for reading plus the track's maximum.
@@ -164,7 +175,7 @@ function updateMasterMeters(now){
     lufsHistT = now;
     lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
     if (isFinite(lufsM) && npPlaying()) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
-    if (isFinite(lufsS) && npPlaying()) { lraBlocks.push(Math.pow(10, (lufsS + 0.691) / 10)); if (lraBlocks.length > 36000) lraBlocks.shift(); }
+    if (isFinite(lufsS) && npPlaying() && now >= lraFrom) lraAdd(lufsS);   // the first 3 s are still the previous track / silence
     const I = integratedLufs();
     miniVals.i = I;
     el('mLufsI').textContent = isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-';
@@ -197,9 +208,11 @@ function updateMasterMeters(now){
   // Peak card: true peak (dBTP) when the audio thread measures it, sample peak (dBFS) otherwise.
   let shownDb = peakHoldDb;
   if (tpAvailable) {
-    const tpDb = 20 * Math.log10(Math.max(tpBlock, 1e-9)); tpBlock = 0;
-    if (tpDb >= tpHoldDb || now - tpHoldT > 1500) { tpHoldDb = tpDb; tpHoldT = now; }
-    if (npPlaying() && tpDb > tpMaxDb && tpDb > -89) tpMaxDb = tpDb;
+    if (tpFresh) {                                         // ~47 messages/s against 60–144 frames/s
+      const tpDb = 20 * Math.log10(Math.max(tpBlock, 1e-9)); tpBlock = 0; tpFresh = false;
+      if (tpDb >= tpHoldDb || now - tpHoldT > 1500) { tpHoldDb = tpDb; tpHoldT = now; }
+      if (npPlaying() && tpDb > tpMaxDb && tpDb > -89) tpMaxDb = tpDb;
+    }
     shownDb = tpHoldDb;
     el('mPeakTitle').textContent = 'True peak';
     el('mPeakUnit').textContent = 'dBTP · MAX ' + (isFinite(tpMaxDb) ? tpMaxDb.toFixed(1) : '--.-');
