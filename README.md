@@ -7,7 +7,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 | | |
 |---|---|
 | ![Hi-Fi VUs, LED columns and a double deck](docs/screenshots/retro-decks.png) | ![90s bar display and a big reel-to-reel style cassette](docs/screenshots/fl-tape.png) |
-| ![Columns spectrum](docs/screenshots/columns.png) | |
+| ![Columns spectrum](docs/screenshots/columns.png) | ![Mini mode: a strip that stays on top](docs/screenshots/mini.png) |
 
 *Screenshots use the built-in DEMO signal.*
 
@@ -17,8 +17,8 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 - **VU meters.** Each needle has spring-damper ballistics. Choose a STUDIO or HI-FI 90s face. The reference level can be AUTO, −18, −14 or −10 dBFS.
 - **Loudness.**
   - Momentary, short-term and integrated LUFS (ITU-R BS.1770 / EBU R128 K-weighting and gating).
-  - Integrated LUFS restarts on every new track.
-  - Also shows sample peak with hold, crest factor and phase correlation.
+  - Integrated LUFS and loudness range (LRA, EBU Tech 3342) restart on every new track.
+  - True peak in dBTP (BS.1770-4, 4x oversampling) with the track's maximum, plus crest factor and phase correlation.
 - **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
 - **Spectrum** in four styles:
   - MODERN: smooth curve with peaks.
@@ -26,11 +26,13 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - COLUMNS: classic bars.
   - FL 90s: wide segmented bars, with three sensitivity levels.
 - **Oscilloscope.**
+- **Goniometer.** The stereo image as a cloud of dots: mono stands upright, wide stereo spreads out, out-of-phase content lies down. A correlation bar sits underneath.
 - **Cassette decks.** Choose one deck or two. A big CINTA cassette comes as REEL (aluminium open-reel look) or CLEAR. The tape runs only while music is actually playing.
 - **Now playing.**
   - Shows the title, artist and cover from the system's media session. Spotless is preferred when several players are open.
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
+- **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
 - **Frameless window.** All controls sit in one console. Display modes: STD, ANALOG, CRT and OLED. Your settings are remembered.
 
 ## Download & run
@@ -70,7 +72,8 @@ sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
 |---|---|
 | `S` / `M` / `D` | System audio / microphone / demo |
 | `Space` / `Esc` | Stop analysis |
-| `1`–`7` | Toggle modules (VU, BPM, LUFS, spectrum, oscilloscope, deck, cassette) |
+| `1`–`8` | Toggle modules (VU, BPM, LUFS, spectrum, oscilloscope, deck, cassette, goniometer) |
+| `P` | Mini mode (always on top) / back |
 | `T` | Spectrum style |
 | `K` | FL sensitivity |
 | `V` | VU face |
@@ -89,6 +92,8 @@ The meters were checked against generated test signals:
 
 - Peak, VU and crest are exact.
 - LUFS (momentary, short-term, integrated) is within ±0.3 dB of ITU-R BS.1770 from 30 Hz to 5 kHz, K-weighting included.
+- True peak finds the peaks between samples: a 12 kHz tone at −6 dBFS sampled at 45° shows a sample peak of −9.0 and reads −6.0 dBTP. Near 20 kHz it can read about 0.2 dB high, within what BS.1770's filter allows.
+- LRA reads 10.0 and 5.0 LU on EBU Tech 3342's first two test cases.
 - Phase correlation is computed sample-aligned on the audio thread: mono reads +1.00, inverted −1.00.
 - BPM: steady beats at 97, 124 and 140 read exactly. Fast tracks (above ~160) may read at half tempo, as with most beat trackers.
 - What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings.

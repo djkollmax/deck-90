@@ -60,6 +60,24 @@ function integratedLufs(){
   for (const ms of gateBlocks) if (ms > ABS_GATE && ms > relGate) { n2++; sum2 += ms; }
   return n2 ? -0.691 + 10 * Math.log10(sum2 / n2) : -Infinity;
 }
+// Loudness range (EBU Tech 3342): short-term loudness every 100 ms, gated at -70 LUFS and 20 LU under the
+// gated mean, LRA = 95th - 10th percentile. Per track, like the integrated loudness.
+let lraBlocks = [];             // short-term block powers
+let lraValue = NaN, lraT = 0;
+function loudnessRange() {
+  let n = 0, sum = 0;
+  for (const p of lraBlocks) if (p > ABS_GATE) { n++; sum += p; }
+  if (n < 50) return NaN;                                  // a few seconds before it means anything
+  const rel = sum / n * 0.01;                              // -20 LU
+  const vals = [];
+  for (const p of lraBlocks) if (p > ABS_GATE && p > rel) vals.push(-0.691 + 10 * Math.log10(p));
+  if (vals.length < 50) return NaN;
+  vals.sort((a, b) => a - b);
+  const pct = q => { const x = q * (vals.length - 1), i = Math.floor(x); return vals[i] + (vals[Math.min(i + 1, vals.length - 1)] - vals[i]) * (x - i); };
+  return pct(0.95) - pct(0.10);
+}
+// True peak: hold for reading plus the track's maximum.
+let tpHoldDb = -90, tpHoldT = 0, tpMaxDb = -Infinity;
 let phaseSm = 1, crestSm = 0;
 
 // BPM: spectral-flux onsets + adaptive threshold + median of folded intervals
@@ -146,8 +164,11 @@ function updateMasterMeters(now){
     lufsHistT = now;
     lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
     if (isFinite(lufsM) && npPlaying()) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
+    if (isFinite(lufsS) && npPlaying()) { lraBlocks.push(Math.pow(10, (lufsS + 0.691) / 10)); if (lraBlocks.length > 36000) lraBlocks.shift(); }
     const I = integratedLufs();
+    miniVals.i = I;
     el('mLufsI').textContent = isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-';
+    if (now - lraT >= 1000) { lraT = now; lraValue = loudnessRange(); el('mLra').textContent = isFinite(lraValue) ? 'LRA ' + lraValue.toFixed(1) : 'LRA --'; }
   }
 
   // Sample peak (unweighted) with a readable 1.5 s hold, crest over the same 400 ms
@@ -169,12 +190,23 @@ function updateMasterMeters(now){
   const den = Math.sqrt(sumL * sumR);
   if(den > 1e-9) phaseSm += (cross / den - phaseSm) * k300;
 
+  miniVals.m = lufsM; miniVals.s = lufsS; miniVals.tp = tpAvailable ? tpHoldDb : peakHoldDb;
   const silent = !isFinite(lufsM) || lufsM < -70;
   el('mLufs').textContent = silent ? '--.-' : lufsM.toFixed(1);
   el('mLufsS').textContent = (!isFinite(lufsS) || lufsS < -70) ? 'S --.-' : 'S ' + lufsS.toFixed(1);
+  // Peak card: true peak (dBTP) when the audio thread measures it, sample peak (dBFS) otherwise.
+  let shownDb = peakHoldDb;
+  if (tpAvailable) {
+    const tpDb = 20 * Math.log10(Math.max(tpBlock, 1e-9)); tpBlock = 0;
+    if (tpDb >= tpHoldDb || now - tpHoldT > 1500) { tpHoldDb = tpDb; tpHoldT = now; }
+    if (npPlaying() && tpDb > tpMaxDb && tpDb > -89) tpMaxDb = tpDb;
+    shownDb = tpHoldDb;
+    el('mPeakTitle').textContent = 'True peak';
+    el('mPeakUnit').textContent = 'dBTP · MAX ' + (isFinite(tpMaxDb) ? tpMaxDb.toFixed(1) : '--.-');
+  }
   const mPeak = el('mPeak');
-  mPeak.textContent = peakHoldDb < -89 ? '--.-' : peakHoldDb.toFixed(1);
-  mPeak.className = 'metric-value ' + (peakHoldDb > -1 ? 'hot' : peakHoldDb > -6 ? 'warn' : '');
+  mPeak.textContent = shownDb < -89 ? '--.-' : shownDb.toFixed(1);
+  mPeak.className = 'metric-value ' + (shownDb > -1 ? 'hot' : shownDb > -6 ? 'warn' : '');
   el('mCrest').textContent = silent || !isFinite(crest) ? '--.-' : crest.toFixed(1);
   const mPhase = el('mPhase');
   if(silent){ mPhase.textContent = '--'; mPhase.className = 'metric-value good'; }
@@ -198,6 +230,12 @@ const xOS = cOS.getContext('2d');
 const cDK = document.getElementById('deck');
 const xDK = cDK.getContext('2d');
 const cTP = document.getElementById('tape');
+const cGO = document.getElementById('gonio');
+const cMI = document.getElementById('mini');
+const xMI = cMI.getContext('2d');
+let miniMode = false;
+const miniVals = { m: -Infinity, s: -Infinity, i: -Infinity, tp: -90 };
+const xGO = cGO.getContext('2d');
 const xTP = cTP.getContext('2d');
 
 // Fit every canvas to the space its panel has right now (the layout is flexible, so this runs on
@@ -210,7 +248,7 @@ function availHeight(c, min) {
 }
 function sizeCanvases() {
   const pr = window.devicePixelRatio || 1;
-  const all = [[cVL, 140], [cVR, 140], [cSP, 90], [cOS, 60], [cDK, 100], [cTP, 160]];
+  const all = [[cVL, 140], [cVR, 140], [cGO, 120], [cSP, 90], [cOS, 60], [cDK, 100], [cTP, 160], [cMI, 40]];
   all.forEach(([c]) => { c.style.height = '0px'; });        // let the panels settle without the old canvas size
   const sizes = all.map(([c, min]) => [c, c.parentElement.clientWidth - 16, availHeight(c, min)]);
   sizes.forEach(([c, w, h]) => {

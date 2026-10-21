@@ -106,16 +106,41 @@ class OnsetEnergy extends AudioWorkletProcessor {
   }
 }
 registerProcessor('onset-energy', OnsetEnergy);
-// L/R correlation sums, sample-aligned (two analysers read one after the other can be a render quantum apart)
+// Sample-aligned stereo measurements on the audio thread (two analysers read one after the other can
+// be a render quantum apart): L/R correlation sums, and true peak per ITU-R BS.1770-4 Annex 2
+// (4x oversampling with the recommendation's 48-tap polyphase FIR, max of the absolute values).
+const TP_H = [
+  [ 0.0017089843750, 0.0109863281250,-0.0196533203125, 0.0332031250000,-0.0594482421875, 0.1373291015625, 0.9721679687500,-0.1022949218750, 0.0476074218750,-0.0266113281250, 0.0148925781250,-0.0083007812500],
+  [-0.0291748046875, 0.0292968750000,-0.0517578125000, 0.0891113281250,-0.1665039062500, 0.4650878906250, 0.7797851562500,-0.2003173828125, 0.1015625000000,-0.0582275390625, 0.0330810546875,-0.0189208984375],
+  [-0.0189208984375, 0.0330810546875,-0.0582275390625, 0.1015625000000,-0.2003173828125, 0.7797851562500, 0.4650878906250,-0.1665039062500, 0.0891113281250,-0.0517578125000, 0.0292968750000,-0.0291748046875],
+  [-0.0083007812500, 0.0148925781250,-0.0266113281250, 0.0476074218750,-0.1022949218750, 0.9721679687500, 0.1373291015625,-0.0594482421875, 0.0332031250000,-0.0196533203125, 0.0109863281250, 0.0017089843750]];
 class StereoCorr extends AudioWorkletProcessor {
-  constructor() { super(); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; }
+  constructor() {
+    super(); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; this.tp = 0;
+    this.hl = new Float32Array(12); this.hr = new Float32Array(12); this.pos = 0;   // input history, newest at pos
+  }
+  peak(h, pos) {
+    let m = 0;
+    for (let k = 0; k < 4; k++) {
+      const c = TP_H[k]; let y = 0;
+      for (let j = 0; j < 12; j++) y += c[j] * h[(pos - j + 12) % 12];
+      if (y < 0) y = -y; if (y > m) m = y;
+    }
+    return m;
+  }
   process(inputs) {
     const inp = inputs[0];
     if (inp && inp.length) {
       const l = inp[0], r = inp[1] || inp[0];
-      for (let i = 0; i < l.length; i++) { this.ll += l[i] * l[i]; this.rr += r[i] * r[i]; this.lr += l[i] * r[i]; }
+      for (let i = 0; i < l.length; i++) {
+        const a = l[i], b = r[i];
+        this.ll += a * a; this.rr += b * b; this.lr += a * b;
+        this.pos = (this.pos + 1) % 12; this.hl[this.pos] = a; this.hr[this.pos] = b;
+        const p = Math.max(this.peak(this.hl, this.pos), this.peak(this.hr, this.pos));
+        if (p > this.tp) this.tp = p;
+      }
       this.n += l.length;
-      if (this.n >= 1024) { this.port.postMessage([this.ll, this.rr, this.lr]); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; }
+      if (this.n >= 1024) { this.port.postMessage([this.ll, this.rr, this.lr, this.tp]); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; this.tp = 0; }
     }
     return true;
   }
@@ -123,6 +148,7 @@ class StereoCorr extends AudioWorkletProcessor {
 registerProcessor('stereo-corr', StereoCorr);
 `;
 let corrNode = null, corrLL = 0, corrRR = 0, corrLR = 0, corrFresh = false;
+let tpBlock = 0, tpAvailable = false;   // largest true peak (linear) since the last frame
 let onsetPrevLow = -100, onsetPrevHigh = -100;
 function onsetBlock(msLow, msHigh, block, sampleRate) {
   const dl = 10 * Math.log10(msLow + 1e-10), dh = 10 * Math.log10(msHigh + 1e-10);
@@ -160,7 +186,7 @@ function attachOnsetDetector(ctx, bands) {
     scriptNode = node;
     if (upmix) {
       const c = new AudioWorkletNode(ctx, 'stereo-corr', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
-      c.port.onmessage = e => { corrLL += e.data[0]; corrRR += e.data[1]; corrLR += e.data[2]; corrFresh = true; };
+      c.port.onmessage = e => { corrLL += e.data[0]; corrRR += e.data[1]; corrLR += e.data[2]; if (e.data[3] > tpBlock) tpBlock = e.data[3]; corrFresh = true; tpAvailable = true; };
       upmix.connect(c); c.connect(mute);
       corrNode = c;
     }
@@ -170,7 +196,7 @@ function attachOnsetDetector(ctx, bands) {
 function resetMeters() {
   spPeak.fill(-Infinity); spPeakTm.fill(0); spLvl.fill(-120); lufsHist.length = 0; gateBlocks = [];
   vu.L = mkVU(); vu.R = mkVU();
-  loudBlocks = []; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
+  loudBlocks = []; lraBlocks = []; tpMaxDb = -Infinity; tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
   bpmVal = 0; bpmConfidence = 0; lastBeat = 0;
   lastFrame = 0;
 }
@@ -297,7 +323,7 @@ async function stopAudio() {
   // v4 never stopped the tracks: Chrome kept "sharing your screen / mic" until the tab was closed.
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   if (corrNode) { corrNode.port.onmessage = null; try { corrNode.disconnect(); } catch (_) {} corrNode = null; }
-  corrLL = corrRR = corrLR = 0; corrFresh = false;
+  corrLL = corrRR = corrLR = 0; corrFresh = false; tpBlock = 0; tpAvailable = false;
   if (scriptNode) { scriptNode.onaudioprocess = null; if (scriptNode.port) scriptNode.port.onmessage = null; try { scriptNode.disconnect(); } catch (_) {} scriptNode = null; }
   if (srcNode) { try { srcNode.disconnect(); } catch(_){} srcNode = null; }
   // Detach before awaiting: a new source may already be starting, and it must not lose its context.
@@ -312,16 +338,15 @@ async function stopAudio() {
 
 const SOURCE_LABEL = { sys: 'SYSTEM AUDIO', mic: 'MICROPHONE', demo: 'DEMO SIGNAL' };
 let activeSource = null;
-const mods = { vu: true, bpm: true, meters: true, spectrum: true, osc: true, deck: false, tape: false };
+const mods = { vu: true, bpm: true, gonio: true, meters: true, spectrum: true, osc: true, deck: false, tape: false };
 let modsBeforeTape = null;
 let deckDouble = true;
 let drawerOpen = false, controlsHidden = false;
 function applyModules() {
   document.querySelectorAll('[data-mod]').forEach(e => e.classList.toggle('mod-off', !mods[e.dataset.mod]));
   const row = document.querySelector('.main-row');
-  row.classList.toggle('only-vu',  mods.vu && !mods.bpm);
-  row.classList.toggle('only-bpm', !mods.vu && mods.bpm);
-  row.classList.toggle('empty',    !mods.vu && !mods.bpm);
+  row.classList.toggle('no-vu', !mods.vu);
+  row.classList.toggle('empty', !mods.vu && !mods.bpm && !mods.gonio);
   document.querySelector('.rack-unit').classList.toggle('no-bottom', !mods.spectrum && !mods.osc && !mods.deck && !mods.tape);
   document.querySelector('.rack-unit').classList.toggle('only-tape', mods.tape && Object.keys(mods).every(k => k === 'tape' || !mods[k]));
   requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });

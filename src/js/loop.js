@@ -46,7 +46,7 @@ function guard(where, fn) {
     report(where, e);
     // A drawing function that threw may have left save()s open: unwind them (bounded) and reset the state.
     const dpr = window.devicePixelRatio || 1;
-    [xVL, xVR, xSP, xOS, xDK, xTP].forEach(c => { try {
+    [xVL, xVR, xGO, xSP, xOS, xDK, xTP, xMI].forEach(c => { try {
       for (let i = 0; i < 32; i++) c.restore();
       c.setTransform(dpr, 0, 0, dpr, 0, 0); c.shadowBlur = 0; c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
     } catch (_) {} });
@@ -74,14 +74,17 @@ function frame() {
   }
   tickVU(vu.L, inL);
   tickVU(vu.R, inR);
-  if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
-
-  // Spectrum + Osc + decks
-  if (mods.spectrum) guard('spectrum', () => drawSpectrum(cSP, xSP));
-  if (mods.osc) guard('osc', () => drawOsc(cOS, xOS));
-  if (mods.deck) guard('deck', () => drawDeck(cDK, xDK, true));
-  if (mods.tape) guard('tape', () => drawBigTape(cTP, xTP, true));
-  if (mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
+  if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
+  else {
+    if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
+    if (mods.gonio) guard('gonio', () => drawGonio(cGO, xGO, true));
+    // Spectrum + Osc + decks
+    if (mods.spectrum) guard('spectrum', () => drawSpectrum(cSP, xSP));
+    if (mods.osc) guard('osc', () => drawOsc(cOS, xOS));
+    if (mods.deck) guard('deck', () => drawDeck(cDK, xDK, true));
+    if (mods.tape) guard('tape', () => drawBigTape(cTP, xTP, true));
+    if (mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
+  }
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));

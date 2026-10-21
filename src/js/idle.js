@@ -79,6 +79,8 @@ function drawIdle() {
     else drawIdlePanel(cSP, xSP, '── SPECTRUM ANALYZER ──');
   }
   if (mods.osc) drawIdlePanel(cOS, xOS, '── OSCILLOSCOPE ──');
+  if (mods.gonio) drawGonio(cGO, xGO, false);
+  if (miniMode) drawMini(cMI, xMI, false);
   if (mods.deck) drawDeck(cDK, xDK, false);
   if (mods.tape) drawBigTape(cTP, xTP, false);
   lufsHist.length = 0; drawLufsHistory(performance.now());

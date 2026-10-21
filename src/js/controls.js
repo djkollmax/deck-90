@@ -68,10 +68,26 @@ document.getElementById('console').addEventListener('click', e => {
     if (v === 'drawer') setDrawer(!drawerOpen);
     if (v === 'hide') setControlsHidden(true);
     if (v === 'tapeonly') toggleTapeOnly();
+    if (v === 'mini') toggleMini();
   }
   savePrefs(); syncConsole();
   if (!running) drawIdle();
 });
+
+// ── MINI MODE ───────────────────────────────────────────────
+// In the program the main process resizes the window, puts it on top and tells the page;
+// in a browser the page just switches to the strip.
+function setMini(on) {
+  miniMode = on;
+  document.body.classList.toggle('mini', on);
+  requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+}
+function toggleMini() {
+  if (window.winCtl && window.winCtl.mini) window.winCtl.mini();
+  else setMini(!miniMode);
+}
+if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini(setMini);
+document.querySelector('.mini-panel').addEventListener('dblclick', toggleMini);
 
 // ── SPLASH ──────────────────────────────────────────────────
 function closeSplash() {
@@ -102,7 +118,7 @@ document.addEventListener('keydown', e => {
     a: () => setDrawer(!drawerOpen),
     h: () => setControlsHidden(!controlsHidden),
     1: () => toggleModule('vu'), 2: () => toggleModule('bpm'), 3: () => toggleModule('meters'),
-    4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), z: () => toggleTapeOnly(),
+    4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), z: () => toggleTapeOnly(), p: () => toggleMini(),
     c: () => { const o = ['AUTO', 18, 14, 10]; vuCal = o[(o.indexOf(vuCal) + 1) % o.length]; savePrefs(); syncConsole(); },
   }[k];
   if (act) { e.preventDefault(); act(); }

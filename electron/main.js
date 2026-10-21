@@ -1,7 +1,7 @@
 // Deck 90 as a program: the same page as src/index.html, but system audio comes straight
 // from Windows (WASAPI loopback) without the browser's "share your screen" dialog, the window is
 // frameless, and a small PowerShell bridge reads Windows' "now playing" sessions.
-const { app, BrowserWindow, session, desktopCapturer, Menu, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, session, desktopCapturer, Menu, shell, ipcMain, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -49,21 +49,52 @@ app.whenReady().then(() => {
     win.setFullScreen(false);
     setTimeout(finish, 700);                     // fallback if the event never comes
   });
+  // Mini mode: a small strip that stays on top of other windows. Its size and place are remembered.
+  const STATE = path.join(app.getPath('userData'), 'window.json');
+  let saved = {}; try { saved = JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch (_) {}
+  let miniOn = false, normalBounds = null;
+  const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
+    return b.x < a.x + a.width - 40 && b.x + b.width > a.x + 40 && b.y >= a.y - 10 && b.y < a.y + a.height - 40; });
+  async function setMini(on) {
+    if (on === miniOn) return;
+    if (on) {
+      if (win.isFullScreen()) await leaveFullScreen();
+      if (win.isMaximized()) win.unmaximize();
+      normalBounds = win.getBounds();
+      const wa = screen.getDisplayMatching(normalBounds).workArea;
+      win.setMinimumSize(300, 96);
+      win.setMaximizable(false); win.setFullScreenable(false);
+      win.setBounds(onScreen(saved.mini) ? saved.mini : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 });
+      win.setAlwaysOnTop(true, 'floating');
+    } else {
+      saved.mini = win.getBounds();
+      try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {}
+      win.setAlwaysOnTop(false);
+      win.setMaximizable(true); win.setFullScreenable(true);
+      win.setMinimumSize(760, 600);
+      if (normalBounds) win.setBounds(normalBounds);
+    }
+    miniOn = on;
+    win.webContents.send('mini', on);
+  }
   ipcMain.on('win', async (e, what) => {
+    if (what === 'mini') return setMini(!miniOn);
     if (what === 'min') { await leaveFullScreen(); win.minimize(); }
     else if (what === 'max') {
       if (win.isFullScreen()) await leaveFullScreen();
       else win.isMaximized() ? win.unmaximize() : win.maximize();
     }
-    else if (what === 'fs') { if (win.isFullScreen()) await leaveFullScreen(); else win.setFullScreen(true); }
+    else if (what === 'fs') { if (miniOn) return; if (win.isFullScreen()) await leaveFullScreen(); else win.setFullScreen(true); }
     else if (what === 'close') win.close();
   });
+  // The bridge can report the track before the page is listening: hand it over once the page is up.
+  win.webContents.on('did-finish-load', () => { if (lastInfo) win.webContents.send('media', lastInfo); });
   win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
   // Links open in the real browser (https only); dropping a file or link on the window must not replace the rack.
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//i.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', e => e.preventDefault());
   win.webContents.on('before-input-event', (e, input) => {
-    if (input.type === 'keyDown' && input.key === 'F11') { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
+    if (input.type === 'keyDown' && input.key === 'F11') { if (!miniOn) win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
     if (input.type === 'keyDown' && input.key === 'Escape' && win.isFullScreen()) { win.setFullScreen(false); e.preventDefault(); }
   });
 });
@@ -83,9 +114,11 @@ function mlog(msg) {
   try { fs.appendFileSync(LOG, out); } catch (_) {}
 }
 let mpris = null;
+let lastInfo = null;          // the newest track info (with its cover), resent when the page (re)loads
 function sendMedia(info) {
   const st = info.none ? 'none' : (info.app || '?') + ' · ' + (info.status || '?') + ' · ' + (info.title || '');
   if (!info.ready && st !== lastStatus) { mlog('player: ' + st); lastStatus = st; }
+  if (!info.ready) lastInfo = info.none ? null : Object.assign({}, lastInfo && !info.cover && lastInfo.title === info.title ? { cover: lastInfo.cover } : {}, info);
   if (win && !win.isDestroyed()) win.webContents.send('media', info);
 }
 function startMedia() {

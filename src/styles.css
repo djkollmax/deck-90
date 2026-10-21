@@ -630,12 +630,9 @@ body{ display:flex; flex-direction:column; }
 #tape{ cursor:default; }
 .osc-panel.mod-off + .deck-panel{ margin-top:0; }
 [data-mod].mod-off{ display:none !important; }
-.main-row.only-vu{ grid-template-columns:1fr 1fr; }
-.main-row.only-bpm{ grid-template-columns:1fr; }
 .main-row.empty{ display:none; }
 .rack-unit.no-bottom .main-row{ flex-grow:1; }
 #bpmValue{ font-size:clamp(62px, 9vh, 150px); }
-.main-row.only-bpm #bpmValue{ font-size:clamp(80px, 22vh, 260px); }
 /* beat pulse */
 .bpm-display-wrap{ position:relative; }
 .beat-ring{
@@ -692,3 +689,30 @@ body.is-app .console-tab{ -webkit-app-region:no-drag; }
 .np.paused #npTitle{ color:rgba(242,226,176,.5); }
 #deck{ cursor:default; }
 #mLufsI{ color:rgba(255,211,106,.75); }
+
+/* v6.1 · main row as flex: VU L/R share the width, BPM and the goniometer keep a fixed column,
+   and whatever is left on grows when the VUs are off */
+.main-row{ display:flex; gap:7px; }
+.main-row > .panel{ flex:1 1 0; min-width:0; }
+.main-row > .bpm-panel, .main-row > .gonio-panel{ flex:0 0 210px; }
+.main-row.no-vu > .bpm-panel, .main-row.no-vu > .gonio-panel{ flex:1 1 0; }
+.main-row.no-vu #bpmValue{ font-size:clamp(70px, 16vh, 220px); }
+.gonio-panel canvas{ display:block; margin:0 auto; }
+@media(max-width:760px){ .main-row{ flex-wrap:wrap; } .main-row > .panel{ flex:1 1 45%; } }
+
+/* v6.1 · mini mode: only the title bar and one strip; the window stays on top (program) */
+.mini-panel{ display:none; }
+body.mini .rack-unit > :not(.title-bar):not(.mini-panel):not(.glass-sheen):not(.screw){ display:none !important; }
+body.mini .mini-panel{ display:flex; flex:1 1 auto; min-height:0; padding:2px 6px 6px; }
+body.mini .mini-panel canvas{ display:block; }
+body.mini .rack-unit{ min-height:0; }
+body.mini .title-bar{ padding-top:4px; padding-bottom:4px; margin-bottom:2px; }
+body.mini .brand-name{ font-size:10px; letter-spacing:3px; }
+body.mini #statusText, body.mini .led-group, body.mini .win-ctl button[data-w="max"]{ display:none; }
+body.mini .np{ max-width:none; flex:1 1 auto; }
+body.mini .screw{ display:none; }
+.win-ctl button[data-w="mini"]{ font-size:11px; }
+/* mini: messages become a one-line strip at the bottom instead of a box over everything */
+body.mini #toast{ top:auto; bottom:4px; padding:3px 10px; font-size:9px; line-height:1.3; letter-spacing:.5px; max-width:94%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+body.mini #toast br{ display:none; }
+body.mini #toast span{ margin-left:6px; }

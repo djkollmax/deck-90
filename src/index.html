@@ -62,6 +62,7 @@
       <div class="led-group"><div class="led-label">SIG</div><div class="led" id="ledSig"></div></div>
       <div class="led-group"><div class="led-label">CLIP</div><div class="led" id="ledClip"></div></div>
       <div class="win-ctl">
+        <button data-w="mini" title="Modo mini, siempre visible (P)">&#9707;</button>
         <button data-w="min" title="Minimizar">&#8212;</button>
         <button data-w="max" title="Maximizar">&#9633;</button>
         <button data-w="close" class="close" title="Cerrar">&#10005;</button>
@@ -86,19 +87,21 @@
         <button data-v="COLUMNS">COLUMNS</button>
         <button data-v="FL90">FL 90s</button>
       </div>
-      <div class="seg mods" data-group="mods" title="Prender / apagar módulos (1–7)">
+      <div class="seg mods" data-group="mods" title="Prender / apagar módulos (1–8)">
         <span class="seg-label">VER</span>
         <button data-v="vu">VU</button>
         <button data-v="bpm">BPM</button>
         <button data-v="meters">LUFS</button>
         <button data-v="spectrum">SPECTRUM</button>
         <button data-v="osc">OSC</button>
+        <button data-v="gonio">GONIO</button>
         <button data-v="deck">DECK</button>
         <button data-v="tape">CINTA</button>
       </div>
       <div class="seg tools" data-group="tools">
         <button data-v="drawer" title="Ajustes: VU, calibración, sensibilidad, tono (A)">⚙</button>
         <button data-v="tapeonly" title="Solo la cinta grande / volver (Z)">◎◎</button>
+        <button data-v="mini" title="Modo mini, siempre visible (P)">&#9707;</button>
         <button data-v="hide" title="Esconder controles (H)">▴</button>
         <button data-v="fs" title="Pantalla completa (F)">⛶</button>
       </div>
@@ -143,6 +146,11 @@
   </div>
   <div class="console-tab" id="consoleTab" title="Mostrar controles (H)">▾ CONTROLES</div>
 
+  <!-- MINI: a compact strip that stays on top (P) -->
+  <div class="mini-panel" title="Doble clic para volver al tamaño normal">
+    <canvas id="mini" width="560" height="80"></canvas>
+  </div>
+
   <!-- MAIN ROW -->
   <div class="main-row">
     <div class="panel" data-mod="vu">
@@ -162,6 +170,10 @@
       </div>
       <div class="bpm-conf" id="bpmConf">NO SIGNAL</div>
     </div>
+    <div class="panel gonio-panel" data-mod="gonio" title="Goniómetro: arriba = mono (centro), abierto = estéreo ancho, horizontal = fase invertida">
+      <div class="panel-label">GONIO</div>
+      <canvas id="gonio" width="200" height="200"></canvas>
+    </div>
   </div>
 
   <!-- MASTERING METERS -->
@@ -170,12 +182,12 @@
       <div class="metric-title">Loudness</div>
       <div class="metric-value blue" id="mLufs">--.-</div>
       <canvas id="lufsHist" class="spark" width="200" height="22" title="Últimos 30 s · líneas en −14 (nivel típico de streaming) y −9 LUFS"></canvas>
-      <div class="metric-unit">LUFS-M · <span id="mLufsS">S --.-</span> · <span id="mLufsI" title="Integrado del tema (BS.1770, con gating)">I --.-</span></div>
+      <div class="metric-unit">LUFS-M · <span id="mLufsS">S --.-</span> · <span id="mLufsI" title="Integrado del tema (BS.1770, con gating)">I --.-</span> · <span id="mLra" title="Rango de loudness del tema (EBU Tech 3342)">LRA --</span></div>
     </div>
     <div class="panel metric-card">
-      <div class="metric-title">Peak</div>
-      <div class="metric-value" id="mPeak">--.-</div>
-      <div class="metric-unit">dBFS</div>
+      <div class="metric-title" id="mPeakTitle">Peak</div>
+      <div class="metric-value" id="mPeak" title="Pico real entre muestras (BS.1770-4, sobremuestreo 4x), con 1,5 s de retención">--.-</div>
+      <div class="metric-unit" id="mPeakUnit">dBFS</div>
     </div>
     <div class="panel metric-card">
       <div class="metric-title">Crest</div>
@@ -217,7 +229,9 @@
 <script src="js/draw-vu.js"></script>
 <script src="js/draw-spectrum.js"></script>
 <script src="js/draw-osc.js"></script>
+<script src="js/draw-gonio.js"></script>
 <script src="js/deck.js"></script>
+<script src="js/draw-mini.js"></script>
 <script src="js/tape.js"></script>
 <script src="js/nowplaying.js"></script>
 <script src="js/loop.js"></script>
