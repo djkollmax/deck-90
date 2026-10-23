@@ -389,6 +389,7 @@ function syncConsole() {
       if (g === 'tools') { b.classList.toggle('on', (b.dataset.v === 'drawer' && drawerOpen) || (b.dataset.v === 'tapeonly' && !!modsBeforeTape)); return; }
       if (g === 'deckmode') { b.classList.toggle('on', (b.dataset.v === 'double') === deckDouble); return; }
       if (g === 'tapestyle') { b.classList.toggle('on', b.dataset.v === tapeStyle); return; }
+      if (g === 'phone') { const on = typeof phoneState !== 'undefined' && phoneState.on; b.classList.toggle('on', b.dataset.v === (on ? 'on' : 'off')); return; }
       b.classList.toggle('on', g in state && state[g] === b.dataset.v);
     });
   });

@@ -720,3 +720,21 @@ body.mini:not(.is-app) .rack-unit{ flex:0 0 auto; }
 body.mini:not(.is-app) .mini-panel{ flex:0 0 96px; }
 body.mini:not(.is-app) .win-ctl{ display:flex; margin-left:6px; }
 body.mini:not(.is-app) .win-ctl button:not([data-w="mini"]){ display:none; }
+
+/* v6.2 · phone display */
+body:not(.is-app) .phone-seg{ display:none; }
+#phoneModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
+#phoneModal.show{ display:flex; }
+.phone-card{ width:min(420px,92vw); background:linear-gradient(180deg,#151821,#0a0c11); border:1px solid rgba(217,189,115,.35); border-radius:10px;
+  padding:16px 18px 18px; text-align:center; color:#c9c3ad; box-shadow:0 20px 60px rgba(0,0,0,.8); font-size:11px; letter-spacing:.5px; }
+.phone-head{ display:flex; justify-content:space-between; align-items:center; color:#f2d991; letter-spacing:3px; font-size:11px; margin-bottom:12px; }
+.phone-head button{ background:none; border:0; color:#8d8a7c; font-size:14px; cursor:pointer; }
+#phoneQR{ width:240px; height:240px; image-rendering:pixelated; border-radius:6px; background:#fff; }
+.phone-status{ margin-top:10px; color:#ffd27a; font-size:11px; letter-spacing:1px; }
+.phone-status.live{ color:#74ffb7; }
+.phone-url{ margin-top:6px; font-family:Consolas, 'Courier New', monospace; font-size:11px; color:#79d9ff; word-break:break-all; user-select:text; -webkit-user-select:text; }
+.phone-help{ margin-top:10px; line-height:1.6; color:rgba(201,195,173,.75); }
+.phone-help b{ color:#f2d991; font-weight:600; }
+.phone-other{ margin-top:6px; font-size:9px; color:rgba(160,170,180,.5); }
+.phone-off{ margin-top:12px; padding:5px 14px; border-radius:5px; border:1px solid rgba(255,255,255,.1); background:#1b202a; color:#a06a5a; cursor:pointer; letter-spacing:2px; font-size:10px; }
+.phone-off:hover{ color:#ff8a6a; }

@@ -12,4 +12,10 @@ contextBridge.exposeInMainWorld('winCtl', {
   mini:  () => ipcRenderer.send('win', 'mini'),
   onMini: cb => ipcRenderer.on('mini', (e, on) => cb(!!on)),
 });
+contextBridge.exposeInMainWorld('phoneDisplay', {
+  set:   on => ipcRenderer.send('remote-set', !!on),
+  get:   () => ipcRenderer.send('remote-get'),
+  frame: f  => ipcRenderer.send('remote-frame', f),
+  on:    cb => ipcRenderer.on('remote-state', (e, st) => cb(st)),
+});
 contextBridge.exposeInMainWorld('appLog', msg => ipcRenderer.send('app-log', String(msg).slice(0, 800)));

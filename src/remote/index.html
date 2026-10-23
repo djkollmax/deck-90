@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07080b">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Deck 90</title>
+<link rel="stylesheet" href="/remote/remote.css">
+</head>
+<body class="view-all">
+<header class="bar">
+  <img id="npCover" alt="">
+  <div class="np" id="np"><span id="npTitle">DECK 90</span><span id="npArtist">esperando a la PC…</span></div>
+  <span class="state" id="state">…</span>
+  <button id="btnView" title="Cambiar vista">◫</button>
+  <button id="btnFull" title="Pantalla completa">⛶</button>
+</header>
+
+<main class="rack">
+  <section class="vus">
+    <div class="cell"><canvas id="vuL"></canvas></div>
+    <div class="cell"><canvas id="vuR"></canvas></div>
+  </section>
+  <section class="nums">
+    <div class="num big"><b id="nM">--.-</b><i>LUFS-M</i></div>
+    <div class="num"><b id="nI">--.-</b><i>INTEGRADO</i></div>
+    <div class="num"><b id="nLra">--</b><i>LRA</i></div>
+    <div class="num"><b id="nTp">--.-</b><i id="nTpU">TRUE PEAK</i></div>
+    <div class="num"><b id="nBpm">--</b><i>BPM</i></div>
+    <div class="num"><b id="nPh">--</b><i>FASE</i></div>
+  </section>
+  <section class="tape"><canvas id="tape"></canvas></section>
+</main>
+
+<div id="toast"></div>
+<canvas id="deck" hidden></canvas>
+
+<script src="/remote/shim.js"></script>
+<script src="/js/deck.js"></script>
+<script src="/js/draw-vu.js"></script>
+<script src="/js/tape.js"></script>
+<script src="/js/nowplaying.js"></script>
+<script src="/remote/remote.js"></script>
+</body>
+</html>

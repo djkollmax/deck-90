@@ -32,6 +32,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - Shows the title, artist and cover from the system's media session. Spotless is preferred when several players are open.
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
+- **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it.
 - **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
 - **Frameless window.** All controls sit in one console. Display modes: STD, ANALOG, CRT and OLED. Your settings are remembered.
 
@@ -65,6 +66,14 @@ sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
 ```
 
 `src/index.html` also opens in a browser, but browsers capture system audio poorly: on Chrome for Windows you must tick "share system audio", and Linux browsers can't capture it at all. The microphone input and DEMO work everywhere.
+
+## Phone display
+
+1. In Deck 90 open the settings drawer (⚙) and press **CELULAR → ON**. A QR code appears.
+2. Scan it with the phone's camera. The phone must be on the same Wi-Fi as the PC.
+3. Tap ◫ on the phone to switch between everything, only the VU meters, and only the cassette. Tap ⛶ for full screen.
+
+The first time, Windows asks whether Deck 90 may use the network: allow it on **private** networks. If the phone can't connect, check that the PC's network is set to *Private*. Port 9090 is used. Browsers keep phones awake only on secure pages, so for a permanent display set the phone's screen timeout, or use Android's *Stay awake while charging*.
 
 ## Keys
 

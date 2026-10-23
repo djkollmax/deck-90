@@ -135,6 +135,12 @@
         <button data-v="REEL">REEL</button>
         <button data-v="CLEAR">CLEAR</button>
       </div>
+      <div class="seg phone-seg" data-group="phone" title="Ver los medidores y la cinta en el celular (misma red WiFi)">
+        <span class="seg-label">CELULAR</span>
+        <button data-v="off">OFF</button>
+        <button data-v="on">ON</button>
+        <button data-v="qr">QR</button>
+      </div>
       <div class="seg" data-group="mode" title="Tono de pantalla (N)">
         <span class="seg-label">TONO</span>
         <button data-v="0">STD</button>
@@ -224,6 +230,21 @@
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<!-- PHONE DISPLAY: scan to open the meters on a phone on the same network -->
+<div id="phoneModal" role="dialog" aria-label="Pantalla en el celular">
+  <div class="phone-card">
+    <div class="phone-head">PANTALLA EN EL CELULAR <button id="phoneClose" title="Cerrar">✕</button></div>
+    <canvas id="phoneQR" width="240" height="240"></canvas>
+    <div class="phone-status" id="phoneStatus"></div>
+    <div class="phone-url" id="phoneUrl"></div>
+    <div class="phone-help">Escaneá el código con la cámara del celular (tiene que estar en el mismo WiFi que la PC).<br>
+      En el celular: <b>⋮ → Agregar a la pantalla principal</b> para tenerlo a mano.<br>
+      Si no conecta: la primera vez Windows pregunta por el firewall → <b>Permitir</b> en redes privadas.</div>
+    <div class="phone-other" id="phoneOther"></div>
+    <button id="phoneOff" class="phone-off">APAGAR</button>
+  </div>
+</div>
+
 <script src="js/core.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/draw-vu.js"></script>
@@ -234,6 +255,8 @@
 <script src="js/draw-mini.js"></script>
 <script src="js/tape.js"></script>
 <script src="js/nowplaying.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="js/phone.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/idle.js"></script>
 <script src="js/controls.js"></script>

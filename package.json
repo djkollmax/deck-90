@@ -1,7 +1,7 @@
 {
   "name": "deck-90",
   "productName": "Deck 90",
-  "version": "6.1.0",
+  "version": "6.2.0",
   "description": "VU meters, loudness (BS.1770), spectrum, BPM and animated cassette decks for whatever is playing on your computer.",
   "main": "electron/main.js",
   "license": "MIT",

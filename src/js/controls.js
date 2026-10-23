@@ -63,6 +63,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'mods') toggleModule(v);
   if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); }
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
+  if (g === 'phone') phoneButton(v);
   if (g === 'tools') {
     if (v === 'fs') toggleFullscreen();
     if (v === 'drawer') setDrawer(!drawerOpen);

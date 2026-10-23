@@ -1,5 +1,19 @@
 # Changelog
 
+## 6.2.0 — 2026-10-22
+
+### Added
+- **Phone display.** In the settings drawer, *CELULAR → ON* starts a small server on the home network (port 9090) and shows a QR code. A phone or tablet that opens it gets:
+  - the VU meters and the big cassette, live, drawn with the rack's own code;
+  - the track and its cover;
+  - momentary and integrated LUFS, LRA, true peak, BPM and phase.
+  - The cassette's keys control the player on the PC.
+  - Three views (all, VU only, cassette only), portrait and landscape, and full screen.
+  - Off by default. Every request needs the key in the address. Only the page's own files are served.
+
+### Fixed
+- The STUDIO VU's "VU" label no longer lands on the dB readout in tall, narrow panels.
+
 ## 6.1.0 — 2026-10-21
 
 ### Added

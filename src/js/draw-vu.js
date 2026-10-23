@@ -304,7 +304,8 @@ function drawVU(canvas, ctx, st) {
   ctx.font = 'bold 12px Courier New';
   ctx.fillStyle = 'rgba(130,210,145,0.52)';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('VU', W / 2, cy + R * 0.40);
+  // (left out when it would land on the dB readout below, in tall narrow panels)
+  if (cy + R * 0.40 + 8 < GAREA + (H - GAREA) * 0.18 - 8) ctx.fillText('VU', W / 2, cy + R * 0.40);
 
   // ── CLIP LED ──
   const clipX = W - 18, clipY = 12;

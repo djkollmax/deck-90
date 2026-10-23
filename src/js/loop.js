@@ -119,6 +119,7 @@ function frame() {
     const ab = document.querySelector('.seg[data-group="cal"] button[data-v="AUTO"]');
     if (ab) ab.textContent = 'AUTO −' + Math.round(autoRef);
   }
+  phoneTick(now);
   const maxVu = Math.max(vu.L.lvl, vu.R.lvl);
   el('ledSig').className  = maxVu > -40 ? 'led green' : 'led';
   el('ledClip').className = (vu.L.clip || vu.R.clip) ? 'led red' : 'led';

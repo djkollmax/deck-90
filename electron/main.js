@@ -6,11 +6,14 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { createMpris } = require('./mpris');
+const { createRemote } = require('./remote');
+const crypto = require('crypto');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 let win;
+let remote = null;          // phone display server (off until the user turns it on)
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 
 app.whenReady().then(() => {
@@ -84,6 +87,28 @@ app.whenReady().then(() => {
       win.webContents.send('mini', on);
     } finally { miniBusy = false; }
   }
+  // ── Phone display ──
+  const saveState = () => { try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {} };
+  saved.remote = Object.assign({ on: false, port: 9090, key: '' }, saved.remote);
+  if (!/^[A-Za-z0-9_-]{8,}$/.test(saved.remote.key)) { saved.remote.key = crypto.randomBytes(6).toString('base64url'); saveState(); }
+  const remoteState = () => remote ? remote.state() : { on: false, urls: [], clients: 0 };
+  const pushRemote = extra => { if (win && !win.isDestroyed()) win.webContents.send('remote-state', Object.assign(remoteState(), extra || {})); };
+  remote = createRemote({
+    onCmd: mediaCommand, log: mlog, onClients: () => pushRemote(),
+    getNowPlaying: () => lastInfo && phoneInfo(lastInfo),
+  });
+  async function setRemote(on) {
+    if (on) {
+      const st = await remote.start(saved.remote.port, saved.remote.key);
+      if (st.error) { saved.remote.on = false; saveState(); pushRemote({ error: st.error }); return; }
+    } else remote.stop();
+    saved.remote.on = !!on; saveState(); pushRemote();
+  }
+  ipcMain.on('remote-set', (e, on) => setRemote(!!on));
+  ipcMain.on('remote-get', () => pushRemote());
+  ipcMain.on('remote-frame', (e, f) => { if (remote) remote.frame(f); });
+  if (saved.remote.on) win.webContents.once('did-finish-load', () => setRemote(true));
+
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
   win.on('close', () => { if (miniOn) saveMini(); });
@@ -130,6 +155,12 @@ function sendMedia(info) {
   if (!info.ready && st !== lastStatus) { mlog('player: ' + st); lastStatus = st; }
   if (!info.ready) lastInfo = info.none ? null : Object.assign({}, lastInfo && !info.cover && lastInfo.title === info.title ? { cover: lastInfo.cover } : {}, info);
   if (win && !win.isDestroyed()) win.webContents.send('media', info);
+  if (remote && !info.ready) remote.nowPlaying(phoneInfo(info));
+}
+function phoneInfo(info) {
+  const o = Object.assign({}, info);
+  if (o.cover && !/^(data:image\/|https:)/.test(o.cover)) delete o.cover;   // a file:// cover means nothing to the phone
+  return o;
 }
 function startMedia() {
   LOG = path.join(app.getPath('userData'), 'media.log');
@@ -170,11 +201,12 @@ function startMedia() {
   });
 }
 ipcMain.on('app-log', (e, msg) => mlog('page: ' + msg));
-ipcMain.on('media-cmd', (e, cmd) => {
+function mediaCommand(cmd) {
   if (media && media.stdin.writable && ['toggle', 'play', 'pause', 'stop', 'next', 'prev'].includes(cmd)) media.stdin.write(cmd + '\n');
   if (mpris) mpris.command(cmd);
-});
+}
+ipcMain.on('media-cmd', (e, cmd) => mediaCommand(cmd));
 app.whenReady().then(startMedia);
-app.on('before-quit', () => { app.isQuitting = true; if (mpris) mpris.stop(); if (media) { try { media.stdin.end(); media.kill(); } catch (_) {} } });
+app.on('before-quit', () => { app.isQuitting = true; if (remote) remote.stop(); if (mpris) mpris.stop(); if (media) { try { media.stdin.end(); media.kill(); } catch (_) {} } });
 
 app.on('window-all-closed', () => app.quit());
