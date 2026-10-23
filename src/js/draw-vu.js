@@ -150,8 +150,10 @@ function drawVUHiFi90(canvas, ctx, st) {
   ctx.fillText(dbTxt + ' VU', W/2, GAREA + (H-GAREA)*.17); ctx.shadowBlur = 0;
 
   ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(160,215,255,.62)'; ctx.fillText('HI-FI REFERENCE VU', 8, 13);
-  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,220,145,.50)'; ctx.fillText('CLASSIC 90s', W-8, 13);
+  if (W >= 300) {                                  // narrow panels: the scale needs the room
+    ctx.fillStyle = 'rgba(160,215,255,.62)'; ctx.fillText('HI-FI REFERENCE VU', 8, 13);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,220,145,.50)'; ctx.fillText('CLASSIC 90s', W-8, 13);
+  }
 
   if(st.clip){
     ctx.beginPath(); ctx.arc(W-18, 28, 5, 0, Math.PI*2); ctx.fillStyle = '#ff4424';

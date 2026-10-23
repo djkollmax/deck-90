@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 let phoneState = { on: false, urls: [], clients: 0 };
 let phoneLastSend = 0;
+const phoneFl = new Float32Array(19);
 const PHONE_MS = 33;
 
 const r1 = x => Math.round(x * 10) / 10;
@@ -18,7 +19,9 @@ function phoneFrame() {
     m: fin(miniVals.m), s: fin(miniVals.s), i: fin(miniVals.i), lra: fin(lraValue),
     tp: tpAvailable ? fin(tpHoldDb) : null, tpMax: fin(tpMaxDb), pk: fin(peakHoldDb),
     ph: Math.round(phaseSm * 100) / 100, bpm: bpmVal > 0 ? Math.round(bpmVal) : 0, lock: bpmConfidence >= 0.45,
-    skin: vuSkin, tape: tapeStyle,
+    skin: vuSkin, tape: tapeStyle, sens: flSensitivity,
+    // FL 90s bands as measured (dBFS, whole numbers): the phone smooths and lifts them itself
+    fl: running && aMain ? Array.from(flRawLevels(phoneFl), x => Math.round(x)) : null,
   };
 }
 // Called from the render loop, and on a slow timer while stopped so the phone still shows STOP.

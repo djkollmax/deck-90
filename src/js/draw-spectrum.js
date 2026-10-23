@@ -137,12 +137,50 @@ function freqColor(t) {
 }
 
 
+// ── FL 90s: the levels are measured here, the display is drawn by drawFLDisplay so the phone page
+// can draw the same panel from the levels the PC sends it.
+const FL_BARS = [31.5,45,63,90,125,180,250,355,500,710,1000,1400,2000,2800,4000,5600,8000,11200,16000];
+const FL_FLOOR = -72;
+// raw level of each band: the loudest FFT bin within ±½ octave (dBFS, no smoothing, no gain)
+function flRawLevels(out) {
+  const fd = bufFD;
+  aMain.getFloatFrequencyData(fd);
+  const nyq = actx.sampleRate / 2, bins = aMain.frequencyBinCount;
+  for (let b = 0; b < FL_BARS.length; b++) {
+    const f = FL_BARS[b];
+    const bi1 = Math.max(0, Math.floor(f / Math.SQRT2 / nyq * bins));
+    const bi2 = Math.min(bins, Math.ceil(f * Math.SQRT2 / nyq * bins));
+    let maxDb = FL_FLOOR;
+    for (let i = bi1; i < bi2; i++) if (fd[i] > maxDb) maxDb = fd[i];
+    out[b] = isFinite(maxDb) ? maxDb : FL_FLOOR;
+  }
+  return out;
+}
+// The FL 90s view is intentionally more visually responsive than the mastering view: HOT/MAX lift
+// the display so yellow and red segments appear with real music, like classic hi-fi analyzers.
+function flGain(sens, live) { return !live ? 0 : sens === 0 ? 10 : sens === 1 ? 18 : 24; }
+// peak caps: hold ~70 frames at 60 Hz, then fall 0.55 dB a frame
+function flPeaks(levels, peak, peakTm, scale) {
+  for (let b = 0; b < FL_BARS.length; b++) {
+    if (levels[b] > peak[b]) { peak[b] = levels[b]; peakTm[b] = 70; }
+    else if (peakTm[b] > 0) peakTm[b] -= scale;
+    else peak[b] = Math.max(FL_FLOOR, peak[b] - .55 * scale);
+  }
+}
+
+const flRaw = new Float32Array(FL_BARS.length), flShown = new Float32Array(FL_BARS.length);
 function drawSpectrumFL(canvas, ctx) {
+  flRawLevels(flRaw);
+  const g = flGain(flSensitivity, audible());
+  for (let b = 0; b < FL_BARS.length; b++) flShown[b] = Math.min(0, smoothBar(b, flRaw[b]) + g);
+  flPeaks(flShown, spPeak, spPeakTm, frameScale);
+  drawFLDisplay(canvas, ctx, flShown, spPeak);
+}
+
+function drawFLDisplay(canvas, ctx, levels, peaks) {
   const W = canvas.offsetWidth  || canvas.width;
   const H = canvas.offsetHeight || canvas.height;
   const PA = 24;
-  const fd = bufFD;
-  aMain.getFloatFrequencyData(fd);
 
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, '#090806');
@@ -154,13 +192,8 @@ function drawSpectrumFL(canvas, ctx) {
   ctx.fillStyle = 'rgba(255,180,70,.035)';
   ctx.fillRect(0, 0, W, 18);
 
-  const nyq  = actx.sampleRate / 2;
-  const bins = aMain.frequencyBinCount;
-  const FMIN = 31.5, FMAX = 16000;
-  const DFLOOR = -72, DCEIL = 0;
-  const flBars = [31.5,45,63,90,125,180,250,355,500,710,1000,1400,2000,2800,4000,5600,8000,11200,16000];
-
-  function fToX(f){ return (Math.log10(f / FMIN) / Math.log10(FMAX / FMIN)) * W; }
+  const DFLOOR = FL_FLOOR, DCEIL = 0;
+  const flBars = FL_BARS;
   function dbToY(db){ return (H - PA) * (1 - (db - DFLOOR) / (DCEIL - DFLOOR)); }
 
   // classic amber display frame
@@ -181,37 +214,20 @@ function drawSpectrumFL(canvas, ctx) {
   });
 
   // segmented fluorescent bars
-  const gap = 4;
   for (let b = 0; b < flBars.length; b++) {
     const f = flBars[b];
-    const f1 = f / Math.sqrt(2);
-    const f2 = f * Math.sqrt(2);
-    const bi1 = Math.max(0, Math.floor(f1 / nyq * bins));
-    const bi2 = Math.min(bins, Math.ceil(f2 / nyq * bins));
-    let maxDb = DFLOOR;
-    for (let i = bi1; i < bi2; i++) if (fd[i] > maxDb) maxDb = fd[i];
-    if (!isFinite(maxDb)) maxDb = DFLOOR;
-    maxDb = smoothBar(b, maxDb);
-
-    // The FL 90s view is intentionally more visually responsive than the mastering view.
-    // HOT/MAX lift the display so yellow and red segments appear with real music, like classic hi-fi analyzers.
-    const sensGain = !audible() ? 0 : flSensitivity === 0 ? 10 : flSensitivity === 1 ? 18 : 24;
-    maxDb = Math.min(0, maxDb + sensGain);
-
-    if (maxDb > spPeak[b]) { spPeak[b] = maxDb; spPeakTm[b] = 70; }
-    else if (spPeakTm[b] > 0) spPeakTm[b] -= frameScale;
-    else spPeak[b] = Math.max(DFLOOR, spPeak[b] - .55 * frameScale);
+    const maxDb = levels[b];
 
     // evenly spaced bands like a hardware graphic display; bars take 72 % of their slot, so they
     // grow with the window instead of staying thin
     const slot = (W - 8) / flBars.length;
-    const bw = Math.max(6, slot * 0.72);
+    const bw = Math.max(3, slot * 0.72);
     const x = 4 + b * slot + (slot - bw) / 2;
     const xCenter = x + bw / 2;
     const y = dbToY(maxDb);
-    const segH = Math.max(4, Math.min(9, (H - PA) / 34));
-    const segGap = 2;
-    const segCount = Math.floor((H - PA - 8) / (segH + segGap));
+    const segH = Math.max(3, Math.min(9, (H - PA) / 34));
+    const segGap = segH > 4 ? 2 : 1;
+    const segCount = Math.max(1, Math.floor((H - PA - 8) / (segH + segGap)));
     const litCount = Math.max(0, Math.round(((H - PA) - y) / (H - PA) * segCount));
 
     for (let s=0; s<segCount; s++) {
@@ -232,16 +248,17 @@ function drawSpectrumFL(canvas, ctx) {
     }
 
     // peak cap
-    const py = dbToY(spPeak[b]);
-    ctx.fillStyle = spPeak[b] > -12 ? '#ff8b22' : spPeak[b] > -28 ? '#ffe25a' : '#29ff74';
+    const py = dbToY(peaks[b]);
+    ctx.fillStyle = peaks[b] > -12 ? '#ff8b22' : peaks[b] > -28 ? '#ffe25a' : '#29ff74';
     ctx.shadowColor = ctx.fillStyle;
     ctx.shadowBlur = 9;
     ctx.fillRect(x, Math.max(4, py), bw, 2);
     ctx.shadowBlur = 0;
 
-    // labels
+    // labels (fewer when the panel is narrow)
     let lbl = f >= 1000 ? (f/1000).toFixed(f>=10000?0:1).replace('.0','') + 'k' : String(Math.round(f));
-    if (b % 2 === 0 || f === 1000 || f === 16000) {
+    const every = slot < 16 ? 4 : 2;
+    if (b % every === 0 || f === 1000 || f === 16000) {
       ctx.font = '8px Courier New';
       ctx.fillStyle = 'rgba(255,195,95,.58)';
       ctx.textAlign = 'center';
@@ -264,28 +281,31 @@ function drawSpectrumFL(canvas, ctx) {
   ctx.fillRect(0,0,W,H);
   ctx.restore();
 
-  // top stereo receiver indicator lamps
-  const lamps = ['POWER','STEREO','EQ','PEAK HOLD'];
-  lamps.forEach((txt, i) => {
-    const lx = W - 230 + i * 58;
-    ctx.beginPath();
-    ctx.arc(lx, 10, 3.2, 0, Math.PI*2);
-    ctx.fillStyle = i === 3 ? 'rgba(255,139,34,.95)' : 'rgba(41,255,116,.9)';
-    ctx.shadowColor = ctx.fillStyle;
-    ctx.shadowBlur = 8;
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.font = '6px Courier New';
-    ctx.fillStyle = 'rgba(255,205,110,.50)';
-    ctx.textAlign = 'left';
-    ctx.fillText(txt, lx + 7, 12);
-  });
+  // top stereo receiver indicator lamps (only when there is room for them and the caption)
+  if (W > 420) {
+    const lamps = ['POWER','STEREO','EQ','PEAK HOLD'];
+    lamps.forEach((txt, i) => {
+      const lx = W - 230 + i * 58;
+      ctx.beginPath();
+      ctx.arc(lx, 10, 3.2, 0, Math.PI*2);
+      ctx.fillStyle = i === 3 ? 'rgba(255,139,34,.95)' : 'rgba(41,255,116,.9)';
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.font = '6px Courier New';
+      ctx.fillStyle = 'rgba(255,205,110,.50)';
+      ctx.textAlign = 'left';
+      ctx.fillText(txt, lx + 7, 12);
+    });
+    ctx.font = 'bold 9px Courier New';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,185,80,.74)';
+    ctx.fillText('CLASSIC FL DISPLAY', W - 8, 25);
+  }
 
-  // FL-display captions
+  // FL-display caption
   ctx.font = 'bold 9px Courier New';
-  ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(255,185,80,.74)';
-  ctx.fillText('CLASSIC FL DISPLAY', W - 8, 25);
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(80,255,135,.68)';
   ctx.shadowColor = 'rgba(80,255,135,.45)';

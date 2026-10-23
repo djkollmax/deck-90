@@ -71,7 +71,14 @@ sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
 
 1. In Deck 90 open the settings drawer (⚙) and press **CELULAR → ON**. A QR code appears.
 2. Scan it with the phone's camera. The phone must be on the same Wi-Fi as the PC.
-3. Tap ◫ on the phone to switch between everything, only the VU meters, and only the cassette. Tap ⛶ for full screen.
+3. Swipe sideways (or tap ◫) to switch views: everything, VU meters, FL 90s spectrum, cassette. Tap ⛶ for full screen.
+4. ⚙ holds the phone's own settings:
+   - VU face, cassette and FL sensitivity: follow the PC or pick your own.
+   - Whether the FL 90s shows in the "everything" view.
+   - A dim night mode.
+   - A short vibration on the cassette keys.
+
+A bar under the title shows the track's progress, with the time played and the time left.
 
 The first time, Windows asks whether Deck 90 may use the network: allow it on **private** networks. If the phone can't connect, check that the PC's network is set to *Private*. Port 9090 is used. Browsers keep phones awake only on secure pages, so for a permanent display set the phone's screen timeout, or use Android's *Stay awake while charging*.
 

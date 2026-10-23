@@ -23,11 +23,14 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 
 /* the rack: VUs, numbers, cassette */
 .rack { flex: 1 1 auto; min-height: 0; display: grid; gap: 6px; padding: 6px;
-  grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.05fr) auto minmax(0, 1.25fr); grid-template-areas: "vus" "nums" "tape"; }
+  grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto minmax(0, .7fr) minmax(0, 1.15fr); grid-template-areas: "vus" "nums" "fl" "tape"; }
+.no-fl-all.view-all .fl { display: none; }
+.no-fl-all.view-all .rack { grid-template-rows: minmax(0, 1.05fr) auto minmax(0, 1.25fr); grid-template-areas: "vus" "nums" "tape"; }
 .vus { grid-area: vus; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-height: 0; }
-.cell, .tape { position: relative; min-height: 0; overflow: hidden; border-radius: 4px; border: 1px solid #1c1c2c; background: #080812; }
-.cell canvas, .tape canvas { position: absolute; left: 0; top: 0; display: block; }
+.cell, .tape, .fl { position: relative; min-height: 0; overflow: hidden; border-radius: 4px; border: 1px solid #1c1c2c; background: #080812; }
+.cell canvas, .tape canvas, .fl canvas { position: absolute; left: 0; top: 0; display: block; }
 .tape { grid-area: tape; }
+.fl { grid-area: fl; }
 .nums { grid-area: nums; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
 .num { background: linear-gradient(160deg, #0d0d16, #080812); border: 1px solid #1c1c2c; border-radius: 4px; padding: 5px 2px 4px; text-align: center; }
 .num b { display: block; font-size: 17px; color: #e7d59b; font-variant-numeric: tabular-nums; }
@@ -36,7 +39,9 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 .num i { display: block; font-style: normal; font-size: 7px; letter-spacing: 1px; color: rgba(160,170,180,.55); margin-top: 3px; white-space: nowrap; overflow: hidden; }
 
 /* views */
-.view-vu .tape { display: none; }
+.view-vu .tape, .view-vu .fl, .view-tape .fl { display: none; }
+.view-fl .vus, .view-fl .tape { display: none; }
+.view-fl .rack { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "fl" "nums"; }
 .view-vu .rack { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "vus" "nums"; }
 .view-tape .vus, .view-tape .nums { display: none; }
 .view-tape .rack { grid-template-rows: minmax(0, 1fr); grid-template-areas: "tape"; }
@@ -44,13 +49,15 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 /* portrait phones: numbers in two rows */
 @media (max-aspect-ratio: 1/1) {
   .nums { grid-template-columns: repeat(3, 1fr); }
-  .rack { grid-template-rows: minmax(0, 0.8fr) auto minmax(0, 1.2fr); }
+  .rack { grid-template-rows: minmax(0, .8fr) auto minmax(0, .55fr) minmax(0, 1.1fr); }
   .view-vu .vus { grid-template-columns: 1fr; }
 }
 /* landscape: VUs beside the cassette, numbers along the bottom */
 @media (min-aspect-ratio: 3/2) {
-  .rack { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: minmax(0, 1fr) auto;
-    grid-template-areas: "vus tape" "nums nums"; }
+  .rack { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: minmax(0, 1fr) minmax(0, .75fr) auto;
+    grid-template-areas: "vus tape" "fl tape" "nums nums"; }
+  .no-fl-all.view-all .rack { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "vus tape" "nums nums"; }
+  .view-fl .rack { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "fl" "nums"; }
   .view-vu .rack { grid-template-columns: 1fr; grid-template-areas: "vus" "nums"; }
   .view-tape .rack { grid-template-columns: 1fr; }
   .num b { font-size: 15px; }
@@ -62,3 +69,26 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 canvas, button { touch-action: manipulation; }   /* quick double taps on ▶▶ skip twice instead of zooming */
 .awake { position: fixed; right: 0; bottom: 0; width: 2px; height: 2px; opacity: .01; pointer-events: none; }
+
+/* progress of the track */
+.prog { flex: 0 0 auto; position: relative; height: 0; overflow: hidden; background: #0b0d12; transition: height .2s; }
+.prog.on { height: 14px; }
+.prog-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, rgba(121,217,255,.25), rgba(121,217,255,.45)); }
+.prog span { position: absolute; top: 1px; font-size: 9px; color: rgba(201,195,173,.75); }
+#progA { left: 8px; } #progB { right: 8px; }
+
+/* the phone's own settings */
+.sheet { position: fixed; inset: 0; z-index: 20; display: none; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.55); }
+.sheet.show { display: flex; }
+.sheet-card { width: min(520px, 100vw); max-height: 92vh; overflow: auto; background: linear-gradient(180deg, #151821, #0a0c11); border: 1px solid rgba(217,189,115,.3);
+  border-radius: 12px 12px 0 0; padding: 12px 14px 18px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; color: #f2d991; letter-spacing: 3px; font-size: 11px; margin-bottom: 8px; }
+.sheet-head button { background: none; border: 0; color: #8d8a7c; font-size: 16px; }
+.opt { display: flex; align-items: center; gap: 5px; margin: 7px 0; flex-wrap: wrap; }
+.opt span { flex: 0 0 96px; font-size: 9px; letter-spacing: 1.5px; color: rgba(217,189,115,.6); }
+.opt button { flex: 1 1 auto; min-height: 34px; border-radius: 6px; border: 1px solid rgba(255,255,255,.08); background: #12151c; color: #a9a490; font-family: inherit; font-size: 10px; letter-spacing: 1px; }
+.opt button.on { color: #06121c; background: linear-gradient(180deg, #bfeaff, #4aa3ff); border-color: transparent; }
+.sheet-tip { margin-top: 10px; font-size: 10px; color: rgba(160,170,180,.6); line-height: 1.5; }
+
+/* night: same look, much less light */
+body.night .rack, body.night .bar, body.night .prog { filter: brightness(.55) saturate(.85); }

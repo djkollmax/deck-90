@@ -23,6 +23,7 @@ const STATIC = {
   '/js/draw-vu.js': 'js/draw-vu.js',
   '/js/tape.js': 'js/tape.js',
   '/js/nowplaying.js': 'js/nowplaying.js',
+  '/js/draw-spectrum.js': 'js/draw-spectrum.js',
 };
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8' };
 const CMDS = ['toggle', 'play', 'pause', 'stop', 'next', 'prev'];

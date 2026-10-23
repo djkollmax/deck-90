@@ -1,5 +1,17 @@
 # Changelog
 
+## 6.3.0 — 2026-10-22
+
+### Added (phone display)
+- **FL 90s spectrum on the phone.** It has its own view and also sits in the "everything" view. The PC sends the 19 bands as measured; the phone does the fall and the peak caps.
+- **The phone's own settings (⚙).** VU face, cassette style and FL sensitivity can each follow the PC or be chosen on the phone. Also: whether the FL shows in "everything", a dim night mode, and a short vibration on the cassette keys.
+- **Track progress bar.** Shows the time played and the time left.
+- **Swipe sideways** to change views.
+
+### Changed
+- The FL 90s display is drawn by one function, `drawFLDisplay`, shared by the rack and the phone. Its lamps and captions step aside in narrow panels.
+- The HI-FI 90s VU drops its captions in panels too narrow for them.
+
 ## 6.2.0 — 2026-10-22
 
 ### Added

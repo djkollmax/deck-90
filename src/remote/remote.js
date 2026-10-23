@@ -1,21 +1,45 @@
 'use strict';
 // Phone display: live meters from Deck 90 on the PC, drawn with the rack's own code.
 const cVL = el('vuL'), cVR = el('vuR'), xVL = cVL.getContext('2d'), xVR = cVR.getContext('2d');
+const cFL = el('fl'), xFL = cFL.getContext('2d');
 let target = null, lastMsg = 0, connected = false, lastFrameAt = 0;
-const VIEWS = ['view-all', 'view-vu', 'view-tape'];
+const VIEWS = ['view-all', 'view-vu', 'view-fl', 'view-tape'];
 let view = 0;
-try { view = Math.max(0, VIEWS.indexOf(localStorage.getItem('deck90-phone-view'))); } catch (_) {}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('deck90-phone-' + k); return v === null ? d : v; } catch (_) { return d; } },
+  set(k, v) { try { localStorage.setItem('deck90-phone-' + k, v); } catch (_) {} },
+};
+view = Math.max(0, VIEWS.indexOf(store.get('view', 'view-all')));
+
+// ── phone's own settings (⚙) ──
+const opts = { vu: store.get('vu', 'pc'), tape: store.get('tape', 'pc'), sens: store.get('sens', 'pc'),
+  flAll: store.get('flAll', '1'), night: store.get('night', '0'), haptic: store.get('haptic', '1') };
+function applyOpts() {
+  document.body.classList.toggle('night', opts.night === '1');
+  document.body.classList.toggle('no-fl-all', opts.flAll !== '1');
+  document.querySelectorAll('.opt').forEach(o => o.querySelectorAll('button').forEach(b => b.classList.toggle('on', opts[o.dataset.k] === b.dataset.v)));
+  requestAnimationFrame(size);
+}
+document.querySelectorAll('.opt button').forEach(b => b.addEventListener('click', () => {
+  const k = b.closest('.opt').dataset.k; opts[k] = b.dataset.v; store.set(k, b.dataset.v); applyOpts();
+}));
+el('btnSet').addEventListener('click', () => el('sheet').classList.add('show'));
+el('sheetClose').addEventListener('click', () => el('sheet').classList.remove('show'));
+el('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') el('sheet').classList.remove('show'); });
+// a short buzz under the finger for the cassette keys
+const sendCmd = window.nowPlaying.cmd;
+window.nowPlaying.cmd = c => { if (opts.haptic === '1' && navigator.vibrate) navigator.vibrate(18); return sendCmd(c); };
 
 // ── layout ──
 function setView(i) {
   view = (i + VIEWS.length) % VIEWS.length;
   document.body.classList.remove(...VIEWS); document.body.classList.add(VIEWS[view]);
-  try { localStorage.setItem('deck90-phone-view', VIEWS[view]); } catch (_) {}
+  store.set('view', VIEWS[view]);
   requestAnimationFrame(size);
 }
 function size() {
   const pr = Math.min(window.devicePixelRatio || 1, 2.5);
-  for (const c of [cVL, cVR, cTP]) {
+  for (const c of [cVL, cVR, cTP, cFL]) {
     const p = c.parentElement, w = Math.max(10, p.clientWidth), h = Math.max(10, p.clientHeight);
     c.width = Math.round(w * pr); c.height = Math.round(h * pr);
     c.style.width = w + 'px'; c.style.height = h + 'px';
@@ -24,6 +48,15 @@ function size() {
 }
 window.addEventListener('resize', () => requestAnimationFrame(size));
 el('btnView').addEventListener('click', () => setView(view + 1));
+// swipe sideways to change view
+let touch0 = null;
+document.addEventListener('touchstart', e => { if (e.touches.length === 1) touch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now() }; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!touch0 || el('sheet').classList.contains('show')) return;
+  const t = e.changedTouches[0], dx = t.clientX - touch0.x, dy = t.clientY - touch0.y;
+  if (Math.abs(dx) > 70 && Math.abs(dy) < 60 && performance.now() - touch0.t < 600) setView(view + (dx < 0 ? 1 : -1));
+  touch0 = null;
+}, { passive: true });
 el('btnFull').addEventListener('click', () => {
   const d = document.documentElement;
   if (document.fullscreenElement) document.exitFullscreen();
@@ -66,8 +99,10 @@ function applyFrame(f) {
   target = f; lastFrameAt = performance.now();
   running = !!f.run;
   if (f.aud) lastAudible = performance.now();
-  if (f.skin) vuSkin = f.skin;
-  if (f.tape) tapeStyle = f.tape;
+  vuSkin = opts.vu === 'pc' ? (f.skin || vuSkin) : opts.vu;
+  tapeStyle = opts.tape === 'pc' ? (f.tape || tapeStyle) : opts.tape;
+  if (f.fl) for (let b = 0; b < flRawP.length; b++) flRawP[b] = f.fl[b];
+  else flRawP.fill(FL_FLOOR);
   for (const [k, a] of [['L', f.L], ['R', f.R]]) {
     const s = vu[k];
     s.peak = a[1]; s.clip = !!a[2]; s.dbfs = a[3]; s.samplePeak = a[4];
@@ -115,6 +150,32 @@ function connect() {
   es.addEventListener('error', () => { connected = false; });
 }
 
+// ── FL 90s: the PC sends each band's raw level; rise at once, fall 38 dB/s, peak caps here ──
+const flRawP = new Float32Array(FL_BARS.length).fill(FL_FLOOR);
+const flShownP = new Float32Array(FL_BARS.length).fill(FL_FLOOR), flPeakP = new Float32Array(FL_BARS.length).fill(FL_FLOOR), flPeakTmP = new Float32Array(FL_BARS.length);
+function tickFL() {
+  const sens = opts.sens === 'pc' ? (target ? target.sens : 1) : Number(opts.sens);
+  const g = flGain(sens, running && audible());
+  const stale = performance.now() - lastFrameAt > 1500;
+  for (let b = 0; b < FL_BARS.length; b++) {
+    const want = stale || !running ? FL_FLOOR : Math.min(0, flRawP[b] + g);
+    flShownP[b] = want >= flShownP[b] ? want : Math.max(want, flShownP[b] - 38 * dtMs / 1000);
+  }
+  flPeaks(flShownP, flPeakP, flPeakTmP, frameScale);
+}
+
+// ── track progress ──
+const mmss = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function progress() {
+  const on = np && np.dur > 0;
+  el('prog').classList.toggle('on', !!on);
+  if (!on) return;
+  const p = npPosition();
+  el('progFill').style.width = Math.min(100, p / np.dur * 100) + '%';
+  el('progA').textContent = mmss(p);
+  el('progB').textContent = '-' + mmss(np.dur - p);
+}
+
 // ── render ──
 let lastT = 0, numT = 0;
 function frame(t) {
@@ -130,9 +191,12 @@ function frame(t) {
   const vis = getComputedStyle(cVL.parentElement).display !== 'none';
   if (vis) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
   if (getComputedStyle(cTP.parentElement).display !== 'none') guard('tape', () => drawBigTape(cTP, xTP, true));
-  if (t - numT > 200) { numT = t; numbers(); setState(); }
+  tickFL();
+  if (getComputedStyle(cFL.parentElement).display !== 'none') guard('fl', () => drawFLDisplay(cFL, xFL, flShownP, flPeakP));
+  if (t - numT > 200) { numT = t; numbers(); setState(); progress(); }
 }
 
+applyOpts();
 setView(view);
 size();
 connect();

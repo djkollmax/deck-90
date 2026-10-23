@@ -13,9 +13,11 @@
   <img id="npCover" alt="">
   <div class="np" id="np"><span id="npTitle">DECK 90</span><span id="npArtist">esperando a la PC…</span></div>
   <span class="state" id="state">…</span>
-  <button id="btnView" title="Cambiar vista">◫</button>
+  <button id="btnView" title="Cambiar vista (o deslizá)">◫</button>
+  <button id="btnSet" title="Ajustes del celular">⚙</button>
   <button id="btnFull" title="Pantalla completa">⛶</button>
 </header>
+<div class="prog" id="prog"><div class="prog-fill" id="progFill"></div><span id="progA">0:00</span><span id="progB"></span></div>
 
 <main class="rack">
   <section class="vus">
@@ -30,8 +32,22 @@
     <div class="num"><b id="nBpm">--</b><i>BPM</i></div>
     <div class="num"><b id="nPh">--</b><i>FASE</i></div>
   </section>
+  <section class="fl"><canvas id="fl"></canvas></section>
   <section class="tape"><canvas id="tape"></canvas></section>
 </main>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-card">
+    <div class="sheet-head">AJUSTES DEL CELULAR <button id="sheetClose">✕</button></div>
+    <div class="opt" data-k="vu"><span>VU</span><button data-v="pc">COMO LA PC</button><button data-v="MODERN">STUDIO</button><button data-v="HIFI90">HI-FI 90s</button></div>
+    <div class="opt" data-k="tape"><span>CINTA</span><button data-v="pc">COMO LA PC</button><button data-v="REEL">REEL</button><button data-v="CLEAR">CLEAR</button></div>
+    <div class="opt" data-k="sens"><span>FL 90s</span><button data-v="pc">COMO LA PC</button><button data-v="0">N</button><button data-v="1">H</button><button data-v="2">MAX</button></div>
+    <div class="opt" data-k="flAll"><span>FL EN “TODO”</span><button data-v="1">SÍ</button><button data-v="0">NO</button></div>
+    <div class="opt" data-k="night"><span>MODO NOCHE</span><button data-v="0">NO</button><button data-v="1">SÍ</button></div>
+    <div class="opt" data-k="haptic"><span>VIBRAR</span><button data-v="1">SÍ</button><button data-v="0">NO</button></div>
+    <div class="sheet-tip">Deslizá a los costados para cambiar de vista: todo · VU · FL 90s · cinta.</div>
+  </div>
+</div>
 
 <div id="toast"></div>
 <canvas id="deck" hidden></canvas>
@@ -39,6 +55,7 @@
 <script src="/remote/shim.js"></script>
 <script src="/js/deck.js"></script>
 <script src="/js/draw-vu.js"></script>
+<script src="/js/draw-spectrum.js"></script>
 <script src="/js/tape.js"></script>
 <script src="/js/nowplaying.js"></script>
 <script src="/remote/remote.js"></script>
