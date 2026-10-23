@@ -53,12 +53,21 @@ function guard(where, fn) {
   }
 }
 
+let lastRafAt = 0;
 function loop(ts) {
   if (!running) return;
   rafId = requestAnimationFrame(loop);          // schedule first: a failing frame can't freeze the next one
-  try { frame(); } catch (e) { report('frame', e); }
+  lastRafAt = performance.now();
+  try { frame(true); } catch (e) { report('frame', e); }
 }
-function frame() {
+// Minimized (or fully covered) windows get no animation frames on Windows, even with background
+// throttling off. Without this the measuring stopped too: integrated LUFS, LRA and BPM froze and the
+// phone display fell to zero. A timer takes over at ~30/s, measuring and feeding the phone, not drawing.
+setInterval(() => {
+  if (!running || performance.now() - lastRafAt < 120) return;
+  try { frame(false); } catch (e) { report('frame', e); }
+}, 33);
+function frame(draw) {
   const now = performance.now();
   dtMs = lastFrame ? Math.min(100, now - lastFrame) : 16.7;
   lastFrame = now;
@@ -74,6 +83,12 @@ function frame() {
   }
   tickVU(vu.L, inL);
   tickVU(vu.R, inR);
+  if (!draw) {
+    guard('meters', () => updateMasterMeters(now));
+    guard('bpm', () => tickBPM(now));
+    phoneTick(now);
+    return;
+  }
   if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
   else {
     if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });

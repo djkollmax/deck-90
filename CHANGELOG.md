@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.3.1
+
+- **Minimized window keeps measuring.** Windows stops animation frames for a minimized (or fully covered) window, and the whole analysis ran on them: the phone display fell to zero and integrated LUFS, LRA and BPM froze until the window came back. A timer now takes over at ~30 per second while no frames arrive — it measures and feeds the phone, and skips the drawing nobody can see.
+
 ## 6.3.0 — 2026-10-22
 
 ### Added (phone display)
