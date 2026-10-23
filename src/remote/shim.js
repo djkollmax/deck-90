@@ -2,7 +2,7 @@
 // What the rack's drawing files expect to find (normally set up by core.js / audio.js), so the phone
 // page can reuse deck.js, draw-vu.js, tape.js and nowplaying.js unchanged.
 let running = false, dtMs = 16.7, frameScale = 1;
-let vuSkin = 'MODERN';
+let vuSkin = 'MODERN', deckDouble = false;
 function mkVU() { return { lvl: -60, vel: 0, peak: -60, peakTmr: 0, clip: false, clipTmr: 0, samplePeak: -90, dbfs: -90 }; }
 const vu = { L: mkVU(), R: mkVU() };
 let gateBlocks = [], tpMaxDb = -Infinity;

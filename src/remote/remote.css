@@ -60,3 +60,5 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
   background: #14120c; border: 1px solid rgba(217,189,115,.45); color: #f2d991; padding: 8px 12px; border-radius: 6px; font-size: 11px;
   max-width: 92vw; text-align: center; pointer-events: none; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
+canvas, button { touch-action: manipulation; }   /* quick double taps on ▶▶ skip twice instead of zooming */
+.awake { position: fixed; right: 0; bottom: 0; width: 2px; height: 2px; opacity: .01; pointer-events: none; }

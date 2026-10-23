@@ -10,6 +10,9 @@
   - The cassette's keys control the player on the PC.
   - Three views (all, VU only, cassette only), portrait and landscape, and full screen.
   - Off by default. Every request needs the key in the address. Only the page's own files are served.
+  - If port 9090 is taken it uses 9091–9095, and the QR shows the port it got.
+  - A phone that stops reading never piles frames up on the PC. At most 8 screens at once.
+  - The phone page tries to keep the screen on: Wake Lock where the browser allows it, otherwise a tiny muted video. Some phones still sleep; the screen timeout setting covers those.
 
 ### Fixed
 - The STUDIO VU's "VU" label no longer lands on the dB readout in tall, narrow panels.

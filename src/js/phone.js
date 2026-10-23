@@ -73,6 +73,7 @@ function renderPhoneModal() {
 }
 function showPhoneModal(on) {
   el('phoneModal').classList.toggle('show', on);
+  if (on && window.phoneDisplay) window.phoneDisplay.get();     // the PC may have changed network since
   renderPhoneModal();
 }
 document.getElementById('phoneClose').addEventListener('click', () => showPhoneModal(false));

@@ -46,18 +46,30 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
   const clients = new Set();
   let lastFrame = null;
 
-  function send(res, event, data) {
+  const MAX_CLIENTS = 8;
+  function send(res, event, data, droppable) {
+    // a phone that stops reading (frozen tab, weak Wi-Fi) must not pile frames up in memory
+    if (res.writableLength > 1 << 20) { try { res.destroy(); } catch (_) {} return; }
+    if (droppable && res.writableLength > 64 << 10) return;
     try { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch (_) {}
   }
   function keyOk(u) {
     const k = u.searchParams.get('k') || '';
-    return key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key));
+    if (!key || !/^[A-Za-z0-9_-]{1,64}$/.test(k)) return false;          // keys are base64url: anything else is wrong
+    const a = Buffer.from(k), b = Buffer.from(key);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
   }
+  // A bad request must never take the program down: answer 500 and carry on.
   function handler(req, res) {
+    try { route(req, res); }
+    catch (e) { log('remote: ' + e.message); try { res.writeHead(500).end(); } catch (_) {} }
+  }
+  function route(req, res) {
     let u;
     try { u = new URL(req.url, 'http://x'); } catch (_) { res.writeHead(400).end(); return; }
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (u.pathname === '/favicon.ico') { res.writeHead(204).end(); return; }
     if (u.pathname === '/' || u.pathname === '/index.html') {
       if (!keyOk(u)) { res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Deck 90: falta la clave. Escaneá el código QR de la PC.'); return; }
       u.pathname = '/remote/index.html';
@@ -74,12 +86,13 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
     }
     if (u.pathname === '/events' && req.method === 'GET') {
       if (!keyOk(u)) { res.writeHead(403).end(); return; }
+      if (clients.size >= MAX_CLIENTS) { res.writeHead(503).end(); return; }
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Connection': 'keep-alive' });
       res.write('retry: 2000\n\n');
       clients.add(res);
       onClients(clients.size);
       log('remote: client connected (' + clients.size + ')');
-      const np = getNowPlaying(); if (np) send(res, 'np', np);
+      send(res, 'np', getNowPlaying() || { none: true });
       if (lastFrame) send(res, 'f', lastFrame);
       const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch (_) {} }, 15000);
       req.on('close', () => { clearInterval(ping); clients.delete(res); onClients(clients.size); log('remote: client left (' + clients.size + ')'); });
@@ -101,9 +114,11 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
       return new Promise(resolve => {
         if (server) return resolve(this.state());
         key = k; port = p;
+        const fail = e => { log('remote: ' + e.message); try { server && server.close(); } catch (_) {} server = null; resolve(Object.assign(this.state(), { error: e.code || e.message })); };
         server = http.createServer(handler);
-        server.on('error', e => { log('remote: ' + e.message); server = null; resolve(Object.assign(this.state(), { error: e.code || e.message })); });
-        server.listen(port, '0.0.0.0', () => { log('remote: listening on ' + port); resolve(this.state()); });
+        server.on('error', fail);
+        try { server.listen(port, '0.0.0.0', () => { log('remote: listening on ' + port); resolve(this.state()); }); }
+        catch (e) { fail(e); }
       });
     },
     stop() {
@@ -112,7 +127,7 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
       if (server) { try { server.close(); } catch (_) {} server = null; }
       lastFrame = null;
     },
-    frame(f) { lastFrame = f; for (const res of clients) send(res, 'f', f); },
+    frame(f) { lastFrame = f; for (const res of clients) send(res, 'f', f, true); },
     nowPlaying(info) { for (const res of clients) send(res, 'np', info); },
     state() {
       const urls = server ? lanAddresses().map(ip => `http://${ip}:${port}/?k=${key}`) : [];

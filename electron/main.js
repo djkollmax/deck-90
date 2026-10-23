@@ -90,6 +90,7 @@ app.whenReady().then(() => {
   // ── Phone display ──
   const saveState = () => { try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {} };
   saved.remote = Object.assign({ on: false, port: 9090, key: '' }, saved.remote);
+  if (!Number.isInteger(saved.remote.port) || saved.remote.port < 1024 || saved.remote.port > 65535) saved.remote.port = 9090;
   if (!/^[A-Za-z0-9_-]{8,}$/.test(saved.remote.key)) { saved.remote.key = crypto.randomBytes(6).toString('base64url'); saveState(); }
   const remoteState = () => remote ? remote.state() : { on: false, urls: [], clients: 0 };
   const pushRemote = extra => { if (win && !win.isDestroyed()) win.webContents.send('remote-state', Object.assign(remoteState(), extra || {})); };
@@ -99,8 +100,14 @@ app.whenReady().then(() => {
   });
   async function setRemote(on) {
     if (on) {
-      const st = await remote.start(saved.remote.port, saved.remote.key);
-      if (st.error) { saved.remote.on = false; saveState(); pushRemote({ error: st.error }); return; }
+      // 9090 first, then the next few if something else holds it (the QR shows whichever it got)
+      let st = null;
+      for (let p = saved.remote.port, tries = 0; tries < 6; p = p >= 9095 ? 9090 : p + 1, tries++) {
+        st = await remote.start(p, saved.remote.key);
+        if (!st.error) { saved.remote.port = p; break; }
+        if (st.error !== 'EADDRINUSE') break;
+      }
+      if (st.error) { saveState(); pushRemote({ error: st.error, port: saved.remote.port }); return; }   // keeps the user's ON for next time
     } else remote.stop();
     saved.remote.on = !!on; saveState(); pushRemote();
   }

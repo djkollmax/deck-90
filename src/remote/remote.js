@@ -25,20 +25,38 @@ function size() {
 window.addEventListener('resize', () => requestAnimationFrame(size));
 el('btnView').addEventListener('click', () => setView(view + 1));
 el('btnFull').addEventListener('click', () => {
+  const d = document.documentElement;
   if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  else if (d.requestFullscreen) d.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  else toast('Este navegador no tiene pantalla completa: usá “Agregar a pantalla de inicio”.');
   keepAwake();
 });
 
-// ── keep the screen on (only where the browser allows it) ──
-let wake = null, wakeTipShown = false;
+// ── keep the screen on ──
+// The Wake Lock API needs a secure page, which a LAN address isn't. Fallback: a tiny muted video that
+// keeps playing (what NoSleep.js does); browsers keep the screen on while a visible video plays.
+// Best effort: some phones still sleep, hence the tip.
+let wake = null, wakeTipShown = false, awakeVideo = null;
 async function keepAwake() {
   if ('wakeLock' in navigator) {
     try { wake = await navigator.wakeLock.request('screen'); return; } catch (_) {}
   }
+  try {
+    if (!awakeVideo) {
+      const c = document.createElement('canvas'); c.width = c.height = 2;
+      const g = c.getContext('2d'); let t = 0;
+      setInterval(() => { g.fillStyle = (t++ & 1) ? '#07080a' : '#07080b'; g.fillRect(0, 0, 2, 2); }, 500);
+      awakeVideo = document.createElement('video');
+      awakeVideo.muted = true; awakeVideo.playsInline = true; awakeVideo.setAttribute('playsinline', ''); awakeVideo.loop = true;
+      awakeVideo.className = 'awake';
+      awakeVideo.srcObject = c.captureStream(2);
+      document.body.appendChild(awakeVideo);
+    }
+    await awakeVideo.play();
+  } catch (_) {}
   if (!wakeTipShown) {
     wakeTipShown = true;
-    toast('Para que no se apague: Ajustes → Pantalla → Tiempo de espera, o dejalo cargando con “Pantalla activa”.', 6000);
+    toast('Si la pantalla se apaga igual: Ajustes → Pantalla → Tiempo de espera, o dejalo cargando.', 6000);
   }
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wake) keepAwake(); });
@@ -81,6 +99,11 @@ function setState() {
 
 function connect() {
   const es = new EventSource('/events?k=' + encodeURIComponent(KEY));
+  es.addEventListener('error', () => {
+    // network errors retry by themselves; an HTTP error (PC restarted, another program on the port) closes
+    // the stream for good, so start over in a few seconds
+    if (es.readyState === 2) setTimeout(connect, 4000);
+  });
   es.addEventListener('open', () => { connected = true; lastMsg = performance.now(); });
   es.addEventListener('f', e => { lastMsg = performance.now(); connected = true; try { applyFrame(JSON.parse(e.data)); } catch (_) {} });
   es.addEventListener('np', e => {
