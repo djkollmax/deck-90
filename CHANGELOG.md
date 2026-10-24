@@ -1,5 +1,23 @@
 # Changelog
 
+## 6.5.0
+
+### Added
+- **Six new spectrum styles**, in the console's new MÁS ▾ menu and on `T`:
+  - **LED 80s:** columns of rectangular LEDs, green / yellow / red, a peak LED that holds and drops.
+  - **FL SHOWROOM:** the FL display in turquoise with magenta tops; after 3 s of silence it runs shop-window demo patterns until the music is back.
+  - **FL ÁMBAR:** stereo, left channel up from the middle, right channel down, amber segments and band names in between.
+  - **RTA 1/3:** 31 ISO third-octave bands measured as power per band, each FFT bin weighted by how much of it falls in the band (pink noise reads flat within ±0.5 dB above 40 Hz, ±1.5 dB below), scale in dBFS on both sides; the bands under 40 Hz are dimmed because the FFT has too few bins there; SENS adds 0 / 6 / 12 dB and says so.
+  - **LCD:** green dot-matrix panel with the pixels' shadow on the backplate.
+  - **ESPECTROGRAMA:** waterfall, 30 Hz – 20 kHz on a log scale, 60 px a second whatever the frame rate.
+- **Two new VU faces:** CINTA 70s (warm backlit cream face, thin black needle, red zone, glass) and AZUL (blue backlit face, amber needle). Both use the classic −20…+3 VU scale spaced by voltage, like the real instrument, and fit wide and tall panels. `V` steps through all four.
+- **Tray icon.** On Windows ✕ leaves Deck 90 in the tray, still measuring (the phone display keeps working); the first time Windows says so. Shift+✕ always quits. Its menu: show/hide, mini mode, phone display, *Arrancar con Windows* (starts hidden, straight to the tray; the entry follows the program if its folder moves), *Al cerrar, quedar en la bandeja* (off by default on Linux, where many desktops show no tray icon), and Salir. If the window never finishes its first paint it's shown anyway after 4 s.
+- After an update the program comes back visible, even when it had been started hidden with Windows.
+- **Phone:** a spectrogram view (swipe: todo · VU · FL · espectrograma · cinta), and the FL's colour (green, turquoise, amber, or like the PC) in ⚙; the new VU faces are there too.
+
+### Fixed
+- Resizing the window while the program was still loading could throw an error.
+
 ## 6.4.0
 
 ### Added

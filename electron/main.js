@@ -1,7 +1,7 @@
 // Deck 90 as a program: the same page as src/index.html, but system audio comes straight
 // from Windows (WASAPI loopback) without the browser's "share your screen" dialog, the window is
 // frameless, and a small PowerShell bridge reads Windows' "now playing" sessions.
-const { app, BrowserWindow, session, desktopCapturer, Menu, shell, ipcMain, screen, dialog, net } = require('electron');
+const { app, BrowserWindow, session, desktopCapturer, Menu, shell, ipcMain, screen, dialog, net, Tray, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -20,7 +20,11 @@ if (app.isPackaged && recoverOnStart({ app, log: m => { try { fs.appendFileSync(
 
 let win;
 let remote = null;          // phone display server (off until the user turns it on)
-app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+// Started with Windows (--oculto): the window waits in the tray until it's wanted.
+const START_HIDDEN = process.argv.includes('--oculto');
+let tray = null;
+function showWin() { if (!win || win.isDestroyed()) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
+app.on('second-instance', () => showWin());
 
 app.whenReady().then(() => {
   const ses = session.defaultSession;
@@ -44,6 +48,7 @@ app.whenReady().then(() => {
     title: 'Deck 90',
     icon: path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     backgroundColor: '#0c0f16',
+    show: false,
     webPreferences: { backgroundThrottling: false, contextIsolation: true, sandbox: true,
                       preload: path.join(__dirname, 'preload.js') },
   });
@@ -99,7 +104,10 @@ app.whenReady().then(() => {
   if (!Number.isInteger(saved.remote.port) || saved.remote.port < 1024 || saved.remote.port > 65535) saved.remote.port = 9090;
   if (!/^[A-Za-z0-9_-]{8,}$/.test(saved.remote.key)) { saved.remote.key = crypto.randomBytes(6).toString('base64url'); saveState(); }
   const remoteState = () => remote ? remote.state() : { on: false, urls: [], clients: 0 };
-  const pushRemote = extra => { if (win && !win.isDestroyed()) win.webContents.send('remote-state', Object.assign(remoteState(), extra || {})); };
+  const pushRemote = extra => {
+    if (win && !win.isDestroyed()) win.webContents.send('remote-state', Object.assign(remoteState(), extra || {}));
+    if (typeof trayMenu === 'function') try { trayMenu(); } catch (_) {}
+  };
   remote = createRemote({
     onCmd: mediaCommand, log: mlog, onClients: () => pushRemote(),
     getNowPlaying: () => lastInfo && phoneInfo(lastInfo),
@@ -138,7 +146,9 @@ app.whenReady().then(() => {
   });
 
   // ── Updates: GitHub, a few seconds after start and every 6 hours ──
-  const updater = createUpdater({ app, net, log: mlog, onState: st => { if (win && !win.isDestroyed()) win.webContents.send('update', st); } });
+  const updater = createUpdater({ app, net, log: mlog,
+    // after an update, come back visible (a start with Windows passes --oculto, which the restart would repeat)
+    relaunchArgs: () => process.argv.slice(1).filter(a => a !== '--oculto'), onState: st => { if (win && !win.isDestroyed()) win.webContents.send('update', st); } });
   ipcMain.on('upd-get', e => { if (ours(e.sender)) e.sender.send('update', updater.state()); });
   ipcMain.on('upd-install', e => { if (ours(e.sender)) updater.install(); });
   ipcMain.on('upd-open', e => { if (ours(e.sender)) shell.openExternal(updater.url()); });
@@ -150,7 +160,57 @@ app.whenReady().then(() => {
 
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
-  win.on('close', () => { if (miniOn) saveMini(); });
+  win.on('close', e => {
+    if (miniOn) saveMini();
+    // ✕ leaves Deck 90 in the tray (measuring, phone display on) unless the user turned that off
+    if (tray && saved.tray.close && !app.isQuitting) {
+      e.preventDefault(); win.hide();
+      if (!saved.tray.told && process.platform === 'win32') {
+        saved.tray.told = true; saveState();
+        try { tray.displayBalloon({ iconType: 'info', title: 'Deck 90 sigue acá', content: 'Sigue midiendo en la bandeja, junto al reloj. Para cerrarlo del todo: clic derecho → Salir.' }); } catch (_) {}
+      }
+    }
+  });
+  // Windows is ending the session: let the window close (not on the query: the user may still cancel)
+  win.on('session-end', () => { app.isQuitting = true; });
+  win.once('ready-to-show', () => { if (!START_HIDDEN || !tray) win.show(); });
+  // if the first paint never comes, show the window anyway instead of leaving an invisible program
+  setTimeout(() => { if (!win.isDestroyed() && !win.isVisible() && (!START_HIDDEN || !tray)) win.show(); }, 4000);
+
+  // ── Tray: an icon by the clock, with the essentials ──
+  // ✕ to the tray by default only on Windows: many Linux desktops show no tray icon, and then a hidden
+  // window could never come back.
+  saved.tray = Object.assign({ close: process.platform === 'win32', told: false }, saved.tray);
+  // "Arrancar con Windows": a fixed name, and the entry follows the program if its folder moves
+  const LOGIN = { args: ['--oculto'], name: 'Deck 90' };
+  const canLogin = process.platform === 'win32' && app.isPackaged;
+  const loginOn = () => canLogin && !!saved.login;
+  if (canLogin && saved.login) { try { app.setLoginItemSettings({ openAtLogin: true, path: process.execPath, ...LOGIN }); } catch (_) {} }
+  function trayMenu() {
+    if (!tray) return;
+    const st = remoteState();
+    const items = [
+      { label: win.isVisible() ? 'Esconder Deck 90' : 'Mostrar Deck 90', click: () => { win.isVisible() ? win.hide() : showWin(); trayMenu(); } },
+      { label: 'Modo mini', type: 'checkbox', checked: miniOn, click: () => { showWin(); setMini(!miniOn); } },
+      { type: 'separator' },
+      { label: 'Pantalla en el celular', type: 'checkbox', checked: !!st.on, click: () => setRemote(!st.on) },
+      { type: 'separator' },
+    ];
+    if (canLogin) items.push({ label: 'Arrancar con Windows', type: 'checkbox', checked: loginOn(),
+      click: m => { saved.login = m.checked; saveState(); try { app.setLoginItemSettings({ openAtLogin: m.checked, path: process.execPath, ...LOGIN }); } catch (_) {} trayMenu(); } });
+    items.push({ label: 'Al cerrar, quedar en la bandeja', type: 'checkbox', checked: saved.tray.close, click: m => { saved.tray.close = m.checked; saveState(); } });
+    items.push({ type: 'separator' }, { label: 'Salir', click: () => { app.isQuitting = true; app.quit(); } });
+    tray.setContextMenu(Menu.buildFromTemplate(items));
+    tray.setToolTip('Deck 90' + (st.on ? ' · celular ' + (st.clients ? 'conectado' : 'esperando') : ''));
+  }
+  try {
+    const ico = path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
+    if (process.platform === 'win32') tray = new Tray(ico);                 // the .ico carries every size: sharp at any scaling
+    else { const img = nativeImage.createFromPath(ico); tray = new Tray(img.isEmpty() ? img : img.resize({ width: 22, height: 22 })); }
+    tray.on('click', () => { win.isVisible() && !win.isMinimized() ? win.hide() : showWin(); trayMenu(); });
+    win.on('show', trayMenu); win.on('hide', trayMenu);
+    trayMenu();
+  } catch (e) { mlog('tray: ' + e.message); tray = null; }
   ipcMain.on('win', async (e, what) => {
     if (!ours(e.sender)) return;
     if (what === 'mini') return setMini(!miniOn);
@@ -161,6 +221,7 @@ app.whenReady().then(() => {
     }
     else if (what === 'fs') { if (miniOn) return; if (win.isFullScreen()) await leaveFullScreen(); else win.setFullScreen(true); }
     else if (what === 'close') win.close();
+    else if (what === 'quit') { app.isQuitting = true; app.quit(); }       // Shift+✕: close for real, tray or not
   });
   // The bridge can report the track before the page is listening: hand it over once the page is up.
   win.webContents.on('did-finish-load', () => { if (lastInfo) win.webContents.send('media', lastInfo); });

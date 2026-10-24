@@ -177,27 +177,44 @@ function drawSpectrumFL(canvas, ctx) {
   drawFLDisplay(canvas, ctx, flShown, spPeak);
 }
 
-function drawFLDisplay(canvas, ctx, levels, peaks) {
+// Colour schemes of the fluorescent display. GREEN is the original FL 90s; TURQ is the shop-window
+// display (blue-green with magenta tops); AMBER the warm orange of 90s Japanese mini systems.
+const FL_PAL = {
+  GREEN: { seg: [['#29ff74', 'rgba(12,45,24,.40)', 'rgba(41,255,116,.55)'], ['#ffe25a', 'rgba(65,55,8,.36)', 'rgba(255,226,90,.55)'], ['#ff8b22', 'rgba(68,28,10,.36)', 'rgba(255,139,34,.62)']],
+           bg: ['#090806', '#030302', '#0b0804'], tint: '255,185,80', frame: 'rgba(255,170,60,.22)', zero: 'rgba(255,95,40,.22)',
+           glowA: 'rgba(255,165,54,.060)', glowB: 'rgba(40,255,120,.030)', cap: 'rgba(80,255,135,.68)', capGlow: 'rgba(80,255,135,.45)',
+           title: 'FL DISPLAY 90s', sub: 'CLASSIC FL DISPLAY', lamps: ['POWER', 'STEREO', 'EQ', 'PEAK HOLD'], lampOn: 'rgba(41,255,116,.9)', lampHot: 'rgba(255,139,34,.95)' },
+  TURQ:  { seg: [['#2ff3e0', 'rgba(8,40,44,.42)', 'rgba(47,243,224,.55)'], ['#7ad7ff', 'rgba(14,34,58,.40)', 'rgba(122,215,255,.55)'], ['#ff5fd2', 'rgba(52,12,44,.40)', 'rgba(255,95,210,.62)']],
+           bg: ['#04080b', '#010305', '#040a0d'], tint: '120,230,240', frame: 'rgba(90,220,235,.22)', zero: 'rgba(255,95,210,.22)',
+           glowA: 'rgba(60,220,255,.060)', glowB: 'rgba(255,95,210,.025)', cap: 'rgba(110,245,235,.75)', capGlow: 'rgba(80,240,230,.5)',
+           title: 'FL SHOWROOM', sub: 'DIGITAL SPECTRUM', lamps: ['POWER', 'SURROUND', 'BASS', 'DEMO'], lampOn: 'rgba(47,243,224,.9)', lampHot: 'rgba(255,95,210,.95)' },
+  AMBER: { seg: [['#ffb02e', 'rgba(52,26,4,.42)', 'rgba(255,176,46,.55)'], ['#ff9520', 'rgba(56,24,4,.40)', 'rgba(255,149,32,.58)'], ['#ff5a14', 'rgba(60,16,4,.42)', 'rgba(255,90,20,.65)']],
+           bg: ['#0a0603', '#030201', '#0b0603'], tint: '255,170,70', frame: 'rgba(255,150,50,.24)', zero: 'rgba(255,90,20,.25)',
+           glowA: 'rgba(255,150,40,.070)', glowB: 'rgba(255,90,20,.025)', cap: 'rgba(255,180,70,.75)', capGlow: 'rgba(255,160,50,.5)',
+           title: 'FL AMBER', sub: 'SPECTRUM ANALYZER', lamps: ['POWER', 'STEREO', 'AUTO', 'PEAK'], lampOn: 'rgba(255,176,46,.95)', lampHot: 'rgba(255,90,20,.95)' },
+};
+function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
+  pal = pal || FL_PAL.GREEN;
   const W = canvas.offsetWidth  || canvas.width;
   const H = canvas.offsetHeight || canvas.height;
   const PA = 24;
 
   const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#090806');
-  bg.addColorStop(.45, '#030302');
-  bg.addColorStop(1, '#0b0804');
+  bg.addColorStop(0, pal.bg[0]);
+  bg.addColorStop(.45, pal.bg[1]);
+  bg.addColorStop(1, pal.bg[2]);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.fillStyle = 'rgba(255,180,70,.035)';
+  ctx.fillStyle = 'rgba(' + pal.tint + ',.035)';
   ctx.fillRect(0, 0, W, 18);
 
   const DFLOOR = FL_FLOOR, DCEIL = 0;
   const flBars = FL_BARS;
   function dbToY(db){ return (H - PA) * (1 - (db - DFLOOR) / (DCEIL - DFLOOR)); }
 
-  // classic amber display frame
-  ctx.strokeStyle = 'rgba(255,170,60,.22)';
+  // display frame
+  ctx.strokeStyle = pal.frame;
   ctx.lineWidth = 1;
   ctx.strokeRect(.5, .5, W-1, H-1);
 
@@ -205,10 +222,10 @@ function drawFLDisplay(canvas, ctx, levels, peaks) {
   [-60,-48,-36,-24,-12,0].forEach(db => {
     const y = dbToY(db);
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
-    ctx.strokeStyle = db === 0 ? 'rgba(255,95,40,.22)' : 'rgba(255,185,80,.10)';
+    ctx.strokeStyle = db === 0 ? pal.zero : 'rgba(' + pal.tint + ',.10)';
     ctx.stroke();
     ctx.font = '7px Courier New';
-    ctx.fillStyle = 'rgba(255,185,80,.38)';
+    ctx.fillStyle = 'rgba(' + pal.tint + ',.38)';
     ctx.textAlign = 'left';
     ctx.fillText(db + 'dB', 4, y - 2);
   });
@@ -216,7 +233,7 @@ function drawFLDisplay(canvas, ctx, levels, peaks) {
   // segmented fluorescent bars
   for (let b = 0; b < flBars.length; b++) {
     const f = flBars[b];
-    const maxDb = levels[b];
+    const maxDb = levels ? levels[b] : DFLOOR;
 
     // evenly spaced bands like a hardware graphic display; bars take 72 % of their slot, so they
     // grow with the window instead of staying thin
@@ -228,18 +245,14 @@ function drawFLDisplay(canvas, ctx, levels, peaks) {
     const segH = Math.max(3, Math.min(9, (H - PA) / 34));
     const segGap = segH > 4 ? 2 : 1;
     const segCount = Math.max(1, Math.floor((H - PA - 8) / (segH + segGap)));
-    const litCount = Math.max(0, Math.round(((H - PA) - y) / (H - PA) * segCount));
+    const litCount = levels ? Math.max(0, Math.round(((H - PA) - y) / (H - PA) * segCount)) : 0;
 
     for (let s=0; s<segCount; s++) {
       const sy = H - PA - 8 - s * (segH + segGap);
       const lit = s < litCount;
-      let colOff = 'rgba(12,45,24,.40)';
-      let colOn = '#29ff74';
-      let glow = 'rgba(41,255,116,.55)';
-      if (s > segCount * .72) { colOff='rgba(68,28,10,.36)'; colOn='#ff8b22'; glow='rgba(255,139,34,.62)'; }
-      else if (s > segCount * .55) { colOff='rgba(65,55,8,.36)'; colOn='#ffe25a'; glow='rgba(255,226,90,.55)'; }
-      ctx.fillStyle = lit ? colOn : colOff;
-      ctx.shadowColor = lit ? glow : 'transparent';
+      const c = pal.seg[s > segCount * .72 ? 2 : s > segCount * .55 ? 1 : 0];
+      ctx.fillStyle = lit ? c[0] : c[1];
+      ctx.shadowColor = lit ? c[2] : 'transparent';
       ctx.shadowBlur = lit ? 8 : 0;
       ctx.fillRect(x, sy, bw, segH);
       ctx.shadowBlur = 0;
@@ -248,19 +261,21 @@ function drawFLDisplay(canvas, ctx, levels, peaks) {
     }
 
     // peak cap
-    const py = dbToY(peaks[b]);
-    ctx.fillStyle = peaks[b] > -12 ? '#ff8b22' : peaks[b] > -28 ? '#ffe25a' : '#29ff74';
-    ctx.shadowColor = ctx.fillStyle;
-    ctx.shadowBlur = 9;
-    ctx.fillRect(x, Math.max(4, py), bw, 2);
-    ctx.shadowBlur = 0;
+    if (peaks && peaks[b] > DFLOOR) {
+      const py = dbToY(peaks[b]);
+      ctx.fillStyle = (peaks[b] > -12 ? pal.seg[2] : peaks[b] > -28 ? pal.seg[1] : pal.seg[0])[0];
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 9;
+      ctx.fillRect(x, Math.max(4, py), bw, 2);
+      ctx.shadowBlur = 0;
+    }
 
     // labels (fewer when the panel is narrow)
     let lbl = f >= 1000 ? (f/1000).toFixed(f>=10000?0:1).replace('.0','') + 'k' : String(Math.round(f));
     const every = slot < 16 ? 4 : 2;
     if (b % every === 0 || f === 1000 || f === 16000) {
       ctx.font = '8px Courier New';
-      ctx.fillStyle = 'rgba(255,195,95,.58)';
+      ctx.fillStyle = 'rgba(' + pal.tint + ',.58)';
       ctx.textAlign = 'center';
       ctx.fillText(lbl, xCenter, H - 6);
     }
@@ -270,52 +285,53 @@ function drawFLDisplay(canvas, ctx, levels, peaks) {
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   for (let yy = 2; yy < H - PA; yy += 4) {
-    ctx.fillStyle = 'rgba(255,210,120,.022)';
+    ctx.fillStyle = 'rgba(' + pal.tint + ',.022)';
     ctx.fillRect(0, yy, W, 1);
   }
   const glow = ctx.createRadialGradient(W*.50, H*.42, 0, W*.50, H*.42, Math.max(W,H)*.62);
-  glow.addColorStop(0, 'rgba(255,165,54,.060)');
-  glow.addColorStop(.48, 'rgba(40,255,120,.030)');
+  glow.addColorStop(0, pal.glowA);
+  glow.addColorStop(.48, pal.glowB);
   glow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0,0,W,H);
   ctx.restore();
 
-  // top stereo receiver indicator lamps (only when there is room for them and the caption)
+  // indicator lamps (only when there is room for them and the caption); the last one blinks in demo
   if (W > 420) {
-    const lamps = ['POWER','STEREO','EQ','PEAK HOLD'];
-    lamps.forEach((txt, i) => {
+    pal.lamps.forEach((txt, i) => {
       const lx = W - 230 + i * 58;
+      const on = i < 3 || !blink || (Math.floor(performance.now() / 500) % 2 === 0);
       ctx.beginPath();
       ctx.arc(lx, 10, 3.2, 0, Math.PI*2);
-      ctx.fillStyle = i === 3 ? 'rgba(255,139,34,.95)' : 'rgba(41,255,116,.9)';
+      ctx.fillStyle = !on ? 'rgba(60,60,60,.5)' : i === 3 ? pal.lampHot : pal.lampOn;
       ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = on ? 8 : 0;
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.font = '6px Courier New';
-      ctx.fillStyle = 'rgba(255,205,110,.50)';
+      ctx.fillStyle = 'rgba(' + pal.tint + ',.50)';
       ctx.textAlign = 'left';
       ctx.fillText(txt, lx + 7, 12);
     });
     ctx.font = 'bold 9px Courier New';
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(255,185,80,.74)';
-    ctx.fillText('CLASSIC FL DISPLAY', W - 8, 25);
+    ctx.fillStyle = 'rgba(' + pal.tint + ',.74)';
+    ctx.fillText(pal.sub, W - 8, 25);
   }
 
-  // FL-display caption
+  // caption
   ctx.font = 'bold 9px Courier New';
   ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(80,255,135,.68)';
-  ctx.shadowColor = 'rgba(80,255,135,.45)';
+  ctx.fillStyle = pal.cap;
+  ctx.shadowColor = pal.capGlow;
   ctx.shadowBlur = 8;
-  ctx.fillText('FL DISPLAY 90s', 8, 13);
+  ctx.fillText(pal.title, 8, 13);
   ctx.shadowBlur = 0;
 }
 
 function drawSpectrum(canvas, ctx) {
   if (spectrumSkin === 'FL90') { drawSpectrumFL(canvas, ctx); return; }
+  if (typeof drawSpectrumMore === 'function' && drawSpectrumMore(canvas, ctx)) return;
   if (spectrumSkin === 'COLUMNS')   { drawSpectrumColumns(canvas, ctx);   return; }
   if (spectrumSkin === 'RETRO')   { drawSpectrumRetro(canvas, ctx);   return; }
   const W = canvas.offsetWidth  || canvas.width;

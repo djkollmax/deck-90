@@ -107,7 +107,7 @@ function recoverOnStart({ app, log }) {
   return true;
 }
 
-function createUpdater({ app, net, log, onState }) {
+function createUpdater({ app, net, log, onState, relaunchArgs }) {
   let state = { state: 'idle' }, release = null, busy = false;
   const set = s => { state = Object.assign({ current: app.getVersion() }, s); onState(state); };
   const headers = () => ({ 'Accept': 'application/vnd.github+json', 'User-Agent': 'Deck90/' + app.getVersion() });
@@ -211,7 +211,7 @@ function createUpdater({ app, net, log, onState }) {
       ok = true;
       log('update: installed ' + version + ', restarting');
       set({ state: 'restarting', version });
-      setTimeout(() => { app.relaunch(); app.quit(); }, 700);
+      setTimeout(() => { app.relaunch(relaunchArgs ? { args: relaunchArgs() } : undefined); app.quit(); }, 700);
     } catch (e) {
       log('update install: ' + (e && e.stack ? e.stack.split('\n')[0] : e));
       // put back exactly what was written: old files from the copy, new ones removed

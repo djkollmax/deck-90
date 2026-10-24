@@ -35,9 +35,28 @@ function toggleModule(m){
   applyModules(); savePrefs(); syncConsole();
 }
 function cycleSkin(){
-  const cycle = { MODERN: 'RETRO', RETRO: 'COLUMNS', COLUMNS: 'FL90', FL90: 'MODERN' };
-  setSpectrumSkin(cycle[spectrumSkin] || 'MODERN'); savePrefs(); syncConsole();
+  const ids = SPECTRUM_SKINS.map(s => s[0]);
+  setSpectrumSkin(ids[(ids.indexOf(spectrumSkin) + 1) % ids.length]); savePrefs(); syncConsole();
+  const name = SPECTRUM_SKINS.find(s => s[0] === spectrumSkin)[1];
+  toast('SPECTRUM · <span>' + name + '</span>', 1400);
 }
+// "MÁS ▾": the other six styles in a small menu under the button
+const skinMenu = document.getElementById('skinMenu');
+function showSkinMenu(on) {
+  skinMenu.classList.toggle('show', on);
+  if (on) {
+    const b = document.querySelector('.seg[data-group="skin"] .more').getBoundingClientRect();
+    skinMenu.style.left = Math.max(8, Math.min(window.innerWidth - skinMenu.offsetWidth - 8, b.left)) + 'px';
+    skinMenu.style.top = (b.bottom + 4) + 'px';
+    skinMenu.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === spectrumSkin));
+  }
+}
+skinMenu.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  setSpectrumSkin(b.dataset.v); showSkinMenu(false); savePrefs(); syncConsole();
+  if (!mods.spectrum) toggleModule('spectrum');
+});
+document.addEventListener('click', e => { if (skinMenu.classList.contains('show') && !e.target.closest('#skinMenu') && !e.target.closest('.more')) showSkinMenu(false); });
 function toggleFullscreen(){
   if (window.winCtl && window.winCtl.fs) { window.winCtl.fs(); return; }   // program: native window full screen
   if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
@@ -55,7 +74,7 @@ document.getElementById('console').addEventListener('click', e => {
     else startAudio(v);
     return;
   }
-  if (g === 'skin') setSpectrumSkin(v);
+  if (g === 'skin') { if (v === 'more') { showSkinMenu(!skinMenu.classList.contains('show')); return; } setSpectrumSkin(v); }
   if (g === 'vu')   setVUSkin(v);
   if (g === 'cal')  vuCal = v === 'AUTO' ? 'AUTO' : Number(v);
   if (g === 'sens') setFlSensitivity(Number(v));
@@ -88,7 +107,8 @@ function toggleMini() {
   if (window.winCtl && window.winCtl.mini) window.winCtl.mini();
   else setMini(!miniMode);
 }
-if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini(setMini);
+if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini(on => { showSkinMenu(false); setMini(on); });
+window.addEventListener('resize', () => { if (skinMenu.classList.contains('show')) showSkinMenu(false); });
 document.querySelector('.mini-panel').addEventListener('dblclick', toggleMini);
 
 // ── SPLASH ──────────────────────────────────────────────────
@@ -116,10 +136,10 @@ document.addEventListener('keydown', e => {
     m: () => { closeSplash(); startAudio('mic'); },
     d: () => { closeSplash(); startDemo(); },
     ' ': () => { if (running) stopAudio(); },
-    escape: () => { if (running && !document.fullscreenElement) stopAudio(); },
+    escape: () => { if (skinMenu.classList.contains('show')) { showSkinMenu(false); return; } if (running && !document.fullscreenElement) stopAudio(); },
     f: toggleFullscreen,
     t: cycleSkin,
-    v: () => { setVUSkin(vuSkin === 'HIFI90' ? 'MODERN' : 'HIFI90'); savePrefs(); syncConsole(); },
+    v: () => { const o = ['MODERN', 'HIFI90', 'REEL70', 'BLUE']; setVUSkin(o[(o.indexOf(vuSkin) + 1) % o.length]); savePrefs(); syncConsole(); },
     k: () => { setFlSensitivity(); savePrefs(); syncConsole(); },
     n: () => { setSpectrumMode(spectrumModeIndex + 1); savePrefs(); syncConsole(); },
     a: () => setDrawer(!drawerOpen),
@@ -136,8 +156,8 @@ document.addEventListener('keydown', e => {
 const prefs = loadPrefs();
 setSpectrumMode(Number.isInteger(prefs.mode) ? prefs.mode : 0);
 setFlSensitivity(Number.isInteger(prefs.flSensitivity) ? prefs.flSensitivity : 1);
-setVUSkin(prefs.vuSkin === 'HIFI90' ? 'HIFI90' : 'MODERN');
-setSpectrumSkin(['MODERN','RETRO','FL90','COLUMNS'].includes(prefs.spectrumSkin) ? prefs.spectrumSkin : 'MODERN');
+setVUSkin(['HIFI90', 'REEL70', 'BLUE'].includes(prefs.vuSkin) ? prefs.vuSkin : 'MODERN');
+setSpectrumSkin(SPECTRUM_SKINS.some(s => s[0] === prefs.spectrumSkin) ? prefs.spectrumSkin : 'MODERN');
 if ([18, 14, 10].includes(prefs.cal)) vuCal = prefs.cal;
 if (prefs.mods && typeof prefs.mods === 'object') {
   for (const k in mods) if (typeof prefs.mods[k] === 'boolean') mods[k] = prefs.mods[k];
@@ -157,11 +177,13 @@ document.getElementById('ledPower').className = 'led amber';
 const IS_APP = /Electron/.test(navigator.userAgent);
 if (IS_APP) {
   document.body.classList.add('is-app');
-  document.querySelectorAll('.win-ctl button').forEach(b => b.addEventListener('click', () => window.winCtl && window.winCtl[b.dataset.w]()));
+  // Shift+✕ quits for real even when ✕ leaves Deck 90 in the tray
+  document.querySelectorAll('.win-ctl button').forEach(b => b.addEventListener('click', e => window.winCtl && window.winCtl[b.dataset.w === 'close' && e.shiftKey ? 'quit' : b.dataset.w]()));
   // The program starts listening right away: no splash, straight to whatever is playing on the PC.
   const sp = document.getElementById('splash');
   if (sp) sp.style.display = 'none';
-  requestAnimationFrame(() => { sizeCanvases(); startAudio('sys'); });
+  // a timer, not an animation frame: started with Windows the window is hidden and gets no frames
+  setTimeout(() => { sizeCanvases(); startAudio('sys'); }, 30);
   const tip = document.querySelector('.splash-tip');
   if (tip) tip.innerHTML = '<span>SISTEMA</span> escucha directo todo lo que suena en la PC (Spotless incluido), sin diálogos.<br>' +
     '<span>S</span> sistema · <span>M</span> micrófono · <span>D</span> demo · <span>ESPACIO</span> detener · <span>F</span> pantalla completa<br>' +

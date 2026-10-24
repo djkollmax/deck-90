@@ -318,4 +318,4 @@ function sizeCanvases() {
   if (sp) { const w = sp.clientWidth || 200; sp.width = Math.round(w * pr); sp.height = Math.round(22 * pr); sp.getContext('2d').setTransform(pr, 0, 0, pr, 0, 0); }
 }
 let resizeT = 0;
-window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { sizeCanvases(); if (!running) drawIdle(); }, 60); });
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { sizeCanvases(); if (!running && typeof drawIdle === 'function') drawIdle(); }, 60); });

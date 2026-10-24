@@ -76,6 +76,7 @@ function drawIdle() {
     if (spectrumSkin === 'FL90') drawIdleFL(cSP, xSP);
     else if (spectrumSkin === 'COLUMNS') drawIdleColumns(cSP, xSP);
     else if (spectrumSkin === 'RETRO') { spPeak.fill(0); drawRetroFrame(cSP, xSP, null); }
+    else if (drawIdleMore(cSP, xSP)) { /* the 6.5 styles */ }
     else drawIdlePanel(cSP, xSP, '── SPECTRUM ANALYZER ──');
   }
   if (mods.osc) drawIdlePanel(cOS, xOS, '── OSCILLOSCOPE ──');

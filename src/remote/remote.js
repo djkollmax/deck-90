@@ -2,8 +2,9 @@
 // Phone display: live meters from Deck 90 on the PC, drawn with the rack's own code.
 const cVL = el('vuL'), cVR = el('vuR'), xVL = cVL.getContext('2d'), xVR = cVR.getContext('2d');
 const cFL = el('fl'), xFL = cFL.getContext('2d');
+const cSG = el('sg'), xSG = cSG.getContext('2d');
 let target = null, lastMsg = 0, connected = false, lastFrameAt = 0;
-const VIEWS = ['view-all', 'view-vu', 'view-fl', 'view-tape'];
+const VIEWS = ['view-all', 'view-vu', 'view-fl', 'view-sg', 'view-tape'];
 let view = 0;
 const store = {
   get(k, d) { try { const v = localStorage.getItem('deck90-phone-' + k); return v === null ? d : v; } catch (_) { return d; } },
@@ -12,7 +13,7 @@ const store = {
 view = Math.max(0, VIEWS.indexOf(store.get('view', 'view-all')));
 
 // ── phone's own settings (⚙) ──
-const opts = { vu: store.get('vu', 'pc'), tape: store.get('tape', 'pc'), sens: store.get('sens', 'pc'),
+const opts = { vu: store.get('vu', 'pc'), tape: store.get('tape', 'pc'), sens: store.get('sens', 'pc'), flc: store.get('flc', 'pc'),
   flAll: store.get('flAll', '1'), night: store.get('night', '0'), haptic: store.get('haptic', '1') };
 function applyOpts() {
   document.body.classList.toggle('night', opts.night === '1');
@@ -39,7 +40,7 @@ function setView(i) {
 }
 function size() {
   const pr = Math.min(window.devicePixelRatio || 1, 2.5);
-  for (const c of [cVL, cVR, cTP, cFL]) {
+  for (const c of [cVL, cVR, cTP, cFL, cSG]) {
     const p = c.parentElement, w = Math.max(10, p.clientWidth), h = Math.max(10, p.clientHeight);
     c.width = Math.round(w * pr); c.height = Math.round(h * pr);
     c.style.width = w + 'px'; c.style.height = h + 'px';
@@ -167,6 +168,48 @@ function tickFL() {
   flPeaks(flShownP, flPeakP, flPeakTmP, frameScale);
 }
 
+// ── spectrogram: the PC sends 64 bands (30 Hz – 20 kHz) ~30 times a second; the phone scrolls them ──
+const SG_LUT = (() => {
+  const st = [[0, 0, 0, 0], [.18, 40, 10, 80], [.38, 120, 20, 120], [.58, 220, 50, 60], [.76, 255, 140, 20], [.9, 255, 225, 80], [1, 255, 255, 235]];
+  const lut = new Uint8ClampedArray(768);
+  for (let i = 0; i < 256; i++) { const t = i / 255; let k = 0; while (k < st.length - 2 && t > st[k + 1][0]) k++;
+    const a = st[k], b = st[k + 1], u = (t - a[0]) / (b[0] - a[0]); for (let c = 0; c < 3; c++) lut[i * 3 + c] = a[c + 1] + (b[c + 1] - a[c + 1]) * u; }
+  return lut;
+})();
+let sgBuf = null, sgBufCtx = null, sgColImg = null, sgAcc = 0, sgBands = new Uint8Array(64);
+function drawPhoneSpectrogram() {
+  const pr = Math.min(window.devicePixelRatio || 1, 2.5);
+  const W = cSG.width / pr, H = cSG.height / pr, L = 26, TOP = 4;
+  const pw = Math.max(10, Math.round(W - L - 2)), ph = Math.max(10, Math.round(H - TOP - 4));
+  if (!sgBuf || sgBuf.width !== pw || sgBuf.height !== ph) {
+    sgBuf = document.createElement('canvas'); sgBuf.width = pw; sgBuf.height = ph;
+    sgBufCtx = sgBuf.getContext('2d'); sgBufCtx.fillStyle = '#000'; sgBufCtx.fillRect(0, 0, pw, ph);
+    sgColImg = sgBufCtx.createImageData(1, ph);
+  }
+  const live = target && target.sg && running && performance.now() - lastFrameAt < 1500;
+  if (live) { try { const s = atob(target.sg); for (let i = 0; i < 64 && i < s.length; i++) sgBands[i] = s.charCodeAt(i); } catch (_) {} }
+  else sgBands.fill(0);
+  sgAcc += 40 * dtMs / 1000;
+  const dx = Math.min(pw, Math.floor(sgAcc)); sgAcc -= dx;
+  if (dx > 0) {
+    const d = sgColImg.data;
+    for (let y = 0; y < ph; y++) {
+      const v = sgBands[Math.min(63, Math.floor((1 - (y + .5) / ph) * 64))] * 3;
+      d[y * 4] = SG_LUT[v]; d[y * 4 + 1] = SG_LUT[v + 1]; d[y * 4 + 2] = SG_LUT[v + 2]; d[y * 4 + 3] = 255;
+    }
+    sgBufCtx.drawImage(sgBuf, -dx, 0);
+    for (let k = 0; k < dx; k++) sgBufCtx.putImageData(sgColImg, pw - 1 - k, 0);
+  }
+  xSG.fillStyle = '#050407'; xSG.fillRect(0, 0, W, H);
+  xSG.drawImage(sgBuf, L, TOP, pw, ph);
+  xSG.font = '8px Courier New'; xSG.textAlign = 'right'; xSG.textBaseline = 'middle';
+  for (const [f, l] of [[100, '100'], [1000, '1k'], [10000, '10k']]) {
+    const y = TOP + ph * (1 - Math.log(f / 30) / Math.log(20000 / 30));
+    xSG.fillStyle = 'rgba(220,200,255,.6)'; xSG.fillText(l, L - 3, y);
+    xSG.fillStyle = 'rgba(255,255,255,.08)'; xSG.fillRect(L, Math.round(y), pw, 1);
+  }
+}
+
 // ── track progress ──
 const mmss = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function progress() {
@@ -195,7 +238,11 @@ function frame(t) {
   if (vis) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
   if (getComputedStyle(cTP.parentElement).display !== 'none') guard('tape', () => drawBigTape(cTP, xTP, true));
   tickFL();
-  if (getComputedStyle(cFL.parentElement).display !== 'none') guard('fl', () => drawFLDisplay(cFL, xFL, flShownP, flPeakP));
+  if (getComputedStyle(cFL.parentElement).display !== 'none') {
+    const pal = FL_PAL[opts.flc === 'pc' ? (target && target.flc) || 'GREEN' : opts.flc] || FL_PAL.GREEN;
+    guard('fl', () => drawFLDisplay(cFL, xFL, flShownP, flPeakP, pal));
+  }
+  if (getComputedStyle(cSG.parentElement).display !== 'none') guard('sg', () => drawPhoneSpectrogram());
   if (t - numT > 200) { numT = t; numbers(); setState(); progress(); }
 }
 
