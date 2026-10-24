@@ -17,13 +17,18 @@ function short(t, n){ t = t || ''; return t.length > n ? t.slice(0, n - 1) + 'â€
 function onNowPlaying(info){
   if (info.ready) return;
   const box = el('np');
-  if (info.none || !(info.title || info.artist)) { np = null; box.classList.remove('on'); return; }
+  if (info.none || !(info.title || info.artist)) {
+    if (np && typeof historyFinalize === 'function') historyFinalize('player gone');
+    np = null; npKey = ''; box.classList.remove('on'); return;
+  }
   const key = (info.app || '') + '|' + info.title + '|' + info.artist;
   if (key !== npKey) {                                   // a new track
+    if (np && typeof historyFinalize === 'function') historyFinalize('next track');   // the one that just ended, with its own numbers
     if (np && np.title) trackHistory.unshift(np);
     trackHistory.length = Math.min(trackHistory.length, 5);
     npKey = key; trackStart = performance.now();
-    gateBlocks = []; lraReset(trackStart); tpMaxDb = -Infinity;   // integrated loudness, LRA and TP max are per track
+    gateBlocks = []; lraReset(trackStart); tpMaxDb = -Infinity; pkMaxDb = -Infinity;   // integrated loudness, LRA and peak maxima are per track
+    if (typeof historyReset === 'function') historyReset();
     decks[0].title = short(info.artist ? info.artist + ' â€“ ' + info.title : info.title, 34);
     decks[0].counter = 0;
     const prev = trackHistory[0];

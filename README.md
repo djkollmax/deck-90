@@ -19,6 +19,8 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - Momentary, short-term and integrated LUFS (ITU-R BS.1770 / EBU R128 K-weighting and gating).
   - Integrated LUFS and loudness range (LRA, EBU Tech 3342) restart on every new track.
   - True peak in dBTP (BS.1770-4, 4x oversampling) with the track's maximum, plus crest factor and phase correlation.
+  - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB).
+- **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS, LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
 - **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
 - **Spectrum** in four styles:
   - MODERN: smooth curve with peaks.
@@ -35,6 +37,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 - **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it.
 - **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
 - **Frameless window.** All controls sit in one console. Display modes: STD, ANALOG, CRT and OLED. Your settings are remembered.
+- **Updates itself.** When a newer release is out, the program offers it; INSTALAR downloads a small package with the program's own files, checks its SHA-256 against the one GitHub publishes, keeps the previous version in `resources\app-anterior` and restarts. A release that changes Electron itself asks you to download the full zip instead.
 
 ## Download & run
 
@@ -43,7 +46,7 @@ Grab the zip for your system from **Releases**, unzip it anywhere and run the pr
 - **Windows 10/11 (x64):** `Deck 90.exe`
 - **Linux (x64):** `deck-90`
 
-Nothing needs to be installed on Windows. Settings and the log (`media.log`) are kept in your user folder:
+Nothing needs to be installed on Windows. Settings, the track history (`history.json`) and the log (`media.log`) are kept in your user folder:
 
 - Windows: `%APPDATA%\Deck 90`
 - Linux: `~/.config/Deck 90`
@@ -97,6 +100,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `N` | Display mode (STD / ANALOG / CRT / OLED) |
 | `Z` | Cassette only |
 | `A` | Settings drawer |
+| `L` | Track history |
 | `H` | Hide the console |
 | `F` | Fullscreen |
 
@@ -112,7 +116,7 @@ The meters were checked against generated test signals:
 - LRA reads 10.0 and 5.0 LU on EBU Tech 3342's first two test cases.
 - Phase correlation is computed sample-aligned on the audio thread: mono reads +1.00, inverted −1.00.
 - BPM: steady beats at 97, 124 and 140 read exactly. Fast tracks (above ~160) may read at half tempo, as with most beat trackers.
-- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings.
+- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings. For the Spotify badge to mean what it says, play at 100 % with the player's own volume levelling off (in Spotless: *Volume levelling*).
 
 ## Build from source
 
@@ -123,6 +127,7 @@ npm install
 npm start                  # run in development
 npm run package:win        # → dist/Deck-90-<version>-win32-x64.zip
 npm run package:linux      # → dist/Deck-90-<version>-linux-x64.zip
+node scripts/package.mjs bundle   # → dist/Deck-90-<version>-app.bundle (the update package)
 ```
 
 The packager downloads the official Electron release, checks it against Electron's published SHA-256 sums and puts the app inside it. Packaging uses `unzip`/`zip` on Linux and the built-in `tar` on Windows.
@@ -160,12 +165,13 @@ Deck 90 es un analizador de audio de escritorio con estética hi-fi retro. Escuc
 - Espectro en cuatro estilos.
 - Medidores de sonoridad (LUFS), BPM y osciloscopio.
 - Caseteras cuya cinta gira mientras hay música.
+- Cuánto le cambiaría Spotify el volumen a cada tema, y un historial de temas que se exporta a Excel (`L`).
 
 También muestra el tema que está sonando y controla el reproductor (ideal con Spotless).
 
 Hecho por Damián Koll junto con Claude (Anthropic), que escribió el código.
 
-Para usarlo, bajá el zip de **Releases**, descomprimilo y abrí el programa.
+Para usarlo, bajá el zip de **Releases**, descomprimilo y abrí el programa. Desde la 6.4 avisa solo cuando hay versión nueva y se actualiza con un clic.
 
 - **Windows:** el audio del sistema funciona sin configurar nada.
 - **Linux:** usa la fuente *Monitor* de PulseAudio/PipeWire. El "tema actual" se lee por MPRIS.

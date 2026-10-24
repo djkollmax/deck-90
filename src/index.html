@@ -36,7 +36,7 @@
     Audio del sistema → en el diálogo de Chrome elegí <span>“Pantalla completa”</span><br>
     y tildá <span>“Compartir audio del sistema”</span>. Spotless puede estar minimizado.<br>
     <span>S</span> sistema · <span>M</span> micrófono · <span>D</span> demo · <span>ESPACIO</span> detener · <span>F</span> pantalla completa<br>
-    <span>T</span> spectrum · <span>V</span> VU · <span>C</span> calibración · <span>K</span> sens · <span>N</span> tono
+    <span>T</span> spectrum · <span>V</span> VU · <span>C</span> calibración · <span>K</span> sens · <span>N</span> tono · <span>L</span> historial
   </div>
 </div>
 
@@ -100,6 +100,7 @@
       </div>
       <div class="seg tools" data-group="tools">
         <button data-v="drawer" title="Ajustes: VU, calibración, sensibilidad, tono (A)">⚙</button>
+        <button data-v="history" title="Historial de temas: loudness, pico, BPM y Spotify de cada uno (L)">☰</button>
         <button data-v="tapeonly" title="Solo la cinta grande / volver (Z)">◎◎</button>
         <button data-v="mini" title="Modo mini, siempre visible (P)">&#9707;</button>
         <button data-v="hide" title="Esconder controles (H)">▴</button>
@@ -185,7 +186,7 @@
   <!-- MASTERING METERS -->
   <div class="master-strip" data-mod="meters">
     <div class="panel metric-card">
-      <div class="metric-title">Loudness</div>
+      <div class="metric-title">Loudness <span id="mSpot" class="spot" title="Cuánto le cambiaría Spotify el volumen a este tema con la normalización estándar: todo se lleva a −14 LUFS integrado; un tema más bajo sube solo hasta que el pico quede en −1 dB. Vale si el reproductor suena al 100 % y sin su propia nivelación."></span></div>
       <div class="metric-value blue" id="mLufs">--.-</div>
       <canvas id="lufsHist" class="spark" width="200" height="22" title="Últimos 30 s · líneas en −14 (nivel típico de streaming) y −9 LUFS"></canvas>
       <div class="metric-unit">LUFS-M · <span id="mLufsS">S --.-</span> · <span id="mLufsI" title="Integrado del tema (BS.1770, con gating)">I --.-</span> · <span id="mLra" title="Rango de loudness del tema (EBU Tech 3342)">LRA --</span></div>
@@ -245,6 +246,29 @@
   </div>
 </div>
 
+<!-- TRACK HISTORY (L) -->
+<div id="histModal" role="dialog" aria-label="Historial de temas">
+  <div class="hist-card">
+    <div class="hist-head">HISTORIAL DE TEMAS <button id="histClose" title="Cerrar (Esc)">✕</button></div>
+    <div class="hist-sub">Cada tema que suena al menos 30 s. SPOTIFY = cuánto le cambiaría el volumen su normalización (−14 LUFS).</div>
+    <div class="hist-scroll">
+      <table class="hist-table">
+        <thead><tr><th>CUÁNDO</th><th>TEMA</th><th title="LUFS integrado del tema">LUFS I</th><th title="Rango de loudness">LRA</th><th title="True peak máximo (o pico de muestra)">PICO</th><th>BPM</th><th title="Ajuste de la normalización de Spotify">SPOTIFY</th></tr></thead>
+        <tbody id="histBody"></tbody>
+      </table>
+      <div class="hist-empty" id="histEmpty">Todavía no hay temas. Se anotan solos mientras Deck 90 escucha el audio del sistema.</div>
+    </div>
+    <div class="hist-foot">
+      <span id="histCount"></span>
+      <button id="histClear" class="hist-btn danger">BORRAR TODO</button>
+      <button id="histExport" class="hist-btn">EXPORTAR A EXCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATES (program only) -->
+<div id="updBar" role="status" aria-live="polite"><span id="updText"></span><button id="updGo"></button><button id="updInfo">QUÉ CAMBIÓ</button><button id="updX" title="Ahora no">✕</button></div>
+
 <script src="js/core.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/draw-vu.js"></script>
@@ -257,6 +281,8 @@
 <script src="js/nowplaying.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="js/phone.js"></script>
+<script src="js/history.js"></script>
+<script src="js/update.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/idle.js"></script>
 <script src="js/controls.js"></script>

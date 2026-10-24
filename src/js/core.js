@@ -87,8 +87,21 @@ function loudnessRange() {
   };
   return pct(0.95) - pct(0.10);
 }
-// True peak: hold for reading plus the track's maximum.
-let tpHoldDb = -90, tpHoldT = 0, tpMaxDb = -Infinity;
+// True peak: hold for reading plus the track's maximum. Sample peak maximum too, for when there's no true peak.
+let tpHoldDb = -90, tpHoldT = 0, tpMaxDb = -Infinity, pkMaxDb = -Infinity;
+// Spotify's loudness normalisation (the default "Normal" level): every track is played at -14 LUFS
+// integrated. Louder tracks are turned down; quieter ones are turned up only as far as their peak
+// stays at -1 dB (no limiter at this level). Returns the change in dB, NaN until there's an integrated.
+const SPOTIFY_TARGET = -14;
+function spotifyGain(I, peakMax) {
+  if (!isFinite(I)) return NaN;
+  const g = SPOTIFY_TARGET - I;
+  if (g <= 0) return g;
+  return Math.max(0, Math.min(g, -1 - (isFinite(peakMax) ? peakMax : -1)));
+}
+function trackPeakMax() { return tpAvailable && isFinite(tpMaxDb) ? tpMaxDb : pkMaxDb; }
+let spotGain = NaN;
+const fmtGain = g => (g > 0.05 ? '+' : g < -0.05 ? '\u2212' : '') + Math.abs(g).toFixed(1);
 let phaseSm = 1, crestSm = 0;
 
 // BPM: spectral-flux onsets + adaptive threshold + median of folded intervals
@@ -172,13 +185,23 @@ function updateMasterMeters(now){
   const lufsM = windowLoudness(now, 400);
   const lufsS = windowLoudness(now, 3000);
   if (now - lufsHistT >= 100) {
-    lufsHistT = now;
-    lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
-    if (isFinite(lufsM) && npPlaying()) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
-    if (isFinite(lufsS) && npPlaying() && now >= lraFrom) lraAdd(lufsS);   // the first 3 s are still the previous track / silence
+    // One block per 100 ms of time, not per frame: a slow frame (busy PC, minimized window) counts for
+    // the blocks it covered, so the integrated value and the time heard stay right (at most 0.5 s caught up).
+    const steps = Math.min(5, Math.floor((now - lufsHistT) / 100));
+    lufsHistT = steps === 5 ? now : lufsHistT + steps * 100;
+    const playing = npPlaying();
+    for (let k = 0; k < steps; k++) {
+      lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
+      if (isFinite(lufsM) && playing) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
+      if (isFinite(lufsS) && playing && now >= lraFrom) lraAdd(lufsS);   // the first 3 s are still the previous track / silence
+    }
     const I = integratedLufs();
     miniVals.i = I;
     el('mLufsI').textContent = isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-';
+    spotGain = spotifyGain(I, trackPeakMax());
+    const sp = el('mSpot');
+    sp.textContent = isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '';
+    sp.className = 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : '');
     if (now - lraT >= 1000) { lraT = now; lraValue = loudnessRange(); el('mLra').textContent = isFinite(lraValue) ? 'LRA ' + lraValue.toFixed(1) : 'LRA --'; }
   }
 
@@ -191,6 +214,7 @@ function updateMasterMeters(now){
     if(p > peak) peak = p;
   }
   const peakDb = 20 * Math.log10(Math.max(peak, 1e-9));
+  if (npPlaying() && peakDb > pkMaxDb && peakDb > -89) pkMaxDb = peakDb;
   if(peakDb >= peakHoldDb || now - peakHoldT > 1500){ peakHoldDb = peakDb; peakHoldT = now; }
   const rmsDb = 10 * Math.log10(Math.max((sumL + sumR) / (2 * n), 1e-12));
   const k300 = 1 - Math.exp(-dtMs / 300);

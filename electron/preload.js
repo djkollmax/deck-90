@@ -18,4 +18,16 @@ contextBridge.exposeInMainWorld('phoneDisplay', {
   frame: f  => ipcRenderer.send('remote-frame', f),
   on:    cb => ipcRenderer.on('remote-state', (e, st) => cb(st)),
 });
+contextBridge.exposeInMainWorld('trackLog', {
+  add:     e => ipcRenderer.send('tl-add', e),
+  list:    () => ipcRenderer.invoke('tl-list'),
+  clear:   () => ipcRenderer.invoke('tl-clear'),
+  saveCsv: (text, name) => ipcRenderer.invoke('tl-save-csv', String(text), String(name)),
+});
+contextBridge.exposeInMainWorld('appUpdate', {
+  on:      cb => ipcRenderer.on('update', (e, st) => cb(st)),
+  get:     () => ipcRenderer.send('upd-get'),
+  install: () => ipcRenderer.send('upd-install'),
+  open:    () => ipcRenderer.send('upd-open'),
+});
 contextBridge.exposeInMainWorld('appLog', msg => ipcRenderer.send('app-log', String(msg).slice(0, 800)));

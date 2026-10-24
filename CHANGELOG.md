@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.4.0
+
+### Added
+- **Updates itself.** A few seconds after it starts (and every 6 hours) the program asks GitHub for the latest release. If it's newer, a bar offers it: INSTALAR downloads a small package with the program's own files (about 230 KB), checks it against the SHA-256 GitHub publishes for it, keeps the current files in `resources\app-anterior`, writes the new ones and restarts. If anything fails half-way the old files are put back. A release built on a different Electron sends you to GitHub for the full zip instead. Releases now carry `Deck-90-<version>-app.bundle` for this.
+- **Spotify badge.** Next to *Loudness*: how much Spotify's normalisation would change the track's volume (target −14 LUFS integrated; a quieter track is raised only until its peak reaches −1 dB). Also on the phone, under the integrated value.
+- **Track history (`L` or ☰).** Each track heard for 30 s or more is kept with its integrated LUFS, LRA, true peak (or sample peak), BPM and the Spotify change, up to 5000 tracks, in `history.json` in the program's data folder. The window shows the track playing now as it's measured. EXPORTAR A EXCEL saves a CSV that Excel opens directly (`;`, decimal commas, UTF-8); titles can't turn into Excel formulas.
+- `Esc` closes the history and phone windows instead of stopping the analysis.
+
+### Fixed
+- Integrated loudness and LRA count one block per 100 ms of time instead of one per frame, so a slow or busy PC measures the same as a fast one.
+
 ## 6.3.1
 
 - **Minimized window keeps measuring.** Windows stops animation frames for a minimized (or fully covered) window, and the whole analysis ran on them: the phone display fell to zero and integrated LUFS, LRA and BPM froze until the window came back. A timer now takes over at ~30 per second while no frames arrive — it measures and feeds the phone, and skips the drawing nobody can see.

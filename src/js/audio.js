@@ -197,7 +197,7 @@ function resetPeakLabels() { el('mPeakTitle').textContent = 'Peak'; el('mPeakUni
 function resetMeters() {
   spPeak.fill(-Infinity); spPeakTm.fill(0); spLvl.fill(-120); lufsHist.length = 0; gateBlocks = [];
   vu.L = mkVU(); vu.R = mkVU();
-  loudBlocks = []; lraReset(); resetPeakLabels(); tpMaxDb = -Infinity; tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
+  loudBlocks = []; lraReset(); resetPeakLabels(); tpMaxDb = -Infinity; pkMaxDb = -Infinity; spotGain = NaN; if (typeof historyReset === 'function') historyReset(); tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
   bpmVal = 0; bpmConfidence = 0; lastBeat = 0;
   lastFrame = 0;
 }
@@ -319,6 +319,7 @@ async function startDemo() {
 }
 
 async function stopAudio() {
+  if (running && typeof historyFinalize === 'function') historyFinalize('stop');
   running = false;
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   // v4 never stopped the tracks: Chrome kept "sharing your screen / mic" until the tab was closed.

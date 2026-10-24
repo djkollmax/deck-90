@@ -37,6 +37,9 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 .num.big b { color: #79d9ff; text-shadow: 0 0 12px rgba(121,217,255,.3); }
 .num b.hot { color: #ff4a25; } .num b.warn { color: #ffd36a; } .num b.good { color: #74ffb7; }
 .num i { display: block; font-style: normal; font-size: 7px; letter-spacing: 1px; color: rgba(160,170,180,.55); margin-top: 3px; white-space: nowrap; overflow: hidden; }
+.num i.spot { color: rgba(116,255,183,.75); margin-top: 2px; }
+.num i.spot:empty { display: none; }
+.num i.spot.warn { color: #ffd36a; } .num i.spot.hot { color: #ff8a6a; }
 
 /* views */
 .view-vu .tape, .view-vu .fl, .view-tape .fl { display: none; }

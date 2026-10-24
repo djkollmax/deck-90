@@ -70,6 +70,7 @@ document.getElementById('console').addEventListener('click', e => {
     if (v === 'hide') setControlsHidden(true);
     if (v === 'tapeonly') toggleTapeOnly();
     if (v === 'mini') toggleMini();
+    if (v === 'history') showHistory(!histOpen());
   }
   savePrefs(); syncConsole();
   if (!running) drawIdle();
@@ -105,6 +106,11 @@ document.getElementById('splashDemo').addEventListener('click', e => { e.stopPro
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const k = e.key.toLowerCase();
+  // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
+  if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {
+    if (k === 'escape' || (k === 'l' && histOpen())) { e.preventDefault(); showHistory(false); showPhoneModal(false); }
+    return;
+  }
   const act = {
     s: () => { closeSplash(); startAudio('sys'); },
     m: () => { closeSplash(); startAudio('mic'); },
@@ -117,6 +123,7 @@ document.addEventListener('keydown', e => {
     k: () => { setFlSensitivity(); savePrefs(); syncConsole(); },
     n: () => { setSpectrumMode(spectrumModeIndex + 1); savePrefs(); syncConsole(); },
     a: () => setDrawer(!drawerOpen),
+    l: () => showHistory(true),
     h: () => setControlsHidden(!controlsHidden),
     1: () => toggleModule('vu'), 2: () => toggleModule('bpm'), 3: () => toggleModule('meters'),
     4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), z: () => toggleTapeOnly(), p: () => { if (!e.repeat) toggleMini(); },
@@ -158,7 +165,7 @@ if (IS_APP) {
   const tip = document.querySelector('.splash-tip');
   if (tip) tip.innerHTML = '<span>SISTEMA</span> escucha directo todo lo que suena en la PC (Spotless incluido), sin diálogos.<br>' +
     '<span>S</span> sistema · <span>M</span> micrófono · <span>D</span> demo · <span>ESPACIO</span> detener · <span>F</span> pantalla completa<br>' +
-    '<span>T</span> spectrum · <span>V</span> VU · <span>C</span> calibración · <span>K</span> sens · <span>N</span> tono';
+    '<span>T</span> spectrum · <span>V</span> VU · <span>C</span> calibración · <span>K</span> sens · <span>N</span> tono · <span>L</span> historial';
 }
 if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
   toast('Este navegador no puede capturar el audio del sistema.<br><span>Usá Chrome o Edge en la PC.</span>', 9000);
