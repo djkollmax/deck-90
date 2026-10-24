@@ -397,6 +397,10 @@ function syncConsole() {
       if (g === 'tools') { b.classList.toggle('on', (b.dataset.v === 'drawer' && drawerOpen) || (b.dataset.v === 'tapeonly' && !!modsBeforeTape)); return; }
       if (g === 'deckmode') { b.classList.toggle('on', (b.dataset.v === 'double') === deckDouble); return; }
       if (g === 'tapestyle') { b.classList.toggle('on', b.dataset.v === tapeStyle); return; }
+      if (g === 'skin' && b.dataset.v === 'more') {
+        const extra = SPECTRUM_SKINS.slice(4).find(s => s[0] === spectrumSkin);
+        b.classList.toggle('on', !!extra); b.textContent = extra ? extra[1] + ' ▾' : 'MÁS ▾'; return;
+      }
       if (g === 'phone') { const on = typeof phoneState !== 'undefined' && phoneState.on; b.classList.toggle('on', b.dataset.v === (on ? 'on' : 'off')); return; }
       b.classList.toggle('on', g in state && state[g] === b.dataset.v);
     });
@@ -404,7 +408,7 @@ function syncConsole() {
   const ab = document.querySelector('.seg[data-group="cal"] button[data-v="AUTO"]');
   if (ab && (vuCal !== 'AUTO' || !activeSource)) ab.textContent = 'AUTO';
   const sens = document.querySelector('.seg[data-group="sens"]');
-  if (sens) sens.classList.toggle('dim', spectrumSkin !== 'FL90');
+  if (sens) sens.classList.toggle('dim', !['FL90', 'LED80', 'SHOWROOM', 'AMBER', 'LCD', 'RTA'].includes(spectrumSkin));
 }
 
 // ═══════════════════════════════════════════════════════════

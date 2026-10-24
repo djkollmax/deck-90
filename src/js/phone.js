@@ -22,6 +22,9 @@ function phoneFrame() {
     skin: vuSkin, tape: tapeStyle, sens: flSensitivity,
     // FL 90s bands as measured (dBFS, whole numbers): the phone smooths and lifts them itself
     fl: running && aMain ? Array.from(flRawLevels(phoneFl), x => Math.round(x)) : null,
+    // the phone's spectrogram: 64 bands, 30 Hz – 20 kHz, 0–255, as base64
+    sg: running && aMain ? spectrogramBands() : null,
+    flc: spectrumSkin === 'SHOWROOM' ? 'TURQ' : spectrumSkin === 'AMBER' ? 'AMBER' : 'GREEN',
   };
 }
 // Called from the render loop, and on a slow timer while stopped so the phone still shows STOP.

@@ -3,6 +3,10 @@
 //  DRAW: VU METER
 // ═══════════════════════════════════════════════════════════
 const DB_LO = -40, DB_HI = 3;
+// older phone browsers have no roundRect: a plain rectangle will do there
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
+}
 
 // Arc: from 210° to 330° clockwise (canvas coords, 0=right, CW)
 // Passes through 270° (straight up) = 12 o'clock position ✓
@@ -161,7 +165,120 @@ function drawVUHiFi90(canvas, ctx, st) {
   }
 }
 
+// ═══ Classic needle meters (6.5): CINTA 70s (warm backlit cream face, black needle) and AZUL (blue
+// backlit face, amber needle). Real VU scale, −20 … +3, spaced like the instrument: the needle moves
+// with the voltage, so the top of the scale is wide and the bottom bunched up. Original designs. ═══
+const VU_THEMES = {
+  REEL70: { face: ['#fbedc4', '#efd193', '#c99a52'], glow: 'rgba(255,190,90,.35)', ink: '#1a130a', red: '#c4261b', soft: 'rgba(40,25,10,.55)',
+            needle: '#111', needleGlow: null, bezel: ['#3a3631', '#1a1816'], read: '#ffcf7a', title: 'VU', sub: 'PEAK' },
+  BLUE:   { face: ['#2a6fd6', '#1546a0', '#071a44'], glow: 'rgba(80,170,255,.45)', ink: '#e6f3ff', red: '#ff6a5a', soft: 'rgba(200,230,255,.7)',
+            needle: '#ffb347', needleGlow: 'rgba(255,170,60,.8)', bezel: ['#1b1f27', '#0a0c10'], read: '#9fd7ff', title: 'VU', sub: 'PEAK' },
+};
+const VU_LO = -20, VU_HI = 3;
+const vuVolt = db => Math.pow(10, db / 20);
+function vuT(db) {                                     // 0 … 1 along the scale
+  const a = vuVolt(VU_LO), b = vuVolt(VU_HI);
+  return Math.max(-0.03, Math.min(1.04, (vuVolt(Math.min(VU_HI + 1, db)) - a) / (b - a)));
+}
+function drawVUClassic(canvas, ctx, st, th) {
+  const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  // bezel
+  const bz = ctx.createLinearGradient(0, 0, 0, H);
+  bz.addColorStop(0, th.bezel[0]); bz.addColorStop(1, th.bezel[1]);
+  ctx.fillStyle = bz; ctx.fillRect(0, 0, W, H);
+  const READ = 18;                                      // the readout strip under the window
+  const wx = 8, wy = 8, ww = W - 16, wh = H - 16 - READ;
+  if (ww < 40 || wh < 30) return;                       // too small to draw a meter (a panel still settling)
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, 6); ctx.clip();
+  // the backlit face: brightest low in the middle, where the lamp sits
+  const face = ctx.createRadialGradient(W / 2, wy + wh * 1.05, 4, W / 2, wy + wh * .6, Math.max(ww, wh) * .95);
+  face.addColorStop(0, th.face[0]); face.addColorStop(.55, th.face[1]); face.addColorStop(1, th.face[2]);
+  ctx.fillStyle = face; ctx.fillRect(wx, wy, ww, wh);
+  const lamp = ctx.createRadialGradient(W / 2, wy + wh, 0, W / 2, wy + wh, wh * .9);
+  lamp.addColorStop(0, th.glow); lamp.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = lamp; ctx.fillRect(wx, wy, ww, wh);
+
+  // geometry: the pivot sits below the window, the scale is a wide shallow arc
+  const half = 47 * Math.PI / 180;
+  const fs0 = Math.max(8, Math.min(13, ww * .045));
+  // as wide as the numbers at both ends allow; in a tall window the pivot comes up into view
+  const Rw = (ww / 2 - 8) / Math.sin(half) - 11 - fs0 * 1.6;
+  let R = Math.max(30, Math.min(Rw, wh * 1.18)), cy = wy + wh * .22 + R;
+  if (cy < wy + wh - 10) {                               // a tall window: pivot at the bottom, in view
+    R = Math.max(30, Math.min(Rw, wh - 38 - fs0 * 1.6));
+    const tall = R + 24 + fs0 * 1.6 + 30;                  // labels on top … pivot plate below
+    cy = Math.min(wy + wh - 14, wy + (wh - tall) / 2 + R + 24 + fs0 * 1.6);
+  }
+  const cx = W / 2, hubIn = cy < wy + wh - 2;
+  const ang = t => -Math.PI / 2 - half + t * 2 * half;
+  const P = (t, r) => [cx + Math.cos(ang(t)) * r, cy + Math.sin(ang(t)) * r];
+  // scale arcs: thin ink line, thick red band from 0 to +3
+  ctx.lineCap = 'butt';
+  ctx.beginPath(); ctx.arc(cx, cy, R, ang(0), ang(vuT(0))); ctx.strokeStyle = th.ink; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, R + 3, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 6; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, R, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 1.4; ctx.stroke();
+  // ticks and numbers
+  const fs = Math.max(8, Math.min(13, R * .085, fs0));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  [[-20, 1], [-10, 1], [-7, 1], [-5, 1], [-3, 1], [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 1], [-15, 0], [-4, 0], [-0.5, 0], [0.5, 0], [1.5, 0], [2.5, 0]].forEach(([db, major]) => {
+    const t = vuT(db), [x1, y1] = P(t, R), [x2, y2] = P(t, R + (major ? 11 : 6));
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = db > 0 ? th.red : th.ink; ctx.lineWidth = major ? 1.4 : 1; ctx.stroke();
+    if (major && (db >= -10 || db === -20) && !(R < 90 && (db === -2 || db === 2))) {
+      const [tx, ty] = P(t, R + 11 + fs * .9);
+      ctx.font = (db === 0 ? 'bold ' : '') + fs + 'px Georgia, "Times New Roman", serif';
+      ctx.fillStyle = db > 0 ? th.red : th.ink;
+      ctx.fillText(db > 0 ? '+' + db : String(Math.abs(db)), tx, ty);
+    }
+  });
+  // the percent scale under the arc
+  ctx.font = Math.max(6, fs * .62) + 'px Georgia, serif'; ctx.fillStyle = th.soft;
+  [[0, '0'], [vuT(-6), '50'], [vuT(0), '100']].forEach(([t, l]) => { const [x, y] = P(t, R - 10); ctx.fillText(l, x, y); });
+  ctx.beginPath(); ctx.arc(cx, cy, R - 4, ang(0), ang(vuT(0))); ctx.strokeStyle = th.soft; ctx.lineWidth = .8; ctx.stroke();
+  // VU and the − / + signs
+  ctx.font = 'bold ' + Math.round(fs * 1.9) + 'px Georgia, "Times New Roman", serif'; ctx.fillStyle = th.ink;
+  ctx.fillText(th.title, cx, hubIn ? cy - R * .42 : wy + wh * .74);
+  ctx.font = 'bold ' + Math.round(fs * 1.3) + 'px Georgia, serif';
+  { const [x, y] = P(-0.04, R * .78); ctx.fillText('−', x, y); }
+  { const [x, y] = P(1.03, R * .78); ctx.fillStyle = th.red; ctx.fillText('+', x, y); }
+  // peak lamp (lights on a near-clip peak)
+  const lit = st.clip || st.samplePeak > -0.5;
+  const lx = wx + ww - 16, ly = wy + 14;
+  ctx.beginPath(); ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
+  ctx.fillStyle = lit ? '#ff3a26' : 'rgba(90,20,15,.55)'; ctx.shadowColor = '#ff3a26'; ctx.shadowBlur = lit ? 14 : 0; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = th.soft; ctx.textAlign = 'right'; ctx.fillText(th.sub, lx - 8, ly + 1);
+  // needle (thin, with a counterweight below the window)
+  const t = vuT(st.lvl), a = ang(t);
+  ctx.save();
+  ctx.shadowColor = th.needleGlow || 'rgba(0,0,0,.35)'; ctx.shadowBlur = th.needleGlow ? 6 : 3; ctx.shadowOffsetX = th.needleGlow ? 0 : 2; ctx.shadowOffsetY = th.needleGlow ? 0 : 2;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (R + 9), cy + Math.sin(a) * (R + 9));
+  ctx.strokeStyle = th.needle; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.restore();
+  if (hubIn) {                                          // the pivot is in view: a small black hub on a plate
+    ctx.beginPath(); ctx.arc(cx, cy, 13, Math.PI, 0); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fillStyle = '#111'; ctx.fill();
+  }
+  // glass: a soft diagonal reflection and the top shade of the bezel
+  const gl = ctx.createLinearGradient(wx, wy, wx + ww * .7, wy + wh);
+  gl.addColorStop(0, 'rgba(255,255,255,.22)'); gl.addColorStop(.35, 'rgba(255,255,255,.04)'); gl.addColorStop(.36, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gl; ctx.fillRect(wx, wy, ww, wh);
+  const sh = ctx.createLinearGradient(0, wy, 0, wy + 14);
+  sh.addColorStop(0, 'rgba(0,0,0,.35)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh; ctx.fillRect(wx, wy, ww, 14);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, 6); ctx.stroke();
+  // readout on the bezel
+  const dbTxt = st.lvl <= DB_LO + 1 ? '-∞' : (st.lvl >= 0 ? '+' : '') + st.lvl.toFixed(1);
+  ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = st.lvl >= 0 ? '#ff8a6a' : th.read;
+  ctx.fillText(dbTxt + ' VU', W / 2, H - READ / 2 - 3);
+}
+
 function drawVU(canvas, ctx, st) {
+  if (vuSkin === 'REEL70') return drawVUClassic(canvas, ctx, st, VU_THEMES.REEL70);
+  if (vuSkin === 'BLUE') return drawVUClassic(canvas, ctx, st, VU_THEMES.BLUE);
   if (vuSkin === 'HIFI90') return drawVUHiFi90(canvas, ctx, st);
   const W = canvas.offsetWidth  || canvas.width;
   const H = canvas.offsetHeight || canvas.height;

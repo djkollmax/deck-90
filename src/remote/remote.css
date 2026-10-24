@@ -27,8 +27,10 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 .no-fl-all.view-all .fl { display: none; }
 .no-fl-all.view-all .rack { grid-template-rows: minmax(0, 1.05fr) auto minmax(0, 1.25fr); grid-template-areas: "vus" "nums" "tape"; }
 .vus { grid-area: vus; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-height: 0; }
-.cell, .tape, .fl { position: relative; min-height: 0; overflow: hidden; border-radius: 4px; border: 1px solid #1c1c2c; background: #080812; }
-.cell canvas, .tape canvas, .fl canvas { position: absolute; left: 0; top: 0; display: block; }
+.sg { grid-area: sg; display: none; }
+.view-sg .sg { display: block; }
+.cell, .tape, .fl, .sg { position: relative; min-height: 0; overflow: hidden; border-radius: 4px; border: 1px solid #1c1c2c; background: #080812; }
+.cell canvas, .tape canvas, .fl canvas, .sg canvas { position: absolute; left: 0; top: 0; display: block; }
 .tape { grid-area: tape; }
 .fl { grid-area: fl; }
 .nums { grid-area: nums; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
@@ -47,6 +49,8 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
 .view-fl .rack { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "fl" "nums"; }
 .view-vu .rack { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "vus" "nums"; }
 .view-tape .vus, .view-tape .nums { display: none; }
+.view-sg .vus, .view-sg .tape, .view-sg .fl { display: none; }
+.view-sg .rack { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "sg" "nums"; }
 .view-tape .rack { grid-template-rows: minmax(0, 1fr); grid-template-areas: "tape"; }
 
 /* portrait phones: numbers in two rows */
@@ -63,6 +67,7 @@ body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 
   .view-fl .rack { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "fl" "nums"; }
   .view-vu .rack { grid-template-columns: 1fr; grid-template-areas: "vus" "nums"; }
   .view-tape .rack { grid-template-columns: 1fr; }
+  .view-sg .rack { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "sg" "nums"; }
   .num b { font-size: 15px; }
 }
 

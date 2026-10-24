@@ -782,3 +782,14 @@ body:not(.is-app) .phone-seg{ display:none; }
 #updBar #updX{ background:none; border:0; color:#8d8a7c; padding:2px 4px; }
 #updBar button:empty{ display:none; }
 body.mini #updBar{ display:none; }
+
+/* ── "MÁS ▾" spectrum styles menu ── */
+.skin-menu{ position:fixed; z-index:8800; display:none; flex-direction:column; min-width:250px; padding:5px; border-radius:7px;
+  background:linear-gradient(180deg,#171a22,#0b0d12); border:1px solid rgba(217,189,115,.3); box-shadow:0 12px 34px rgba(0,0,0,.6); -webkit-app-region:no-drag; }
+.skin-menu.show{ display:flex; }
+.skin-menu button{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; padding:6px 9px; border:0; border-radius:5px;
+  background:transparent; color:#c9c3ad; cursor:pointer; font-family:'Courier New',monospace; }
+.skin-menu button b{ font-size:10px; letter-spacing:1.5px; color:#f2d991; font-weight:bold; }
+.skin-menu button span{ font-size:9px; color:rgba(160,170,180,.65); letter-spacing:.3px; }
+.skin-menu button:hover{ background:rgba(217,189,115,.08); }
+.skin-menu button.on{ background:linear-gradient(180deg,rgba(243,220,149,.18),rgba(201,159,69,.12)); }

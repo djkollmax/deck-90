@@ -14,7 +14,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 ## Features
 
 - **System audio with no setup.** On Windows it uses WASAPI loopback, so there's no virtual cable and no picker dialog. On Linux it uses the PulseAudio/PipeWire *Monitor* source. Microphone input is also available.
-- **VU meters.** Each needle has spring-damper ballistics. Choose a STUDIO or HI-FI 90s face. The reference level can be AUTO, −18, −14 or −10 dBFS.
+- **VU meters.** Each needle has spring-damper ballistics. Four faces: STUDIO, HI-FI 90s, CINTA 70s (warm backlit cream face, black needle) and AZUL (blue backlit face, amber needle); the last two use the classic −20…+3 VU scale spaced like the real instrument. The reference level can be AUTO, −18, −14 or −10 dBFS.
 - **Loudness.**
   - Momentary, short-term and integrated LUFS (ITU-R BS.1770 / EBU R128 K-weighting and gating).
   - Integrated LUFS and loudness range (LRA, EBU Tech 3342) restart on every new track.
@@ -22,11 +22,18 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB).
 - **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS, LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
 - **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
-- **Spectrum** in four styles:
+- **Spectrum** in ten styles (`T` steps through them, MÁS ▾ lists the newer ones):
   - MODERN: smooth curve with peaks.
   - RETRO 97: LED columns.
   - COLUMNS: classic bars.
-  - FL 90s: wide segmented bars, with three sensitivity levels.
+  - FL 90s: wide segmented fluorescent bars.
+  - LED 80s: columns of rectangular LEDs, green, yellow and red, with a falling peak LED.
+  - FL SHOWROOM: the turquoise shop-window display; after a few seconds of silence it plays its demo patterns.
+  - FL ÁMBAR: stereo, the left channel rising from the middle and the right one hanging down, in warm amber.
+  - RTA 1/3: 31 ISO third-octave bands with the power of each band, like a studio real-time analyzer.
+  - LCD: a green dot-matrix panel.
+  - ESPECTROGRAMA: the track as a waterfall, time to the left, frequency upwards, colour for level.
+  - The hardware-style ones (FL, LED, LCD, RTA) follow the SENS setting (`K`).
 - **Oscilloscope.**
 - **Goniometer.** The stereo image as a cloud of dots: mono stands upright, wide stereo spreads out, out-of-phase content lies down. A correlation bar sits underneath.
 - **Cassette decks.** Choose one deck or two. A big CINTA cassette comes as REEL (aluminium open-reel look) or CLEAR. The tape runs only while music is actually playing.
@@ -34,6 +41,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - Shows the title, artist and cover from the system's media session. Spotless is preferred when several players are open.
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
+- **Tray.** Deck 90 sits by the clock: ✕ leaves it measuring there (the phone display keeps working), and its menu shows the window, switches mini mode and the phone display, starts it with Windows (hidden, straight to the tray) and quits.
 - **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it.
 - **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
 - **Frameless window.** All controls sit in one console. Display modes: STD, ANALOG, CRT and OLED. Your settings are remembered.
@@ -93,9 +101,9 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `Space` / `Esc` | Stop analysis |
 | `1`–`8` | Toggle modules (VU, BPM, LUFS, spectrum, oscilloscope, deck, cassette, goniometer) |
 | `P` | Mini mode (always on top) / back |
-| `T` | Spectrum style |
+| `T` | Spectrum style (ten) |
 | `K` | FL sensitivity |
-| `V` | VU face |
+| `V` | VU face (four) |
 | `C` | VU calibration |
 | `N` | Display mode (STD / ANALOG / CRT / OLED) |
 | `Z` | Cassette only |
