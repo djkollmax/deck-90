@@ -51,13 +51,13 @@ let peakHoldDb = -90, peakHoldT = 0;
 const lufsHist = []; let lufsHistT = 0;
 let gateBlocks = [];          // mean-square of 400 ms blocks, one every 100 ms (75 % overlap)
 const ABS_GATE = Math.pow(10, (-70 + 0.691) / 10);   // -70 LUFS as block power
-function integratedLufs(){
+function integratedLufs(blocks = gateBlocks){
   let n = 0, sum = 0;
-  for (const ms of gateBlocks) if (ms > ABS_GATE) { n++; sum += ms; }
+  for (const ms of blocks) if (ms > ABS_GATE) { n++; sum += ms; }
   if (n < 5) return -Infinity;
   const relGate = sum / n * 0.1;                        // -10 LU below the absolutely-gated mean
   let n2 = 0, sum2 = 0;
-  for (const ms of gateBlocks) if (ms > ABS_GATE && ms > relGate) { n2++; sum2 += ms; }
+  for (const ms of blocks) if (ms > ABS_GATE && ms > relGate) { n2++; sum2 += ms; }
   return n2 ? -0.691 + 10 * Math.log10(sum2 / n2) : -Infinity;
 }
 // Loudness range (EBU Tech 3342): short-term loudness every 100 ms, gated at -70 LUFS and 20 LU under the
@@ -87,8 +87,35 @@ function loudnessRange() {
   };
   return pct(0.95) - pct(0.10);
 }
-// True peak: hold for reading plus the track's maximum.
-let tpHoldDb = -90, tpHoldT = 0, tpMaxDb = -Infinity;
+// True peak: hold for reading plus the track's maximum. Sample peak maximum too, for when there's no true peak.
+let tpHoldDb = -90, tpHoldT = 0, tpMaxDb = -Infinity, pkMaxDb = -Infinity;
+// The player reports a new track a moment after (or before) its sound changes. So peaks count from 1 s
+// into a track, and the track history uses the "settled" maxima, which leave out the last second: when
+// the next track is announced, that second may already be the next track's first transient.
+let pkSettled = -Infinity, tpSettled = -Infinity;
+const pkRecent = [];
+function notePeaks(now, pk, tp) {
+  pkRecent.push({ t: now, pk, tp });
+  while (pkRecent.length && now - pkRecent[0].t > 1000) {
+    const o = pkRecent.shift();
+    if (o.pk > pkSettled) pkSettled = o.pk;
+    if (o.tp > tpSettled) tpSettled = o.tp;
+  }
+}
+function resetTrackPeaks() { tpMaxDb = pkMaxDb = pkSettled = tpSettled = -Infinity; pkRecent.length = 0; }
+// Spotify's loudness normalisation (the default "Normal" level): every track is played at -14 LUFS
+// integrated. Louder tracks are turned down; quieter ones are turned up only as far as their peak
+// stays at -1 dB (no limiter at this level). Returns the change in dB, NaN until there's an integrated.
+const SPOTIFY_TARGET = -14;
+function spotifyGain(I, peakMax) {
+  if (!isFinite(I)) return NaN;
+  const g = SPOTIFY_TARGET - I;
+  if (g <= 0) return g;
+  return Math.max(0, Math.min(g, -1 - (isFinite(peakMax) ? peakMax : -1)));
+}
+function trackPeakMax() { return tpAvailable && isFinite(tpMaxDb) ? tpMaxDb : pkMaxDb; }
+let spotGain = NaN;
+const fmtGain = g => (g > 0.05 ? '+' : g < -0.05 ? '\u2212' : '') + Math.abs(g).toFixed(1);
 let phaseSm = 1, crestSm = 0;
 
 // BPM: spectral-flux onsets + adaptive threshold + median of folded intervals
@@ -172,13 +199,23 @@ function updateMasterMeters(now){
   const lufsM = windowLoudness(now, 400);
   const lufsS = windowLoudness(now, 3000);
   if (now - lufsHistT >= 100) {
-    lufsHistT = now;
-    lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
-    if (isFinite(lufsM) && npPlaying()) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
-    if (isFinite(lufsS) && npPlaying() && now >= lraFrom) lraAdd(lufsS);   // the first 3 s are still the previous track / silence
+    // One block per 100 ms of time, not per frame: a slow frame (busy PC, minimized window) counts for
+    // the blocks it covered, so the integrated value and the time heard stay right (at most 0.5 s caught up).
+    const steps = Math.min(5, Math.floor((now - lufsHistT) / 100));
+    lufsHistT = steps === 5 ? now : lufsHistT + steps * 100;
+    const playing = npPlaying();
+    for (let k = 0; k < steps; k++) {
+      lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
+      if (isFinite(lufsM) && playing) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
+      if (isFinite(lufsS) && playing && now >= lraFrom) lraAdd(lufsS);   // the first 3 s are still the previous track / silence
+    }
     const I = integratedLufs();
     miniVals.i = I;
     el('mLufsI').textContent = isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-';
+    spotGain = spotifyGain(I, trackPeakMax());
+    const sp = el('mSpot');
+    sp.textContent = isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '';
+    sp.className = 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : '');
     if (now - lraT >= 1000) { lraT = now; lraValue = loudnessRange(); el('mLra').textContent = isFinite(lraValue) ? 'LRA ' + lraValue.toFixed(1) : 'LRA --'; }
   }
 
@@ -191,6 +228,10 @@ function updateMasterMeters(now){
     if(p > peak) peak = p;
   }
   const peakDb = 20 * Math.log10(Math.max(peak, 1e-9));
+  const counting = npPlaying() && now - trackStart > 1000;
+  const pkNow = counting && peakDb > -89 ? peakDb : -Infinity;
+  if (pkNow > pkMaxDb) pkMaxDb = pkNow;
+  let tpNow = -Infinity;
   if(peakDb >= peakHoldDb || now - peakHoldT > 1500){ peakHoldDb = peakDb; peakHoldT = now; }
   const rmsDb = 10 * Math.log10(Math.max((sumL + sumR) / (2 * n), 1e-12));
   const k300 = 1 - Math.exp(-dtMs / 300);
@@ -211,12 +252,13 @@ function updateMasterMeters(now){
     if (tpFresh) {                                         // ~47 messages/s against 60–144 frames/s
       const tpDb = 20 * Math.log10(Math.max(tpBlock, 1e-9)); tpBlock = 0; tpFresh = false;
       if (tpDb >= tpHoldDb || now - tpHoldT > 1500) { tpHoldDb = tpDb; tpHoldT = now; }
-      if (npPlaying() && tpDb > tpMaxDb && tpDb > -89) tpMaxDb = tpDb;
+      if (counting && tpDb > -89) { tpNow = tpDb; if (tpDb > tpMaxDb) tpMaxDb = tpDb; }
     }
     shownDb = tpHoldDb;
     el('mPeakTitle').textContent = 'True peak';
     el('mPeakUnit').textContent = 'dBTP · MAX ' + (isFinite(tpMaxDb) ? tpMaxDb.toFixed(1) : '--.-');
   }
+  notePeaks(now, pkNow, tpNow);
   const mPeak = el('mPeak');
   mPeak.textContent = shownDb < -89 ? '--.-' : shownDb.toFixed(1);
   mPeak.className = 'metric-value ' + (shownDb > -1 ? 'hot' : shownDb > -6 ? 'warn' : '');

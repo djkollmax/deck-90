@@ -114,6 +114,9 @@ function numbers() {
   const silent = !f.run || !(f.m > -70);
   el('nM').textContent = silent ? '--.-' : fmt(f.m);
   el('nI').textContent = f.run && f.i > -70 ? fmt(f.i) : '--.-';
+  const sp = f.run && typeof f.sp === 'number' && isFinite(f.sp) ? f.sp : null;
+  el('nSpot').textContent = sp === null ? '' : 'SPOTIFY ' + (sp > 0.05 ? '+' : sp < -0.05 ? '\u2212' : '') + Math.abs(sp).toFixed(1) + ' dB';
+  el('nSpot').className = 'spot' + (sp !== null && sp < -6 ? ' hot' : sp !== null && sp < -3 ? ' warn' : '');
   el('nLra').textContent = f.lra !== null && isFinite(f.lra) ? fmt(f.lra) : '--';
   const tpOn = f.tp !== null;
   const tp = tpOn ? f.tp : f.pk;

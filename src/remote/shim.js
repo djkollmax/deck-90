@@ -5,7 +5,8 @@ let running = false, dtMs = 16.7, frameScale = 1;
 let vuSkin = 'MODERN', deckDouble = false;
 function mkVU() { return { lvl: -60, vel: 0, peak: -60, peakTmr: 0, clip: false, clipTmr: 0, samplePeak: -90, dbfs: -90 }; }
 const vu = { L: mkVU(), R: mkVU() };
-let gateBlocks = [], tpMaxDb = -Infinity;
+let gateBlocks = [], tpMaxDb = -Infinity, pkMaxDb = -Infinity;
+function resetTrackPeaks() {}
 function lraReset() {}
 function el(id) { return document.getElementById(id); }
 function guard(where, fn) { try { fn(); } catch (e) { console.error(where, e); } }

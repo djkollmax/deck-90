@@ -194,10 +194,15 @@ function attachOnsetDetector(ctx, bands) {
 }
 
 function resetPeakLabels() { el('mPeakTitle').textContent = 'Peak'; el('mPeakUnit').textContent = 'dBFS'; }
-function resetMeters() {
-  spPeak.fill(-Infinity); spPeakTm.fill(0); spLvl.fill(-120); lufsHist.length = 0; gateBlocks = [];
+// keepTrack: the system audio again, same track as before the stop: its integrated loudness, LRA,
+// peak maxima and BPM tally carry on instead of starting over.
+let measuredSrc = null;
+function resetMeters(keepTrack) {
+  spPeak.fill(-Infinity); spPeakTm.fill(0); spLvl.fill(-120); lufsHist.length = 0; lufsHistT = performance.now();
   vu.L = mkVU(); vu.R = mkVU();
-  loudBlocks = []; lraReset(); resetPeakLabels(); tpMaxDb = -Infinity; tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
+  loudBlocks = []; resetPeakLabels();
+  if (!keepTrack) { gateBlocks = []; lraReset(); resetTrackPeaks(); spotGain = NaN; if (typeof historyReset === 'function') historyReset(); }
+  tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
   bpmVal = 0; bpmConfidence = 0; lastBeat = 0;
   lastFrame = 0;
 }
@@ -242,7 +247,8 @@ async function startAudio(mode) {
     // If the user presses Chrome's "Stop sharing" bar, stop cleanly instead of freezing the meters.
     stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => { if (running) stopAudio(); }));
 
-    resetMeters();
+    resetMeters(mode === 'sys' && measuredSrc === 'sys' && !!np);
+    measuredSrc = mode;
     running = true;
     setUI('on', mode);
     document.body.classList.add('audio-active');
@@ -311,7 +317,8 @@ async function startDemo() {
 
   buildGraph(merger);
   merger.connect(actx.destination);      // the demo is audible on purpose
-  resetMeters();
+  resetMeters(false);
+  measuredSrc = 'demo';
   running = true;
   setUI('on', 'demo');
   document.body.classList.add('audio-active');
@@ -319,6 +326,7 @@ async function startDemo() {
 }
 
 async function stopAudio() {
+  if (running && typeof historyFinalize === 'function') historyFinalize('stop');
   running = false;
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   // v4 never stopped the tracks: Chrome kept "sharing your screen / mic" until the tab was closed.

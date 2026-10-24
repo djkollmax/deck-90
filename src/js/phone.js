@@ -16,7 +16,7 @@ function phoneFrame() {
   return {
     run: running, src: activeSource, aud: running && audible(),
     L: v(vu.L), R: v(vu.R),
-    m: fin(miniVals.m), s: fin(miniVals.s), i: fin(miniVals.i), lra: fin(lraValue),
+    m: fin(miniVals.m), s: fin(miniVals.s), i: fin(miniVals.i), lra: fin(lraValue), sp: fin(spotGain),
     tp: tpAvailable ? fin(tpHoldDb) : null, tpMax: fin(tpMaxDb), pk: fin(peakHoldDb),
     ph: Math.round(phaseSm * 100) / 100, bpm: bpmVal > 0 ? Math.round(bpmVal) : 0, lock: bpmConfidence >= 0.45,
     skin: vuSkin, tape: tapeStyle, sens: flSensitivity,

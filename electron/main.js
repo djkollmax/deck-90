@@ -1,16 +1,22 @@
 // Deck 90 as a program: the same page as src/index.html, but system audio comes straight
 // from Windows (WASAPI loopback) without the browser's "share your screen" dialog, the window is
 // frameless, and a small PowerShell bridge reads Windows' "now playing" sessions.
-const { app, BrowserWindow, session, desktopCapturer, Menu, shell, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, session, desktopCapturer, Menu, shell, ipcMain, screen, dialog, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { createMpris } = require('./mpris');
 const { createRemote } = require('./remote');
+const { createTrackLog } = require('./tracklog');
+const { createUpdater, recoverOnStart } = require('./updater');
 const crypto = require('crypto');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
+// An update that was cut off, or that didn't start: go back to the previous version before anything else.
+if (app.isPackaged && recoverOnStart({ app, log: m => { try { fs.appendFileSync(path.join(app.getPath('userData'), 'media.log'), new Date().toISOString() + ' ' + m + '\n'); } catch (_) {} } })) {
+  process.exit(0);
+}
 
 let win;
 let remote = null;          // phone display server (off until the user turns it on)
@@ -111,15 +117,42 @@ app.whenReady().then(() => {
     } else remote.stop();
     saved.remote.on = !!on; saveState(); pushRemote();
   }
-  ipcMain.on('remote-set', (e, on) => setRemote(!!on));
-  ipcMain.on('remote-get', () => pushRemote());
-  ipcMain.on('remote-frame', (e, f) => { if (remote) remote.frame(f); });
+  ipcMain.on('remote-set', (e, on) => { if (ours(e.sender)) setRemote(!!on); });
+  ipcMain.on('remote-get', e => { if (ours(e.sender)) pushRemote(); });
+  ipcMain.on('remote-frame', (e, f) => { if (remote && ours(e.sender)) remote.frame(f); });
   if (saved.remote.on) win.webContents.once('did-finish-load', () => setRemote(true));
+
+  // ── Track history ──
+  const trackLog = createTrackLog({ dir: app.getPath('userData'), log: mlog });
+  ipcMain.on('tl-add', (e, entry) => { if (ours(e.sender)) trackLog.add(entry); });
+  ipcMain.handle('tl-list', e => ours(e.sender) ? trackLog.list() : []);
+  ipcMain.handle('tl-clear', e => ours(e.sender) ? trackLog.clear() : false);
+  ipcMain.handle('tl-save-csv', async (e, text, name) => {
+    if (!ours(e.sender) || typeof text !== 'string' || text.length > 20e6) return { error: 'datos no válidos' };
+    const base = String(name || 'Deck 90 - historial.csv').replace(/[\\/:*?"<>|]/g, '-').slice(0, 120);
+    const r = await dialog.showSaveDialog(win, { title: 'Exportar historial', defaultPath: path.join(app.getPath('documents'), base),
+                                                 filters: [{ name: 'CSV para Excel', extensions: ['csv'] }] });
+    if (r.canceled || !r.filePath) return { canceled: true };
+    try { fs.writeFileSync(r.filePath, '\ufeff' + text, 'utf8'); return { ok: true, path: r.filePath }; }
+    catch (err) { return { error: err.code === 'EBUSY' ? 'el archivo está abierto en Excel' : err.message }; }
+  });
+
+  // ── Updates: GitHub, a few seconds after start and every 6 hours ──
+  const updater = createUpdater({ app, net, log: mlog, onState: st => { if (win && !win.isDestroyed()) win.webContents.send('update', st); } });
+  ipcMain.on('upd-get', e => { if (ours(e.sender)) e.sender.send('update', updater.state()); });
+  ipcMain.on('upd-install', e => { if (ours(e.sender)) updater.install(); });
+  ipcMain.on('upd-open', e => { if (ours(e.sender)) shell.openExternal(updater.url()); });
+  win.webContents.once('did-finish-load', () => {
+    updater.confirmBoot();
+    setTimeout(() => updater.check(), 8000);
+    setInterval(() => updater.check(), 6 * 3600 * 1000);
+  });
 
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
   win.on('close', () => { if (miniOn) saveMini(); });
   ipcMain.on('win', async (e, what) => {
+    if (!ours(e.sender)) return;
     if (what === 'mini') return setMini(!miniOn);
     if (what === 'min') { await leaveFullScreen(); win.minimize(); }
     else if (what === 'max') {
@@ -207,12 +240,13 @@ function startMedia() {
     if (!app.isQuitting && mediaRestarts++ < 5) setTimeout(startMedia, 3000);
   });
 }
-ipcMain.on('app-log', (e, msg) => mlog('page: ' + msg));
+const fromWin = e => !!win && !win.isDestroyed() && e.sender === win.webContents;
+ipcMain.on('app-log', (e, msg) => { if (fromWin(e)) mlog('page: ' + String(msg).slice(0, 800)); });
 function mediaCommand(cmd) {
   if (media && media.stdin.writable && ['toggle', 'play', 'pause', 'stop', 'next', 'prev'].includes(cmd)) media.stdin.write(cmd + '\n');
   if (mpris) mpris.command(cmd);
 }
-ipcMain.on('media-cmd', (e, cmd) => mediaCommand(cmd));
+ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
 app.whenReady().then(startMedia);
 app.on('before-quit', () => { app.isQuitting = true; if (remote) remote.stop(); if (mpris) mpris.stop(); if (media) { try { media.stdin.end(); media.kill(); } catch (_) {} } });
 

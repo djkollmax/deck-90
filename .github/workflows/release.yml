@@ -54,7 +54,8 @@ jobs:
         run: |
           node scripts/package.mjs win32
           node scripts/package.mjs linux
-          ls -la dist/*.zip
+          node scripts/package.mjs bundle
+          ls -la dist/*.zip dist/*.bundle
 
       - name: Release notes from CHANGELOG.md
         if: env.NEEDED == 'yes'
@@ -72,8 +73,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/*.zip --clobber
+            gh release upload "$TAG" dist/*.zip dist/*.bundle --clobber
             gh release edit "$TAG" --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --draft=false --latest
           else
-            gh release create "$TAG" dist/*.zip --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --latest
+            gh release create "$TAG" dist/*.zip dist/*.bundle --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --latest
           fi
