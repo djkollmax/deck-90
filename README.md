@@ -2,14 +2,30 @@
 
 A desktop audio analyzer with a retro hi-fi look. It listens to whatever your computer is playing and shows it on VU meters, a spectrum analyzer, loudness meters, an oscilloscope and a pair of cassette decks whose tape actually turns. It also shows the track that's playing now, and pairs well with [Spotless](https://github.com/nix-codes/spotless).
 
-![Deck 90 — main view](docs/screenshots/main.png)
+![Deck 90 — CINTA 70s VU meters, the Spotify badge and the stereo FL ÁMBAR spectrum](docs/screenshots/main.png)
+
+**Six of the ten spectrum styles:** LED 80s, FL SHOWROOM, FL ÁMBAR (stereo), RTA 1/3 octave, LCD and the spectrogram.
+
+![Spectrum styles](docs/screenshots/spectrums.png)
+
+**VU faces CINTA 70s and AZUL**
+
+![VU faces](docs/screenshots/vu-faces.png)
+
+**Phone display:** everything, FL 90s and the spectrogram, live from the PC.
+
+![Phone display](docs/screenshots/phone.png)
+
+**Track history** with the Spotify change for each track, exported to Excel.
+
+![Track history](docs/screenshots/history.png)
 
 | | |
 |---|---|
 | ![Hi-Fi VUs, LED columns and a double deck](docs/screenshots/retro-decks.png) | ![90s bar display and a big reel-to-reel style cassette](docs/screenshots/fl-tape.png) |
 | ![Columns spectrum](docs/screenshots/columns.png) | ![Mini mode: a strip that stays on top](docs/screenshots/mini.png) |
 
-*Screenshots use the built-in DEMO signal.*
+*Screenshots use the built-in DEMO signal; track names are made up.*
 
 ## Features
 

@@ -793,3 +793,6 @@ body.mini #updBar{ display:none; }
 .skin-menu button span{ font-size:9px; color:rgba(160,170,180,.65); letter-spacing:.3px; }
 .skin-menu button:hover{ background:rgba(217,189,115,.08); }
 .skin-menu button.on{ background:linear-gradient(180deg,rgba(243,220,149,.18),rgba(201,159,69,.12)); }
+
+/* the program skips the browser's start screen: hidden from the first paint (see js/boot.js) */
+.app-boot #splash{ display:none !important; }

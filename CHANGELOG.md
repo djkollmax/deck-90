@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.5.1
+
+### Fixed
+- The program no longer flashes the browser version's start screen for a moment when it opens.
+
+### Docs
+- New screenshots: the main view with the CINTA 70s VU and FL ÁMBAR, six spectrum styles, both new VU faces, the phone display and the track history.
+
 ## 6.5.0
 
 ### Added
