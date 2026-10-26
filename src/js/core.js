@@ -66,7 +66,10 @@ function integratedLufs(blocks = gateBlocks){
 // track or mix costs the same as a short one.
 const LRA_MIN = -70, LRA_STEP = 0.1, LRA_BINS = 1000;
 const lraHist = new Uint32Array(LRA_BINS);
-let lraN = 0, lraPow = 0, lraValue = NaN, lraT = 0, lraFrom = 0;
+let lraN = 0, lraPow = 0, lraValue = NaN, lraT = 0, lraFrom = 0, gateFrom = 0;
+let measureN = 0;            // bumps for every new measurement (track change, a new start): part of the history id
+const GATE_MAX = 216000;     // 6 hours of gate blocks: long DJ sets and podcasts stay whole
+let crestRing = [];          // the last 400 ms of {t, peak and sum of squares per channel, samples}
 function lraReset(now) { lraHist.fill(0); lraN = 0; lraPow = 0; lraValue = NaN; lraT = 0; lraFrom = (now || performance.now()) + 3000; }
 function lraAdd(lufsS) {
   if (!(lufsS > LRA_MIN)) return;                            // absolute gate
@@ -219,7 +222,7 @@ function updateMasterMeters(now){
     const playing = npPlaying();
     for (let k = 0; k < steps; k++) {
       lufsHist.push(isFinite(lufsM) ? lufsM : -70); if (lufsHist.length > 300) lufsHist.shift();
-      if (isFinite(lufsM) && playing) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > 36000) gateBlocks.shift(); }
+      if (isFinite(lufsM) && playing && now >= gateFrom) { gateBlocks.push(Math.pow(10, (lufsM + 0.691) / 10)); if (gateBlocks.length > GATE_MAX) gateBlocks.shift(); }
       if (isFinite(lufsS) && playing && now >= lraFrom) lraAdd(lufsS);   // the first 3 s are still the previous track / silence
     }
     const I = integratedLufs();
@@ -240,23 +243,33 @@ function updateMasterMeters(now){
     if (now - lraT >= 1000) { lraT = now; lraValue = loudnessRange(); el('mLra').textContent = isFinite(lraValue) ? 'LRA ' + lraValue.toFixed(1) : 'LRA --'; }
   }
 
-  // Sample peak (unweighted) with a readable 1.5 s hold, crest over the same 400 ms
-  let peak = 0, sumL = 0, sumR = 0, cross = 0;
+  // Sample peak (unweighted) with a readable 1.5 s hold; crest per channel over the last 400 ms
+  let peak = 0, sumL = 0, sumR = 0, cross = 0, pL = 0, pR = 0;
   for(let i = FFT - n; i < FFT; i++){
     const L = bufL[i], R = bufR[i];
     sumL += L*L; sumR += R*R; cross += L*R;
-    const p = Math.max(Math.abs(L), Math.abs(R));
-    if(p > peak) peak = p;
+    const aL_ = L < 0 ? -L : L, aR_ = R < 0 ? -R : R;
+    if (aL_ > pL) pL = aL_; if (aR_ > pR) pR = aR_;
   }
+  peak = Math.max(pL, pR);
+  crestRing.push({ t: now, pL, pR, sL: sumL, sR: sumR, n });
+  while (crestRing.length > 1 && now - crestRing[0].t > 400) crestRing.shift();
   const peakDb = 20 * Math.log10(Math.max(peak, 1e-9));
   const counting = npPlaying() && now - trackStart > 1000;
   const pkNow = counting && peakDb > -89 ? peakDb : -Infinity;
   if (pkNow > pkMaxDb) pkMaxDb = pkNow;
   let tpNow = -Infinity;
   if(peakDb >= peakHoldDb || now - peakHoldT > 1500){ peakHoldDb = peakDb; peakHoldT = now; }
-  const rmsDb = 10 * Math.log10(Math.max((sumL + sumR) / (2 * n), 1e-12));
   const k300 = 1 - Math.exp(-dtMs / 300);
-  if(isFinite(rmsDb) && rmsDb > -70) crestSm += ((peakDb - rmsDb) - crestSm) * k300;
+  {
+    let wpL = 0, wpR = 0, wsL = 0, wsR = 0, wn = 0;
+    for (const c of crestRing) { if (c.pL > wpL) wpL = c.pL; if (c.pR > wpR) wpR = c.pR; wsL += c.sL; wsR += c.sR; wn += c.n; }
+    const rL = wsL / wn, rR = wsR / wn;
+    // each channel's own peak against its own RMS: a signal on one side only isn't 3 dB off
+    const cL = rL > 1e-7 ? 20 * Math.log10(wpL) - 10 * Math.log10(rL) : NaN, cR = rR > 1e-7 ? 20 * Math.log10(wpR) - 10 * Math.log10(rR) : NaN;
+    const c = isFinite(cL) && isFinite(cR) ? (rL >= rR ? cL : cR) : isFinite(cL) ? cL : cR;
+    if (isFinite(c)) crestSm += (c - crestSm) * k300;
+  }
   const crest = crestSm;
   // Phase: sample-aligned sums from the audio thread when available, else this frame's buffers.
   if (corrFresh) { sumL = corrLL; sumR = corrRR; cross = corrLR; corrLL = corrRR = corrLR = 0; corrFresh = false; }

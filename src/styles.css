@@ -432,7 +432,7 @@ body.mode-oled .panel{ background:linear-gradient(180deg,#080b12 0%,#020307 100%
 body.mode-oled #bpmValue{ color:#a8ffd2; }
 body.mode-analog .panel{ background:radial-gradient(ellipse at 50% 0%, rgba(217,189,115,.07), transparent 55%),linear-gradient(180deg,#15120e 0%,#080706 100%); }
 body.mode-analog canvas{ filter:sepia(.13) saturate(.96); }
-@media(max-width:760px){ .main-row{grid-template-columns:1fr}.master-strip{grid-template-columns:repeat(2,1fr)}.metric-card:last-child{grid-column:span 2}.splash-btns{flex-direction:column}.brand-name{letter-spacing:3px}
+@media(max-width:759px){ .main-row{grid-template-columns:1fr}.master-strip{grid-template-columns:repeat(2,1fr)}.metric-card:last-child{grid-column:span 2}.splash-btns{flex-direction:column}.brand-name{letter-spacing:3px}
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -605,7 +605,7 @@ body.audio-active .rack-unit{
 .seg.src button.stop{ color:#a06a5a; }
 .seg.src button.stop:disabled{ opacity:.3; cursor:default; background:transparent; }
 .seg[data-group="sens"].dim{ opacity:.35; }
-@media(max-width:760px){ .master-strip{grid-template-columns:repeat(2,1fr)} .seg-label{display:none}
+@media(max-width:759px){ .master-strip{grid-template-columns:repeat(2,1fr)} .seg-label{display:none}
 }
 
 /* v5.2 · as a program the rack IS the window: no OS frame, no outer margin */
@@ -702,7 +702,7 @@ body.is-app .console-tab{ -webkit-app-region:no-drag; }
 .main-row.no-vu > .bpm-panel, .main-row.no-vu > .gonio-panel{ flex:1 1 0; }
 .main-row.no-vu #bpmValue{ font-size:clamp(70px, 16vh, 220px); }
 .gonio-panel canvas{ display:block; margin:0 auto; }
-@media(max-width:760px){ .main-row{ flex-wrap:wrap; } .main-row > .panel{ flex:1 1 45%; } }
+@media(max-width:759px){ .main-row{ flex-wrap:wrap; } .main-row > .panel{ flex:1 1 45%; } }
 
 /* v6.1 · mini mode: only the title bar and one strip; the window stays on top (program) */
 .mini-panel{ display:none; }
@@ -810,3 +810,17 @@ body.mini #updBar{ display:none; }
 .app-boot .console-row .seg.src{ display:none; }
 .seg.src-drawer{ display:none; }
 .app-boot .seg.src-drawer{ display:inline-flex; }
+
+/* A short program window (down to its 600 px minimum): panels give up height before anything is cut,
+   and if it still doesn't fit, the rack scrolls instead of hiding its bottom. */
+@media (max-height:820px){
+  body.is-app .main-row{ min-height:150px; }
+  body.is-app .spectrum-panel{ min-height:84px; }
+  body.is-app .osc-panel{ min-height:56px; }
+  body.is-app .deck-panel{ min-height:110px; }
+  body.is-app .tape-panel{ min-height:140px; }
+  body.is-app .metric-card{ min-height:52px; padding:5px 8px; }
+}
+body.is-app:not(.mini){ overflow-y:auto; scrollbar-width:thin; scrollbar-color:#2a3242 transparent; }
+body.is-app:not(.mini)::-webkit-scrollbar{ width:8px; }
+body.is-app:not(.mini)::-webkit-scrollbar-thumb{ background:#2a3242; border-radius:4px; }

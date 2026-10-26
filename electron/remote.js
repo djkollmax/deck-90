@@ -45,6 +45,8 @@ function lanAddresses() {
   return out.sort((a, b) => rank(a) - rank(b));
 }
 
+// the PC's clock goes with each track message, so the phone can put the play position on its own clock
+const stamp = info => Object.assign({}, info, { now: Date.now() });
 function createRemote({ onCmd, log, getNowPlaying, onClients }) {
   let server = null, port = 0, key = '';
   const clients = new Set();
@@ -96,7 +98,7 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
       clients.add(res);
       onClients(clients.size);
       log('remote: client connected (' + clients.size + ')');
-      send(res, 'np', getNowPlaying() || { none: true });
+      send(res, 'np', stamp(getNowPlaying() || { none: true }));
       if (lastFrame) send(res, 'f', lastFrame);
       const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch (_) {} }, 15000);
       req.on('close', () => { clearInterval(ping); clients.delete(res); onClients(clients.size); log('remote: client left (' + clients.size + ')'); });
@@ -132,7 +134,7 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
       lastFrame = null;
     },
     frame(f) { lastFrame = f; for (const res of clients) send(res, 'f', f, true); },
-    nowPlaying(info) { for (const res of clients) send(res, 'np', info); },
+    nowPlaying(info) { const s = stamp(info); for (const res of clients) send(res, 'np', s); },
     state() {
       const urls = server ? lanAddresses().map(ip => `http://${ip}:${port}/?k=${key}`) : [];
       return { on: !!server, port, urls, clients: clients.size };

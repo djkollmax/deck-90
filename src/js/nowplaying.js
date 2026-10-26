@@ -30,14 +30,19 @@ function onNowPlaying(info){
   const sameTrack = key === npKey;                       // before npKey moves on: a new track starts from its own info
   if (npGone) {                                          // back from a gap: same track carries on, another one closes it
     clearTimeout(npGoneT);
-    if (key !== npKey && typeof historyFinalize === 'function') historyFinalize('next track', npGone);
+    if (key !== npKey) {
+      if (typeof historyFinalize === 'function') historyFinalize('next track', npGone);
+      if (npGone.title) trackHistory.unshift(npGone);    // it was the track before this one, for deck B
+    }
     npGone = null;
   }
-  if (key !== npKey) {                                   // a new track
+  // the same track started over ("repeat one", or back to its start after a good while): a new play
+  const replay = sameTrack && np && np.dur > 0 && isFinite(info.pos) && info.pos < 5 && npPosition() > 30;
+  if (key !== npKey || replay) {                         // a new track
     if (np && typeof historyFinalize === 'function') historyFinalize('next track');   // the one that just ended, with its own numbers
     if (np && np.title) trackHistory.unshift(np);
     trackHistory.length = Math.min(trackHistory.length, 5);
-    npKey = key; trackStart = performance.now();
+    npKey = key; trackStart = performance.now(); measureN++;
     gateBlocks = []; lraReset(trackStart); resetTrackPeaks();   // integrated loudness, LRA and peak maxima are per track
     if (typeof historyReset === 'function') historyReset();
     decks[0].title = short(info.artist ? info.artist + ' – ' + info.title : info.title, 34);

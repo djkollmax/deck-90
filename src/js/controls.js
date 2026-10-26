@@ -5,7 +5,7 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, drawerOpen, controlsHidden, deckDouble, tapeStyle })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle })); } catch(_){}
 }
 function loadPrefs(){
   try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(_) { return {}; }
@@ -37,6 +37,7 @@ function toggleModule(m){
 function cycleSkin(){
   const ids = SPECTRUM_SKINS.map(s => s[0]);
   setSpectrumSkin(ids[(ids.indexOf(spectrumSkin) + 1) % ids.length]); savePrefs(); syncConsole();
+  if (skinMenu.classList.contains('show')) showSkinMenu(false);
   const name = SPECTRUM_SKINS.find(s => s[0] === spectrumSkin)[1];
   toast('SPECTRUM · <span>' + name + '</span>', 1400);
 }
@@ -127,19 +128,23 @@ document.getElementById('splashDemo').addEventListener('click', e => { e.stopPro
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const k = e.key.toLowerCase();
-  // F1–F5 the favourite looks, F6–F8 yours (C1–C3); Shift+F6–F8 saves what's on screen there
-  const fk = /^f([1-8])$/.exec(k);
-  if (fk && !histOpen()) {
-    e.preventDefault();
-    const n = Number(fk[1]), id = n <= 5 ? String(n) : 'c' + (n - 5);
-    (e.shiftKey ? savePreset : applyPreset)(id); return;
-  }
-  if (k === 'escape' && presetSaveArmed) { presetSaveArmed = false; syncConsole(); return; }
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
   if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {
-    if (k === 'escape' || (k === 'l' && histOpen())) { e.preventDefault(); showHistory(false); showPhoneModal(false); }
+    if (k === 'escape' || (k === 'l' && histOpen())) { e.preventDefault(); showHistory(false); showPhoneModal(false); if (presetSaveArmed) { presetSaveArmed = false; syncConsole(); } }
+    if (/^f[1-8]$/.test(k)) e.preventDefault();
     return;
   }
+  // F1–F5 the favourite looks, F6–F8 yours (C1–C3); Shift+F6–F8 (or GUARDAR, then F6–F8) saves what's on screen there
+  const fk = /^f([1-8])$/.exec(k);
+  if (fk) {
+    e.preventDefault();
+    if (skinMenu.classList.contains('show')) showSkinMenu(false);
+    const n = Number(fk[1]), id = n <= 5 ? String(n) : 'c' + (n - 5);
+    (e.shiftKey || presetSaveArmed ? savePreset : applyPreset)(id); return;
+  }
+  if (k === 'escape' && presetSaveArmed) { presetSaveArmed = false; syncConsole(); return; }
+  // a held S, M, D or Space would start (or stop) the source over and over
+  if (e.repeat && ['s', 'm', 'd', ' '].includes(k)) { e.preventDefault(); return; }
   const act = {
     s: () => { closeSplash(); startAudio('sys'); },
     m: () => { closeSplash(); startAudio('mic'); },
@@ -172,6 +177,12 @@ if (prefs.mods && typeof prefs.mods === 'object') {
   for (const k in mods) if (typeof prefs.mods[k] === 'boolean') mods[k] = prefs.mods[k];
   if (typeof prefs.mods.gonio !== 'boolean') mods.gonio = false;   // settings from before 6.1: the goniometer starts off
   if (!Object.values(mods).some(Boolean)) for (const k in mods) mods[k] = true;
+  // closed in tape-only mode (Z): Z still brings back the rack it came from
+  const mb = prefs.modsBeforeTape;
+  if (mb && typeof mb === 'object' && Object.keys(mods).every(k => mods[k] === (k === 'tape'))) {
+    modsBeforeTape = {}; for (const k in mods) modsBeforeTape[k] = typeof mb[k] === 'boolean' ? mb[k] : mods[k];
+    if (!Object.values(modsBeforeTape).some(Boolean)) modsBeforeTape = null;
+  }
 }
 if (typeof prefs.deckDouble === 'boolean') deckDouble = prefs.deckDouble;
 if (prefs.tapeStyle === 'CLEAR' || prefs.tapeStyle === 'REEL') tapeStyle = prefs.tapeStyle;

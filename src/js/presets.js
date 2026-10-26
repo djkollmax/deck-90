@@ -60,6 +60,7 @@ function applyPreset(id) {
     if (!Object.values(mods).some(Boolean)) mods.vu = true;
   }
   applyModules(); savePrefs(); syncConsole();
+  if (typeof showSkinMenu === 'function' && skinMenu.classList.contains('show')) showSkinMenu(false);
   if (!running) drawIdle();
   toast('PRESET ' + presetLabel(id) + ' · <span>' + p.name + '</span>', 1600);
 }

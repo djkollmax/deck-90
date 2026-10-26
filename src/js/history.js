@@ -38,7 +38,9 @@ function historyEntry(minBlocks, info, ended) {
   const peak = tpAvailable && isFinite(tpMax) ? tpMax : pkMax;
   const pg = playerGainFor(info);          // what the player's volume took off (NaN: it was normalising itself)
   return {
-    id: HIST_PAGE_T0 + '|' + Math.round(trackStart) + '|' + npKey.slice(0, 400),
+    // one id per measurement: a short re-measure of the same track (back from MIC or DEMO) gets its own line
+    // instead of replacing a long one
+    id: HIST_PAGE_T0 + '|' + measureN + '|' + Math.round(trackStart) + '|' + npKey.slice(0, 400),
     at: Math.round(Date.now() - (performance.now() - trackStart)),
     title: info.title || '', artist: info.artist || '', album: info.album || '', app: info.app || '',
     dur: info.dur > 0 ? Math.round(info.dur) : null,

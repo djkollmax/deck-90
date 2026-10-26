@@ -49,11 +49,7 @@ function buildGraph(source) {
   splitter.connect(aR, 1);
 
   // K-weighting (BS.1770): high shelf +4 dB around 1.5 kHz, then a 38 Hz high-pass.
-  const shelf = actx.createBiquadFilter();
-  shelf.type = 'highshelf'; shelf.frequency.value = 1681.97; shelf.gain.value = 3.9998;
-  const rlb = actx.createBiquadFilter();
-  rlb.type = 'highpass'; rlb.frequency.value = 38.135;
-  rlb.Q.value = 20 * Math.log10(0.5003);   // Web Audio takes a high-pass Q in dB: this is BS.1770's linear Q of 0.5003
+  const [shelf, rlb] = kWeighting(actx);
   upmix.connect(shelf); shelf.connect(rlb);
   const kSplit = actx.createChannelSplitter(2);
   rlb.connect(kSplit);
@@ -118,6 +114,9 @@ class StereoCorr extends AudioWorkletProcessor {
   constructor() {
     super(); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; this.tp = 0;
     this.hl = new Float32Array(12); this.hr = new Float32Array(12); this.pos = 0;   // input history, newest at pos
+    // the history starts empty while the audio is already playing: that step makes the filter overshoot
+    // (up to +1 dB), so no true peak until it holds 12 real samples
+    this.warm = 12;
   }
   peak(h, pos) {
     let m = 0;
@@ -136,6 +135,7 @@ class StereoCorr extends AudioWorkletProcessor {
         const a = l[i], b = r[i];
         this.ll += a * a; this.rr += b * b; this.lr += a * b;
         this.pos = (this.pos + 1) % 12; this.hl[this.pos] = a; this.hr[this.pos] = b;
+        if (this.warm > 0) { this.warm--; continue; }
         const p = Math.max(this.peak(this.hl, this.pos), this.peak(this.hr, this.pos));
         if (p > this.tp) this.tp = p;
       }
@@ -147,6 +147,26 @@ class StereoCorr extends AudioWorkletProcessor {
 }
 registerProcessor('stereo-corr', StereoCorr);
 `;
+// BS.1770's two K-weighting filters, designed for the context's own sample rate: at 48 kHz these are
+// exactly the recommendation's coefficients. (Web Audio's 'highshelf' has a different curve: it read up
+// to 0.5 dB low between 1 and 3 kHz.)
+function kWeighting(ctx) {
+  const fs = ctx.sampleRate;
+  if (typeof ctx.createIIRFilter !== 'function') {          // very old browsers: the close-enough biquads
+    const sh = ctx.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1681.97; sh.gain.value = 3.9998;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 38.135; hp.Q.value = 20 * Math.log10(0.5003);
+    return [sh, hp];
+  }
+  let K = Math.tan(Math.PI * 1681.974450955533 / fs);
+  const Q = 0.7071752369554196, Vh = Math.pow(10, 3.999843853973347 / 20), Vb = Math.pow(Vh, 0.4996667741545416);
+  let a0 = 1 + K / Q + K * K;
+  const shelf = ctx.createIIRFilter([(Vh + Vb * K / Q + K * K) / a0, 2 * (K * K - Vh) / a0, (Vh - Vb * K / Q + K * K) / a0],
+                                    [1, 2 * (K * K - 1) / a0, (1 - K / Q + K * K) / a0]);
+  K = Math.tan(Math.PI * 38.13547087602444 / fs);
+  const Q2 = 0.5003270373238773; a0 = 1 + K / Q2 + K * K;
+  const hp = ctx.createIIRFilter([1, -2, 1], [1, 2 * (K * K - 1) / a0, (1 - K / Q2 + K * K) / a0]);
+  return [shelf, hp];
+}
 let corrNode = null, corrLL = 0, corrRR = 0, corrLR = 0, corrFresh = false;
 let tpBlock = 0, tpAvailable = false, tpFresh = false;   // largest true peak (linear) since the last frame
 let onsetPrevLow = -100, onsetPrevHigh = -100;
@@ -200,8 +220,10 @@ let measuredSrc = null;
 function resetMeters(keepTrack) {
   spPeak.fill(-Infinity); spPeakTm.fill(0); spLvl.fill(-120); lufsHist.length = 0; lufsHistT = performance.now();
   vu.L = mkVU(); vu.R = mkVU();
-  loudBlocks = []; resetPeakLabels();
-  if (!keepTrack) { gateBlocks = []; lraReset(); resetTrackPeaks(); spotGain = NaN; if (typeof historyReset === 'function') historyReset(); }
+  loudBlocks = []; resetPeakLabels(); crestRing = [];
+  // the loudness windows refill from empty: no gate blocks for 0.4 s, no LRA for 3 s (also when the track carries on)
+  gateFrom = performance.now() + 400; lraFrom = performance.now() + 3000;
+  if (!keepTrack) { measureN++; gateBlocks = []; lraReset(); resetTrackPeaks(); spotGain = NaN; if (typeof historyReset === 'function') historyReset(); }
   tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
   bpmVal = 0; bpmConfidence = 0; lastBeat = 0;
   lastFrame = 0;
@@ -212,36 +234,39 @@ async function startAudio(mode) {
   const gen = ++srcGen;
   if (running || actx) await stopAudio();
   if (gen !== srcGen) return;
+  let s = null;                // this start's own stream: the global only takes it once it's still the newest start
   try {
-    if (mode === 'sys' && IS_LINUX) stream = await linuxMonitorStream();
-    if (mode === 'sys' && stream) {
+    if (mode === 'sys' && IS_LINUX) s = await linuxMonitorStream();
+    if (mode === 'sys' && s) {
       // Linux monitor source found: that's the system mix, nothing else to ask for
     } else if (mode === 'sys' && IS_LINUX && typeof IS_APP !== 'undefined' && IS_APP) {
       // The program can't share the screen's audio on Linux: without a monitor source there's nothing to capture.
       toast('⚠ NO HAY FUENTE "MONITOR"<br><span>PulseAudio/PipeWire no muestra el audio del sistema como entrada. Usá <b>MIC</b> o revisá <b>pavucontrol</b>.</span>', 9000);
       return;
     } else if (mode === 'sys') {
-      stream = await navigator.mediaDevices.getDisplayMedia({
+      s = await navigator.mediaDevices.getDisplayMedia({
         video: { width: 1, height: 1, frameRate: 1 },
         audio: RAW_AUDIO,
         systemAudio: 'include',
         selfBrowserSurface: 'exclude',
         surfaceSwitching: 'exclude'
       });
-      stream.getVideoTracks().forEach(t => t.stop());
-      if (!stream.getAudioTracks().length) {
-        stream.getTracks().forEach(t => t.stop()); stream = null;
-        toast('⚠ NO SE CAPTURÓ AUDIO<br><span>Elegí <b>Pantalla completa</b> y tildá <b>“Compartir audio del sistema”</b> antes de Compartir.</span>', 9000);
+      s.getVideoTracks().forEach(t => t.stop());
+      if (!s.getAudioTracks().length) {
+        s.getTracks().forEach(t => t.stop()); s = null;
+        if (gen === srcGen) toast('⚠ NO SE CAPTURÓ AUDIO<br><span>Elegí <b>Pantalla completa</b> y tildá <b>“Compartir audio del sistema”</b> antes de Compartir.</span>', 9000);
         return;
       }
     } else {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: RAW_AUDIO, video: false });
+      s = await navigator.mediaDevices.getUserMedia({ audio: RAW_AUDIO, video: false });
     }
 
-    if (gen !== srcGen) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }
+    if (gen !== srcGen) { s.getTracks().forEach(t => t.stop()); return; }
+    stream = s;
     // No forced sample rate: v4 forced 48 kHz, which breaks (Firefox) or resamples when the device runs at 44.1 kHz.
-    actx = new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') await actx.resume();
+    const ctx = actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (gen !== srcGen || actx !== ctx) return;      // a newer start took over meanwhile (and stopped this one)
     buildGraph(actx.createMediaStreamSource(stream));
 
     // If the user presses Chrome's "Stop sharing" bar, stop cleanly instead of freezing the meters.
@@ -256,7 +281,8 @@ async function startAudio(mode) {
 
   } catch (e) {
     console.error(e);
-    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    if (s) { s.getTracks().forEach(t => t.stop()); if (stream === s) stream = null; }
+    if (gen !== srcGen) return;                       // an older start failing late: the newer one is fine
     if (e.name === 'NotAllowedError') toast('Permiso cancelado.', 3500);
     else toast('⚠ ERROR: ' + (e.message || e.name), 8000);
   }

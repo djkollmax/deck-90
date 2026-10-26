@@ -1,5 +1,36 @@
 # Changelog
 
+## 6.9.0
+
+### Fixed
+- **Loudness is now exact around 1–3 kHz.** The K-weighting used the browser's own high-shelf filter, whose curve isn't BS.1770's: it read up to 0.5 dB low between 1 and 3 kHz (music about 0.1–0.3 LU low, and the Spotify badge that much too generous). Both K-weighting filters are now designed from the recommendation for the sound card's own rate; at 48 kHz they are exactly its coefficients. A 2 kHz tone at −20 dBFS reads −17.6 LUFS, as it should.
+- **True peak no longer jumps up to +1 dB when measuring starts.** The oversampling filter started from silence while the music was already playing; it now waits for 12 real samples.
+- **Crest** is each channel's peak against its own RMS over 400 ms, as the label says: it no longer changes with the frame rate (it read higher in the tray) nor reads 3 dB high when only one channel has sound.
+- **History: a short re-measure no longer replaces a long line.** Switching to MIC or DEMO and back during a track measured it again under the same line; now each measurement has its own.
+- The track before, on deck B, is right when the player disappears and comes back with another track; a track played again ("repeat one") is a new line.
+- Integrated loudness keeps 6 hours (was 1) for long DJ sets and podcasts.
+- After a restart on the same track, LRA and integrated wait for the loudness windows to fill again.
+- The window at its smallest sizes: nothing overlaps at 760 px wide, panels give up height before anything is cut, and if it still doesn't fit the rack scrolls.
+- Keys: F1–F8 do nothing behind the phone window; Esc closes a window even with GUARDAR armed; GUARDAR then F6–F8 saves; holding S, M, D or Space no longer restarts the source over and over (two quick starts could leave the microphone in use).
+- Tape-only mode (Z) is remembered with the rack it came from.
+- The phone's progress bar and tape counter no longer depend on the phone's clock agreeing with the PC's.
+
+### Added
+- **Spotless's volume is taken into account.** Deck 90 reads Spotless's volume and levelling from its settings: at 71 % Spotless plays 7.9 dB under the master, which made the history read about 8 dB low and the Spotify badge wrong by that much. The badge now shows what Spotify would do to the master at any volume (its tooltip says how much was added back), and the history has a **MASTER** column (also in the CSV, with the player's volume). With Spotless's levelling on, the badge shows **SPOTIFY ?**: Spotless is already evening out the volume, so the master can't be known. Lines saved before 6.9 can't be corrected and show — there.
+- Tray: **Nueva clave para el celular** (with the phone display on) cuts off everyone who ever scanned the QR.
+
+### Changed — safety
+- **An update that doesn't start puts the previous version back by itself**, even when its main process fails to load (the program now starts from a small fixed file, `electron/boot.js`) or its window hasn't loaded after 2 minutes. Before writing anything, every script in an update must compile.
+- Checks give GitHub 20 s to answer and 2 minutes for the download: a dead connection no longer stops the checks for days or leaves BAJANDO… on screen. **Buscar actualizaciones** in the tray always reports. A version that failed once can be installed again from there.
+- Started with Windows, Deck 90 stays in the tray even when it was last closed maximized (and comes back maximized).
+- Leaving mini mode on Windows brings the window back maximized if it was.
+- History: if a backup program or the antivirus is holding the file, nothing is written over it (it could lose the history); it's written at most every 30 s and when the program closes.
+- "Now playing" recovers by itself when Windows restarts Explorer; the bridge is restarted when it goes silent, and keeps trying instead of giving up after five failed starts.
+- If the page stops (graphics driver, memory) after days in the tray, it is loaded again. The log moves to `media.1.log` past 1 MB instead of going silent or being deleted. Settings are written so a power cut can't leave them half written.
+- Phone display: a port Windows reserves (Hyper-V, WSL) is skipped like a busy one; virtual-machine adapters go last in the QR.
+- "Arrancar con Windows" no longer turns itself back on when disabled in the Task Manager.
+- Releases: every push compiles every script, and the Linux build is started once before it's published; the build actions are pinned.
+
 ## 6.8.2
 
 ### Changed

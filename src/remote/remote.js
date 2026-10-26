@@ -148,6 +148,8 @@ function connect() {
   es.addEventListener('np', e => {
     lastMsg = performance.now();
     let info; try { info = JSON.parse(e.data); } catch (_) { return; }
+    // 'at' is the PC's clock: move it onto this phone's, which may be off by seconds or minutes
+    if (info.now > 0 && info.at > 0) info.at += Date.now() - info.now;
     npHandlers.forEach(cb => cb(info));
     if (info.none) { el('npTitle').textContent = 'DECK 90'; el('npArtist').textContent = 'nada sonando'; }
   });
