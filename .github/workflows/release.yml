@@ -17,25 +17,38 @@ on:
 permissions:
   contents: write
 
+# two quick pushes never race to publish the same release
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions pinned to the commit of their v4.4.0 tag, so a moved tag can't change what runs here
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4.4.0
         with:
           node-version: 20
+
+      # every push: the scripts must compile, and the program must start and load its page
+      - name: Check the scripts
+        run: node scripts/check.mjs
 
       - name: Work out the version and whether it needs a release
         env:
           GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          if [ "${{ github.ref_type }}" = "tag" ] || [ -n "${{ github.event.inputs.tag }}" ]; then
-            TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          if [ "$REF_TYPE" = "tag" ] || [ -n "$INPUT_TAG" ]; then
+            TAG="${INPUT_TAG:-$REF_NAME}"
             if [ "$TAG" != "v$VERSION" ]; then echo "Tag $TAG does not match package.json $VERSION"; exit 1; fi
             NEEDED=yes
           else
@@ -56,6 +69,13 @@ jobs:
           node scripts/package.mjs linux
           node scripts/package.mjs bundle
           ls -la dist/*.zip dist/*.bundle
+
+      - name: Start the Linux build once
+        if: env.NEEDED == 'yes'
+        run: |
+          cd "dist/Deck 90-linux-x64"
+          DECK90_SMOKE=1 timeout 90 xvfb-run -a ./deck-90 --no-sandbox --user-data-dir="$RUNNER_TEMP/deck90-smoke" 2>&1 | tee smoke.log
+          grep -q "DECK90_SMOKE ok" smoke.log
 
       - name: Release notes from CHANGELOG.md
         if: env.NEEDED == 'yes'

@@ -2,7 +2,8 @@
 # Reads Windows' media sessions (the same data as the volume flyout), prefers Spotless,
 # prints one JSON line per change on stdout and takes commands on stdin:
 #   toggle | play | pause | next | prev | stop
-# Exits when stdin closes (Deck 90 quit).
+# Exits when stdin closes (Deck 90 quit). Says {"hb":1} every 5 s so Deck 90 knows it isn't stuck,
+# and exits (Deck 90 starts it again) when Windows' media service keeps failing, e.g. after Explorer restarts.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -45,6 +46,8 @@ $pending = $stdin.ReadLineAsync()
 $last = ''
 $coverKey = ''
 $tick = 0
+$beat = 0
+$fails = 0
 
 while ($true) {
   try {
@@ -104,9 +107,14 @@ while ($true) {
     } else {
       if ($last -ne 'none') { Say @{ none = $true }; $last = 'none'; $coverKey = '' }
     }
+    $fails = 0
   } catch {
     [Console]::Error.WriteLine($_.Exception.Message)
+    $fails++
+    if ($fails -ge 25) { [Console]::Error.WriteLine('media sessions keep failing: restarting the bridge'); exit 3 }
   }
+  $beat++
+  if ($beat -ge 12) { Say @{ hb = 1 }; $beat = 0 }
   $tick++
   Start-Sleep -Milliseconds 400
 }

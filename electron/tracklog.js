@@ -26,40 +26,58 @@ function clean(e) {
   return out;
 }
 
-function createTrackLog({ dir, log }) {
+function createTrackLog({ dir, log, delayMs = 30000 }) {
   const FILE = path.join(dir, 'history.json');
-  let list = null;
+  let list = null, pend = [], timer = null, dirty = false;
+  function merge(e) {
+    const k = list.findIndex(x => x.id === e.id);
+    if (k >= 0) list.splice(k, 1);                      // the same play, measured further: the newest numbers win
+    list.unshift(e);
+    if (list.length > MAX_ENTRIES) list.length = MAX_ENTRIES;
+  }
+  // null while the file can't be read (a backup program or the antivirus holding it): nothing is written
+  // over it then; what arrives meanwhile waits and is added once it can be read
   function load() {
     if (list) return list;
     try { const a = JSON.parse(fs.readFileSync(FILE, 'utf8')); list = Array.isArray(a) ? a.map(clean).filter(Boolean) : []; }
     catch (e) {
-      if (e.code !== 'ENOENT') {                        // keep the damaged file aside instead of overwriting it
+      if (e && e.code === 'ENOENT') list = [];
+      else if (e instanceof SyntaxError) {             // damaged: keep it aside instead of overwriting it
         log('history: unreadable file kept as history.json.bad (' + e.message + ')');
         try { fs.renameSync(FILE, FILE + '.bad'); } catch (_) {}
-      }
-      list = [];
+        list = [];
+      } else { log('history: can\'t read history.json now (' + (e && e.code || e) + '), will try again'); return null; }
     }
+    if (pend.length) { pend.forEach(merge); pend = []; dirty = true; schedule(); }
     return list;
   }
   function save() {
+    if (!list) return;
     try {
       const tmp = FILE + '.tmp';
       fs.writeFileSync(tmp, JSON.stringify(list));
       fs.renameSync(tmp, FILE);                         // never leaves half a file behind
+      dirty = false;
     } catch (e) { log('history: ' + e.message); }
+  }
+  // written at most every 30 s (and when the program closes): a long history isn't rewritten on every checkpoint
+  function schedule() { if (!timer) timer = setTimeout(flush, delayMs); }
+  function flush() {
+    clearTimeout(timer); timer = null;
+    if (!list && pend.length) load();
+    if (dirty && list) save();
+    if (dirty || pend.length) schedule();              // couldn't write or read yet: try again later
   }
   return {
     add(entry) {
       const e = clean(entry); if (!e) return false;
       const l = load();
-      const k = l.findIndex(x => x.id === e.id);
-      if (k >= 0) l.splice(k, 1);                       // the same play, measured further: the newest numbers win
-      l.unshift(e);
-      if (l.length > MAX_ENTRIES) l.length = MAX_ENTRIES;
-      save(); return true;
+      if (!l) { pend = pend.filter(x => x.id !== e.id); pend.push(e); schedule(); return true; }
+      merge(e); dirty = true; schedule(); return true;
     },
-    list() { return load().slice(); },
-    clear() { list = []; save(); return true; },
+    list() { const l = load(); return l ? l.slice() : pend.slice().reverse(); },
+    clear() { list = []; pend = []; dirty = true; flush(); return true; },
+    flush,
   };
 }
 

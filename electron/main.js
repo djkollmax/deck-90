@@ -23,7 +23,19 @@ let remote = null;          // phone display server (off until the user turns it
 // Started with Windows (--oculto): the window waits in the tray until it's wanted.
 const START_HIDDEN = process.argv.includes('--oculto');
 let tray = null;
-function showWin() { if (!win || win.isDestroyed()) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
+// maximize() also shows a window, so a start in the tray that should come back maximized waits for showWin()
+let pendingMax = false;
+function showWin() {
+  if (!win || win.isDestroyed()) return;
+  if (win.isMinimized()) win.restore();
+  if (pendingMax) { pendingMax = false; win.maximize(); }
+  win.show(); win.focus();
+}
+// a file rewritten whole: to a temporary one first, so a crash or a power cut never leaves it half written
+function writeAtomic(file, text) { const tmp = file + '.tmp'; fs.writeFileSync(tmp, text); fs.renameSync(tmp, file); }
+// anything that slips through in the main process goes to the log instead of a dialog box
+process.on('uncaughtException', err => { mlog('main: ' + String(err && err.stack || err).split('\n').slice(0, 3).join(' | ')); });
+process.on('unhandledRejection', err => { mlog('main (promise): ' + String(err && err.stack || err).split('\n').slice(0, 3).join(' | ')); });
 app.on('second-instance', () => showWin());
 
 app.whenReady().then(() => {
@@ -31,8 +43,11 @@ app.whenReady().then(() => {
   // "SISTEMA" → the whole screen as a (discarded) video source plus loopback audio: no picker.
   ses.setDisplayMediaRequestHandler((request, callback) => {
     desktopCapturer.getSources({ types: ['screen'] })
-      .then(sources => callback({ video: sources[0], audio: 'loopback' }))
-      .catch(() => callback({}));
+      .then(sources => {
+        if (!sources.length) throw new Error('no screen');             // e.g. a disconnected remote desktop session
+        callback({ video: sources[0], audio: 'loopback' });
+      })
+      .catch(e => { mlog('capture: ' + e.message); try { callback({}); } catch (_) {} });
   });
   // Capture and full screen only for our own local page.
   const ours = wc => !!wc && !!win && wc === win.webContents && wc.getURL().startsWith('file://');
@@ -74,7 +89,7 @@ app.whenReady().then(() => {
   const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, 900, wa.width), height: Math.min(b.height, 300) });
   const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
     return b.x < a.x + a.width - 40 && b.x + b.width > a.x + 40 && b.y >= a.y - 10 && b.y < a.y + a.height - 40; });
-  const saveMini = () => { if (!win.isMaximized()) saved.mini = win.getBounds(); try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {} };
+  const saveMini = () => { if (!win.isMaximized()) saved.mini = win.getBounds(); saveState(); };
   async function setMini(on) {
     if (on === miniOn || miniBusy) return;
     miniBusy = true;
@@ -92,6 +107,7 @@ app.whenReady().then(() => {
       } else {
         if (win.isMaximized()) win.unmaximize();
         saveMini();
+        miniOn = false;            // before maximize(): on Windows its event fires right away, and the strip guard would undo it
         win.setAlwaysOnTop(false);
         win.setMaximizable(true); win.setFullScreenable(true);
         win.setMinimumSize(760, 600);
@@ -103,7 +119,7 @@ app.whenReady().then(() => {
     } finally { miniBusy = false; }
   }
   // ── Phone display ──
-  const saveState = () => { try { fs.writeFileSync(STATE, JSON.stringify(saved)); } catch (_) {} };
+  function saveState() { try { writeAtomic(STATE, JSON.stringify(saved)); } catch (e) { mlog('window.json: ' + e.message); } }
   saved.remote = Object.assign({ on: false, port: 9090, key: '' }, saved.remote);
   if (!Number.isInteger(saved.remote.port) || saved.remote.port < 1024 || saved.remote.port > 65535) saved.remote.port = 9090;
   if (!/^[A-Za-z0-9_-]{8,}$/.test(saved.remote.key)) { saved.remote.key = crypto.randomBytes(6).toString('base64url'); saveState(); }
@@ -116,18 +132,27 @@ app.whenReady().then(() => {
     onCmd: mediaCommand, log: mlog, onClients: () => pushRemote(),
     getNowPlaying: () => lastInfo && phoneInfo(lastInfo),
   });
-  async function setRemote(on) {
+  // one change at a time: quick on/off clicks must end where the last one says
+  let remoteQ = Promise.resolve();
+  function setRemote(on) { remoteQ = remoteQ.then(() => applyRemote(on)).catch(e => mlog('phone: ' + e.message)); return remoteQ; }
+  async function applyRemote(on) {
     if (on) {
       // 9090 first, then the next few if something else holds it (the QR shows whichever it got)
       let st = null;
       for (let p = saved.remote.port, tries = 0; tries < 6; p = p >= 9095 ? 9090 : p + 1, tries++) {
         st = await remote.start(p, saved.remote.key);
         if (!st.error) { saved.remote.port = p; break; }
-        if (st.error !== 'EADDRINUSE') break;
+        if (st.error !== 'EADDRINUSE' && st.error !== 'EACCES') break;   // EACCES: a port Windows reserved (Hyper-V, WSL, Docker)
       }
       if (st.error) { saveState(); pushRemote({ error: st.error, port: saved.remote.port }); return; }   // keeps the user's ON for next time
     } else remote.stop();
     saved.remote.on = !!on; saveState(); pushRemote();
+  }
+  // anyone who once scanned the QR keeps access: a new key cuts them all off (the QR shows the new one)
+  function newPhoneKey() {
+    saved.remote.key = crypto.randomBytes(6).toString('base64url'); saveState();
+    mlog('phone: new key');
+    if (saved.remote.on) { setRemote(false); setRemote(true); }
   }
   ipcMain.on('remote-set', (e, on) => { if (ours(e.sender)) setRemote(!!on); });
   ipcMain.on('remote-get', e => { if (ours(e.sender)) pushRemote(); });
@@ -169,7 +194,7 @@ app.whenReady().then(() => {
   // remember the normal window (not the mini strip, not full screen) a moment after it moves or resizes
   let normT = 0;
   const saveNormal = () => {
-    if (miniOn || win.isDestroyed() || win.isFullScreen()) return;
+    if (miniOn || win.isDestroyed() || win.isFullScreen() || win.isMinimized()) return;
     saved.normal = win.isMaximized() ? Object.assign({}, saved.normal || {}, win.getNormalBounds()) : win.getBounds();
     saved.maximized = win.isMaximized();
     saveState();
@@ -187,14 +212,16 @@ app.whenReady().then(() => {
     }
   });
   // Windows is ending the session: let the window close (not on the query: the user may still cancel)
-  win.on('session-end', () => { app.isQuitting = true; });
+  win.on('session-end', () => { app.isQuitting = true; trackLog.flush(); });
+  app.on('will-quit', () => trackLog.flush());               // after the page's last entry (sent as it closes)
   // The window appears once the page says it's listening (its meters live, not the empty rack waiting for a
   // source); if that takes long, it appears anyway.
   let shownOnce = false;
   const firstShow = () => {
     if (shownOnce || win.isDestroyed()) return; shownOnce = true;
-    if (saved.maximized && !miniOn) win.maximize();
-    if (!START_HIDDEN || !tray) win.show();
+    const hidden = START_HIDDEN && tray;
+    if (saved.maximized && !miniOn) { if (hidden) pendingMax = true; else win.maximize(); }
+    if (!hidden) win.show();
   };
   // if the first paint never comes, show the window anyway instead of leaving an invisible program
   win.once('ready-to-show', () => setTimeout(firstShow, 2500));
@@ -208,7 +235,10 @@ app.whenReady().then(() => {
   const LOGIN = { args: ['--oculto'], name: 'Deck 90' };
   const canLogin = process.platform === 'win32' && app.isPackaged;
   const loginOn = () => canLogin && !!saved.login;
-  if (canLogin && saved.login) { try { app.setLoginItemSettings({ openAtLogin: true, path: process.execPath, ...LOGIN }); } catch (_) {} }
+  // re-made only if the entry is gone (the folder moved): one turned off in the Task Manager stays off
+  if (canLogin && saved.login) {
+    try { if (!app.getLoginItemSettings({ path: process.execPath, args: LOGIN.args }).openAtLogin) app.setLoginItemSettings({ openAtLogin: true, path: process.execPath, ...LOGIN }); } catch (_) {}
+  }
   function trayMenu() {
     if (!tray) return;
     const st = remoteState();
@@ -217,6 +247,7 @@ app.whenReady().then(() => {
       { label: 'Modo mini', type: 'checkbox', checked: miniOn, click: () => { showWin(); setMini(!miniOn); } },
       { type: 'separator' },
       { label: 'Pantalla en el celular', type: 'checkbox', checked: !!st.on, click: () => setRemote(!st.on) },
+      ...(st.on ? [{ label: 'Nueva clave para el celular', click: newPhoneKey }] : []),
       { type: 'separator' },
     ];
     if (canLogin) items.push({ label: 'Arrancar con Windows', type: 'checkbox', checked: loginOn(),
@@ -226,7 +257,7 @@ app.whenReady().then(() => {
     items.push({ type: 'separator' },
       up.state === 'available' && up.auto
         ? { label: 'Instalar Deck 90 ' + up.version, click: () => { showWin(); updater.install(); } }
-        : { label: 'Buscar actualizaciones', click: () => { showWin(); updater.check(true); } },
+        : { label: 'Buscar actualizaciones', click: () => { updater.check(true); showWin(); } },
       { label: 'Salir', click: () => { app.isQuitting = true; app.quit(); } });
     tray.setContextMenu(Menu.buildFromTemplate(items));
     tray.setToolTip('Deck 90' + (st.on ? ' · celular ' + (st.clients ? 'conectado' : 'esperando') : ''));
@@ -252,6 +283,29 @@ app.whenReady().then(() => {
     else if (what === 'close') win.close();
     else if (what === 'quit') { app.isQuitting = true; app.quit(); }       // Shift+✕: close for real, tray or not
   });
+  // The page died (GPU driver, out of memory) after days in the tray: load it again, a few times an hour at most.
+  let reloads = [];
+  win.webContents.on('render-process-gone', (e, d) => {
+    mlog('page gone: ' + d.reason + ' (' + d.exitCode + ')');
+    if (d.reason === 'clean-exit' || app.isQuitting) return;
+    const now = Date.now(); reloads = reloads.filter(t => now - t < 3600e3);
+    if (reloads.length >= 5) { mlog('page gone too often: not reloading'); return; }
+    reloads.push(now);
+    setTimeout(() => { if (!win.isDestroyed()) win.webContents.reload(); }, 2000 * reloads.length);
+  });
+  win.on('unresponsive', () => mlog('page not responding'));
+  win.on('responsive', () => mlog('page responding again'));
+  // Release check (DECK90_SMOKE=1): start, load the page, see that its scripts ran, report and quit.
+  if (process.env.DECK90_SMOKE) {
+    const pageErrors = [];
+    win.webContents.on('console-message', (e, level, message) => { if (level >= 3) pageErrors.push(message); });
+    win.webContents.once('did-finish-load', () => setTimeout(async () => {
+      let ok = false;
+      try { ok = await win.webContents.executeJavaScript("typeof frame === 'function' && typeof applyPreset === 'function' && typeof historyCsv === 'function' && !!document.getElementById('mSpot')"); } catch (_) {}
+      console.log('DECK90_SMOKE ' + (ok && !pageErrors.length ? 'ok' : 'FAIL') + ' ' + app.getVersion() + (pageErrors.length ? ' errors: ' + pageErrors.join(' | ') : ''));
+      app.isQuitting = true; app.exit(ok && !pageErrors.length ? 0 : 1);
+    }, 4000));
+  }
   // The bridge can report the track before the page is listening: hand it over once the page is up.
   win.webContents.on('did-finish-load', () => { if (lastInfo) win.webContents.send('media', lastInfo); });
   win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
@@ -265,7 +319,7 @@ app.whenReady().then(() => {
 });
 
 // ── "now playing" bridge: a hidden PowerShell process reading Windows' media sessions ──
-let media = null, mediaRestarts = 0, mediaBuf = '', lastStatus = '';
+let media = null, mediaRestarts = 0, mediaBuf = '', lastStatus = '', mediaSeen = 0, mediaUp = 0;
 let LOG = null;   // %APPDATA%\\Deck 90\\media.log once the app is ready
 let lastLog = '', logRepeats = 0, logBytes = 0;
 function mlog(msg) {
@@ -275,8 +329,14 @@ function mlog(msg) {
   if (logRepeats) out += new Date().toISOString() + ' (previous line repeated ' + logRepeats + ' times)\n';
   lastLog = msg; logRepeats = 0;
   out += new Date().toISOString() + ' ' + msg + '\n';
-  if ((logBytes += out.length) > 1000000) return;              // never let one session fill the disk
+  // past 1 MB the log moves to media.1.log and starts again (two files at most)
+  if ((logBytes += out.length) > 1000000) { try { fs.renameSync(LOG, LOG.replace(/\.log$/, '.1.log')); } catch (_) {} logBytes = out.length; }
   try { fs.appendFileSync(LOG, out); } catch (_) {}
+}
+function openLog() {
+  if (LOG) return;
+  LOG = path.join(app.getPath('userData'), 'media.log');
+  try { logBytes = fs.statSync(LOG).size; } catch (_) { logBytes = 0; }
 }
 let mpris = null;
 let lastInfo = null;          // the newest track info (with its cover), resent when the page (re)loads
@@ -293,8 +353,7 @@ function phoneInfo(info) {
   return o;
 }
 function startMedia() {
-  LOG = path.join(app.getPath('userData'), 'media.log');
-  try { if (fs.existsSync(LOG) && fs.statSync(LOG).size > 200000) fs.unlinkSync(LOG); } catch (_) {}
+  openLog();
   if (process.platform === 'linux') {            // Linux: MPRIS over D-Bus
     mpris = createMpris(sendMedia, mlog);
     mpris.start();
@@ -303,6 +362,7 @@ function startMedia() {
   }
   if (process.platform !== 'win32') return;
   mediaBuf = '';
+  mediaSeen = Date.now();
   media = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'media.ps1')],
                 { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   media.on('error', e => { mlog('bridge error: ' + e.message); });   // e.g. powershell.exe missing or blocked
@@ -317,19 +377,30 @@ function startMedia() {
       if (!line) continue;
       try {
         const info = JSON.parse(line);
-        if (info.ready) { mlog('bridge ready'); mediaRestarts = 0; }
+        mediaSeen = Date.now();
+        if (info.hb) continue;                                  // heartbeat: the bridge is alive
+        if (info.ready) { mlog('bridge ready'); mediaUp = Date.now(); }
         sendMedia(info);
       } catch (e) { mlog('bad line: ' + line.slice(0, 200)); }
     }
   });
   media.stderr.setEncoding('utf8');
   media.stderr.on('data', d => mlog('ps: ' + String(d).trim().slice(0, 500)));
+  const me = media;
   media.on('exit', code => {
     mlog('bridge exit ' + code);
-    media = null;
-    if (!app.isQuitting && mediaRestarts++ < 5) setTimeout(startMedia, 3000);
+    if (media === me) media = null;
+    if (app.isQuitting) return;
+    // start again, waiting longer after each quick failure (3 s … 5 min); a bridge that ran a good while starts over
+    if (mediaUp && Date.now() - mediaUp > 120000) mediaRestarts = 0;
+    mediaUp = 0;
+    setTimeout(startMedia, Math.min(300000, 3000 * Math.pow(2, mediaRestarts++)));
   });
 }
+// The bridge says something at least every 5 s; one silent for 30 s is stuck: start it again.
+setInterval(() => {
+  if (media && Date.now() - mediaSeen > 30000) { mlog('bridge silent for 30 s: restarting it'); mediaSeen = Date.now(); try { media.kill(); } catch (_) {} }
+}, 10000).unref();
 const fromWin = e => !!win && !win.isDestroyed() && e.sender === win.webContents;
 ipcMain.on('app-log', (e, msg) => { if (fromWin(e)) mlog('page: ' + String(msg).slice(0, 800)); });
 function mediaCommand(cmd) {

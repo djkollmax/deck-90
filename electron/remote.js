@@ -30,15 +30,18 @@ const CMDS = ['toggle', 'play', 'pause', 'stop', 'next', 'prev'];
 
 function lanAddresses() {
   const out = [];
-  for (const list of Object.values(os.networkInterfaces())) {
+  const virt = {};
+  for (const [name, list] of Object.entries(os.networkInterfaces())) {
     for (const a of list || []) {
       if (a.family !== 'IPv4' && a.family !== 4) continue;
       if (a.internal || a.address.startsWith('169.254.')) continue;
       out.push(a.address);
+      // adapters of virtual machines and containers: the phone can't reach those
+      if (/virtualbox|vmware|vethernet|hyper-v|wsl|docker|vbox|virbr|^br-|^veth/i.test(name) || a.address.startsWith('192.168.56.')) virt[a.address] = true;
     }
   }
   // home networks first (192.168.x, then 10.x, then 172.16–31.x); VPN/virtual adapters last
-  const rank = ip => ip.startsWith('192.168.') ? 0 : ip.startsWith('10.') ? 1 : /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ? 2 : 3;
+  const rank = ip => virt[ip] ? 4 : ip.startsWith('192.168.') ? 0 : ip.startsWith('10.') ? 1 : /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ? 2 : 3;
   return out.sort((a, b) => rank(a) - rank(b));
 }
 

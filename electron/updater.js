@@ -12,11 +12,17 @@
 //  - resources\deck90-update.json marks an install in progress. If the program starts and finds it
 //    still "writing" (power cut, crash) or still "booting" (the new version started and died before
 //    its window loaded), it restores resources\app-anterior, restarts into it and doesn't offer that
-//    version again.
+//    version again. A new version whose window hasn't loaded 2 minutes after starting counts as failed too;
+//  - electron/boot.js, where the program starts, does the same if the new main process doesn't even load;
+//  - before anything is written, every script in the bundle must at least compile, and the package's
+//    entry point must exist in it;
+//  - GitHub gets 20 s to answer and 2 minutes for the download, so a dead connection never leaves the
+//    checks (or the install) waiting forever.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const vm = require('vm');
 
 const REPO = 'djkollmax/deck-90';
 const API = `https://api.github.com/repos/${REPO}/releases/latest`;
@@ -77,7 +83,25 @@ function readNotes(app) {
   try { const n = JSON.parse(fs.readFileSync(notesFile(app), 'utf8')); return { skip: [], manual: [], ...n }; }
   catch (_) { return { skip: [], manual: [] }; }
 }
-function writeNotes(app, n) { try { fs.writeFileSync(notesFile(app), JSON.stringify(n)); } catch (_) {} }
+function writeAtomic(file, text) { const tmp = file + '.tmp'; retry(() => fs.writeFileSync(tmp, text)); retry(() => fs.renameSync(tmp, file)); }
+function writeNotes(app, n) { try { writeAtomic(notesFile(app), JSON.stringify(n)); } catch (_) {} }
+// net.fetch with a deadline for the whole answer, body included
+async function fetchWithin(net, url, opts, ms, read) {
+  const ac = new AbortController();
+  let timer;
+  const late = new Promise((_, rej) => { timer = setTimeout(() => { ac.abort(); rej(new Error('GitHub no respondió a tiempo')); }, ms); });
+  try { return await Promise.race([(async () => { const r = await net.fetch(url, Object.assign({}, opts, { signal: ac.signal })); return read(r); })(), late]); }
+  finally { clearTimeout(timer); }
+}
+// the scripts of a bundle must compile (a syntax error there would stop the program from starting)
+function compiles(p, buf) {
+  try {
+    const code = buf.toString('utf8');
+    if (p.startsWith('electron/')) new vm.Script('(function (exports, require, module, __filename, __dirname) {' + code + '\n})', { filename: p });
+    else new vm.Script(code, { filename: p });
+    return true;
+  } catch (_) { return false; }
+}
 
 // ── at start-up, before anything else: finish or undo an interrupted install ──
 // Returns true when it restored the previous version and is restarting into it.
@@ -90,19 +114,22 @@ function recoverOnStart({ app, log }) {
     mk = JSON.parse(fs.readFileSync(marker, 'utf8'));
   } catch (e) { try { fs.rmSync(marker, { force: true }); } catch (_) {} return false; }
   if (mk.phase === 'installed') {                   // first start of the new version: confirmed once its window loads
-    try { fs.writeFileSync(marker, JSON.stringify({ ...mk, phase: 'booting' })); } catch (_) {}
+    try { writeAtomic(marker, JSON.stringify({ ...mk, phase: 'booting' })); } catch (_) {}
     return false;
   }
   const backup = path.join(path.dirname(appDir), 'app-anterior');
   if (!fs.existsSync(path.join(backup, 'package.json'))) { try { fs.rmSync(marker, { force: true }); } catch (_) {} return false; }
   const why = mk.phase === 'writing' ? 'la instalación se cortó' : 'no llegó a arrancar';
   const failed = copyTree(backup, appDir);
-  log('update: ' + mk.to + ' ' + why + ', restored ' + mk.from + (failed.length ? ' (' + failed.length + ' files failed)' : ''));
+  const tries = (mk.tries || 0) + 1;
+  log('update: ' + mk.to + ' ' + why + ', restored ' + mk.from + (failed.length ? ' (' + failed.length + ' files failed, try ' + tries + ')' : ''));
   const n = readNotes(app);
   if (mk.to && !n.skip.includes(mk.to)) n.skip.push(mk.to);
   n.note = { failed: mk.to, back: mk.from, why, incomplete: failed.length > 0 };
   writeNotes(app, n);
-  try { fs.rmSync(marker, { force: true }); } catch (_) {}
+  // files that couldn't be put back (locked): try again on the next start, three times at most
+  if (failed.length && tries < 3) { try { writeAtomic(marker, JSON.stringify({ ...mk, tries })); } catch (_) {} }
+  else { try { fs.rmSync(marker, { force: true }); } catch (_) {} }
   app.relaunch(); app.exit(0);
   return true;
 }
@@ -122,32 +149,53 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
   }
 
   // the window of the new version loaded: the update is good
+  let booted = false;
   function confirmBoot() {
+    booted = true;
     try {
       if (!fs.existsSync(marker)) return;
       const mk = JSON.parse(fs.readFileSync(marker, 'utf8'));
       if (mk.phase === 'booting' && mk.to === app.getVersion()) { fs.rmSync(marker, { force: true }); log('update: ' + mk.to + ' started fine'); }
     } catch (_) {}
   }
+  // ... and if it hasn't loaded 2 minutes after starting, the update failed: restart, and the start-up
+  // check puts the previous version back
+  try {
+    const mk = app.isPackaged && fs.existsSync(marker) ? JSON.parse(fs.readFileSync(marker, 'utf8')) : null;
+    if (mk && mk.phase === 'booting' && mk.to === app.getVersion()) {
+      setTimeout(() => {
+        if (booted) return;
+        log('update: ' + mk.to + ' did not load its window in 2 minutes, going back');
+        app.isQuitting = true; app.relaunch(); app.exit(0);
+      }, 120000).unref();
+    }
+  } catch (_) {}
 
   let checking = null, lastCheck = 0;
   // manual: asked for from the tray, so even "up to date" or "couldn't reach GitHub" is reported
-  function check(manual) { return checking || (checking = doCheck(!!manual).finally(() => { checking = null; })); }
+  // (a manual check that finds one already running, e.g. started by bringing the window back, still reports)
+  let wantReport = false;
+  function check(manual) {
+    if (manual) wantReport = true;
+    return checking || (checking = doCheck().finally(() => { checking = null; }));
+  }
   // check unless one ran in the last `minAgeMs` (bringing the window back from the tray)
   function maybeCheck(minAgeMs) { if (Date.now() - lastCheck >= minAgeMs) check(); }
-  async function doCheck(manual) {
-    if (busy) return state;
+  async function doCheck() {
+    if (busy) { wantReport = false; return state; }
     lastCheck = Date.now();
+    let manual = false;
+    const report = () => { manual = manual || wantReport; wantReport = false; return manual; };
     if (!app.isPackaged) { set({ state: 'dev' }); return state; }       // running from the source folder
     try {
-      const r = await net.fetch(API, { headers: headers() });
-      if (!r.ok) throw new Error('GitHub ' + r.status);
-      const rel = await r.json();
+      const rel = await fetchWithin(net, API, { headers: headers() }, 20000, r => { if (!r.ok) throw new Error('GitHub ' + r.status); return r.json(); });
+      report();
       if (busy) return state;                                          // an install started meanwhile
       const m = /^v(\d+\.\d+\.\d+)$/.exec(rel.tag_name || '');
       if (!m || rel.draft || rel.prerelease) throw new Error('unexpected release ' + rel.tag_name);
       const version = m[1];
-      if (!newer(version, app.getVersion()) || notes.skip.includes(version)) {
+      // a version that failed once isn't offered by itself again, but asking from the tray offers it
+      if (!newer(version, app.getVersion()) || (notes.skip.includes(version) && !manual)) {
         release = null;
         if (!state.fromNote || manual) set({ state: 'current', latest: version, manual });   // leave the start-up message up
         return state;
@@ -161,7 +209,7 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
       set({ state: 'available', version, url, auto: !!ok });
     } catch (e) {
       log('update check: ' + e.message);                              // offline, rate limit…: try again later, quietly
-      if (manual || (state.state !== 'available' && !state.fromNote)) set({ state: 'error', error: 'check', manual, message: friendly(e) });
+      if (report() || (state.state !== 'available' && !state.fromNote)) set({ state: 'error', error: 'check', manual, message: friendly(e) });
     }
     return state;
   }
@@ -175,10 +223,14 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
     const written = [];                    // [path, existed before]
     let ok = false;
     try {
+      // an install whose undo failed is still pending: the start-up check must put the old version back
+      // first, and the copy in app-anterior is the only good one, so it can't be replaced now
+      if (fs.existsSync(marker)) throw new Error('hay una actualización anterior sin terminar: cerrá Deck 90 (clic derecho en la bandeja → Salir) y abrilo de nuevo');
       set({ state: 'downloading', version });
-      const r = await net.fetch(rel.download, { headers: { 'User-Agent': headers()['User-Agent'] } });
-      if (!r.ok) throw new Error('la descarga falló (' + r.status + ')');
-      const buf = Buffer.from(await r.arrayBuffer());
+      const buf = await fetchWithin(net, rel.download, { headers: { 'User-Agent': headers()['User-Agent'] } }, 120000, async r => {
+        if (!r.ok) throw new Error('la descarga falló (' + r.status + ')');
+        return Buffer.from(await r.arrayBuffer());
+      });
       if (buf.length !== rel.size) throw new Error('la descarga llegó incompleta');
       if (crypto.createHash('sha256').update(buf).digest('hex') !== rel.sha256) throw new Error('el archivo no coincide con el publicado (SHA-256)');
       const b = JSON.parse(zlib.gunzipSync(buf, { maxOutputLength: 64 << 20 }).toString('utf8'));
@@ -194,12 +246,17 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
       if (!files.some(([p]) => p === 'electron/main.js') || !files.some(([p]) => p === 'src/index.html')) throw new Error('paquete incompleto');
       for (const [p, data] of files) if (!safePath(p) || typeof data !== 'string') throw new Error('paquete con una ruta no válida');
       const decoded = files.map(([p, data]) => [p, Buffer.from(data, 'base64')]);
+      for (const [p, data] of decoded) if (/\.js$/.test(p) && !compiles(p, data)) throw new Error('el paquete trae un archivo dañado (' + p + ')');
+      let entry = 'electron/main.js';
+      try { entry = JSON.parse(decoded.find(([p]) => p === 'package.json')[1].toString('utf8')).main || 'index.js'; } catch (_) { throw new Error('paquete sin package.json válido'); }
+      if (!decoded.some(([p]) => p === path.posix.normalize(entry))) throw new Error('paquete incompleto (' + entry + ')');
+      if (notes.skip.includes(version)) { notes.skip = notes.skip.filter(v => v !== version); writeNotes(app, notes); }
 
       set({ state: 'installing', version });
       // a fresh copy of the current files (if the old copy can't be removed, e.g. open in Explorer, it's overwritten)
       try { fs.rmSync(backup, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch (_) {}
       if (copyTree(appDir, backup).length) throw new Error('no pude guardar una copia de la versión actual');
-      fs.writeFileSync(marker, JSON.stringify({ phase: 'writing', from: app.getVersion(), to: version, at: Date.now() }));
+      writeAtomic(marker, JSON.stringify({ phase: 'writing', from: app.getVersion(), to: version, at: Date.now() }));
       const before = new Set(listFiles(appDir));
       for (const [p, data] of decoded) {
         const dest = path.join(appDir, ...p.split('/'));
@@ -211,7 +268,7 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
       // files the new version no longer has
       const keep = new Set(files.map(([p]) => p));
       for (const p of before) if (!keep.has(p) && p !== 'LICENSE') { try { retry(() => fs.rmSync(path.join(appDir, ...p.split('/')), { force: true })); } catch (_) {} }
-      fs.writeFileSync(marker, JSON.stringify({ phase: 'installed', from: app.getVersion(), to: version, at: Date.now() }));
+      writeAtomic(marker, JSON.stringify({ phase: 'installed', from: app.getVersion(), to: version, at: Date.now() }));
       ok = true;
       log('update: installed ' + version + ', restarting');
       set({ state: 'restarting', version });
