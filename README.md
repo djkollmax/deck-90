@@ -63,7 +63,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 - **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it.
 - **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
 - **Frameless window.** All controls sit in one console. Display modes: STD, ANALOG, CRT and OLED. Your settings are remembered.
-- **Updates itself.** When a newer release is out, the program offers it; INSTALAR downloads a small package with the program's own files, checks its SHA-256 against the one GitHub publishes, keeps the previous version in `resources\app-anterior` and restarts. A release that changes Electron itself asks you to download the full zip instead.
+- **Updates itself.** It asks GitHub at start, every hour and when it comes back from the tray (or from the tray menu: *Buscar actualizaciones*). When a newer release is out, the program offers it; INSTALAR downloads a small package with the program's own files, checks its SHA-256 against the one GitHub publishes, keeps the previous version in `resources\app-anterior` and restarts. A release that changes Electron itself asks you to download the full zip instead.
 
 ## Download & run
 

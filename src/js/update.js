@@ -36,7 +36,12 @@
     info.style.display = infoOn ? '' : 'none';
     x.style.display = ['downloading', 'installing', 'restarting'].includes(st && st.state) ? 'none' : '';
   }
-  window.appUpdate.on(s => { st = s; render(); });
+  window.appUpdate.on(s => {
+    st = s; render();
+    // asked for from the tray: say how it went even when there's nothing to install
+    if (s.manual && s.state === 'current') toast('Deck 90 ' + esc(s.current) + ' está al día', 2500);
+    if (s.manual && s.state === 'error' && s.error === 'check') toast('⚠ No pude consultar GitHub: ' + esc(s.message), 4000);
+  });
   go.addEventListener('click', () => {
     if (!st) return;
     if (st.state === 'available' && st.auto) window.appUpdate.install();

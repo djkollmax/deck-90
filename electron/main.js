@@ -152,14 +152,16 @@ app.whenReady().then(() => {
   // ── Updates: GitHub, a few seconds after start and every 6 hours ──
   const updater = createUpdater({ app, net, log: mlog,
     // after an update, come back visible (a start with Windows passes --oculto, which the restart would repeat)
-    relaunchArgs: () => process.argv.slice(1).filter(a => a !== '--oculto'), onState: st => { if (win && !win.isDestroyed()) win.webContents.send('update', st); } });
+    relaunchArgs: () => process.argv.slice(1).filter(a => a !== '--oculto'),
+    onState: st => { if (win && !win.isDestroyed()) win.webContents.send('update', st); if (typeof trayMenu === 'function') try { trayMenu(); } catch (_) {} } });
   ipcMain.on('upd-get', e => { if (ours(e.sender)) e.sender.send('update', updater.state()); });
   ipcMain.on('upd-install', e => { if (ours(e.sender)) updater.install(); });
   ipcMain.on('upd-open', e => { if (ours(e.sender)) shell.openExternal(updater.url()); });
   win.webContents.once('did-finish-load', () => {
     updater.confirmBoot();
     setTimeout(() => updater.check(), 8000);
-    setInterval(() => updater.check(), 6 * 3600 * 1000);
+    setInterval(() => updater.check(), 3600 * 1000);                  // hourly: Deck 90 often lives in the tray for days
+    win.on('show', () => updater.maybeCheck(30 * 60 * 1000));         // and when it comes back from there
   });
 
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
@@ -212,7 +214,12 @@ app.whenReady().then(() => {
     if (canLogin) items.push({ label: 'Arrancar con Windows', type: 'checkbox', checked: loginOn(),
       click: m => { saved.login = m.checked; saveState(); try { app.setLoginItemSettings({ openAtLogin: m.checked, path: process.execPath, ...LOGIN }); } catch (_) {} trayMenu(); } });
     items.push({ label: 'Al cerrar, quedar en la bandeja', type: 'checkbox', checked: saved.tray.close, click: m => { saved.tray.close = m.checked; saveState(); } });
-    items.push({ type: 'separator' }, { label: 'Salir', click: () => { app.isQuitting = true; app.quit(); } });
+    const up = updater.state();
+    items.push({ type: 'separator' },
+      up.state === 'available' && up.auto
+        ? { label: 'Instalar Deck 90 ' + up.version, click: () => { showWin(); updater.install(); } }
+        : { label: 'Buscar actualizaciones', click: () => { showWin(); updater.check(true); } },
+      { label: 'Salir', click: () => { app.isQuitting = true; app.quit(); } });
     tray.setContextMenu(Menu.buildFromTemplate(items));
     tray.setToolTip('Deck 90' + (st.on ? ' · celular ' + (st.clients ? 'conectado' : 'esperando') : ''));
   }

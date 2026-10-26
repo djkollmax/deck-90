@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.8.0
+
+### Changed
+- **Updates show up sooner.** Deck 90 often lives in the tray for days, where ✕ leaves it, so it only saw a new release when restarted or every 6 hours. Now it asks GitHub every hour and whenever the window comes back from the tray (if the last look is over 30 minutes old).
+- The tray menu has **Buscar actualizaciones**, which says "al día" or what went wrong, and turns into **Instalar Deck 90 x.y** when there's one to install.
+
 ## 6.7.0
 
 ### Changed

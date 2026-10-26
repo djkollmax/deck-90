@@ -130,10 +130,14 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
     } catch (_) {}
   }
 
-  let checking = null;
-  function check() { return checking || (checking = doCheck().finally(() => { checking = null; })); }
-  async function doCheck() {
+  let checking = null, lastCheck = 0;
+  // manual: asked for from the tray, so even "up to date" or "couldn't reach GitHub" is reported
+  function check(manual) { return checking || (checking = doCheck(!!manual).finally(() => { checking = null; })); }
+  // check unless one ran in the last `minAgeMs` (bringing the window back from the tray)
+  function maybeCheck(minAgeMs) { if (Date.now() - lastCheck >= minAgeMs) check(); }
+  async function doCheck(manual) {
     if (busy) return state;
+    lastCheck = Date.now();
     if (!app.isPackaged) { set({ state: 'dev' }); return state; }       // running from the source folder
     try {
       const r = await net.fetch(API, { headers: headers() });
@@ -145,7 +149,7 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
       const version = m[1];
       if (!newer(version, app.getVersion()) || notes.skip.includes(version)) {
         release = null;
-        if (!state.fromNote) set({ state: 'current', latest: version });   // leave the start-up message up
+        if (!state.fromNote || manual) set({ state: 'current', latest: version, manual });   // leave the start-up message up
         return state;
       }
       const url = `${PAGE}/tag/v${version}`;
@@ -157,7 +161,7 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
       set({ state: 'available', version, url, auto: !!ok });
     } catch (e) {
       log('update check: ' + e.message);                              // offline, rate limit…: try again later, quietly
-      if (state.state !== 'available' && !state.fromNote) set({ state: 'error', error: 'check', message: friendly(e) });
+      if (manual || (state.state !== 'available' && !state.fromNote)) set({ state: 'error', error: 'check', manual, message: friendly(e) });
     }
     return state;
   }
@@ -230,7 +234,7 @@ function createUpdater({ app, net, log, onState, relaunchArgs }) {
     } finally { if (!ok) busy = false; }
   }
 
-  return { check, install, confirmBoot, state: () => state, url: () => (release && release.url) || (state.url) || PAGE };
+  return { check, maybeCheck, install, confirmBoot, state: () => state, url: () => (release && release.url) || (state.url) || PAGE };
 }
 
 module.exports = { createUpdater, recoverOnStart, newer, safePath };
