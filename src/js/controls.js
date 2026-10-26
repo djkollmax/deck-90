@@ -83,6 +83,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); }
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
   if (g === 'phone') phoneButton(v);
+  if (g === 'preset') { presetButton(v, e.shiftKey); return; }
   if (g === 'tools') {
     if (v === 'fs') toggleFullscreen();
     if (v === 'drawer') setDrawer(!drawerOpen);
@@ -126,6 +127,10 @@ document.getElementById('splashDemo').addEventListener('click', e => { e.stopPro
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const k = e.key.toLowerCase();
+  // F1–F5 load a preset, Shift+F1–F5 save what's on screen there
+  const fk = /^f([1-5])$/.exec(k);
+  if (fk && !histOpen()) { e.preventDefault(); (e.shiftKey ? savePreset : applyPreset)(Number(fk[1]) - 1); return; }
+  if (k === 'escape' && presetSaveArmed) { presetSaveArmed = false; syncConsole(); return; }
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
   if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {
     if (k === 'escape' || (k === 'l' && histOpen())) { e.preventDefault(); showHistory(false); showPhoneModal(false); }

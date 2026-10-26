@@ -394,6 +394,11 @@ function syncConsole() {
     seg.querySelectorAll('button').forEach(b => {
       if (g === 'src' && b.dataset.v === 'stop') { b.disabled = !activeSource; return; }
       if (g === 'mods') { b.classList.toggle('on', !!mods[b.dataset.v]); return; }
+      if (g === 'preset') {
+        if (b.dataset.v === 'save') b.classList.toggle('on', typeof presetSaveArmed !== 'undefined' && presetSaveArmed);
+        else b.classList.toggle('on', typeof presetMatches === 'function' && presetMatches(Number(b.dataset.v) - 1));
+        return;
+      }
       if (g === 'tools') { b.classList.toggle('on', (b.dataset.v === 'drawer' && drawerOpen) || (b.dataset.v === 'tapeonly' && !!modsBeforeTape)); return; }
       if (g === 'deckmode') { b.classList.toggle('on', (b.dataset.v === 'double') === deckDouble); return; }
       if (g === 'tapestyle') { b.classList.toggle('on', b.dataset.v === tapeStyle); return; }
@@ -405,6 +410,7 @@ function syncConsole() {
       b.classList.toggle('on', g in state && state[g] === b.dataset.v);
     });
   });
+  if (typeof presetTitles === 'function') presetTitles();
   const ab = document.querySelector('.seg[data-group="cal"] button[data-v="AUTO"]');
   if (ab && (vuCal !== 'AUTO' || !activeSource)) ab.textContent = 'AUTO';
   const sens = document.querySelector('.seg[data-group="sens"]');

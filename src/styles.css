@@ -796,3 +796,8 @@ body.mini #updBar{ display:none; }
 
 /* the program skips the browser's start screen: hidden from the first paint (see js/boot.js) */
 .app-boot #splash{ display:none !important; }
+
+/* presets: the armed GUARDAR pulses until a number is chosen */
+.seg.preset button.save{ font-size:8px; letter-spacing:1.5px; }
+.seg.preset button.save.on{ background:linear-gradient(180deg,#ffb3a0,#e0573a); color:#1a0703; animation:presetArm 1s ease-in-out infinite; }
+@keyframes presetArm{ 50%{ opacity:.55; } }

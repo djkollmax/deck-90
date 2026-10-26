@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.6.0
+
+### Added
+- **Five presets**, in the console (★ 1 2 3 4 5 GUARDAR) and on F1–F5. A preset keeps the whole look: VU face, spectrum style and FL sensitivity, screen tone, VU calibration, which modules show, and the deck and cassette styles. Five come ready — Estudio, Hi-Fi 90s, Cinta 70s, Vidriera, Mastering — and any of them can be replaced: GUARDAR then a number, Shift+click on a number, or Shift+F1–F5. A replaced preset is named after its VU face and spectrum; the number whose look is on screen lights up. Kept with the program's settings.
+
 ## 6.5.1
 
 ### Fixed
