@@ -192,7 +192,13 @@ if (IS_APP) {
   const sp = document.getElementById('splash');
   if (sp) sp.style.display = 'none';
   // a timer, not an animation frame: started with Windows the window is hidden and gets no frames
-  setTimeout(() => { sizeCanvases(); startAudio('sys'); }, 30);
+  setTimeout(async () => {
+    sizeCanvases();
+    try { await startAudio('sys'); } catch (_) {}
+    // one drawn frame of live meters (a hidden window gets no animation frames), then show the window
+    if (running) { try { frame(true); } catch (_) {} }
+    setTimeout(() => window.winCtl && window.winCtl.ready && window.winCtl.ready(), 60);
+  }, 30);
   const tip = document.querySelector('.splash-tip');
   if (tip) tip.innerHTML = '<span>SISTEMA</span> escucha directo todo lo que suena en la PC (Spotless incluido), sin diálogos.<br>' +
     '<span>S</span> sistema · <span>M</span> micrófono · <span>D</span> demo · <span>ESPACIO</span> detener · <span>F</span> pantalla completa<br>' +

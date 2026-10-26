@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('winCtl', {
   fs:    () => ipcRenderer.send('win', 'fs'),
   mini:  () => ipcRenderer.send('win', 'mini'),
   quit:  () => ipcRenderer.send('win', 'quit'),
+  ready: () => ipcRenderer.send('win', 'ready'),
   onMini: cb => ipcRenderer.on('mini', (e, on) => cb(!!on)),
 });
 contextBridge.exposeInMainWorld('phoneDisplay', {

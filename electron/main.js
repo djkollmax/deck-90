@@ -159,7 +159,7 @@ app.whenReady().then(() => {
   ipcMain.on('upd-open', e => { if (ours(e.sender)) shell.openExternal(updater.url()); });
   win.webContents.once('did-finish-load', () => {
     updater.confirmBoot();
-    setTimeout(() => updater.check(), 8000);
+    setTimeout(() => updater.maybeCheck(60 * 1000), 8000);
     setInterval(() => updater.check(), 3600 * 1000);                  // hourly: Deck 90 often lives in the tray for days
     win.on('show', () => updater.maybeCheck(30 * 60 * 1000));         // and when it comes back from there
   });
@@ -188,9 +188,17 @@ app.whenReady().then(() => {
   });
   // Windows is ending the session: let the window close (not on the query: the user may still cancel)
   win.on('session-end', () => { app.isQuitting = true; });
-  win.once('ready-to-show', () => { if (saved.maximized && !miniOn) win.maximize(); if (!START_HIDDEN || !tray) win.show(); });
+  // The window appears once the page says it's listening (its meters live, not the empty rack waiting for a
+  // source); if that takes long, it appears anyway.
+  let shownOnce = false;
+  const firstShow = () => {
+    if (shownOnce || win.isDestroyed()) return; shownOnce = true;
+    if (saved.maximized && !miniOn) win.maximize();
+    if (!START_HIDDEN || !tray) win.show();
+  };
   // if the first paint never comes, show the window anyway instead of leaving an invisible program
-  setTimeout(() => { if (!win.isDestroyed() && !win.isVisible() && (!START_HIDDEN || !tray)) win.show(); }, 4000);
+  win.once('ready-to-show', () => setTimeout(firstShow, 2500));
+  setTimeout(firstShow, 5000);                                 // even if the first paint never comes
 
   // ── Tray: an icon by the clock, with the essentials ──
   // ✕ to the tray by default only on Windows: many Linux desktops show no tray icon, and then a hidden
@@ -233,6 +241,7 @@ app.whenReady().then(() => {
   } catch (e) { mlog('tray: ' + e.message); tray = null; }
   ipcMain.on('win', async (e, what) => {
     if (!ours(e.sender)) return;
+    if (what === 'ready') return firstShow();
     if (what === 'mini') return setMini(!miniOn);
     if (what === 'min') { await leaveFullScreen(); win.minimize(); }
     else if (what === 'max') {

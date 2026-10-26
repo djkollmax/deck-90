@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.8.1
+
+### Fixed
+- **No more waiting rack at start.** For a moment the program showed the rack at rest — FUENTE with nothing chosen, STANDBY, the "waiting" panels — like the old pick-a-source screen, before the system audio started. The window now appears once it's listening, with one live frame already drawn (or after 2.5 s if that takes longer, 5 s at the latest).
+
 ## 6.8.0
 
 ### Changed
