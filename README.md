@@ -35,8 +35,8 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - Momentary, short-term and integrated LUFS (ITU-R BS.1770 / EBU R128 K-weighting and gating).
   - Integrated LUFS and loudness range (LRA, EBU Tech 3342) restart on every new track.
   - True peak in dBTP (BS.1770-4, 4x oversampling) with the track's maximum, plus crest factor and phase correlation.
-  - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB).
-- **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS, LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
+  - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB). With Spotless it allows for Spotless's own volume.
+- **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS (as heard and the master's, without Spotless's volume), LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
 - **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
 - **Spectrum** in ten styles (`T` steps through them, MÁS ▾ lists the newer ones):
   - MODERN: smooth curve with peaks.
@@ -144,7 +144,7 @@ The meters were checked against generated test signals:
 - LRA reads 10.0 and 5.0 LU on EBU Tech 3342's first two test cases.
 - Phase correlation is computed sample-aligned on the audio thread: mono reads +1.00, inverted −1.00.
 - BPM: steady beats at 97, 124 and 140 read exactly. Fast tracks (above ~160) may read at half tempo, as with most beat trackers.
-- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings. For the Spotify badge to mean what it says, play at 100 % with the player's own volume levelling off (in Spotless: *Volume levelling*).
+- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings. With **Spotless** the program reads its volume and levelling from Spotless's settings and takes the volume back out: the Spotify badge and the history's MASTER column are the master's own figures at any volume (Spotless's knob is a cubic curve over 60 dB: 71 % is −7.9 dB, 90 % −2.5 dB). With its *Volume levelling* on, Spotless already normalises the sound, so the badge shows **SPOTIFY ?** until it's off. With other players, play at 100 % with their levelling off.
 
 ## Build from source
 

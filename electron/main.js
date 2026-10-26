@@ -338,6 +338,35 @@ function mediaCommand(cmd) {
 }
 ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
 app.whenReady().then(startMedia);
+
+// ── Spotless' own volume and levelling ──
+// Deck 90 measures what comes out of the player, after its volume slider. Spotless keeps its settings in
+// %APPDATA%\spotless\settings.json (~/.config/spotless on Linux); its volume goes through librespot's
+// cubic curve, (0.9·v + 0.1)³, so 71 % is −7.9 dB. The page uses this to estimate the master's loudness.
+let spotlessLast = '';
+function spotlessState() {
+  const file = path.join(app.getPath('appData'), 'spotless', 'settings.json');
+  let s = null;
+  try {
+    const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const v = Number(j.volume);
+    if (Number.isFinite(v) && v >= 0 && v <= 100) {
+      const lin = Math.floor(v * 65535 / 100) / 65535;         // as Spotless hands it to librespot
+      const gain = v >= 100 ? 0 : v <= 0 ? -Infinity : 60 * Math.log10(0.9 * lin + 0.1);
+      s = { volume: v, levelling: !!j.levelling, gainDb: Number.isFinite(gain) ? Math.round(gain * 100) / 100 : null };
+    }
+  } catch (_) {}
+  const key = JSON.stringify(s);
+  if (key !== spotlessLast) {
+    spotlessLast = key;
+    if (s) mlog('spotless: volume ' + s.volume + ' % (' + s.gainDb + ' dB), levelling ' + (s.levelling ? 'on' : 'off'));
+    if (win && !win.isDestroyed()) win.webContents.send('spotless', s);
+  }
+}
+app.whenReady().then(() => {
+  setInterval(spotlessState, 3000);                          // the user may move the slider while it plays
+  if (win) win.webContents.on('did-finish-load', () => { spotlessLast = ''; spotlessState(); });
+});
 app.on('before-quit', () => { app.isQuitting = true; if (remote) remote.stop(); if (mpris) mpris.stop(); if (media) { try { media.stdin.end(); media.kill(); } catch (_) {} } });
 
 app.on('window-all-closed', () => app.quit());

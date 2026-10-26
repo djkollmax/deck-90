@@ -115,6 +115,19 @@ function spotifyGain(I, peakMax) {
 }
 function trackPeakMax() { return tpAvailable && isFinite(tpMaxDb) ? tpMaxDb : pkMaxDb; }
 let spotGain = NaN;
+// Spotless (librespot) lowers the level before Windows ever hears it: its volume knob is a cubic
+// curve over 60 dB and its own normalisation ("nivelación") can change it again. The main process
+// reads both from Spotless's settings; the master's own loudness is what we hear minus that gain.
+let playerState = null;                 // { volume, levelling, gainDb } or null
+if (window.nowPlaying && window.nowPlaying.onPlayer) window.nowPlaying.onPlayer(s => { playerState = s && typeof s === 'object' ? s : null; });
+const playerIsSpotless = info => !!(info && /spotless/i.test(info.app || ''));
+// dB the player took off what we measure (0 = nothing known), NaN when it can't be known (levelling on)
+function playerGainFor(info) {
+  if (!playerState || !playerIsSpotless(info)) return 0;
+  if (playerState.levelling) return NaN;
+  return isFinite(playerState.gainDb) ? playerState.gainDb : 0;
+}
+const fmtVol = s => 'Spotless al ' + Math.round(s.volume) + ' % (' + fmtGain(s.gainDb) + ' dB)';
 const fmtGain = g => (g > 0.05 ? '+' : g < -0.05 ? '\u2212' : '') + Math.abs(g).toFixed(1);
 let phaseSm = 1, crestSm = 0;
 
@@ -212,10 +225,18 @@ function updateMasterMeters(now){
     const I = integratedLufs();
     miniVals.i = I;
     el('mLufsI').textContent = isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-';
-    spotGain = spotifyGain(I, trackPeakMax());
+    const pg = playerGainFor(np);
+    spotGain = isFinite(pg) ? spotifyGain(I - pg, trackPeakMax() - pg) : NaN;
     const sp = el('mSpot');
-    sp.textContent = isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '';
-    sp.className = 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : '');
+    if (isNaN(pg) && isFinite(I)) {
+      sp.textContent = 'SPOTIFY ?'; sp.className = 'spot warn';
+      sp.title = 'Spotless tiene la nivelación prendida: ya normaliza el sonido, así que no se puede saber cuánto ajustaría Spotify el master. Apagala en Spotless para medirlo.';
+    } else {
+      sp.textContent = isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '';
+      sp.className = 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : '');
+      sp.title = 'Cuánto subiría o bajaría Spotify este tema (normalización a −14 LUFS)' +
+        (pg ? '. Compensa el volumen de ' + fmtVol(playerState) + ': el master mide ' + (I - pg).toFixed(1) + ' LUFS' : '');
+    }
     if (now - lraT >= 1000) { lraT = now; lraValue = loudnessRange(); el('mLra').textContent = isFinite(lraValue) ? 'LRA ' + lraValue.toFixed(1) : 'LRA --'; }
   }
 

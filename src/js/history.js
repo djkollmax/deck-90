@@ -36,6 +36,7 @@ function historyEntry(minBlocks, info, ended) {
   if (!isFinite(I)) return null;
   const tpMax = ended ? tpSettled : tpMaxDb, pkMax = ended ? pkSettled : pkMaxDb;
   const peak = tpAvailable && isFinite(tpMax) ? tpMax : pkMax;
+  const pg = playerGainFor(info);          // what the player's volume took off (NaN: it was normalising itself)
   return {
     id: HIST_PAGE_T0 + '|' + Math.round(trackStart) + '|' + npKey.slice(0, 400),
     at: Math.round(Date.now() - (performance.now() - trackStart)),
@@ -46,7 +47,9 @@ function historyEntry(minBlocks, info, ended) {
     tp: tpAvailable && isFinite(tpMax) ? histR1(tpMax) : null,
     pk: histR1(pkMax),
     bpm: histBpmValue(),
-    spot: histR1(spotifyGain(I, peak)),
+    gain: pg ? histR1(pg) : null,            // the player's volume, in dB (null: nothing taken off)
+    im: isFinite(pg) ? histR1(I - pg) : null, // the master's own loudness
+    spot: isFinite(pg) ? histR1(spotifyGain(I - pg, peak - pg)) : null,
   };
 }
 function historyFinalize(reason, info) {
@@ -102,9 +105,9 @@ function csvField(v) {
   return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function historyCsv(list) {
-  const head = ['Fecha', 'Tema', 'Artista', 'Álbum', 'Reproductor', 'Duración', 'Escuchado', 'LUFS integrado', 'LRA', 'True peak máx (dBTP)', 'Pico máx (dBFS)', 'BPM', 'Spotify (dB)'];
+  const head = ['Fecha', 'Tema', 'Artista', 'Álbum', 'Reproductor', 'Duración', 'Escuchado', 'LUFS integrado', 'Volumen reproductor (dB)', 'LUFS master', 'LRA', 'True peak máx (dBTP)', 'Pico máx (dBFS)', 'BPM', 'Spotify (dB)'];
   const rows = list.map(e => [histDate(e.at, true), e.title, e.artist, e.album, e.app, histHMS(e.dur), histHMS(e.heard),
-                              e.i, e.lra, e.tp, e.pk, e.bpm, e.spot].map(csvField).join(';'));
+                              e.i, e.gain, e.im, e.lra, e.tp, e.pk, e.bpm, e.spot].map(csvField).join(';'));
   return [head.join(';')].concat(rows).join('\r\n') + '\r\n';
 }
 
@@ -126,6 +129,11 @@ function histRow(e, live) {
   td.title = [e.title, e.artist, e.album].filter(Boolean).join(' — ');
   td.appendChild(t); td.appendChild(a); tr.appendChild(td);
   histCell(tr, histNum(e.i), 'n');
+  const im = e.im ?? null;
+  const mc = document.createElement('td'); mc.className = 'n'; mc.textContent = histNum(im);
+  if (e.gain) mc.title = 'El reproductor estaba ' + fmtGain(e.gain) + ' dB: el master mide ' + histNum(im) + ' LUFS';
+  else if (e.im === undefined) mc.title = 'Guardado antes de la versión 6.9: no se sabe el volumen del reproductor';
+  tr.appendChild(mc);
   histCell(tr, histNum(e.lra), 'n');
   histCell(tr, e.tp !== null && e.tp !== undefined ? histNum(e.tp) : histNum(e.pk), 'n' + ((e.tp ?? e.pk) > -1 ? ' hot' : ''));
   histCell(tr, e.bpm ? String(e.bpm) : '—', 'n');

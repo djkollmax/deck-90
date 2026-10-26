@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('nowPlaying', {
   on:  cb => ipcRenderer.on('media', (e, info) => cb(info)),
   cmd: c  => ipcRenderer.send('media-cmd', c),
+  // Spotless' volume and levelling, read from its settings ({ volume, levelling, gainDb } or null)
+  onPlayer: cb => ipcRenderer.on('spotless', (e, s) => cb(s)),
 });
 contextBridge.exposeInMainWorld('winCtl', {
   min:   () => ipcRenderer.send('win', 'min'),

@@ -14,13 +14,16 @@ function clean(e) {
   const at = n(e.at, 946684800000, 4102444800000);      // 2000 … 2100
   const i = n(e.i, -90, 10);
   if (at === null || i === null) return null;
-  return {
+  const out = {
     id: e.id, at: Math.round(at),
     title: s(e.title), artist: s(e.artist), album: s(e.album), app: s(e.app),
     dur: n(e.dur, 0, 86400), heard: n(e.heard, 0, 86400),
     i, lra: n(e.lra, 0, 100), tp: n(e.tp, -120, 30), pk: n(e.pk, -120, 30),
     bpm: n(e.bpm, 20, 400), spot: n(e.spot, -100, 100),
   };
+  // 6.9: the player's volume and the master's loudness (missing in older lines: left out, not null)
+  if ('gain' in e || 'im' in e) { out.gain = n(e.gain, -100, 0); out.im = n(e.im, -90, 30); }
+  return out;
 }
 
 function createTrackLog({ dir, log }) {
