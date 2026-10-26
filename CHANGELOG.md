@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.8.2
+
+### Changed
+- In the program, FUENTE (SISTEMA · MIC · DEMO · ■) moved from the main row to the ⚙ drawer: the program listens to the PC by itself, so the main row no longer looks like the old pick-a-source screen. S, M, D and Space work as before. The browser version keeps it up front, where it's needed.
+
 ## 6.8.1
 
 ### Fixed

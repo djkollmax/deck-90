@@ -804,3 +804,9 @@ body.mini #updBar{ display:none; }
 .seg.preset button.custom{ color:#9fc8e8; }
 .seg.preset button.custom.empty{ opacity:.45; }
 .seg.preset button.custom.on{ color:#120e05; }
+
+/* the program listens to the PC by itself: the source buttons live in the ⚙ drawer, not in the main row
+   (a browser still needs them up front). app-boot is set in <head>, so they never show for a frame. */
+.app-boot .console-row .seg.src{ display:none; }
+.seg.src-drawer{ display:none; }
+.app-boot .seg.src-drawer{ display:inline-flex; }
