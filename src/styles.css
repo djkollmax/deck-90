@@ -801,3 +801,6 @@ body.mini #updBar{ display:none; }
 .seg.preset button.save{ font-size:8px; letter-spacing:1.5px; }
 .seg.preset button.save.on{ background:linear-gradient(180deg,#ffb3a0,#e0573a); color:#1a0703; animation:presetArm 1s ease-in-out infinite; }
 @keyframes presetArm{ 50%{ opacity:.55; } }
+.seg.preset button.custom{ color:#9fc8e8; }
+.seg.preset button.custom.empty{ opacity:.45; }
+.seg.preset button.custom.on{ color:#120e05; }

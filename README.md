@@ -57,7 +57,8 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
   - Shows the title, artist and cover from the system's media session. Spotless is preferred when several players are open.
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
-- **Five presets (★ 1–5, or F1–F5).** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. They come as Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering; GUARDAR then a number (or Shift+click, Shift+F1–F5) stores what's on screen in that slot. The one matching the screen lights up.
+- **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
+- **It remembers.** The look, the window's size and place (or maximized), the mini strip's place, the phone display and the tray choices all come back as you left them.
 - **Tray.** Deck 90 sits by the clock: on Windows ✕ leaves it measuring there (the phone display keeps working; Shift+✕ quits), and its menu shows the window, switches mini mode and the phone display, starts it with Windows (hidden, straight to the tray) and quits.
 - **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it.
 - **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
@@ -126,7 +127,8 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `Z` | Cassette only |
 | `A` | Settings drawer |
 | `L` | Track history |
-| `F1`–`F5` | Load a preset (`Shift` + `F1`–`F5` saves the current look there) |
+| `F1`–`F5` | Favourite looks 1–5 |
+| `F6`–`F8` | Your looks C1–C3 (`Shift` + `F6`–`F8` saves the current look there) |
 | `H` | Hide the console |
 | `F` | Fullscreen |
 

@@ -127,9 +127,13 @@ document.getElementById('splashDemo').addEventListener('click', e => { e.stopPro
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const k = e.key.toLowerCase();
-  // F1–F5 load a preset, Shift+F1–F5 save what's on screen there
-  const fk = /^f([1-5])$/.exec(k);
-  if (fk && !histOpen()) { e.preventDefault(); (e.shiftKey ? savePreset : applyPreset)(Number(fk[1]) - 1); return; }
+  // F1–F5 the favourite looks, F6–F8 yours (C1–C3); Shift+F6–F8 saves what's on screen there
+  const fk = /^f([1-8])$/.exec(k);
+  if (fk && !histOpen()) {
+    e.preventDefault();
+    const n = Number(fk[1]), id = n <= 5 ? String(n) : 'c' + (n - 5);
+    (e.shiftKey ? savePreset : applyPreset)(id); return;
+  }
   if (k === 'escape' && presetSaveArmed) { presetSaveArmed = false; syncConsole(); return; }
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
   if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {

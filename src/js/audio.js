@@ -396,7 +396,7 @@ function syncConsole() {
       if (g === 'mods') { b.classList.toggle('on', !!mods[b.dataset.v]); return; }
       if (g === 'preset') {
         if (b.dataset.v === 'save') b.classList.toggle('on', typeof presetSaveArmed !== 'undefined' && presetSaveArmed);
-        else b.classList.toggle('on', typeof presetMatches === 'function' && presetMatches(Number(b.dataset.v) - 1));
+        else b.classList.toggle('on', typeof presetMatches === 'function' && presetMatches(b.dataset.v));
         return;
       }
       if (g === 'tools') { b.classList.toggle('on', (b.dataset.v === 'drawer' && drawerOpen) || (b.dataset.v === 'tapeonly' && !!modsBeforeTape)); return; }

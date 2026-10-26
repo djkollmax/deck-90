@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.7.0
+
+### Changed
+- **Presets: five favourites and three of your own.** 1–5 (F1–F5) are now fixed looks — Estudio, Hi-Fi 90s, Cinta 70s, Vidriera, Mastering — and C1, C2, C3 (F6–F8) are yours: GUARDAR then C1–C3, Shift+click on one, or Shift+F6–F8 stores what's on screen there. An empty C says so when clicked. Looks saved over 1–5 with 6.6.0 move into C1–C3 by themselves.
+
+### Added
+- The window's size and place, and whether it was maximized, are remembered between sessions (only restored if that place is still on a screen). The mini strip keeps its own.
+
 ## 6.6.0
 
 ### Added

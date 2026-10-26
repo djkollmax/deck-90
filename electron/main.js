@@ -40,10 +40,17 @@ app.whenReady().then(() => {
   ses.setPermissionRequestHandler((wc, permission, cb) => cb(ALLOWED.includes(permission) && ours(wc)));
   ses.setPermissionCheckHandler((wc, permission) => ALLOWED.includes(permission) && ours(wc));
 
+  // The normal window's size and place are remembered too (only if that place is still on a screen).
+  const onScreenAt = b => b && Number.isFinite(b.x) && b.width >= 760 && b.height >= 600 && screen.getAllDisplays().some(d => { const a = d.workArea;
+    return b.x < a.x + a.width - 80 && b.x + b.width > a.x + 80 && b.y >= a.y - 10 && b.y < a.y + a.height - 80; });
+  // Mini mode: a small strip that stays on top of other windows. Its size and place are remembered.
+  const STATE = path.join(app.getPath('userData'), 'window.json');
+  let saved = {}; try { saved = JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch (_) {}
   Menu.setApplicationMenu(null);
   // No Windows frame: the rack is the window. It still resizes from its edges and snaps (Win+arrows).
   win = new BrowserWindow({
     width: 1120, height: 900, useContentSize: true, minWidth: 760, minHeight: 600,
+    ...(onScreenAt(saved.normal) ? { x: saved.normal.x, y: saved.normal.y, width: saved.normal.width, height: saved.normal.height, useContentSize: false } : {}),
     frame: false,
     title: 'Deck 90',
     icon: path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
@@ -63,9 +70,6 @@ app.whenReady().then(() => {
     win.setFullScreen(false);
     setTimeout(finish, 700);                     // fallback if the event never comes
   });
-  // Mini mode: a small strip that stays on top of other windows. Its size and place are remembered.
-  const STATE = path.join(app.getPath('userData'), 'window.json');
-  let saved = {}; try { saved = JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch (_) {}
   let miniOn = false, miniBusy = false, normalBounds = null, wasMax = false;
   const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, 900, wa.width), height: Math.min(b.height, 300) });
   const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
@@ -160,8 +164,17 @@ app.whenReady().then(() => {
 
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
+  // remember the normal window (not the mini strip, not full screen) a moment after it moves or resizes
+  let normT = 0;
+  const saveNormal = () => {
+    if (miniOn || win.isDestroyed() || win.isFullScreen()) return;
+    saved.normal = win.isMaximized() ? Object.assign({}, saved.normal || {}, win.getNormalBounds()) : win.getBounds();
+    saved.maximized = win.isMaximized();
+    saveState();
+  };
+  ['resize', 'move', 'maximize', 'unmaximize'].forEach(ev => win.on(ev, () => { clearTimeout(normT); normT = setTimeout(saveNormal, 500); }));
   win.on('close', e => {
-    if (miniOn) saveMini();
+    if (miniOn) saveMini(); else saveNormal();
     // ✕ leaves Deck 90 in the tray (measuring, phone display on) unless the user turned that off
     if (tray && saved.tray.close && !app.isQuitting) {
       e.preventDefault(); win.hide();
@@ -173,7 +186,7 @@ app.whenReady().then(() => {
   });
   // Windows is ending the session: let the window close (not on the query: the user may still cancel)
   win.on('session-end', () => { app.isQuitting = true; });
-  win.once('ready-to-show', () => { if (!START_HIDDEN || !tray) win.show(); });
+  win.once('ready-to-show', () => { if (saved.maximized && !miniOn) win.maximize(); if (!START_HIDDEN || !tray) win.show(); });
   // if the first paint never comes, show the window anyway instead of leaving an invisible program
   setTimeout(() => { if (!win.isDestroyed() && !win.isVisible() && (!START_HIDDEN || !tray)) win.show(); }, 4000);
 
