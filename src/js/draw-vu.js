@@ -259,12 +259,23 @@ function drawVUClassic(canvas, ctx, st, th) {
   [[0, '0'], [vuT(-6), '50'], [vuT(0), '100']].forEach(([t, l]) => { const [x, y] = P(t, R - 10); ctx.fillText(l, x, y); });
   ctx.beginPath(); ctx.arc(cx, cy, R - 4, ang(0), ang(vuT(0))); ctx.strokeStyle = th.soft; ctx.lineWidth = .8; ctx.stroke();
   // VU and the − / + signs
-  ctx.font = 'bold ' + Math.round(fs * 1.9) + 'px Georgia, "Times New Roman", serif'; ctx.fillStyle = th.ink;
-  ctx.fillText(th.title, cx, hubIn ? cy - R * .42 : wy + wh * .74);
-  ctx.font = 'bold ' + Math.round(fs * 1.3) + 'px Georgia, serif';
-  { const sr = big ? R * .6 : R * .78, t0 = big ? 0.03 : -0.04, t1 = big ? 0.97 : 1.03;
-    { const [x, y] = P(t0, sr); ctx.fillText('−', x, Math.min(y, wy + wh * .86)); }
-    { const [x, y] = P(t1, sr); ctx.fillStyle = th.red; ctx.fillText('+', x, Math.min(y, wy + wh * .86)); } }
+  // the pivot below the window (a low meter): VU sits in the room left under the arc's top, sized to it,
+  // and the − / + by the arc's ends, never on the scale
+  const under = cy - R + 14 * k + fs * .9, room = wy + wh - 4 - under;
+  const tfs = hubIn ? fs * 1.9 : Math.max(9, Math.min(fs * 1.9, room * .5));
+  ctx.font = 'bold ' + Math.round(tfs) + 'px Georgia, "Times New Roman", serif'; ctx.fillStyle = th.ink;
+  if (R >= 60) ctx.fillText(th.title, cx, hubIn ? cy - R * .42 : under + room * .5);   // a tiny meter has no room for it
+  const sfs = hubIn ? fs * 1.3 : Math.max(8, Math.min(fs * 1.3, room * .35));
+  ctx.font = 'bold ' + Math.round(sfs) + 'px Georgia, serif';
+  if (hubIn || !big) {
+    const sr = R * .78;
+    { const [x, y] = P(-0.04, sr); ctx.fillText('−', x, Math.min(y, wy + wh * .86)); }
+    { const [x, y] = P(1.03, sr); ctx.fillStyle = th.red; ctx.fillText('+', x, Math.min(y, wy + wh * .86)); }
+  } else {                                              // under each end of the arc, at the height of VU
+    const sy = under + room * .5, [lx0] = P(0, R), [rx0] = P(1, R);
+    ctx.fillText('−', lx0 + (cx - lx0) * .32, sy);
+    ctx.fillStyle = th.red; ctx.fillText('+', rx0 - (rx0 - cx) * .32, sy);
+  }
   // peak lamp (lights on a near-clip peak)
   const lit = st.clip || st.samplePeak > -0.5;
   const lx = wx + ww - 16 * k, ly = wy + 14 * k;

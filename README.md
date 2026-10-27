@@ -2,15 +2,27 @@
 
 A desktop audio analyzer with a retro hi-fi look. It listens to whatever your computer is playing and shows it on VU meters, a spectrum analyzer, loudness meters, an oscilloscope and a pair of cassette decks whose tape actually turns. It also shows the track that's playing now, and pairs well with [Spotless](https://github.com/nix-codes/spotless).
 
-![Deck 90 — CINTA 70s VU meters, the Spotify badge and the stereo FL ÁMBAR spectrum](docs/screenshots/main.png)
+![Deck 90 — TITANIO frame, CREMA VU meters, the Spotify badge, FL 90s spectrum and the DECK 90 cassette deck](docs/screenshots/main.jpg)
 
-**Six of the ten spectrum styles:** LED 80s, FL SHOWROOM, FL ÁMBAR (stereo), RTA 1/3 octave, LCD and the spectrogram.
+**Three metal frames:** TITANIO, NEGRO and CHAMPAGNE (or the CLÁSICO dark rack). Every display sits behind glass in a polished bevel, its name engraved above it.
 
-![Spectrum styles](docs/screenshots/spectrums.png)
+![TITANIO, NEGRO and CHAMPAGNE frames](docs/screenshots/finishes.jpg)
 
-**VU faces CINTA 70s and AZUL**
+**The DECK 90 cassette deck:** the tape's reels turn as a real C90's, the song is on the label and on the display, the level meters have yellow and red zones, and the keys drive the player. One deck or two.
 
-![VU faces](docs/screenshots/vu-faces.png)
+![DECK 90 cassette deck, single and double](docs/screenshots/deck90.jpg)
+
+**The big tape, SO-90 REEL:** gold open reels over the tape packs that change as the side plays.
+
+![SO-90 REEL](docs/screenshots/so90.jpg)
+
+**VU faces:** CREMA, AZUL, CINTA 70s and HI-FI 90s (and STUDIO).
+
+![VU faces](docs/screenshots/vu-faces.jpg)
+
+**Six of the ten spectrum styles:** FL 90s, LED 80s, FL ÁMBAR (stereo), RTA 1/3 octave, LCD and the spectrogram.
+
+![Spectrum styles](docs/screenshots/spectrums.jpg)
 
 **Phone display:** everything, FL 90s and the spectrogram, live from the PC.
 
@@ -22,8 +34,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 
 | | |
 |---|---|
-| ![Hi-Fi VUs, LED columns and a double deck](docs/screenshots/retro-decks.png) | ![90s bar display and a big reel-to-reel style cassette](docs/screenshots/fl-tape.png) |
-| ![Columns spectrum](docs/screenshots/columns.png) | ![Mini mode: a strip that stays on top](docs/screenshots/mini.png) |
+| ![The CLÁSICO frame: the dark rack of the first versions](docs/screenshots/classic.jpg) | ![Mini mode: a strip that stays on top](docs/screenshots/mini.png) |
 
 *Screenshots use the built-in DEMO signal; track names are made up.*
 

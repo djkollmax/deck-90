@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.13.3
+
+### Fixed
+- Low, wide needle meters (CREMA, AZUL, CINTA 70s): "VU" and the − / + signs ran into the arc and the needle. They now sit in the room left under the arc, sized to it; a tiny meter leaves "VU" out.
+
+### Changed
+- New screenshots in the README: the metal frames, the DECK 90 cassette deck, the SO-90 REEL, the VU faces with CREMA, and the spectrum styles in the new frame.
+
 ## 6.13.2
 
 ### Changed
