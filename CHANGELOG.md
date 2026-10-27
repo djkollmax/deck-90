@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.13.2
+
+### Changed
+- The SO-90 REEL's reels are a richer, brighter gold, with more contrast in the brushed metal.
+
 ## 6.13.1
 
 ### Changed
