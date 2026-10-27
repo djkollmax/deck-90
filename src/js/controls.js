@@ -96,6 +96,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
   if (g === 'phone') phoneButton(v);
   if (g === 'chassis') setChassis(v);
+  if (g === 'clock') setClockMode(v);
   if (g === 'preset') { presetButton(v, e.shiftKey); return; }
   if (g === 'tools') {
     if (v === 'fs') toggleFullscreen();
@@ -139,6 +140,7 @@ document.getElementById('splashDemo').addEventListener('click', e => { e.stopPro
 // ── KEYBOARD ────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (e.target && e.target.closest && e.target.closest('input, textarea')) return;   // typing (the city) isn't a shortcut
   const k = e.key.toLowerCase();
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
   if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {

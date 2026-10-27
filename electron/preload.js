@@ -34,4 +34,9 @@ contextBridge.exposeInMainWorld('appUpdate', {
   install: () => ipcRenderer.send('upd-install'),
   open:    () => ipcRenderer.send('upd-open'),
 });
+// the weather for the header display: find a place by name, and its weather now
+contextBridge.exposeInMainWorld('weather', {
+  find: q => ipcRenderer.invoke('weather-find', String(q).slice(0, 80)),
+  now:  (lat, lon) => ipcRenderer.invoke('weather-now', Number(lat), Number(lon)),
+});
 contextBridge.exposeInMainWorld('appLog', msg => ipcRenderer.send('app-log', String(msg).slice(0, 800)));

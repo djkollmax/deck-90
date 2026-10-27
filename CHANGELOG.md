@@ -1,5 +1,16 @@
 # Changelog
 
+## 7.1.0
+
+### Added
+- **Clock, date and weather in the header display** (with the metal frames). The display now spans the header between the brand and the status. On its left, the time in the same 7-segment digits as the decks, the colon blinking, with the day and date beside it (MARTES / 27 OCT). The song stays centred in the middle. On its right, the weather: an FL icon (sun or moon, clouds, rain, drizzle, storm, snow, fog), the temperature in 7-segment digits, the sky in words and today's high and low. The display is taller when the window is.
+- **⚙ → RELOJ**: OFF, HORA (just the clock) or + CLIMA, and a field for your city: type it and press Enter (it's looked up by name and the first match is kept; the full name shows when you rest the mouse on the weather). Clicking the weather opens that field. Until there's a city the weather's side says how to set one.
+- The weather comes from Open-Meteo (free, no account) every 15 minutes, through the main process; only the city's name, once, and its coordinates are sent. Offline, it tries again every few minutes and hides numbers older than three hours.
+- A narrow window keeps room for the song: the weather's words go first, then the date, then the weather. In mini mode and with the CLÁSICO frame the header stays as before.
+
+### Fixed
+- Typing in a field of the drawer no longer works the rack's keyboard shortcuts.
+
 ## 7.0.1
 
 ### Changed

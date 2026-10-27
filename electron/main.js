@@ -435,6 +435,49 @@ function mediaCommand(cmd) {
   if (mpris) mpris.command(cmd);
 }
 ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
+
+// ── The weather in the header display ──
+// From Open-Meteo (free, no key; data under CC BY 4.0): a place looked up once by the name typed in the drawer,
+// then its weather now and today's high and low, every 15 minutes. Only numbers go back to the page.
+let weatherErr = '';
+async function getJson(url) {
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), 15000);
+  try {
+    const r = await net.fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Deck90/' + app.getVersion() } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+function weatherFail(what, err) {
+  const m = what + ': ' + (err && err.message || err);
+  if (m !== weatherErr) { weatherErr = m; mlog('weather ' + m); }             // once, not every 15 minutes
+}
+ipcMain.handle('weather-find', async (e, q) => {
+  if (!fromWin(e)) return null;
+  const name = String(q || '').trim().slice(0, 80);
+  if (!name) return [];
+  try {
+    const j = await getJson('https://geocoding-api.open-meteo.com/v1/search?count=5&language=es&format=json&name=' + encodeURIComponent(name));
+    return (Array.isArray(j.results) ? j.results : []).slice(0, 5)
+      .map(p => ({ name: String(p.name || '').slice(0, 60), area: [p.admin1, p.country].filter(x => typeof x === 'string').join(', ').slice(0, 80), lat: num(p.latitude), lon: num(p.longitude) }))
+      .filter(p => p.name && p.lat !== null && p.lon !== null);
+  } catch (err) { weatherFail('find', err); return null; }
+});
+ipcMain.handle('weather-now', async (e, lat, lon) => {
+  if (!fromWin(e)) return null;
+  lat = Number(lat); lon = Number(lon);
+  if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) return null;
+  try {
+    const j = await getJson('https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(4) + '&longitude=' + lon.toFixed(4) +
+      '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1');
+    const c = j.current || {}, d = j.daily || {}, first = a => (Array.isArray(a) ? num(a[0]) : null);
+    const out = { temp: num(c.temperature_2m), code: num(c.weather_code), day: c.is_day === 0 ? 0 : 1, max: first(d.temperature_2m_max), min: first(d.temperature_2m_min) };
+    if (out.temp === null) throw new Error('no temperature in the answer');
+    weatherErr = '';
+    return out;
+  } catch (err) { weatherFail('now', err); return null; }
+});
 app.whenReady().then(startMedia);
 
 // ── Spotless' own volume and levelling ──

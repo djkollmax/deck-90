@@ -1065,3 +1065,41 @@ html:not(.chassis-ti) #npArtist{ font-size:10px; color:rgba(230,205,140,.8); }
 }
 @media (max-height:820px){ .chassis-ti #npTitle{ font-size:15.5px; } .chassis-ti #npArtist{ font-size:11.5px; } }
 .chassis-ti body.mini #npTitle{ font-size:15px; } .chassis-ti body.mini #npArtist{ font-size:11px; }
+
+/* 7.1.0 · clock and weather in the header display (metal frames): the display spans the whole header,
+   the time in 7-segment digits at its left with the day and date, the weather at its right; the song in the middle */
+.hc, .hw{ display:none; }
+html.chassis-ti.hdr-clock .np{
+  display:grid; grid-template-columns:1fr auto minmax(0, max-content) 1fr; align-items:center; gap:0;
+  flex:1 1 auto; min-height:54px; padding:5px 16px;
+}
+html.chassis-ti.hdr-clock .np img.on{ margin:0 10px 0 16px; }
+html.chassis-ti.hdr-clock .np-text{ padding:0 16px; }
+html.chassis-ti.hdr-clock .np:not(.on) .np-text, html.chassis-ti.hdr-clock .np:not(.on) img{ visibility:hidden; }
+html.chassis-ti.hdr-clock .hc{ display:flex; align-items:center; gap:11px; justify-self:start; grid-column:1; padding-right:16px; border-right:1px solid rgba(127,246,230,.13); }
+html.chassis-ti.hdr-wx .hw{ display:flex; align-items:center; gap:9px; justify-self:end; grid-column:4; padding-left:16px; border-left:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }
+html.chassis-ti.hdr-clock .np img{ grid-column:2; }
+html.chassis-ti.hdr-clock .np-text{ grid-column:3; }
+.hc canvas, .hw canvas{ display:block; flex:none; }
+.hc-date, .hw-text{
+  display:flex; flex-direction:column; justify-content:center; white-space:nowrap;
+  font:500 12.5px/1.2 'Deck90 Display', 'Bahnschrift', 'Arial Narrow', sans-serif; letter-spacing:2px;
+  color:rgba(96,222,212,.92); text-shadow:0 0 4px rgba(80,214,204,.22);
+  -webkit-font-smoothing:antialiased; font-kerning:normal;
+}
+#hcDay, #hwCond{ font-weight:600; font-size:15px; letter-spacing:1.8px; color:#8ef8ea; text-shadow:0 0 1px rgba(142,248,234,.8), 0 0 5px rgba(127,246,230,.4); }
+.hw.hint .hw-text{ opacity:.75; }
+/* a narrow display leaves room for the song: the weather's words go first, then the date, then the weather */
+.np.hc-tight .hw-text, .np.hc-tighter .hc-date, .np.hc-tightest .hw{ display:none !important; }
+@media (max-height:820px){
+  html.chassis-ti.hdr-clock .np{ min-height:42px; padding:3px 14px; }
+  .hc-date, .hw-text{ font-size:11px; } #hcDay, #hwCond{ font-size:13px; }
+}
+/* the city, typed in the drawer */
+.seg input{
+  width:130px; padding:0 10px; border:0; border-left:1px solid rgba(255,255,255,.06); outline:none;
+  background:rgba(0,0,0,.35); color:#f2d991; font:bold 9.5px 'Courier New', monospace; letter-spacing:1.4px; text-transform:uppercase;
+}
+.seg input::placeholder{ color:rgba(217,189,115,.42); }
+.seg input:focus{ background:rgba(0,0,0,.6); box-shadow:inset 0 0 0 1px rgba(217,189,115,.55); }
+body.is-app .seg input{ -webkit-app-region:no-drag; }

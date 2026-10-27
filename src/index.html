@@ -54,9 +54,11 @@
       <div class="led amber" id="ledPower"></div>
       <div class="brand-name">DECK 90</div>
     </div>
-    <div class="np" id="np" title="Lo que está sonando (según Windows)">
+    <div class="np" id="np">
+      <div class="hc" id="hcBox" title="Hora y fecha (⚙ → RELOJ)"><canvas id="hcDigits"></canvas><div class="hc-date"><span id="hcDay"></span><span id="hcDate"></span></div></div>
       <img id="npCover" alt="">
-      <div class="np-text"><span id="npTitle"></span><span id="npArtist"></span></div>
+      <div class="np-text" title="Lo que está sonando (según Windows)"><span id="npTitle"></span><span id="npArtist"></span></div>
+      <div class="hw" id="hwBox" title="Clima (⚙ → RELOJ → ciudad) · datos de Open-Meteo.com"><canvas id="hwIcon"></canvas><canvas id="hwTemp"></canvas><div class="hw-text"><span id="hwCond"></span><span id="hwRange"></span></div></div>
     </div>
     <div class="title-right">
       <span id="statusText">STANDBY</span>
@@ -167,6 +169,13 @@
         <button data-v="off">OFF</button>
         <button data-v="on">ON</button>
         <button data-v="qr">QR</button>
+      </div>
+      <div class="seg clock-seg" data-group="clock" title="Hora, fecha y clima en el display de arriba (con los marcos de metal). Escribí tu ciudad y Enter">
+        <span class="seg-label">RELOJ</span>
+        <button data-v="off">OFF</button>
+        <button data-v="clock">HORA</button>
+        <button data-v="weather">+ CLIMA</button>
+        <input id="cityInput" type="text" maxlength="60" placeholder="CIUDAD" spellcheck="false" autocomplete="off">
       </div>
       <div class="seg" data-group="chassis" title="Marco del aparato: metal cepillado como un deck de los 90 (titanio, negro o champagne) o el rack clásico">
         <span class="seg-label">MARCO</span>
@@ -334,6 +343,7 @@
 <script src="js/loop.js"></script>
 <script src="js/idle.js"></script>
 <script src="js/controls.js"></script>
+<script src="js/clock.js"></script>
 
 </body>
 </html>

@@ -434,6 +434,7 @@ function syncConsole() {
       if (g === 'tools') { b.classList.toggle('on', (b.dataset.v === 'drawer' && drawerOpen) || (b.dataset.v === 'tapeonly' && !!modsBeforeTape)); return; }
       if (g === 'deckmode') { b.classList.toggle('on', (b.dataset.v === 'double') === deckDouble); return; }
       if (g === 'tapestyle') { b.classList.toggle('on', b.dataset.v === tapeStyle); return; }
+      if (g === 'clock') { b.classList.toggle('on', typeof clockCfg === 'object' && b.dataset.v === clockCfg.mode); return; }
       if (g === 'skin' && b.dataset.v === 'more') {
         const extra = SPECTRUM_SKINS.slice(4).find(s => s[0] === spectrumSkin);
         b.classList.toggle('on', !!extra); b.textContent = extra ? extra[1] + ' ▾' : 'MÁS ▾'; return;
