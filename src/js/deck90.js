@@ -61,7 +61,8 @@ function drawDeck90(ctx, X, Y, W, H, d, levels, running) {
   // the tape packs, behind the plastic: the left one pays out, the right one winds up (see reelRadii).
   // Clear in the centre window, faint through the smoked strip around the hubs.
   const [rl, rr2] = reelRadii(d.pos), R_FULL = 128;
-  const HUBS = [[196.5, 179], [480.5, 178.5]];
+  // the hubs' true centres (where each looks the same turned 60°): the spindles the reels turn on
+  const HUBS = [[195.5, 172.45], [480.33, 172.38]];
   const packs = [[HUBS[0][0], HUBS[0][1], rl * R_FULL], [HUBS[1][0], HUBS[1][1], rr2 * R_FULL]];
   const pack = (alpha) => packs.forEach(([px, py, r]) => {
     const x = cX + P(px), y = cY + P(py), R = P(r);
@@ -87,10 +88,16 @@ function drawDeck90(ctx, X, Y, W, H, d, levels, running) {
   ctx.rect(cX + P(win[0]), cY + P(win[1]), P(win[2]), P(win[3])); ctx.clip('evenodd');
   pack(0.22);
   ctx.restore();
-  const hubD = P(110);
+  // the hubs turn exactly about their centres (the image is centred on them to a fraction of a pixel and
+  // made six-fold symmetric); the light on them doesn't turn, as on a real reel
+  const hubD = P(108);
   [[HUBS[0][0], HUBS[0][1], d.ang[0]], [HUBS[1][0], HUBS[1][1], d.ang[1]]].forEach(([hx, hy, a]) => {
-    ctx.save(); ctx.translate(cX + P(hx), cY + P(hy)); ctx.rotate(a);
+    const x = cX + P(hx), y = cY + P(hy);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
     ctx.drawImage(D90.hub, -hubD / 2, -hubD / 2, hubD, hubD); ctx.restore();
+    const light = ctx.createLinearGradient(x - P(40), y - P(40), x + P(40), y + P(40));
+    light.addColorStop(0, 'rgba(255,248,235,.16)'); light.addColorStop(.45, 'rgba(255,255,255,0)'); light.addColorStop(1, 'rgba(0,0,0,.24)');
+    ctx.beginPath(); ctx.arc(x, y, P(50), 0, Math.PI * 2); ctx.fillStyle = light; ctx.fill();
   });
   if (d.side !== 'A') {                                    // the tape is printed with side A: deck B shows B
     ctx.fillStyle = 'rgb(22,20,19)'; ctx.fillRect(cX + P(91), cY + P(165), P(25), P(25));

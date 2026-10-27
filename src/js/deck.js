@@ -326,23 +326,26 @@ function deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H) {
   const segs = wide ? Math.max(24, Math.min(48, Math.round(mW / (fH * 0.11)))) : 24;
   const pitch = mW / segs, sGap = Math.max(1, pitch * 0.13), sW = pitch - sGap, rad = Math.min(sH * 0.14, 3);
   const dbAt = k => -40 + k * (48 / (segs - 1));
+  // zones as on the decks of the time: turquoise, yellow from −6 dB, red from 0 dB; unlit segments keep a hint of theirs
+  const zone = db => db >= -0.05 ? 2 : db >= -6.7 ? 1 : 0;
+  const ZLIT = [FL, '#ffd24a', '#ff4f3a'], ZOFF = [UNLIT, 'rgba(255,210,74,.15)', 'rgba(255,79,58,.17)'], ZTXT = [DIM, 'rgba(255,210,74,.85)', 'rgba(255,99,78,.9)'];
   ['L', 'R'].forEach((chn, row) => {
     const yy = fY + fH * (compact ? (row ? 0.80 : 0.64) : (row ? 0.735 : 0.637));
     ctx.font = face(fH * (compact ? 0.12 : 0.085)); ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(127,246,230,.9)';
     ctx.fillText(chn, mX - fW * 0.018, yy + sH / 2);
     for (let k = 0; k < segs; k++) {
-      const db = dbAt(k), on = levels[row] >= db;
-      const col = db >= 3 ? '#ff6a4d' : FL;
-      ctx.fillStyle = on ? col : UNLIT;
+      const db = dbAt(k), on = levels[row] >= db, z = zone(db), col = ZLIT[z];
+      ctx.fillStyle = on ? col : ZOFF[z];
       if (on) { ctx.shadowColor = col; ctx.shadowBlur = glow; }
       rr(ctx, mX + k * pitch, yy, sW, sH, rad); ctx.fill();
       ctx.shadowBlur = 0;
     }
   });
   if (compact) return;                                     // no room for the dB scale
-  ctx.font = face(fH * 0.06); ctx.textAlign = 'center'; ctx.fillStyle = DIM;
+  ctx.font = face(fH * 0.06); ctx.textAlign = 'center';
   [-40, -20, -10, -6, -3, 0, 3, 8].forEach(db => {
     const k = (db + 40) / 48 * (segs - 1);
+    ctx.fillStyle = ZTXT[zone(dbAt(Math.round(k)))];
     ctx.fillText(db > 0 ? '+' + db : String(db), mX + k * pitch + sW / 2, fY + fH * 0.865);
   });
 }

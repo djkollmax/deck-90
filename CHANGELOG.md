@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.11.1
+
+### Fixed
+- **The DECK 90 tape's reels no longer wobble.** They turned about a point 6–7 px below their real centre, so they swung and the still hub of the picture showed around them. Each hub's centre is now found from its own six-fold shape (the point where it looks the same turned 60°), the hub picture is centred on it to a fraction of a pixel, and the light on it stays put while the hub turns, as on a real reel. Over a full turn the spindle stays within 0.06 px.
+
+### Added
+- **Yellow and red zones on the deck's level meters**, as on the decks of the time: turquoise up to −6 dB, yellow to 0 dB, red above. Unlit segments keep a hint of their zone's colour, and the scale's numbers take it too.
+
 ## 6.11.0
 
 ### Added
