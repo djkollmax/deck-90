@@ -1005,3 +1005,14 @@ body.is-app .rack-unit > .s-br{ bottom:3px; right:4px; top:auto; left:auto; }
 }
 /* 6.10.1 · one deck instead of two: its panel takes more of the height, so the deck fills the width */
 .rack-unit.deck-single .deck-panel{ flex-grow:2.2; }
+/* 6.10.2 · the whole frame moves the window, not only the header: its metal edge, the screws and the gaps
+   between modules. The modules themselves, the controls and the windows on top stay clickable. */
+body.is-app .rack-unit{ -webkit-app-region:drag; }
+body.is-app .rack-unit .panel,
+body.is-app .rack-unit .console,
+body.is-app .rack-unit .console-tab,
+body.is-app .rack-unit .mini-panel{ -webkit-app-region:no-drag; }
+/* the engraved name above each module is part of the metal too */
+body.is-app .rack-unit .panel > .panel-label{ -webkit-app-region:drag; }
+.chassis-ti .panel > .panel-label{ top:0; padding:6px 0; }
+@media (max-height:820px){ .chassis-ti .panel > .panel-label{ top:0; padding:4px 0; } }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.10.2
+
+### Fixed
+- **The window can be moved from the whole frame.** Only the header bar moved it: grabbing the metal edge, a screw, the gaps between modules or the engraved name above a module did nothing, which is easy to do with the window maximized (the top of the screen is the frame). Now all of these move the window (and a double-click on them maximizes or restores it, as on the header). The modules, the controls and the deck keys take clicks as before.
+
 ## 6.10.1
 
 ### Changed
