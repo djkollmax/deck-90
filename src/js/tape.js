@@ -41,8 +41,8 @@ function drawClearCassette(ctx, cX, cY, cw, ch, st, title, side) {
   const reelY = cY + ch * 0.47, reelL = cX + cw * 0.2875, reelR = cX + cw * 0.7125;
   const rHub = ch * 0.1, rMin = rHub * 1.05, rMax = cw * 0.2;
   const f = Math.max(0, Math.min(1, st.pos / SIDE_SECONDS));
-  const rTake = Math.sqrt(rMin * rMin + f * (rMax * rMax - rMin * rMin));
-  const rFeed = Math.sqrt(rMin * rMin + (1 - f) * (rMax * rMax - rMin * rMin));
+  const rLeft = Math.sqrt(rMin * rMin + (1 - f) * (rMax * rMax - rMin * rMin));   // paying out
+  const rRight = Math.sqrt(rMin * rMin + f * (rMax * rMax - rMin * rMin));        // winding up
 
   // clear shell body (smoked, slightly blue)
   rr(ctx, cX, cY, cw, ch, R);
@@ -56,7 +56,7 @@ function drawClearCassette(ctx, cX, cY, cw, ch, st, title, side) {
   ctx.beginPath(); ctx.moveTo(cX + cw * 0.04, cY + ch * 0.2); ctx.lineTo(cX + cw * 0.96, cY + ch * 0.2); ctx.stroke();
 
   // tape packs
-  [[reelL, rTake, st.ang[0]], [reelR, rFeed, st.ang[1]]].forEach(([x, r, a]) => {
+  [[reelL, rLeft, st.ang[0]], [reelR, rRight, st.ang[1]]].forEach(([x, r, a]) => {
     const g = ctx.createRadialGradient(x, reelY, rMin, x, reelY, r);
     g.addColorStop(0, '#4e3524'); g.addColorStop(.7, '#3a2719'); g.addColorStop(.985, '#2a1b11'); g.addColorStop(1, '#7a5a3e');
     ctx.beginPath(); ctx.arc(x, reelY, r, 0, Math.PI * 2); ctx.arc(x, reelY, rMin, 0, Math.PI * 2, true); ctx.fillStyle = g; ctx.fill();
@@ -73,8 +73,8 @@ function drawClearCassette(ctx, cX, cY, cw, ch, st, title, side) {
   // tape path: packs → guide rollers → past the pressure pad
   const gy = cY + ch * 0.86, gL = cX + cw * 0.115, gR = cX + cw * 0.885, gr = cw * 0.018;
   ctx.strokeStyle = '#3f2b1c'; ctx.lineWidth = Math.max(1.6, ch * 0.01);
-  ctx.beginPath(); ctx.moveTo(reelL - rTake * 0.97, reelY + rTake * 0.25); ctx.lineTo(gL - gr, gy); ctx.lineTo(gL, gy + gr);
-  ctx.lineTo(gR, gy + gr); ctx.lineTo(gR + gr, gy); ctx.lineTo(reelR + rFeed * 0.97, reelY + rFeed * 0.25); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(reelL - rLeft * 0.97, reelY + rLeft * 0.25); ctx.lineTo(gL - gr, gy); ctx.lineTo(gL, gy + gr);
+  ctx.lineTo(gR, gy + gr); ctx.lineTo(gR + gr, gy); ctx.lineTo(reelR + rRight * 0.97, reelY + rRight * 0.25); ctx.stroke();
   [gL, gR].forEach(x => {
     ctx.beginPath(); ctx.arc(x, gy, gr, 0, Math.PI * 2); ctx.fillStyle = '#f0eee8'; ctx.fill();
     ctx.beginPath(); ctx.arc(x, gy, gr * 0.4, 0, Math.PI * 2); ctx.fillStyle = '#9a968c'; ctx.fill();
@@ -182,8 +182,8 @@ function drawReelCassette(ctx, cX, cY, cw, ch, st, title, side) {
   const rFl = Math.min(cw * 0.185, ch * 0.30);
   const rMinPack = rFl * 0.38, rMaxPack = rFl * 0.97;
   const f = Math.max(0, Math.min(1, st.pos / SIDE_SECONDS));
-  const rTake = Math.sqrt(rMinPack * rMinPack + f * (rMaxPack * rMaxPack - rMinPack * rMinPack));
-  const rFeed = Math.sqrt(rMinPack * rMinPack + (1 - f) * (rMaxPack * rMaxPack - rMinPack * rMinPack));
+  const rLeft = Math.sqrt(rMinPack * rMinPack + (1 - f) * (rMaxPack * rMaxPack - rMinPack * rMinPack));   // paying out
+  const rRight = Math.sqrt(rMinPack * rMinPack + f * (rMaxPack * rMaxPack - rMinPack * rMinPack));        // winding up
 
   // aluminium body with the two windows cut out (even-odd)
   ctx.save();
@@ -214,13 +214,13 @@ function drawReelCassette(ctx, cX, cY, cw, ch, st, title, side) {
   wins.forEach(([x, y, w, h]) => ctx.rect(cX + cw * x, cY + ch * y, cw * w, ch * h));
   ctx.clip();
   ctx.strokeStyle = '#3f2b1c'; ctx.lineWidth = Math.max(1.6, ch * 0.01);
-  ctx.beginPath(); ctx.moveTo(reelL - rTake * 0.96, reelY + rTake * 0.28); ctx.lineTo(cX + cw * 0.1, gy);
-  ctx.lineTo(cX + cw * 0.9, gy); ctx.lineTo(reelR + rFeed * 0.96, reelY + rFeed * 0.28); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(reelL - rLeft * 0.96, reelY + rLeft * 0.28); ctx.lineTo(cX + cw * 0.1, gy);
+  ctx.lineTo(cX + cw * 0.9, gy); ctx.lineTo(reelR + rRight * 0.96, reelY + rRight * 0.28); ctx.stroke();
   ctx.restore();
 
   // the reels (gold on side A, silver on side B)
-  drawOpenReel(ctx, reelL, reelY, rFl, rTake, rMinPack, st.ang[0], side === 'A' ? 'gold' : 'silver');
-  drawOpenReel(ctx, reelR, reelY, rFl, rFeed, rMinPack, st.ang[1], side === 'A' ? 'gold' : 'silver');
+  drawOpenReel(ctx, reelL, reelY, rFl, rLeft, rMinPack, st.ang[0], side === 'A' ? 'gold' : 'silver');
+  drawOpenReel(ctx, reelR, reelY, rFl, rRight, rMinPack, st.ang[1], side === 'A' ? 'gold' : 'silver');
 
   // window bevels
   wins.forEach(([x, y, w, h]) => {
@@ -269,10 +269,7 @@ function drawBigTape(canvas, ctx, live) {
   if (play) {
     const T = dtMs / 1000;
     bigTape.pos += T; if (bigTape.pos > SIDE_SECONDS) bigTape.pos = 60;
-    const f = bigTape.pos / SIDE_SECONDS, rh = 0.42, rf = 1;
-    const rTake = Math.sqrt(rh * rh + f * (rf * rf - rh * rh)), rFeed = Math.sqrt(rh * rh + (1 - f) * (rf * rf - rh * rh));
-    bigTape.ang[0] += 1.9 / rTake * T;
-    bigTape.ang[1] += 1.9 / rFeed * T;
+    turnReels(bigTape, T);
     bigTape.counter = np && np.status === 'Playing' ? npPosition() : bigTape.counter + T;
   }
   // stage: dark felt with a warm spotlight
@@ -368,19 +365,16 @@ function drawDeck(canvas, ctx, live) {
         if (np.status === 'Playing') d.counter = npPosition();
         else d.counter += T - T * 0.9;                        // reported paused but audible: keep time ourselves (1 s/s)
       }
-      const ch0 = 1;                                               // relative units, only the ratio matters
-      const f = d.pos / SIDE_SECONDS, rh = 0.36, rf = 1;
-      const rFeed = Math.sqrt(rh * rh + (1 - f) * (rf * rf - rh * rh)), rTake = Math.sqrt(rh * rh + f * (rf * rf - rh * rh));
-      const v = 2.2 * ch0;                                         // visual tape speed
-      d.ang[0] += v / rTake * T;                                   // take-up (left) and feed (right) both turn the same way
-      d.ang[1] += v / rFeed * T;
+      turnReels(d, T);                                             // as a real cassette: see reelRadii
     }
     // each deck fills its half: as tall as the panel allows, and as wide as its half (the display and keys
     // stretch); only a very wide half leaves some room at the sides, and a narrow one keeps it 2.4 : 1
-    const slotW = W / n, pad = Math.min(8, slotW * 0.015), padY = Math.min(6, H * 0.03);
+    // the DECK 90 faceplate with the metal frames (once its pieces are loaded), the drawn one with CLÁSICO
+    const premium = typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && deck90Ready();
+    const slotW = W / n, pad = Math.min(8, slotW * 0.015), padY = Math.min(6, H * 0.03), minA = premium ? 2.7 : 2.4;
     let dw = slotW - pad * 2, dh = H - padY * 2;
-    if (dw / dh > 7.2) dw = dh * 7.2; else if (dw / dh < 2.4) dh = dw / 2.4;
+    if (dw / dh > 7.2) dw = dh * 7.2; else if (dw / dh < minA) dh = dw / minA;
     const dx = i * slotW + (slotW - dw) / 2, dy = (H - dh) / 2;
-    drawCassetteDeck(ctx, dx, dy, dw, dh, d, levels, play);
+    (premium ? drawDeck90 : drawCassetteDeck)(ctx, dx, dy, dw, dh, d, levels, play);
   }
 }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.11.0
+
+### Added
+- **The DECK 90 cassette deck.** With the metal frames (TITANIO, NEGRO, CHAMPAGNE) the DECK module is a black brushed-aluminium deck built from the panel's mock-up: a bevelled cassette well with a DECK 90 TYPE IV tape, the FL display behind its bezel, six square transport keys under TRANSPORT, two knurled knobs (REC LEVEL follows the music), the power key with its LED and the phones jack, and four screws. It fills its panel like the old one: the well and knobs keep their size and the display and keys stretch. CLÁSICO keeps the drawn deck.
+- **The song on the cassette's label**: deck A's tape has the playing song in big letters with the artist under it (long titles shrink, then are cut with …); deck B's has the song before.
+
+### Changed
+- **The cassettes turn like real ones.** Playing side A, the left reel pays the tape out and the right one winds it up, and both turn counterclockwise (they turned the other way). Each turns at the tape's speed over its own pack: 0.30 turns a second on a full pack, 0.67 on a bare hub, 0.39 each halfway — as a C90 at 4.76 cm/s. In the DECK 90 tape you see the brown packs change through the window as the side plays. Applies to every cassette (the decks, the big tape, REEL and CLEAR).
+- **The FL display** of the decks: upright digits with bevelled segments and no ghost of the unlit ones, condensed bold lettering, thick meter segments with the unlit ones faintly there, the dB scale under them. A low display shows just the counter, PLAY/METAL and the meters, so nothing overlaps.
+
 ## 6.10.2
 
 ### Fixed

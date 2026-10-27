@@ -9,6 +9,20 @@ const decks = [
   { pos: 1710, ang: [0, 0], side: 'B', title: 'LATE NIGHT DUB',       stripe: '#79d9ff', counter: 1187 },
 ];
 const SIDE_SECONDS = 2700;
+// How a cassette turns. Side A plays left → right past the heads: the left reel pays the tape out (its pack
+// shrinks), the right one winds it up (grows), and seen from the front both turn counterclockwise. The tape
+// runs at a constant 4.76 cm/s, so each reel turns at that speed over its pack's radius: about 0.7 turns a
+// second on a bare hub (1.1 cm), 0.3 on a full C90 pack (2.5 cm). Radii relative to a full pack.
+const REEL_HUB = 0.44, REEL_V = 1.9;                       // hub / full pack; rad/s at a full pack
+function reelRadii(pos) {                                    // [left (paying out), right (winding up)], relative
+  const f = Math.max(0, Math.min(1, pos / SIDE_SECONDS)), h2 = REEL_HUB * REEL_HUB;
+  return [Math.sqrt(h2 + (1 - f) * (1 - h2)), Math.sqrt(h2 + f * (1 - h2))];
+}
+function turnReels(st, T) {                                  // both counterclockwise, each at its own speed
+  const [rl, rr2] = reelRadii(st.pos);
+  st.ang[0] -= REEL_V / rl * T;
+  st.ang[1] -= REEL_V / rr2 * T;
+}
 // rounded rect that never throws: tiny or negative sizes (a panel caught mid-resize) are clamped
 function rr(ctx, x, y, w, h, r){
   w = Math.max(0, w || 0); h = Math.max(0, h || 0);
@@ -34,22 +48,21 @@ function drawReel(ctx, cx, cy, rHub, ang) {
 
 // ── high-end deck parts ──────────────────────────────────────
 const SEG7 = { 0:'abcdef', 1:'bc', 2:'abged', 3:'abgcd', 4:'fgbc', 5:'afgcd', 6:'afgedc', 7:'abc', 8:'abcdefg', 9:'abcfgd' };
+// A fluorescent 7-segment digit: upright, each segment a long hexagon whose pointed ends meet its
+// neighbours at the corners, with a hair of dark between them.
 function draw7(ctx, x, y, w, h, ch, on, off) {
-  const t = Math.max(1.2, w * 0.17), g = t * 0.25;
-  const seg = {
-    a: [x + t / 2 + g, y, w - t - 2 * g, t], d: [x + t / 2 + g, y + h - t, w - t - 2 * g, t], g: [x + t / 2 + g, y + h / 2 - t / 2, w - t - 2 * g, t],
-    f: [x, y + t / 2 + g, t, h / 2 - t - g], b: [x + w - t, y + t / 2 + g, t, h / 2 - t - g],
-    e: [x, y + h / 2 + t / 2, t, h / 2 - t - g], c: [x + w - t, y + h / 2 + t / 2, t, h / 2 - t - g],
-  };
-  ctx.save(); ctx.transform(1, 0, -0.08, 1, (y + h) * 0.08, 0);
+  const t = Math.max(1.4, w * 0.19), g = Math.max(0.6, t * 0.16), m = t / 2;
+  const L = x + m, R = x + w - m, T = y + m, M = y + h / 2, B = y + h - m;
+  const hor = (x0, x1, cy) => [[x0 + g, cy], [x0 + g + m, cy - m], [x1 - g - m, cy - m], [x1 - g, cy], [x1 - g - m, cy + m], [x0 + g + m, cy + m]];
+  const ver = (cx, y0, y1) => [[cx, y0 + g], [cx + m, y0 + g + m], [cx + m, y1 - g - m], [cx, y1 - g], [cx - m, y1 - g - m], [cx - m, y0 + g + m]];
+  const seg = { a: hor(L, R, T), g: hor(L, R, M), d: hor(L, R, B), f: ver(L, T, M), b: ver(R, T, M), e: ver(L, M, B), c: ver(R, M, B) };
   for (const k of 'abcdefg') {
     const lit = (SEG7[ch] || '').includes(k);
     ctx.fillStyle = lit ? on : off;
-    if (lit) { ctx.shadowColor = on; ctx.shadowBlur = t * 2.2; }
-    const [sx, sy, sw, sh] = seg[k]; ctx.fillRect(sx, sy, sw, sh);
+    if (lit) { ctx.shadowColor = on; ctx.shadowBlur = t * 1.8; }
+    ctx.beginPath(); seg[k].forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.closePath(); ctx.fill();
     ctx.shadowBlur = 0;
   }
-  ctx.restore();
 }
 function brushed(ctx, x, y, w, h, base) {
   const g = ctx.createLinearGradient(0, y, 0, y + h);
@@ -142,11 +155,11 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   const reelY = cY + ch * 0.47, reelL = cX + cw * 0.2875, reelR = cX + cw * 0.7125;
   const rHub = ch * 0.08, rMin = rHub * 1.35, rMax = cw * 0.205;
   const f = Math.max(0, Math.min(1, d.pos / SIDE_SECONDS));
-  const rTake = Math.sqrt(rMin * rMin + f * (rMax * rMax - rMin * rMin));
-  const rFeed = Math.sqrt(rMin * rMin + (1 - f) * (rMax * rMax - rMin * rMin));
+  const rLeft = Math.sqrt(rMin * rMin + (1 - f) * (rMax * rMax - rMin * rMin));   // paying out
+  const rRight = Math.sqrt(rMin * rMin + f * (rMax * rMax - rMin * rMin));        // winding up
 
   // tape packs seen through the clear shell (warm, with a sheen ring)
-  [[reelL, rTake], [reelR, rFeed]].forEach(([x, r]) => {
+  [[reelL, rLeft], [reelR, rRight]].forEach(([x, r]) => {
     const g = ctx.createRadialGradient(x, reelY, rMin * .9, x, reelY, r);
     g.addColorStop(0, '#5a3f28'); g.addColorStop(.6, '#3d2a1b'); g.addColorStop(.97, '#2a1c12'); g.addColorStop(1, '#6b5038');
     ctx.beginPath(); ctx.arc(x, reelY, r, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
@@ -157,8 +170,8 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   const pathY = cY + ch * 0.9;
   ctx.strokeStyle = '#3b2819'; ctx.lineWidth = Math.max(1.5, ch * 0.012);
   ctx.beginPath();
-  ctx.moveTo(reelL - rTake * 0.2, reelY + rTake * 0.98); ctx.lineTo(cX + cw * 0.12, pathY);
-  ctx.lineTo(cX + cw * 0.88, pathY); ctx.lineTo(reelR + rFeed * 0.2, reelY + rFeed * 0.98); ctx.stroke();
+  ctx.moveTo(reelL - rLeft * 0.2, reelY + rLeft * 0.98); ctx.lineTo(cX + cw * 0.12, pathY);
+  ctx.lineTo(cX + cw * 0.88, pathY); ctx.lineTo(reelR + rRight * 0.2, reelY + rRight * 0.98); ctx.stroke();
 
   // clear smoked shell on top
   rr(ctx, cX, cY, cw, ch, cw * 0.03);
@@ -205,77 +218,12 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
 
   // ── FL display, centre
   const fX = wX + wW + gap * 1.4, fY = Y + H * 0.2, fH = H * 0.4, fW = X + W - mx - rW - gap - fX;
-  const wide = fW > H * 2.0 && H >= 100;                   // room for the remaining time and more indicators
   rr(ctx, fX - 3, fY - 3, fW + 6, fH + 6, 5); ctx.fillStyle = '#050607'; ctx.fill();
   rr(ctx, fX, fY, fW, fH, 4);
   const glass = ctx.createLinearGradient(0, fY, 0, fY + fH);
   glass.addColorStop(0, '#081314'); glass.addColorStop(1, '#030707');
   ctx.fillStyle = glass; ctx.fill();
-  // counter, 4 digits
-  const timeMode = d.side === 'A' && !!np;
-  const secs = Math.floor(d.counter);
-  const dg = timeMode ? (String(Math.floor(secs / 60) % 100).padStart(2, '0') + String(secs % 60).padStart(2, '0'))
-                      : String(secs % 10000).padStart(4, '0');
-  const dH = fH * 0.42, dW = dH * 0.52, dGap = dW * 0.28;
-  const dX0 = fX + fW * 0.05, dY0 = fY + fH * 0.1;
-  for (let k = 0; k < 4; k++) draw7(ctx, dX0 + k * (dW + dGap), dY0, dW, dH, dg[k], FL, FLdim);
-  if (timeMode) {                                         // m:ss colon
-    const cx = dX0 + 2 * (dW + dGap) - dGap / 2, r = Math.max(1.2, dW * 0.08);
-    ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 6;
-    [0.33, 0.7].forEach(fy => { ctx.beginPath(); ctx.arc(cx, dY0 + dH * fy, r, 0, Math.PI * 2); ctx.fill(); });
-    ctx.shadowBlur = 0;
-  }
-  // indicators
-  ctx.font = `bold ${Math.max(6, Math.round(fH * 0.09))}px Arial, sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-  const ind = (txt, x, y, on, col) => { ctx.fillStyle = on ? (col || FL) : 'rgba(127,246,230,.10)'; if (on) { ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 6; } ctx.fillText(txt, x, y); ctx.shadowBlur = 0; };
-  const iX = dX0 + 4 * (dW + dGap) + fW * 0.02;
-  const showPause = d.side === 'A' && np && np.status !== 'Playing' && !running;
-  ind(showPause ? 'PAUSE ❚❚' : 'PLAY ▶', iX, fY + fH * 0.15, running || showPause, showPause ? '#ffd27a' : '#9dffc8');
-  ind('REC ●', iX, fY + fH * 0.28, false);
-  ind('METAL', iX, fY + fH * 0.41, true);
-  const dimFL = 'rgba(127,246,230,.55)';
-  ind('TYPE I  II  IV', fX + fW * 0.05, fY + fH * 0.62, true, dimFL);
-  if (!wide) ind('NR OFF', fX + fW * 0.62, fY + fH * 0.62, true, dimFL);
-  else {
-    // a wide display: the song's (or the side's) remaining time at the right, and the deck's other indicators
-    const remain = d.side === 'A' && np && np.dur > 0 ? Math.max(0, np.dur - d.counter) : Math.max(0, SIDE_SECONDS - d.pos);
-    const rs = Math.floor(remain), rg = String(Math.floor(rs / 60) % 100).padStart(2, '0') + String(rs % 60).padStart(2, '0');
-    const rH = dH * 0.78, rWd = rH * 0.52, rGap = rWd * 0.28, rX = fX + fW * 0.97 - (4 * rWd + 3 * rGap), rY = dY0 + (dH - rH);
-    for (let k = 0; k < 4; k++) draw7(ctx, rX + k * (rWd + rGap), rY, rWd, rH, rg[k], FL, FLdim);
-    const rc = rX + 2 * (rWd + rGap) - rGap / 2, rr3 = Math.max(1.1, rWd * 0.08);
-    ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 6;
-    [0.33, 0.7].forEach(fy => { ctx.beginPath(); ctx.arc(rc, rY + rH * fy, rr3, 0, Math.PI * 2); ctx.fill(); });
-    ctx.shadowBlur = 0;
-    ind('REMAIN', rX - fH * 0.05 - ctx.measureText('REMAIN').width, rY + rH * 0.5, true, dimFL);
-    const cX2 = iX + (rX - iX) * 0.45;
-    ind('DOLBY B', cX2, fY + fH * 0.15, running, '#9dffc8');
-    ind('HX PRO', cX2, fY + fH * 0.28, running);
-    ind('⇄ AUTO REV', cX2, fY + fH * 0.41, true);
-    ind('NR B   C   OFF', fX + fW * 0.32, fY + fH * 0.62, true, dimFL);
-    ind('MPX FILTER', fX + fW * 0.62, fY + fH * 0.62, false);
-  }
-  // peak meters with dB scale
-  const mX = fX + fW * (wide ? 0.05 : 0.1), mW = fW * (wide ? 0.92 : 0.86), sH = fH * 0.07, sGap = 1.5;
-  const segs = Math.max(24, Math.min(48, Math.round(mW / (H * 0.05)))), sW = (mW - sGap * (segs - 1)) / segs;
-  const dbAt = k => -40 + k * (48 / (segs - 1));
-  ['L', 'R'].forEach((chn, row) => {
-    const yy = fY + fH * 0.72 + row * (sH + 3);
-    ctx.fillStyle = 'rgba(127,246,230,.55)'; ctx.font = `${Math.max(6, Math.round(sH * 1.2))}px Arial`; ctx.textAlign = 'right';
-    ctx.fillText(chn, mX - 4, yy + sH / 2);
-    for (let k = 0; k < segs; k++) {
-      const db = dbAt(k), on = levels[row] >= db;
-      const col = db >= 3 ? '#ff6a4d' : FL;
-      ctx.fillStyle = on ? col : FLdim;
-      if (on) { ctx.shadowColor = col; ctx.shadowBlur = 5; }
-      ctx.fillRect(mX + k * (sW + sGap), yy, sW, sH);
-      ctx.shadowBlur = 0;
-    }
-  });
-  ctx.font = `${Math.max(5, Math.round(fH * 0.06))}px Arial`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(127,246,230,.35)';
-  [-40, -20, -10, -6, -3, 0, 3, 8].forEach(db => {
-    const k = (db + 40) / 48 * (segs - 1);
-    ctx.fillText(db > 0 ? '+' + db : String(db), mX + k * (sW + sGap) + sW / 2, fY + fH * 0.95);
-  });
+  deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H);
   // glass sheen
   rr(ctx, fX, fY, fW, fH, 4);
   const sh2 = ctx.createLinearGradient(0, fY, 0, fY + fH);
@@ -314,4 +262,87 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   ctx.beginPath(); ctx.arc(jX, jY, kr * 0.22, 0, Math.PI * 2); ctx.fillStyle = '#050505'; ctx.fill();
   ctx.fillStyle = goldDim; ctx.textAlign = 'center'; ctx.fillText('PHONES', jX, pY + H * 0.12);
   ctx.textBaseline = 'alphabetic';
+}
+
+// What the deck's FL display shows: the counter (deck A: the song's time), the indicators and the L/R peak
+// meters; on a wide display also the remaining time. Shared by both deck designs.
+function deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H) {
+  const FL = '#7ff6e6', GHOST = 'rgba(127,246,230,.035)', UNLIT = 'rgba(127,246,230,.13)', DIM = 'rgba(64,200,190,.85)';
+  const wide = fW > fH * 5 && fH >= 40;                    // room for the remaining time and more indicators
+  const roomy = fH >= 50;                                  // tall enough for three indicator lines
+  const compact = fH < 60;                                 // a low display: digits, PLAY/METAL and the meters only
+  const glow = Math.max(4, fH * 0.03);
+  // condensed bold lettering, as printed on the FL glass
+  const face = px => `bold ${Math.max(6, Math.round(px))}px "Bahnschrift SemiBold Condensed", "Bahnschrift", "Arial Narrow", "Roboto Condensed", Arial, sans-serif`;
+  // the counter: deck A shows the song's m:ss, deck B its tape counter
+  const timeMode = d.side === 'A' && !!np;
+  const secs = Math.floor(d.counter);
+  const dg = timeMode ? (String(Math.floor(secs / 60) % 100).padStart(2, '0') + String(secs % 60).padStart(2, '0'))
+                      : String(secs % 10000).padStart(4, '0');
+  const dH = fH * (compact ? 0.46 : 0.37), dW = dH * 0.52, dGap = dW * 0.24;
+  const dX0 = fX + fW * 0.045, dY0 = fY + fH * (compact ? 0.07 : 0.12);
+  for (let k = 0; k < 4; k++) draw7(ctx, dX0 + k * (dW + dGap), dY0, dW, dH, dg[k], FL, GHOST);
+  const colon = (cx, top, h, wd) => {                     // two small square dots
+    const q = Math.max(1.6, wd * 0.13);
+    ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;
+    [0.36, 0.66].forEach(fy => ctx.fillRect(cx - q / 2, top + h * fy - q / 2, q, q));
+    ctx.shadowBlur = 0;
+  };
+  if (timeMode) colon(dX0 + 2 * (dW + dGap) - dGap / 2, dY0, dH, dW);
+  // indicators
+  ctx.font = face(fH * (compact ? 0.14 : 0.1)); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const ind = (txt, x, y, on, col) => {
+    ctx.fillStyle = on ? (col || FL) : 'rgba(127,246,230,.22)';
+    if (on) { ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = glow; }
+    ctx.fillText(txt, x, y); ctx.shadowBlur = 0;
+  };
+  const iX = dX0 + 4 * (dW + dGap) + fW * 0.03;
+  const showPause = d.side === 'A' && np && np.status !== 'Playing' && !running;
+  ind(showPause ? 'PAUSE ❚❚' : 'PLAY ▶', iX, fY + fH * (compact ? 0.17 : roomy ? 0.16 : 0.18), running || showPause, showPause ? '#ffd27a' : FL);
+  if (roomy && !compact) ind('REC ●', iX, fY + fH * 0.275, false);
+  ind('METAL', iX, fY + fH * (compact ? 0.42 : roomy ? 0.385 : 0.40), true);
+  const rowY = fY + fH * 0.555;
+  if (!compact) ind('TYPE I  II  IV', fX + fW * 0.045, rowY, true, DIM);
+  if (!wide) { if (!compact) ind('NR OFF', fX + fW * 0.62, rowY, true, DIM); }
+  else {
+    // a wide display: the song's (or the side's) remaining time at the right, and the deck's other indicators
+    const remain = d.side === 'A' && np && np.dur > 0 ? Math.max(0, np.dur - d.counter) : Math.max(0, SIDE_SECONDS - d.pos);
+    const rs = Math.floor(remain), rg = String(Math.floor(rs / 60) % 100).padStart(2, '0') + String(rs % 60).padStart(2, '0');
+    const rH = dH * 0.78, rWd = rH * 0.52, rGap = rWd * 0.24, rX = fX + fW * 0.965 - (4 * rWd + 3 * rGap), rY = dY0 + (dH - rH);
+    for (let k = 0; k < 4; k++) draw7(ctx, rX + k * (rWd + rGap), rY, rWd, rH, rg[k], FL, GHOST);
+    colon(rX + 2 * (rWd + rGap) - rGap / 2, rY, rH, rWd);
+    ind('REMAIN', rX - fH * 0.06 - ctx.measureText('REMAIN').width, rY + rH * 0.5, true, DIM);
+    if (!compact) {
+      const cX2 = iX + (rX - iX) * 0.45;
+      ind('DOLBY B', cX2, fY + fH * 0.16, running);
+      ind('HX PRO', cX2, fY + fH * 0.275, running);
+      ind('⇄ AUTO REV', cX2, fY + fH * 0.385, true);
+      ind('NR B   C   OFF', fX + fW * 0.32, rowY, true, DIM);
+      ind('MPX FILTER', fX + fW * 0.62, rowY, false);
+    }
+  }
+  // L/R peak meters: thick segments with a dark gap, the unlit ones still faintly there
+  const mX = fX + fW * 0.089, mW = fW * 0.866, sH = fH * (compact ? 0.11 : 0.068);
+  const segs = wide ? Math.max(24, Math.min(48, Math.round(mW / (fH * 0.11)))) : 24;
+  const pitch = mW / segs, sGap = Math.max(1, pitch * 0.13), sW = pitch - sGap, rad = Math.min(sH * 0.14, 3);
+  const dbAt = k => -40 + k * (48 / (segs - 1));
+  ['L', 'R'].forEach((chn, row) => {
+    const yy = fY + fH * (compact ? (row ? 0.80 : 0.64) : (row ? 0.735 : 0.637));
+    ctx.font = face(fH * (compact ? 0.12 : 0.085)); ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(127,246,230,.9)';
+    ctx.fillText(chn, mX - fW * 0.018, yy + sH / 2);
+    for (let k = 0; k < segs; k++) {
+      const db = dbAt(k), on = levels[row] >= db;
+      const col = db >= 3 ? '#ff6a4d' : FL;
+      ctx.fillStyle = on ? col : UNLIT;
+      if (on) { ctx.shadowColor = col; ctx.shadowBlur = glow; }
+      rr(ctx, mX + k * pitch, yy, sW, sH, rad); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  });
+  if (compact) return;                                     // no room for the dB scale
+  ctx.font = face(fH * 0.06); ctx.textAlign = 'center'; ctx.fillStyle = DIM;
+  [-40, -20, -10, -6, -3, 0, 3, 8].forEach(db => {
+    const k = (db + 40) / 48 * (segs - 1);
+    ctx.fillText(db > 0 ? '+' + db : String(db), mX + k * pitch + sW / 2, fY + fH * 0.865);
+  });
 }
