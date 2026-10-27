@@ -340,7 +340,7 @@ function availHeight(c, min) {
 function sizeCanvases() {
   const pr = window.devicePixelRatio || 1;
   // smallest heights: only reached in a very short window, where a display must stay inside its frame
-  const all = [[cVL, 96], [cVR, 96], [cGO, 90], [cSP, 56], [cOS, 36], [cDK, 90], [cTP, 120], [cMI, 40]];
+  const all = [[cVL, 96], [cVR, 96], [cGO, 90], [cSP, 56], [cOS, 36], [cDK, 90], [cTP, 120], [cMI, 20]];
   all.forEach(([c]) => { c.style.height = '0px'; });        // let the panels settle without the old canvas size
   const padX = p => { const cs = getComputedStyle(p); return (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0); };
   const sizes = all.map(([c, min]) => [c, c.parentElement.clientWidth - padX(c.parentElement), availHeight(c, min)]);

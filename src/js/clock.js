@@ -5,7 +5,7 @@
 //  where you are, an FL icon, the temperature, the sky and today's high and low. ⚙ → RELOJ turns them on and
 //  off and takes the city. The weather comes from Open-Meteo through the main process, every 15 minutes.
 //  The display grows to the whole width between the brand and the status; when it gets narrow, the weather's
-//  words go first, then the weather, then the date.
+//  words go first, then the date, then the weather. The mini strip keeps them too, as room allows.
 // ═══════════════════════════════════════════════════════════
 const CLOCK_KEY = 'deck90-clock';
 const CLOCK_MODES = ['off', 'clock', 'weather'];
@@ -43,7 +43,7 @@ function wxKind(c) {
 }
 
 let hcH = 0, hcLast = '', wx = null, wxAt = 0, wxTimer = 0, wxBusy = false;
-const hcShown = () => clockCfg.mode !== 'off' && document.documentElement.classList.contains('chassis-ti') && !document.body.classList.contains('mini');
+const hcShown = () => clockCfg.mode !== 'off' && document.documentElement.classList.contains('chassis-ti');
 // a canvas sized in CSS pixels, drawn sharp at the screen's density
 function hcCanvas(c, w, h) {
   const pr = window.devicePixelRatio || 1;
@@ -134,8 +134,9 @@ function drawWeather() {
   segDraw(x, txt, h, false, true);
   wxIcon(old ? 'cloud' : wxKind(wx.code), !old && !wx.day);
   hcEl.cond.textContent = old ? (wxBusy ? 'BUSCANDO…' : 'SIN DATOS') : (WX_TEXT[wx.code] || 'NUBLADO');
-  hcEl.range.textContent = old || wx.max === null ? clockCfg.place.name.toUpperCase()
-    : 'MÁX ' + Math.round(wx.max) + '° · MÍN ' + Math.round(wx.min) + '°';
+  // the city, and today's high and low
+  hcEl.range.textContent = clockCfg.place.name.toUpperCase() +
+    (old || wx.max === null || wx.min === null ? '' : ' · ↑' + Math.round(wx.max) + '° ↓' + Math.round(wx.min) + '°');
   hcEl.wx.title = clockCfg.place.name + (clockCfg.place.area ? ', ' + clockCfg.place.area : '') + ' · datos de Open-Meteo.com (⚙ → RELOJ para cambiar la ciudad)';
 }
 
@@ -162,9 +163,9 @@ function layoutClock() {
   if (nh !== hcH) { hcH = nh; hcLast = ''; }
   drawClock(new Date());
   if (clockCfg.mode === 'weather') drawWeather();
-  // the song keeps its room: when it's cramped (or cut while there's little room), the weather's words go,
-  // then the date, then the weather
-  const steps = ['hc-tight', 'hc-tighter', 'hc-tightest'];
+  // the song keeps its room: when it's cramped, the weather's words go, then the date, then the weather,
+  // and in the narrowest window the clock too
+  const steps = ['hc-tight', 'hc-tighter', 'hc-tightest', 'hc-gone'];
   box.classList.remove(...steps);
   const room = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   const song = box.classList.contains('on') ? Math.max(el('npTitle').scrollWidth, el('npArtist').scrollWidth) + 32 : 0;
@@ -215,6 +216,10 @@ hcEl.wx.addEventListener('click', () => { if (!drawerOpen) setDrawer(true); if (
   setTimeout(tick, 500 - (Date.now() % 500) + 5);
 })();
 new ResizeObserver(() => requestAnimationFrame(layoutClock)).observe(hcEl.box);
+// the header's height follows its display (taller with the clock): the modules under it are sized again
+let hdrT = 0;
+new ResizeObserver(() => { clearTimeout(hdrT); hdrT = setTimeout(() => { sizeCanvases(); if (!running && typeof drawIdle === 'function') drawIdle(); }, 60); })
+  .observe(document.querySelector('.title-bar'));
 new MutationObserver(() => requestAnimationFrame(layoutClock)).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
 new MutationObserver(() => requestAnimationFrame(layoutClock)).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 new MutationObserver(() => requestAnimationFrame(layoutClock)).observe(document.body, { attributes: true, attributeFilter: ['class'] });

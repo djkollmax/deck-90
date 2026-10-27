@@ -1,5 +1,16 @@
 # Changelog
 
+## 7.1.1
+
+### Changed
+- The weather shows its city beside today's high and low (QUILMES · ↑18° ↓12°), so you can see which place it is.
+- The mini strip keeps the clock and the weather as far as its width allows; a narrow strip gives the engraved name's room to the display (the LED stays).
+
+### Fixed
+- The mini strip could end up cut off at the bottom: when the header changes height (the clock turning on, going into or out of mini mode), the modules under it are now sized again.
+- In a very low mini strip the meters stay inside their window.
+- New screenshots in the README: the header with five kinds of weather, a wide window with the CD-90, and the mini strip.
+
 ## 7.1.0
 
 ### Added

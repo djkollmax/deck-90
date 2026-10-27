@@ -1090,11 +1090,18 @@ html.chassis-ti.hdr-clock .np-text{ grid-column:3; }
 #hcDay, #hwCond{ font-weight:600; font-size:15px; letter-spacing:1.8px; color:#8ef8ea; text-shadow:0 0 1px rgba(142,248,234,.8), 0 0 5px rgba(127,246,230,.4); }
 .hw.hint .hw-text{ opacity:.75; }
 /* a narrow display leaves room for the song: the weather's words go first, then the date, then the weather */
-.np.hc-tight .hw-text, .np.hc-tighter .hc-date, .np.hc-tightest .hw{ display:none !important; }
+.np.hc-tight .hw-text, .np.hc-tighter .hc-date, .np.hc-tightest .hw, .np.hc-gone .hc{ display:none !important; }
 @media (max-height:820px){
   html.chassis-ti.hdr-clock .np{ min-height:42px; padding:3px 14px; }
   .hc-date, .hw-text{ font-size:11px; } #hcDay, #hwCond{ font-size:13px; }
 }
+/* the mini strip: the same display, as low as before */
+html.chassis-ti.hdr-clock body.mini .np{ min-height:36px; padding:3px 12px; }
+html.chassis-ti.hdr-clock body.mini .hc{ padding-right:12px; gap:9px; }
+html.chassis-ti.hdr-wx body.mini .hw{ padding-left:12px; gap:7px; }
+body.mini .hc-date, body.mini .hw-text{ font-size:10.5px; } body.mini #hcDay, body.mini #hwCond{ font-size:12px; }
+/* a narrow strip gives the engraved name's room to the display (the LED stays) */
+@media (max-width:700px){ html.chassis-ti.hdr-clock body.mini .brand-name{ display:none; } }
 /* the city, typed in the drawer */
 .seg input{
   width:130px; padding:0 10px; border:0; border-left:1px solid rgba(255,255,255,.06); outline:none;
