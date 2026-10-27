@@ -340,7 +340,27 @@ function openLog() {
 }
 let mpris = null;
 let lastInfo = null;          // the newest track info (with its cover), resent when the page (re)loads
+// Browsers report the tab's title: "(3) Artist - Song (Official Video) - YouTube". Keep the song: no unread
+// count, no site name, no video tags, the artist (the channel) not repeated in the title.
+const BROWSER = /chrome|msedge|edge|firefox|opera|brave|vivaldi|308046B0AF4A39CB|^arc$/i;
+const VIDEO_TAG = /\s*[\(\[](?:official\s*)?(?:music\s*)?(?:video|audio|visualizer|lyric(?:s)?(?:\s*video)?|video\s*oficial|audio\s*oficial|videoclip|clip\s*oficial|hd|hq|4k)(?:\s*oficial)?[\)\]]/gi;
+function cleanInfo(info) {
+  if (!info || info.none || info.ready || !BROWSER.test(info.app || '')) return info;
+  const o = Object.assign({}, info);
+  let t = String(o.title || ''), a = String(o.artist || '');
+  t = t.replace(/^\(\d+\+?\)\s*/, '').replace(/\s*[-–|·]\s*(YouTube(?: Music)?|Spotify|SoundCloud|Deezer|Tidal|Apple Music)\s*$/i, '');
+  t = t.replace(VIDEO_TAG, '').trim();
+  a = a.replace(/\s*-\s*Topic$/i, '').replace(/VEVO$/i, '').trim();
+  // "Artist - Song" with the artist (the channel) known: drop it from the title
+  const m = /^(.+?)\s+[-–]\s+(.+)$/.exec(t);
+  const key = x => x.toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
+  if (m && a && key(m[1]) === key(a)) { a = m[1]; t = m[2]; }       // the title's spelling ("Gustavo Cerati", not "GustavoCerati")
+  else if (m && !a) { a = m[1]; t = m[2]; }
+  o.title = t || info.title; o.artist = a;
+  return o;
+}
 function sendMedia(info) {
+  info = cleanInfo(info);
   const st = info.none ? 'none' : (info.app || '?') + ' · ' + (info.status || '?') + ' · ' + (info.title || '');
   if (!info.ready && st !== lastStatus) { mlog('player: ' + st); lastStatus = st; }
   if (!info.ready) lastInfo = info.none ? null : Object.assign({}, lastInfo && !info.cover && lastInfo.title === info.title ? { cover: lastInfo.cover } : {}, info);

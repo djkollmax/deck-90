@@ -33,10 +33,29 @@ $mgr = Await ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMa
 if (-not $mgr) { [Console]::Error.WriteLine('no media session manager'); exit 2 }
 Say @{ ready = $true }
 
+# Which player to follow: the one that is playing. Spotless first if it plays; otherwise the one followed
+# last if it still plays (so two players don't take turns); otherwise Windows' current one. When nothing plays:
+# Spotless if it's open, else Windows' current session.
+$script:lastApp = ''
+function IsPlaying($s) { try { return ([string]$s.GetPlaybackInfo().PlaybackStatus) -eq 'Playing' } catch { return $false } }
 function Pick() {
-  $all = $mgr.GetSessions()
-  foreach ($s in $all) { if ($s.SourceAppUserModelId -match 'spotless') { return $s } }
-  return $mgr.GetCurrentSession()
+  $all = @($mgr.GetSessions())
+  $playing = @($all | Where-Object { IsPlaying $_ })
+  $pick = $null
+  if ($playing.Count -gt 0) {
+    foreach ($s in $playing) { if ($s.SourceAppUserModelId -match 'spotless') { $pick = $s; break } }
+    if (-not $pick -and $script:lastApp) { foreach ($s in $playing) { if ($s.SourceAppUserModelId -eq $script:lastApp) { $pick = $s; break } } }
+    if (-not $pick) {
+      $cur = $mgr.GetCurrentSession()
+      if ($cur) { foreach ($s in $playing) { if ($s.SourceAppUserModelId -eq $cur.SourceAppUserModelId) { $pick = $s; break } } }
+    }
+    if (-not $pick) { $pick = $playing[0] }
+  } else {
+    foreach ($s in $all) { if ($s.SourceAppUserModelId -match 'spotless') { $pick = $s; break } }
+    if (-not $pick) { $pick = $mgr.GetCurrentSession() }
+  }
+  if ($pick) { $script:lastApp = $pick.SourceAppUserModelId }
+  return $pick
 }
 
 # A real async reader: [Console]::In.ReadLineAsync() is synchronous in .NET Framework (it blocked the

@@ -65,7 +65,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 - **Goniometer.** The stereo image as a cloud of dots: mono stands upright, wide stereo spreads out, out-of-phase content lies down. A correlation bar sits underneath.
 - **Cassette decks.** Choose one deck or two. A big CINTA cassette comes as REEL (aluminium open-reel look) or CLEAR. The tape runs only while music is actually playing.
 - **Now playing.**
-  - Shows the title, artist and cover from the system's media session. Spotless is preferred when several players are open.
+  - Shows the title, artist and cover from the system's media session: Spotless, Spotify, a browser tab (YouTube, SoundCloud…), Apple Music or any player that reports to Windows. The one that's playing wins (Spotless first if several play). Browser tab titles are cleaned up into the song and the artist.
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
 - **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.

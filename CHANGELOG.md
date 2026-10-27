@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.14.0
+
+### Changed
+- **The player that's playing wins.** With Spotless open but paused, Deck 90 kept showing its song even while another player played (a YouTube video in Chrome, Spotify, Apple Music…). Now it follows whichever is playing: Spotless first if it plays, otherwise the one it was already following, otherwise Windows' current one; with nothing playing, Spotless if it's open. The deck keys control the player shown.
+- **Clean song names from browsers.** A browser tab's title becomes the song: no unread count ("(5)"), no "- YouTube", no "(Official Video)", "[Official Audio]", "(Video Oficial)" and the like, and "Artist - Song" is split so the artist isn't repeated (channels named "… - Topic" or "…VEVO" give the artist's name). In the header, the decks, the phone and the history.
+
 ## 6.13.4
 
 ### Changed
