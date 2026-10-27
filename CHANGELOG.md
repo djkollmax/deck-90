@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.15.0
+
+### Added
+- **AZUL INTENSO**, a sixth VU face: a deep, saturated blue lit bright from below and darker towards the corners, a thick white scale, a coral band, an amber needle that glows — and no readout under it: the meter fills its frame. In the ⚙ drawer (AZUL INT.), on V, in presets and on the phone. AZUL stays as it was.
+
 ## 6.14.0
 
 ### Changed

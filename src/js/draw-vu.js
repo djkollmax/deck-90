@@ -178,6 +178,11 @@ const VU_THEMES = {
   // CREMA (6.13): the classic backlit cream meter — an even, bright face, black ink, a bold red band, a black needle
   CREAM:  { face: ['#fff6e2', '#f9e5b8', '#ecca8a'], glow: 'rgba(255,252,240,.55)', ink: '#18120c', red: '#e2271b', soft: 'rgba(35,25,12,.6)',
             needle: '#141210', needleGlow: null, needleW: 2.6, bezel: ['#2a2a2c', '#121214'], read: '#f2a541', title: 'VU', sub: 'PEAK' },
+  // AZUL INTENSO (6.15): a saturated, deep-blue face lit bright from below, white ink, a coral band, an amber
+  // needle that glows; the meter fills its frame (no readout under it)
+  COBALT: { face: ['#167cf6', '#0551cf', '#011f6c'], glow: 'rgba(25,135,255,.42)', ink: '#ffffff', red: '#ff5a46', soft: 'rgba(225,238,255,.85)',
+            needle: '#ffad2a', needleGlow: 'rgba(255,160,35,1)', needleW: 3.4, bezel: ['#1b1f27', '#0a0c10'], read: '#b9c6ff', title: 'VU', sub: 'PEAK',
+            noRead: true, lineK: 1.9, glass: 0.35, vignette: 'rgba(0,12,60,.62)' },
   BLUE:   { face: ['#2a6fd6', '#1546a0', '#071a44'], glow: 'rgba(80,170,255,.45)', ink: '#e6f3ff', red: '#ff6a5a', soft: 'rgba(200,230,255,.7)',
             needle: '#ffb347', needleGlow: 'rgba(255,170,60,.8)', bezel: ['#1b1f27', '#0a0c10'], read: '#9fd7ff', title: 'VU', sub: 'PEAK' },
 };
@@ -198,7 +203,7 @@ function drawVUClassic(canvas, ctx, st, th) {
   ctx.fillStyle = bz; ctx.fillRect(0, 0, W, H);
   // the readout strip under the window; framed, a black window of its own
   const m = framed ? Math.max(6, Math.min(16, W * 0.022)) : 8;
-  const READ = framed ? Math.max(18, Math.min(46, H * 0.14)) : 18, rGap = framed ? Math.max(3, m * 0.45) : 0;
+  const READ = th.noRead ? 0 : framed ? Math.max(18, Math.min(46, H * 0.14)) : 18, rGap = framed && !th.noRead ? Math.max(3, m * 0.45) : 0;
   const wx = m, wy = m, ww = W - 2 * m, wh = H - 2 * m - READ - rGap;
   const rad = framed ? Math.max(6, Math.min(14, W * 0.014)) : 6;
   if (ww < 40 || wh < 30) return;                       // too small to draw a meter (a panel still settling)
@@ -213,6 +218,11 @@ function drawVUClassic(canvas, ctx, st, th) {
   // fade to the lamp's own colour, transparent: fading to transparent black greys the middle of the face
   lamp.addColorStop(0, th.glow); lamp.addColorStop(1, th.glow.replace(/,\s*[\d.]+\)$/, ',0)'));
   ctx.fillStyle = lamp; ctx.fillRect(wx, wy, ww, wh);
+  if (th.vignette) {                                    // the face darkens towards its edges, away from the lamp
+    const vg = ctx.createRadialGradient(W / 2, wy + wh * .95, Math.min(ww, wh) * .25, W / 2, wy + wh * .7, Math.max(ww * .62, wh * 1.1));
+    vg.addColorStop(0, th.vignette.replace(/,\s*[\d.]+\)$/, ',0)')); vg.addColorStop(1, th.vignette);
+    ctx.fillStyle = vg; ctx.fillRect(wx, wy, ww, wh);
+  }
 
   // geometry: the pivot sits below the window, the scale is a wide shallow arc
   const half = 47 * Math.PI / 180;
@@ -237,15 +247,16 @@ function drawVUClassic(canvas, ctx, st, th) {
   ctx.lineCap = 'butt';
   const fs = Math.max(8, Math.min(fsMax, R * .085, fs0));
   const k = framed ? fs / 13 : 1;                        // line weights follow the figures
-  ctx.beginPath(); ctx.arc(cx, cy, R, ang(0), ang(vuT(0))); ctx.strokeStyle = th.ink; ctx.lineWidth = 1.4 * k; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, R + 3 * k, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 6 * k; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, R, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 1.4 * k; ctx.stroke();
+  const lk = k * (th.lineK || 1);                        // AZUL INTENSO draws its scale thicker
+  ctx.beginPath(); ctx.arc(cx, cy, R, ang(0), ang(vuT(0))); ctx.strokeStyle = th.ink; ctx.lineWidth = 1.4 * lk; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, R + 3 * lk, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 6 * lk; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, R, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 1.4 * lk; ctx.stroke();
   // ticks and numbers
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   [[-20, 1], [-10, 1], [-7, 1], [-5, 1], [-3, 1], [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 1], [-15, 0], [-4, 0], [-0.5, 0], [0.5, 0], [1.5, 0], [2.5, 0]].forEach(([db, major]) => {
     const t = vuT(db), [x1, y1] = P(t, R), [x2, y2] = P(t, R + (major ? 11 : 6) * k);
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-    ctx.strokeStyle = db > 0 ? th.red : th.ink; ctx.lineWidth = (major ? 1.4 : 1) * k; ctx.stroke();
+    ctx.strokeStyle = db > 0 ? th.red : th.ink; ctx.lineWidth = (major ? 1.4 : 1) * lk; ctx.stroke();
     const few = R < 70;                                   // a very small meter: only the main figures
     if (major && (db >= -10 || db === -20) && !(R < 90 && (db === -2 || db === 2)) && !(few && ![-20, -10, -5, 0, 3].includes(db))) {
       const [tx, ty] = P(t, R + 11 * k + fs * .9);
@@ -285,7 +296,7 @@ function drawVUClassic(canvas, ctx, st, th) {
   // needle (thin, with a counterweight below the window)
   const t = vuT(st.lvl), a = ang(t);
   ctx.save();
-  ctx.shadowColor = th.needleGlow || 'rgba(0,0,0,.35)'; ctx.shadowBlur = th.needleGlow ? 6 : 3; ctx.shadowOffsetX = th.needleGlow ? 0 : 2; ctx.shadowOffsetY = th.needleGlow ? 0 : 2;
+  ctx.shadowColor = th.needleGlow || 'rgba(0,0,0,.35)'; ctx.shadowBlur = th.needleGlow ? (th.lineK ? 10 : 6) : 3; ctx.shadowOffsetX = th.needleGlow ? 0 : 2; ctx.shadowOffsetY = th.needleGlow ? 0 : 2;
   ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (R + 9 * k), cy + Math.sin(a) * (R + 9 * k));
   ctx.strokeStyle = th.needle; ctx.lineWidth = th.needleW || 1.6; ctx.lineCap = 'round'; ctx.stroke();
   ctx.restore();
@@ -295,7 +306,8 @@ function drawVUClassic(canvas, ctx, st, th) {
   }
   // glass: a soft diagonal reflection and the top shade of the bezel
   const gl = ctx.createLinearGradient(wx, wy, wx + ww * .7, wy + wh);
-  gl.addColorStop(0, 'rgba(255,255,255,.22)'); gl.addColorStop(.35, 'rgba(255,255,255,.04)'); gl.addColorStop(.36, 'rgba(255,255,255,0)');
+  const ga = th.glass ?? 1;
+  gl.addColorStop(0, `rgba(255,255,255,${.22 * ga})`); gl.addColorStop(.35, `rgba(255,255,255,${.04 * ga})`); gl.addColorStop(.36, 'rgba(255,255,255,0)');
   ctx.fillStyle = gl; ctx.fillRect(wx, wy, ww, wh);
   const sh = ctx.createLinearGradient(0, wy, 0, wy + 14);
   sh.addColorStop(0, 'rgba(0,0,0,.35)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
@@ -304,6 +316,7 @@ function drawVUClassic(canvas, ctx, st, th) {
   const dbTxt = st.lvl <= DB_LO + 1 ? '-∞' : (st.lvl >= 0 ? '+' : '') + st.lvl.toFixed(1);
   if (!framed) {
     ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, 6); ctx.stroke();
+    if (th.noRead) return;
     // readout on the bezel
     ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = st.lvl >= 0 ? '#ff8a6a' : th.read;
@@ -311,6 +324,7 @@ function drawVUClassic(canvas, ctx, st, th) {
     return;
   }
   vuWindowRing(ctx, wx, wy, ww, wh, rad);
+  if (th.noRead) return;                                // AZUL INTENSO: the meter alone
   // the readout's black window, the level in mono figures
   const ry = wy + wh + rGap, rh = H - m - ry;
   ctx.beginPath(); ctx.roundRect(wx, ry, ww, rh, Math.max(3, rad * 0.5));
@@ -347,6 +361,7 @@ function drawVU(canvas, ctx, st) {
   if (vuSkin === 'REEL70') return drawVUClassic(canvas, ctx, st, VU_THEMES.REEL70);
   if (vuSkin === 'BLUE') return drawVUClassic(canvas, ctx, st, VU_THEMES.BLUE);
   if (vuSkin === 'CREAM') return drawVUClassic(canvas, ctx, st, VU_THEMES.CREAM);
+  if (vuSkin === 'COBALT') return drawVUClassic(canvas, ctx, st, VU_THEMES.COBALT);
   if (!vuFramed() || vuBox) return vuSkin === 'HIFI90' ? drawVUHiFi90(canvas, ctx, st) : drawVUStudio(canvas, ctx, st);
   // STUDIO and HI-FI 90s with the metal frames: the same black frame and polished ring round the whole face
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;

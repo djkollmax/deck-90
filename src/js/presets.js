@@ -16,7 +16,7 @@ const FACTORY_PRESETS = [
   { name: 'Vidriera',  snap: { vuSkin: 'BLUE',   spectrumSkin: 'SHOWROOM', flSensitivity: 2, mode: 0, cal: 'AUTO', deckDouble: false, tapeStyle: 'CLEAR', mods: presetMods(['vu', 'bpm', 'spectrum', 'tape']) } },
   { name: 'Mastering', snap: { vuSkin: 'MODERN', spectrumSkin: 'RTA',      flSensitivity: 1, mode: 3, cal: 18,     deckDouble: true,  tapeStyle: 'REEL',  mods: presetMods(['vu', 'gonio', 'meters', 'spectrum', 'osc']) } },
 ];
-const vuName = v => ({ MODERN: 'Studio', HIFI90: 'Hi-Fi 90s', REEL70: 'Cinta 70s', BLUE: 'Azul', CREAM: 'Crema' }[v] || v);
+const vuName = v => ({ MODERN: 'Studio', HIFI90: 'Hi-Fi 90s', REEL70: 'Cinta 70s', BLUE: 'Azul', COBALT: 'Azul intenso', CREAM: 'Crema' }[v] || v);
 const skinName = s => (SPECTRUM_SKINS.find(x => x[0] === s) || [s, s])[1];
 
 function presetSnapshot() {
@@ -48,7 +48,7 @@ function applyPreset(id) {
   if (!p) { toast('C' + id[1] + ' está vacío · <span>GUARDAR</span> y tocá C' + id[1] + ' para guardar ahí lo que ves', 3000); return; }
   const s = p.snap;
   if (modsBeforeTape) modsBeforeTape = null;
-  if (['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'CREAM'].includes(s.vuSkin)) setVUSkin(s.vuSkin);
+  if (['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM'].includes(s.vuSkin)) setVUSkin(s.vuSkin);
   if (SPECTRUM_SKINS.some(x => x[0] === s.spectrumSkin)) setSpectrumSkin(s.spectrumSkin);
   if ([0, 1, 2].includes(s.flSensitivity)) setFlSensitivity(s.flSensitivity);
   if (Number.isInteger(s.mode)) setSpectrumMode(s.mode);

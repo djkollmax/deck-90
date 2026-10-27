@@ -16,7 +16,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 
 ![SO-90 REEL](docs/screenshots/so90.jpg)
 
-**VU faces:** CREMA, AZUL, CINTA 70s and HI-FI 90s (and STUDIO).
+**VU faces:** CREMA, AZUL, CINTA 70s and HI-FI 90s (and STUDIO and AZUL INTENSO).
 
 ![VU faces](docs/screenshots/vu-faces.jpg)
 
