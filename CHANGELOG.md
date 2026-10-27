@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.13.4
+
+### Changed
+- **The song in the header reads like the decks' display**: with the metal frames, the title is in glowing turquoise, condensed bold capitals and larger, with the artist and album under it in a dimmer turquoise; a long title is cut with … inside its slot; a paused song dims. The source (SISTEMA, DEMO…) is a clear green and SIG / CLIP take the engraved labels' colour, so the whole header is readable on every finish. In the CLÁSICO rack the song is larger and brighter in its gold.
+
 ## 6.13.3
 
 ### Fixed
