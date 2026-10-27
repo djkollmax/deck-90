@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.0.1
+
+### Changed
+- **A wider CD-90 panel when the module is wide.** With the CD-90 under the VU meters and the spectrum (a module much wider than tall), the steel panel now grows sideways too, up to 75 % wider: a longer tray, keys 1–8 wider and further apart, more steel between the LED and TIME. The lettering, the keys' numbers, eject and the rounded corners keep their shape, because the photo only stretches in plain strips. The display takes the rest of the width, as before.
+
 ## 7.0.0
 
 ### Changed

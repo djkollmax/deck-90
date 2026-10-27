@@ -25,11 +25,50 @@ function cdPanel() {                                     // the photo with its o
   x.putImageData(m, 0, 0); x.globalCompositeOperation = 'source-in'; x.drawImage(CD90.panel, 0, 0);
   return (cdPanelCanvas = c);
 }
+// A wide module gets a wider panel. The photo is cut into three horizontal bands and each one stretches only
+// at its own columns, so the lettering, the keys' numbers and the rounded corners keep their shape:
+//   top (labels, tray, eject): two strips of the tray, one each side of "COMPACT DISC", which stays centred;
+//   keys: each key on both sides of its number, and the gaps between keys;
+//   bottom: the steel between the LED and TIME.
+// Columns are [from, to, weight] in the photo's pixels (842 × 567); the extra width is shared by weight.
+const CD_KX = [40, 137, 232, 329, 425, 522, 618, 714];  // left edge of keys 1–8 (each 90 wide)
+const CD_GAPS = [134, 230, 326, 423, 520, 615, 712];     // the cleanest steel column between each two keys
+const CD_BANDS = [
+  { y0: 0, y1: 330, cols: [[205, 265, 1], [467, 527, 1]] },
+  { y0: 330, y1: 440, cols: CD_KX.flatMap((x, i) => [[x + 14, x + 30, 2], [x + 60, x + 76, 2]].concat(i < 7 ? [[CD_GAPS[i], CD_GAPS[i] + 1, 3]] : [])) },
+  { y0: 440, y1: 567, cols: [[260, 500, 1]] },
+];
+// where each piece of a band goes for `extra` more pixels: [from, to, new from, new to], whole pixels
+function cdBandMap(band, extra) {
+  const tw = band.cols.reduce((t, c) => t + c[2], 0), segs = [];
+  let sx = 0, dx = 0, given = 0, wsum = 0;
+  for (const [a, b, w] of band.cols) {
+    if (a > sx) { segs.push([sx, a, dx, dx + a - sx]); dx += a - sx; }
+    wsum += w; const upto = Math.round(extra * wsum / tw), add = upto - given; given = upto;
+    segs.push([a, b, dx, dx + b - a + add]); dx += b - a + add; sx = b;
+  }
+  segs.push([sx, 842, dx, dx + 842 - sx]);
+  return segs;
+}
+const cdMapX = (segs, x) => { for (const [a, b, c, d] of segs) if (x <= b) return c + (x - a) * (d - c) / (b - a); return x; };
+let cdWide = { extra: -1, canvas: null, maps: null };
+function cdPanelWide(extra) {
+  if (cdWide.extra === extra) return cdWide;
+  const src = cdPanel(), maps = CD_BANDS.map(b => cdBandMap(b, extra));
+  const c = document.createElement('canvas'); c.width = 842 + extra; c.height = 567;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  CD_BANDS.forEach((b, i) => { for (const [a, e, f, g] of maps[i]) x.drawImage(src, a, b.y0, e - a, b.y1 - b.y0, f, b.y0, g - f, b.y1 - b.y0); });
+  return (cdWide = { extra, canvas: c, maps });
+}
+
 // the player's state: the track number counts the songs played since the program started
 const cd = { track: 0, key: '', remain: false, repeat: false, edgesN: 0 };
 
 function drawCD90(ctx, W, H, play) {
   const s = Math.min(H / 746, W / 1750), P = v => v * s, oy = (H - 746 * s) / 2;
+  // a module wider than the mock-up: half the spare width widens the panel, up to 75 % more
+  const extra = Math.round(Math.max(0, Math.min((W / s - 1750) * 0.5, 842 * 0.75)));
+  const wide = cdPanelWide(extra);
   if (np && npKey && npKey !== cd.key) { cd.key = npKey; cd.track++; }
   if (!cd.track) cd.track = 1;
   ctx.save();
@@ -45,10 +84,12 @@ function drawCD90(ctx, W, H, play) {
   ctx.translate(0, oy);
 
   // ── the steel panel
-  const pX = P(44), pY = P(66), pW = P(842), pH = P(567);
+  const pX = P(44), pY = P(66), pW = P(842 + extra), pH = P(567);
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = P(16); ctx.shadowOffsetY = P(5);
-  ctx.drawImage(cdPanel(), pX, pY, pW, pH); ctx.restore();
-  const Q = (x, y) => [pX + P(x), pY + P(y)];           // panel pixels → canvas
+  ctx.drawImage(wide.canvas, pX, pY, pW, pH); ctx.restore();
+  // panel pixels → canvas, through the stretch of the band the point is in
+  const bandAt = y => (y < 330 ? 0 : y < 440 ? 1 : 2);
+  const Q = (x, y) => [pX + P(cdMapX(wide.maps[bandAt(y)], x)), pY + P(y)];
   // power LED: green while it plays, dim otherwise
   { const [lx, ly] = Q(176, 509), r = P(11);
     ctx.beginPath(); ctx.arc(lx, ly, r, 0, Math.PI * 2);
@@ -56,13 +97,12 @@ function drawCD90(ctx, W, H, play) {
     else ctx.fillStyle = '#1d3a22';
     ctx.fill(); ctx.shadowBlur = 0; }
   // the current track's key glows (1–8)
-  const kx = [40, 136, 232, 329, 425, 522, 618, 714];
   const cur = ((cd.track - 1) % 8);
-  { const [x, y] = Q(kx[cur], 351);
-    ctx.save(); rr(ctx, x + P(4), y + P(4), P(83), P(64), P(6));
+  { const [x, y] = Q(CD_KX[cur] + 4, 351), [x2] = Q(CD_KX[cur] + 87, 351);
+    ctx.save(); rr(ctx, x, y + P(4), x2 - x, P(64), P(6));
     ctx.fillStyle = play ? 'rgba(95,243,234,.16)' : 'rgba(95,243,234,.08)'; ctx.shadowColor = '#5ff3ea'; ctx.shadowBlur = play ? P(14) : 0; ctx.fill(); ctx.restore(); }
   // keys on the panel that do something here
-  const key = (x, y, w, h, k, act) => { const [a, b] = Q(x, y); tapeHits.push({ x: a, y: b + oy, w: P(w), h: P(h), k, local: act }); };
+  const key = (x, y, w, h, k, act) => { const [a, b] = Q(x, y), [a2] = Q(x + w, y); tapeHits.push({ x: a, y: b + oy, w: a2 - a, h: P(h), k, local: act }); };
   key(529, 476, 135, 64, 'TIME', () => { cd.remain = !cd.remain; });
   key(670, 476, 135, 64, 'REPEAT', () => { cd.repeat = !cd.repeat; toast(cd.repeat ? 'REPEAT · <span>solo el indicador: el que repite es el reproductor</span>' : 'REPEAT apagado', 2400); });
   key(698, 134, 87, 129, '⏏', () => toast('El CD-90 solo reproduce 🙂', 2000));
@@ -72,7 +112,7 @@ function drawCD90(ctx, W, H, play) {
   });
 
   // ── the display, from the panel to the right edge (its bezel stretched in the middle only)
-  const dX = P(916), dY = P(88), dH = P(368), dW = Math.max(P(500), W - P(40) - dX);
+  const dX = P(916 + extra), dY = P(88), dH = P(368), dW = Math.max(P(500), W - P(40) - dX);
   const Dm = CD90.display, b = 34, bs = P(b), Dw = Dm.width, Dh = Dm.height;
   const nine = (sx, sy, sw, sh, x, y, w, h) => { if (w > 0 && h > 0) ctx.drawImage(Dm, sx, sy, sw, sh, x, y, w, h); };
   nine(0, 0, b, b, dX, dY, bs, bs); nine(Dw - b, 0, b, b, dX + dW - bs, dY, bs, bs);
