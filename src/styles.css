@@ -385,9 +385,9 @@ body::after{
   content:''; position:absolute; inset:-40% -20%;
   background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,.11) 18%, rgba(255,255,255,.018) 31%, transparent 48%);
   transform:translateX(-25%);
-  animation:sheen-drift 9s ease-in-out infinite alternate;
 }
-@keyframes sheen-drift{ from{transform:translateX(-32%)} to{transform:translateX(18%)} }
+/* 6.9.2: the glare that drifted across the rack from the left is gone */
+.rack-unit .glass-sheen{ display:none; }
 .rack-unit::before,.rack-unit::after{ filter:brightness(1.16); }
 .panel{
   border-radius:8px;
@@ -824,3 +824,18 @@ body.mini #updBar{ display:none; }
 body.is-app:not(.mini){ overflow-y:auto; scrollbar-width:thin; scrollbar-color:#2a3242 transparent; }
 body.is-app:not(.mini)::-webkit-scrollbar{ width:8px; }
 body.is-app:not(.mini)::-webkit-scrollbar-thumb{ background:#2a3242; border-radius:4px; }
+
+/* 6.9.2 · the program's edge: a faceplate frame, with its four screws inside it instead of on the title bar's corners */
+body.is-app .rack-unit{
+  padding:16px 18px 16px;
+  box-shadow:
+    inset 0 0 0 1px #2b3142,                 /* the plate's edge, so the window reads against whatever is behind it */
+    inset 0 1px 0 1px rgba(255,255,255,.06), /* light from above */
+    inset 0 0 0 5px #0c0f17,                 /* a groove */
+    inset 0 0 0 6px rgba(255,255,255,.035);
+}
+body.is-app .rack-unit > .screw{ width:10px; height:10px; }
+body.is-app .rack-unit > .s-tl{ top:3px; left:4px; }
+body.is-app .rack-unit > .s-tr{ top:3px; right:4px; left:auto; }
+body.is-app .rack-unit > .s-bl{ bottom:3px; left:4px; top:auto; }
+body.is-app .rack-unit > .s-br{ bottom:3px; right:4px; top:auto; left:auto; }

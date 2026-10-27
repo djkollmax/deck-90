@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.9.2
+
+### Changed
+- The glare that drifted across the rack from the left, back and forth every 9 seconds, is gone.
+- The program's edge is a faceplate frame, with the four screws inside it: they no longer sit on the corners of the title bar, and the window's edge reads against whatever is behind it.
+
 ## 6.9.1
 
 ### Changed
