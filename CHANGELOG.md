@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.0.0
+
+### Changed
+- **New engine: Electron 45** (with its Chromium and Node.js), in place of Electron 33, which stopped getting security fixes in April 2025. This version can't come in through INSTALAR: Deck 90 says it *cambia el motor del programa*, and the full Windows zip has to be downloaded once and put in place of the program's folder. Settings, presets and the track history live in `%APPDATA%\Deck 90` and stay as they are. Later versions on this engine install themselves again. The meters read the same on the new engine (tones, one channel, inverted phase, EBU Tech 3342).
+- **Checked on Windows before every release.** Each push now also runs on one of GitHub's Windows machines: the now-playing bridge (it parses; it follows the right player among made-up sessions, Spotless first when it plays, then the one already followed, then Windows' current one; and it starts for real, reports, beats and quits when Deck 90 closes it), the built program starting once, and the updater through a normal install, a new version that doesn't start (the old one comes back), a damaged package (refused before anything is written) and a package that needs a new engine (offered as a full download). A release is only published when all of this passes.
+- When system-audio capture can't start, `media.log` now says why (for example *NotReadableError: Could not start audio source*).
+
 ## 6.16.1
 
 ### Changed

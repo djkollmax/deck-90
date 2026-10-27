@@ -167,7 +167,7 @@ Requires Node.js 18+.
 
 ```sh
 npm install
-npm start                  # run in development
+npm start                  # run in development (the first run downloads Electron)
 npm run package:win        # → dist/Deck-90-<version>-win32-x64.zip
 npm run package:linux      # → dist/Deck-90-<version>-linux-x64.zip
 node scripts/package.mjs bundle   # → dist/Deck-90-<version>-app.bundle (the update package)
@@ -175,13 +175,17 @@ node scripts/package.mjs bundle   # → dist/Deck-90-<version>-app.bundle (the u
 
 The packager downloads the official Electron release, checks it against Electron's published SHA-256 sums and puts the app inside it. Packaging uses `unzip`/`zip` on Linux and the built-in `tar` on Windows.
 
+### Checks
+
+`node scripts/check.mjs` compiles every script. On GitHub, every push also runs on a Windows machine: `scripts/test-media.ps1` checks the now-playing bridge (it parses, picks the right player among made-up sessions, starts, reports and quits), the built program is started once, and `scripts/test-update.mjs` runs the updater through a normal install, a new version that doesn't start, a damaged package and one that needs a new engine. A release is published only when all of it passes.
+
 ### Layout
 
 ```
 electron/   main process: window, loopback capture, now-playing bridges (media.ps1 for Windows, mpris.js for Linux)
 src/        the UI: index.html, styles.css, js/ (audio graph, meters, drawing, decks, controls)
 assets/     icon
-scripts/    packaging
+scripts/    packaging and checks
 ```
 
 ## Credits
