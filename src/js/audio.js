@@ -383,6 +383,8 @@ function applyModules() {
   row.classList.toggle('no-vu', !mods.vu);
   row.classList.toggle('empty', !mods.vu && !mods.bpm && !mods.gonio);
   document.querySelector('.rack-unit').classList.toggle('no-bottom', !mods.spectrum && !mods.osc && !mods.deck && !mods.tape);
+  // one deck: its panel asks for more height, so the deck can grow across the width too
+  document.querySelector('.rack-unit').classList.toggle('deck-single', !deckDouble);
   document.querySelector('.rack-unit').classList.toggle('only-tape', mods.tape && Object.keys(mods).every(k => k === 'tape' || !mods[k]));
   requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
 }

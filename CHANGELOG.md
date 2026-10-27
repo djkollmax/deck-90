@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.10.1
+
+### Changed
+- **The cassette decks fill their panel.** They kept a fixed shape (at most about 3 : 1) and stayed small in the middle of a wide panel. Now the cassette well and the knobs follow the deck's height and the display and transport keys stretch across: two decks fill the panel side by side, and one deck takes its panel's whole width.
+- With one deck (SIMPLE), its panel takes more of the window's height, so that deck grows in both directions.
+- A wide deck's display adds the **remaining time** (of the song on deck A, of the tape side on B) and the indicators of the decks of the time: DOLBY B, HX PRO, AUTO REV, NR, MPX FILTER.
+- Small decks keep their knob labels apart.
+
 ## 6.10.0
 
 ### Added

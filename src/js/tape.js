@@ -375,10 +375,11 @@ function drawDeck(canvas, ctx, live) {
       d.ang[0] += v / rTake * T;                                   // take-up (left) and feed (right) both turn the same way
       d.ang[1] += v / rFeed * T;
     }
-    // fit each deck in its half with a realistic aspect (about 2.4 : 1)
-    const slotW = W / n, pad = Math.min(10, slotW * 0.02);
-    let dw = slotW - pad * 2, dh = H - pad * 2;
-    if (dw / dh > 3.1) dw = dh * 3.1; else if (dw / dh < 2.4) dh = dw / 2.4;
+    // each deck fills its half: as tall as the panel allows, and as wide as its half (the display and keys
+    // stretch); only a very wide half leaves some room at the sides, and a narrow one keeps it 2.4 : 1
+    const slotW = W / n, pad = Math.min(8, slotW * 0.015), padY = Math.min(6, H * 0.03);
+    let dw = slotW - pad * 2, dh = H - padY * 2;
+    if (dw / dh > 7.2) dw = dh * 7.2; else if (dw / dh < 2.4) dh = dw / 2.4;
     const dx = i * slotW + (slotW - dw) / 2, dy = (H - dh) / 2;
     drawCassetteDeck(ctx, dx, dy, dw, dh, d, levels, play);
   }

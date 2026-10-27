@@ -92,7 +92,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'sens') setFlSensitivity(Number(v));
   if (g === 'mode') setSpectrumMode(Number(v));
   if (g === 'mods') toggleModule(v);
-  if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); }
+  if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); else applyModules(); }
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
   if (g === 'phone') phoneButton(v);
   if (g === 'chassis') setChassis(v);

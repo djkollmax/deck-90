@@ -100,6 +100,11 @@ function knob(ctx, cx, cy, r, ang, label, legendPx) {
 
 function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   const legend = Math.max(6, Math.round(H * 0.042));
+  // Across: the cassette well (left) and the knobs (right) follow the deck's height; the display and the
+  // transport keys take whatever width is left, so a wide deck fills its panel instead of staying small.
+  const mx = Math.max(W * 0.012, H * 0.07), gap = H * 0.05;
+  const kr = Math.min(W * 0.035, H * 0.1), kSp = Math.max(kr * 2.6, legend * 4.4);   // knobs: size, and spacing so their labels never touch
+  const wW = Math.min(W * 0.4, H * 1.12), rW = kSp + kr * 1.9 + gap * 0.4;
   const gold = '#d9bd73', goldDim = 'rgba(217,189,115,.6)';
   const FL = '#7ff6e6', FLdim = 'rgba(127,246,230,.07)';
 
@@ -117,14 +122,14 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   ctx.textBaseline = 'middle';
   ctx.font = `bold ${Math.round(H * 0.06)}px "Courier New", monospace`; ctx.textAlign = 'left'; ctx.fillStyle = gold;
   ctx.shadowColor = 'rgba(217,189,115,.35)'; ctx.shadowBlur = 6;
-  ctx.fillText('DECK 90', X + W * 0.03, tY);
+  ctx.fillText('DECK 90', X + mx, tY);
   ctx.shadowBlur = 0;
   ctx.font = `${legend}px Arial, sans-serif`; ctx.textAlign = 'right'; ctx.fillStyle = goldDim;
-  ctx.fillText('SO-1' + d.side + '  ·  3-HEAD CASSETTE DECK  ·  DUAL CAPSTAN', X + W * 0.97, tY);
-  ctx.fillStyle = 'rgba(217,189,115,.18)'; ctx.fillRect(X + W * 0.03, Y + H * 0.15, W * 0.94, 1);
+  ctx.fillText('SO-1' + d.side + '  ·  3-HEAD CASSETTE DECK  ·  DUAL CAPSTAN' + (W > H * 4 ? '  ·  DOLBY B·C NR  ·  HX PRO' : ''), X + W - mx, tY);
+  ctx.fillStyle = 'rgba(217,189,115,.18)'; ctx.fillRect(X + mx, Y + H * 0.15, W - mx * 2, 1);
 
   // ── cassette well (lit), left
-  const wX = X + W * 0.03, wY = Y + H * 0.2, wW = W * 0.4, wH = H * 0.72;
+  const wX = X + mx, wY = Y + H * 0.2, wH = H * 0.72;
   rr(ctx, wX - 3, wY - 3, wW + 6, wH + 6, 6); ctx.fillStyle = '#060607'; ctx.fill();
   rr(ctx, wX, wY, wW, wH, 5);
   const well = ctx.createRadialGradient(wX + wW / 2, wY - wH * 0.1, wH * 0.05, wX + wW / 2, wY + wH * 0.4, wH * 1.1);
@@ -199,7 +204,8 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1; ctx.stroke();
 
   // ── FL display, centre
-  const fX = X + W * 0.46, fY = Y + H * 0.2, fW = W * 0.33, fH = H * 0.4;
+  const fX = wX + wW + gap * 1.4, fY = Y + H * 0.2, fH = H * 0.4, fW = X + W - mx - rW - gap - fX;
+  const wide = fW > H * 2.0 && H >= 100;                   // room for the remaining time and more indicators
   rr(ctx, fX - 3, fY - 3, fW + 6, fH + 6, 5); ctx.fillStyle = '#050607'; ctx.fill();
   rr(ctx, fX, fY, fW, fH, 4);
   const glass = ctx.createLinearGradient(0, fY, 0, fY + fH);
@@ -227,10 +233,30 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   ind(showPause ? 'PAUSE ❚❚' : 'PLAY ▶', iX, fY + fH * 0.15, running || showPause, showPause ? '#ffd27a' : '#9dffc8');
   ind('REC ●', iX, fY + fH * 0.28, false);
   ind('METAL', iX, fY + fH * 0.41, true);
-  ind('TYPE I  II  IV', fX + fW * 0.05, fY + fH * 0.62, true, 'rgba(127,246,230,.55)');
-  ind('NR OFF', fX + fW * 0.62, fY + fH * 0.62, true, 'rgba(127,246,230,.55)');
+  const dimFL = 'rgba(127,246,230,.55)';
+  ind('TYPE I  II  IV', fX + fW * 0.05, fY + fH * 0.62, true, dimFL);
+  if (!wide) ind('NR OFF', fX + fW * 0.62, fY + fH * 0.62, true, dimFL);
+  else {
+    // a wide display: the song's (or the side's) remaining time at the right, and the deck's other indicators
+    const remain = d.side === 'A' && np && np.dur > 0 ? Math.max(0, np.dur - d.counter) : Math.max(0, SIDE_SECONDS - d.pos);
+    const rs = Math.floor(remain), rg = String(Math.floor(rs / 60) % 100).padStart(2, '0') + String(rs % 60).padStart(2, '0');
+    const rH = dH * 0.78, rWd = rH * 0.52, rGap = rWd * 0.28, rX = fX + fW * 0.97 - (4 * rWd + 3 * rGap), rY = dY0 + (dH - rH);
+    for (let k = 0; k < 4; k++) draw7(ctx, rX + k * (rWd + rGap), rY, rWd, rH, rg[k], FL, FLdim);
+    const rc = rX + 2 * (rWd + rGap) - rGap / 2, rr3 = Math.max(1.1, rWd * 0.08);
+    ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 6;
+    [0.33, 0.7].forEach(fy => { ctx.beginPath(); ctx.arc(rc, rY + rH * fy, rr3, 0, Math.PI * 2); ctx.fill(); });
+    ctx.shadowBlur = 0;
+    ind('REMAIN', rX - fH * 0.05 - ctx.measureText('REMAIN').width, rY + rH * 0.5, true, dimFL);
+    const cX2 = iX + (rX - iX) * 0.45;
+    ind('DOLBY B', cX2, fY + fH * 0.15, running, '#9dffc8');
+    ind('HX PRO', cX2, fY + fH * 0.28, running);
+    ind('⇄ AUTO REV', cX2, fY + fH * 0.41, true);
+    ind('NR B   C   OFF', fX + fW * 0.32, fY + fH * 0.62, true, dimFL);
+    ind('MPX FILTER', fX + fW * 0.62, fY + fH * 0.62, false);
+  }
   // peak meters with dB scale
-  const segs = 24, mX = fX + fW * 0.1, mW = fW * 0.86, sH = fH * 0.07, sGap = 1.5, sW = (mW - sGap * (segs - 1)) / segs;
+  const mX = fX + fW * (wide ? 0.05 : 0.1), mW = fW * (wide ? 0.92 : 0.86), sH = fH * 0.07, sGap = 1.5;
+  const segs = Math.max(24, Math.min(48, Math.round(mW / (H * 0.05)))), sW = (mW - sGap * (segs - 1)) / segs;
   const dbAt = k => -40 + k * (48 / (segs - 1));
   ['L', 'R'].forEach((chn, row) => {
     const yy = fY + fH * 0.72 + row * (sH + 3);
@@ -258,20 +284,22 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
 
   // ── transport keys under the display
   const keys = ['◀◀', '▶', '■', '▶▶', '❚❚', '●'];
-  const kY = Y + H * 0.66, kH = H * 0.13, kG = W * 0.006, kW = (fW - kG * (keys.length - 1)) / keys.length;
+  const kY = Y + H * 0.66, kH = H * 0.13, kG = Math.max(W * 0.006, H * 0.025);
+  const kW = Math.min((fW - kG * (keys.length - 1)) / keys.length, H * 0.5);
+  const kX0 = fX + (fW - (kW * keys.length + kG * (keys.length - 1))) / 2;
   keys.forEach((k, i) => {
     const lit = (k === '▶' && running) || (k === '■' && !running);
     const pressedRecently = deckHits.length >= 0 && performance.now() - (deckPressed[k] || 0) < 180;
-    metalKey(ctx, fX + i * (kW + kG), kY + (pressedRecently ? 1 : 0), kW, kH, k, lit || pressedRecently, k === '▶' ? '#7dffb4' : k === '●' ? '#ff5a3d' : '#ffb35a');
-    deckHits.push({ x: fX + i * (kW + kG), y: kY, w: kW, h: kH, k });
+    metalKey(ctx, kX0 + i * (kW + kG), kY + (pressedRecently ? 1 : 0), kW, kH, k, lit || pressedRecently, k === '▶' ? '#7dffb4' : k === '●' ? '#ff5a3d' : '#ffb35a');
+    deckHits.push({ x: kX0 + i * (kW + kG), y: kY, w: kW, h: kH, k });
   });
   ctx.font = `${legend}px Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = goldDim;
-  ['REW', 'PLAY', 'STOP', 'FF', 'PAUSE', 'REC'].forEach((t, i) => ctx.fillText(t, fX + i * (kW + kG) + kW / 2, kY + kH + 3));
+  ['REW', 'PLAY', 'STOP', 'FF', 'PAUSE', 'REC'].forEach((t, i) => ctx.fillText(t, kX0 + i * (kW + kG) + kW / 2, kY + kH + 3));
 
   // ── right: knobs, power, phones
-  const kx = X + W * 0.86, kr = Math.min(W * 0.035, H * 0.1);
+  const kx = X + W - mx - kSp - kr * 0.9;
   knob(ctx, kx, Y + H * 0.33, kr, -Math.PI * 0.5 + (levels[0] + 40) / 48 * 0.6, 'REC LEVEL', legend);
-  knob(ctx, kx + kr * 2.6, Y + H * 0.33, kr * 0.8, -Math.PI * 0.5, 'BIAS', legend);
+  knob(ctx, kx + kSp, Y + H * 0.33, kr * 0.8, -Math.PI * 0.5, 'BIAS', legend);
   // power switch + LED
   const pX = kx - kr, pY = Y + H * 0.7;
   rr(ctx, pX, pY, kr * 1.5, H * 0.1, 3); ctx.fillStyle = '#0d0e10'; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.stroke();
@@ -281,7 +309,7 @@ function drawCassetteDeck(ctx, X, Y, W, H, d, levels, running) {
   ctx.fillStyle = goldDim; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   ctx.fillText('POWER', pX, pY + H * 0.12);
   // phones jack
-  const jX = kx + kr * 2.6, jY = pY + H * 0.05;
+  const jX = kx + kSp, jY = pY + H * 0.05;
   ctx.beginPath(); ctx.arc(jX, jY, kr * 0.45, 0, Math.PI * 2); ctx.fillStyle = '#9a9ea7'; ctx.fill();
   ctx.beginPath(); ctx.arc(jX, jY, kr * 0.22, 0, Math.PI * 2); ctx.fillStyle = '#050505'; ctx.fill();
   ctx.fillStyle = goldDim; ctx.textAlign = 'center'; ctx.fillText('PHONES', jX, pY + H * 0.12);

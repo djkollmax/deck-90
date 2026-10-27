@@ -1003,3 +1003,5 @@ body.is-app .rack-unit > .s-br{ bottom:3px; right:4px; top:auto; left:auto; }
   .chassis-ti body.is-app .osc-panel{ min-height:50px; }
   .chassis-ti body.is-app .spectrum-panel{ min-height:80px; }
 }
+/* 6.10.1 · one deck instead of two: its panel takes more of the height, so the deck fills the width */
+.rack-unit.deck-single .deck-panel{ flex-grow:2.2; }
