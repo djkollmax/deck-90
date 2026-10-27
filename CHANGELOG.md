@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.9.1
+
+### Changed
+- **Spotless 1.2's equaliser.** On and not flat, it changes the sound by frequency, so the master's loudness can't be worked out from what's heard: the Spotify badge shows **SPOTIFY ?** (and the history leaves MASTER and Spotify empty) until it's off or flat, as with Spotless's levelling. Its preamp and bands are read from Spotless's settings like its volume.
+
 ## 6.9.0
 
 ### Fixed

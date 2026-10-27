@@ -424,13 +424,16 @@ function spotlessState() {
     if (Number.isFinite(v) && v >= 0 && v <= 100) {
       const lin = Math.floor(v * 65535 / 100) / 65535;         // as Spotless hands it to librespot
       const gain = v >= 100 ? 0 : v <= 0 ? -Infinity : 60 * Math.log10(0.9 * lin + 0.1);
-      s = { volume: v, levelling: !!j.levelling, gainDb: Number.isFinite(gain) ? Math.round(gain * 100) / 100 : null };
+      // Spotless 1.2's equaliser: on and not flat, it changes the level by frequency, which can't be taken back out
+      const eq = j.equaliser && typeof j.equaliser === 'object' ? j.equaliser : null;
+      const eqOn = !!(eq && eq.on && (Number(eq.preamp) || (Array.isArray(eq.bands) && eq.bands.some(b => Number(b)))));
+      s = { volume: v, levelling: !!j.levelling, eq: eqOn, gainDb: Number.isFinite(gain) ? Math.round(gain * 100) / 100 : null };
     }
   } catch (_) {}
   const key = JSON.stringify(s);
   if (key !== spotlessLast) {
     spotlessLast = key;
-    if (s) mlog('spotless: volume ' + s.volume + ' % (' + s.gainDb + ' dB), levelling ' + (s.levelling ? 'on' : 'off'));
+    if (s) mlog('spotless: volume ' + s.volume + ' % (' + s.gainDb + ' dB), levelling ' + (s.levelling ? 'on' : 'off') + ', equaliser ' + (s.eq ? 'on' : 'off'));
     if (win && !win.isDestroyed()) win.webContents.send('spotless', s);
   }
 }

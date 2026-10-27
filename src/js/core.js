@@ -124,10 +124,10 @@ let spotGain = NaN;
 let playerState = null;                 // { volume, levelling, gainDb } or null
 if (window.nowPlaying && window.nowPlaying.onPlayer) window.nowPlaying.onPlayer(s => { playerState = s && typeof s === 'object' ? s : null; });
 const playerIsSpotless = info => !!(info && /spotless/i.test(info.app || ''));
-// dB the player took off what we measure (0 = nothing known), NaN when it can't be known (levelling on)
+// dB the player took off what we measure (0 = nothing known), NaN when it can't be known (levelling or equaliser on)
 function playerGainFor(info) {
   if (!playerState || !playerIsSpotless(info)) return 0;
-  if (playerState.levelling) return NaN;
+  if (playerState.levelling || playerState.eq) return NaN;
   return isFinite(playerState.gainDb) ? playerState.gainDb : 0;
 }
 const fmtVol = s => 'Spotless al ' + Math.round(s.volume) + ' % (' + fmtGain(s.gainDb) + ' dB)';
@@ -233,7 +233,9 @@ function updateMasterMeters(now){
     const sp = el('mSpot');
     if (isNaN(pg) && isFinite(I)) {
       sp.textContent = 'SPOTIFY ?'; sp.className = 'spot warn';
-      sp.title = 'Spotless tiene la nivelación prendida: ya normaliza el sonido, así que no se puede saber cuánto ajustaría Spotify el master. Apagala en Spotless para medirlo.';
+      sp.title = playerState && playerState.levelling
+        ? 'Spotless tiene la nivelación prendida: ya normaliza el sonido, así que no se puede saber cuánto ajustaría Spotify el master. Apagala en Spotless para medirlo.'
+        : 'El ecualizador de Spotless está prendido: cambia el sonido según la frecuencia, así que no se puede saber cómo es el master. Apagalo (o dejalo plano) para medirlo.';
     } else {
       sp.textContent = isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '';
       sp.className = 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : '');

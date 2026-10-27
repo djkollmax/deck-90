@@ -144,7 +144,7 @@ The meters were checked against generated test signals:
 - LRA reads 10.0 and 5.0 LU on EBU Tech 3342's first two test cases.
 - Phase correlation is computed sample-aligned on the audio thread: mono reads +1.00, inverted −1.00.
 - BPM: steady beats at 97, 124 and 140 read exactly. Fast tracks (above ~160) may read at half tempo, as with most beat trackers.
-- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings. With **Spotless** the program reads its volume and levelling from Spotless's settings and takes the volume back out: the Spotify badge and the history's MASTER column are the master's own figures at any volume (Spotless's knob is a cubic curve over 60 dB: 71 % is −7.9 dB, 90 % −2.5 dB). With its *Volume levelling* on, Spotless already normalises the sound, so the badge shows **SPOTIFY ?** until it's off. With other players, play at 100 % with their levelling off.
+- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings. With **Spotless** the program reads its volume and levelling from Spotless's settings and takes the volume back out: the Spotify badge and the history's MASTER column are the master's own figures at any volume (Spotless's knob is a cubic curve over 60 dB: 71 % is −7.9 dB, 90 % −2.5 dB). With its *Volume levelling* on, Spotless already normalises the sound, and with its equaliser on (and not flat) it changes the sound by frequency, so in both cases the badge shows **SPOTIFY ?** until they're off. With other players, play at 100 % with their levelling off.
 
 ## Build from source
 
