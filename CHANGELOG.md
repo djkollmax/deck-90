@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.12.0
+
+### Added
+- **The big tape as an SO-90 REEL**, with the metal frames and the REEL cassette: built from the panel's mock-up — the brushed-aluminium cassette with the song on its label, two windows with **gold open reels** that turn about their true centres (as a real C90: see 6.11.0) with the brown tape packs changing behind their cut-outs and the strands to the guides, "DECK 90" along the right reel's rim; the FL display behind a chrome bezel with the song's time, PLAY, the song in dot-matrix letters (scrolling when long) and L/R meters with **yellow and red zones**; and five dark transport keys, PLAY lit green with its bar. It follows the panel: by its height, or by its width in a tall panel. CLEAR, CLÁSICO and a portrait panel keep the drawn tape.
+
 ## 6.11.2
 
 ### Added

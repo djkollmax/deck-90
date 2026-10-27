@@ -272,6 +272,10 @@ function drawBigTape(canvas, ctx, live) {
     turnReels(bigTape, T);
     bigTape.counter = np && np.status === 'Playing' ? npPosition() : bigTape.counter + T;
   }
+  // the SO-90 REEL built from the mock-up, with the metal frames (not in a portrait panel: that keeps the drawn one)
+  if (tapeStyle === 'REEL' && typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && typeof tape90Ready === 'function' && tape90Ready() && W / H >= 1.4) {
+    drawBigTape90(ctx, W, H, play); return;
+  }
   // stage: dark felt with a warm spotlight
   ctx.fillStyle = '#07080b'; ctx.fillRect(0, 0, W, H);
   const spot = ctx.createRadialGradient(W * 0.4, -H * 0.1, H * 0.05, W * 0.4, H * 0.45, Math.max(W, H) * 0.8);
