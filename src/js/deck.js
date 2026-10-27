@@ -301,6 +301,42 @@ function deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H) {
   ind(showPause ? 'PAUSE ❚❚' : 'PLAY ▶', iX, fY + fH * (compact ? 0.17 : roomy ? 0.16 : 0.18), running || showPause, showPause ? '#ffd27a' : FL);
   if (roomy && !compact) ind('REC ●', iX, fY + fH * 0.275, false);
   ind('METAL', iX, fY + fH * (compact ? 0.42 : roomy ? 0.385 : 0.40), true);
+  // the song, in the display's free space right of the indicators: deck A what's playing, deck B the one before.
+  // Too long for the space, it scrolls slowly (with a pause at the start), as the displays of the time did.
+  const song = d.side === 'A' ? (np && np.title ? np : null) : (typeof trackHistory !== 'undefined' ? trackHistory[0] : null);
+  let songEnd = fX + fW * 0.965;                           // where the song's space ends (the remaining time takes the right on a wide display)
+  if (wide) songEnd = fX + fW * 0.965 - (4 * dH * 0.78 * 0.52 + 3 * dH * 0.78 * 0.52 * 0.24) - fH * 0.06 - ctx.measureText('REMAIN').width - fH * 0.25;
+  if (song) {
+    const indW = Math.max(ctx.measureText('PAUSE ❚❚').width, ctx.measureText('METAL').width);
+    const sX = iX + indW + fH * 0.22, sW = songEnd - sX;
+    const marquee = (txt, y, px, col, glowOn) => {
+      ctx.font = face(px);
+      const tw = ctx.measureText(txt).width;
+      ctx.save(); ctx.beginPath(); ctx.rect(sX, y - px, sW, px * 2); ctx.clip();
+      ctx.fillStyle = col; if (glowOn) { ctx.shadowColor = col; ctx.shadowBlur = glow; }
+      ctx.textAlign = 'left';
+      if (tw <= sW) ctx.fillText(txt, sX, y);
+      else {
+        const gap = px * 3, loop = tw + gap, speed = px * 2.2;                  // px per second
+        const t = performance.now() / 1000, pause = 2, cycle = loop / speed + pause;
+        const ph = t % cycle, off = ph < pause ? 0 : (ph - pause) * speed;
+        ctx.fillText(txt, sX - off, y); ctx.fillText(txt, sX - off + loop, y);
+        ctx.shadowBlur = 0;                                // soft edges where it enters and leaves
+        const fw = Math.min(px * 1.6, sW * 0.12);
+        const l = ctx.createLinearGradient(sX, 0, sX + fw, 0); l.addColorStop(0, 'rgba(2,4,4,1)'); l.addColorStop(1, 'rgba(2,4,4,0)');
+        const r = ctx.createLinearGradient(sX + sW - fw, 0, sX + sW, 0); r.addColorStop(0, 'rgba(2,4,4,0)'); r.addColorStop(1, 'rgba(2,4,4,1)');
+        if (off > 0) { ctx.fillStyle = l; ctx.fillRect(sX, y - px, fw, px * 2); }
+        ctx.fillStyle = r; ctx.fillRect(sX + sW - fw, y - px, fw, px * 2);
+      }
+      ctx.restore(); ctx.shadowBlur = 0; ctx.textAlign = 'left';
+    };
+    if (sW > fH * 0.8) {
+      const big = fH * (compact ? 0.15 : 0.115), small = fH * (compact ? 0.12 : 0.09);
+      marquee(String(song.title || '').toUpperCase(), fY + fH * (compact ? 0.17 : 0.17), big, FL, true);
+      if (song.artist) marquee(String(song.artist).toUpperCase(), fY + fH * (compact ? 0.42 : 0.355), small, DIM, false);
+    }
+    ctx.font = face(fH * (compact ? 0.14 : 0.1));
+  }
   const rowY = fY + fH * 0.555;
   if (!compact) ind('TYPE I  II  IV', fX + fW * 0.045, rowY, true, DIM);
   if (!wide) { if (!compact) ind('NR OFF', fX + fW * 0.62, rowY, true, DIM); }
@@ -313,12 +349,11 @@ function deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H) {
     colon(rX + 2 * (rWd + rGap) - rGap / 2, rY, rH, rWd);
     ind('REMAIN', rX - fH * 0.06 - ctx.measureText('REMAIN').width, rY + rH * 0.5, true, DIM);
     if (!compact) {
-      const cX2 = iX + (rX - iX) * 0.45;
-      ind('DOLBY B', cX2, fY + fH * 0.16, running);
-      ind('HX PRO', cX2, fY + fH * 0.275, running);
-      ind('⇄ AUTO REV', cX2, fY + fH * 0.385, true);
-      ind('NR B   C   OFF', fX + fW * 0.32, rowY, true, DIM);
-      ind('MPX FILTER', fX + fW * 0.62, rowY, false);
+      ind('NR B   C   OFF', fX + fW * 0.30, rowY, true, DIM);
+      ind('DOLBY B', fX + fW * 0.47, rowY, running);
+      ind('HX PRO', fX + fW * 0.59, rowY, running);
+      ind('⇄ AUTO REV', fX + fW * 0.70, rowY, true, DIM);
+      ind('MPX FILTER', fX + fW * 0.84, rowY, false);
     }
   }
   // L/R peak meters: thick segments with a dark gap, the unlit ones still faintly there

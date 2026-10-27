@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.11.2
+
+### Added
+- **The song on the deck's display.** In the free space right of PLAY and METAL, in the display's own lettering: the title bright, the artist under it (deck A: what's playing; deck B: the song before). Too long for the space, a line scrolls slowly with a pause at its start, fading in and out at the edges, as the displays of the time did. On a wide display it sits in the middle, before the remaining time, and the DOLBY / HX PRO / AUTO REV indicators move to the bottom row.
+
 ## 6.11.1
 
 ### Fixed
