@@ -280,7 +280,10 @@ async function startAudio(mode) {
     rafId = requestAnimationFrame(loop);
 
   } catch (e) {
-    console.error(e);
+    // a capture that can't start is reported on screen (below) and in media.log, not as a page error
+    const why = 'capture (' + mode + '): ' + (e && e.name) + ': ' + (e && e.message);
+    console.warn(why);
+    if (window.appLog) window.appLog(why);
     if (s) { s.getTracks().forEach(t => t.stop()); if (stream === s) stream = null; }
     if (gen !== srcGen) return;                       // an older start failing late: the newer one is fine
     if (e.name === 'NotAllowedError') toast('Permiso cancelado.', 3500);

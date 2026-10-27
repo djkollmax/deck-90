@@ -299,8 +299,8 @@ app.whenReady().then(() => {
   if (process.env.DECK90_SMOKE) {
     const pageErrors = [];
     // Electron 35+ puts level ('error'…) and message on the event; older ones passed them as arguments
-    win.webContents.on('console-message', (e, lvl, msg) => {
-      const level = e && e.level !== undefined ? e.level : lvl, message = e && e.message !== undefined ? e.message : msg;
+    win.webContents.on('console-message', (e, ...old) => {
+      const level = e && e.level !== undefined ? e.level : old[0], message = e && e.message !== undefined ? e.message : old[1];
       if (level === 'error' || level >= 3) pageErrors.push(message);
     });
     win.webContents.once('did-finish-load', () => setTimeout(async () => {
