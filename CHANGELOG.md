@@ -1,5 +1,18 @@
 # Changelog
 
+## 6.13.0
+
+### Added
+- **The meters' frame.** With the metal frames every VU face sits in a meter's black frame, its edge catching the light, the face behind a polished ring with rounded corners. The needle faces (AZUL, CINTA 70s, CREMA) have the level in a black readout window of its own under the face, in mono figures; their figures, marks and red band grow with the meter, and a wide meter gets a larger, flatter arc. STUDIO and HI-FI 90s sit inside the same frame with their own read-outs. CLÁSICO keeps the old look.
+- **CREMA**, a fifth VU face: the classic backlit cream meter, bright and even, black ink and needle, a bold red band, the level in amber. In the ⚙ drawer, on V and on the phone.
+
+### Changed
+- The SO-90's reels are a brighter, yellower gold, and the shade over them is lighter.
+
+### Fixed
+- The backlit VU faces (CINTA 70s, AZUL) had a grey haze in the middle: the lamp's glow faded to transparent black. It fades to its own colour now.
+- Very small needle meters show only the main figures and no PEAK word, so nothing overlaps.
+
 ## 6.12.0
 
 ### Added

@@ -71,7 +71,7 @@ function drawBigTape90(ctx, W, H, play) {
     ctx.restore();
     // the light on the reel stays put while it turns
     const light = ctx.createLinearGradient(x - P(160), y - P(160), x + P(160), y + P(160));
-    light.addColorStop(0, 'rgba(255,245,225,.10)'); light.addColorStop(.5, 'rgba(255,255,255,0)'); light.addColorStop(1, 'rgba(0,0,0,.22)');
+    light.addColorStop(0, 'rgba(255,240,200,.14)'); light.addColorStop(.5, 'rgba(255,255,255,0)'); light.addColorStop(1, 'rgba(0,0,0,.12)');
     ctx.beginPath(); ctx.arc(x, y, P(161), 0, Math.PI * 2); ctx.fillStyle = light; ctx.fill();
     // the window's smoked glass: a reflection at the top left, a shadow along the frame
     const refl = ctx.createLinearGradient(x0, y0, x0 + w * 0.6, y0 + h * 0.6);
