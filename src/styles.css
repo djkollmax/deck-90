@@ -1,3 +1,9 @@
+/* The displays' lettering: Barlow Condensed (SIL Open Font License, see fonts/OFL-BarlowCondensed.txt),
+   bundled so it looks the same, and sharp, on every PC; and Doto (same licence, fonts/OFL-Doto.txt), the
+   dot-matrix letters of the CD display. Latin subsets. */
+@font-face{ font-family:'Deck90 Display'; src:url(fonts/barlow-condensed-semibold.woff2) format('woff2'); font-weight:600; font-style:normal; font-display:block; }
+@font-face{ font-family:'Deck90 Display'; src:url(fonts/barlow-condensed-medium.woff2) format('woff2'); font-weight:500; font-style:normal; font-display:block; }
+@font-face{ font-family:'Deck90 Dots'; src:url(fonts/doto-black.woff2) format('woff2'); font-weight:400; font-style:normal; font-display:block; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -1043,3 +1049,19 @@ html:not(.chassis-ti) #npArtist{ font-size:10px; color:rgba(230,205,140,.8); }
 .chassis-ti #statusText.on{ color:#5dff9a; text-shadow:0 0 6px rgba(93,255,154,.45), 0 1px 0 rgba(0,0,0,.6); }
 .chassis-ti .led-label{ font-size:9px; opacity:1; color:var(--lbl); text-shadow:var(--lbl-sh); }
 .chassis-ti.fin-gold #statusText.on{ color:#0d6b33; text-shadow:0 1px 0 rgba(255,250,232,.6); }
+
+/* 6.16.1 · the song in the header in the bundled display face: crisp letters with a tight glow around them */
+.chassis-ti #npTitle, .chassis-ti #npArtist{
+  -webkit-font-smoothing:antialiased; text-rendering:geometricPrecision; font-kerning:normal; font-feature-settings:'kern','case';
+}
+.chassis-ti #npTitle{
+  font:600 18px/1.12 'Deck90 Display', 'Bahnschrift', 'Arial Narrow', sans-serif; letter-spacing:1.6px;
+  color:#8ef8ea;
+  text-shadow:0 0 1px rgba(142,248,234,.85), 0 0 5px rgba(127,246,230,.45), 0 0 14px rgba(127,246,230,.16);
+}
+.chassis-ti #npArtist{
+  font:500 13px/1.2 'Deck90 Display', 'Bahnschrift', 'Arial Narrow', sans-serif; letter-spacing:2.2px;
+  color:rgba(96,222,212,.92); text-shadow:0 0 4px rgba(80,214,204,.22);
+}
+@media (max-height:820px){ .chassis-ti #npTitle{ font-size:15.5px; } .chassis-ti #npArtist{ font-size:11.5px; } }
+.chassis-ti body.mini #npTitle{ font-size:15px; } .chassis-ti body.mini #npArtist{ font-size:11px; }

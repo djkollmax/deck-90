@@ -153,7 +153,7 @@ function tapeDisplay(ctx, gX, gY, gW, gH, play, song) {
     ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;
     [0.36, 0.66].forEach(fy => ctx.fillRect(cx - q / 2, dY0 + dH * fy - q / 2, q, q)); ctx.shadowBlur = 0; }
   const iX = dX0 + 4 * (dW + dGap) + gH * 0.12;
-  const face = px => `${Math.max(6, Math.round(px))}px "Bahnschrift", "Segoe UI", Arial, sans-serif`;
+  const face = px => `600 ${Math.max(6, Math.round(px * 1.08))}px "Deck90 Display", "Bahnschrift", "Segoe UI", Arial, sans-serif`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   // the indicators take the room right of the digits: smaller when the display is narrow
   ctx.font = face(gH * 0.085);
@@ -163,9 +163,9 @@ function tapeDisplay(ctx, gX, gY, gW, gH, play, song) {
   ctx.fillStyle = play ? FL : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = glow;
   ctx.fillText(state, iX, gY + gH * 0.23); ctx.shadowBlur = 0;
   ctx.fillStyle = DIM; ctx.fillText('REEL - TYPE II', iX, gY + gH * 0.41);
-  // the song, in dot-matrix-like letters; scrolls with a pause when it doesn't fit
+  // the song in dot-matrix letters; scrolls with a pause when it doesn't fit
   const tX = dX0, tW = gX + gW - gH * 0.12 - tX, tY = gY + gH * 0.655, px = gH * 0.105;
-  ctx.font = `${Math.max(7, Math.round(px))}px "Lucida Console", "Consolas", "Courier New", monospace`;
+  ctx.font = `${Math.max(9, Math.round(px * 1.3))}px "Deck90 Dots", "Lucida Console", "Consolas", monospace`;
   const tw = ctx.measureText(song).width;
   ctx.save(); ctx.beginPath(); ctx.rect(tX, tY - px, tW, px * 2); ctx.clip();
   ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;

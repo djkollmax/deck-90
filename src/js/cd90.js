@@ -109,7 +109,7 @@ function drawCD90(ctx, W, H, play) {
 
 function cdDisplay(ctx, gX, gY, gW, gH, play) {
   const FL = '#5ff3ea', GHOST = 'rgba(95,243,234,.045)', DIM = 'rgba(95,243,234,.6)', UNLIT = 'rgba(95,243,234,.12)', glow = Math.max(4, gH * 0.03);
-  const face = (px, w = 600) => `${w} ${Math.max(6, Math.round(px))}px "Bahnschrift SemiBold Condensed", "Bahnschrift", "Arial Narrow", "Roboto Condensed", Arial, sans-serif`;
+  const face = (px, w = 600) => `${w} ${Math.max(6, Math.round(px * 1.08))}px "Deck90 Display", "Bahnschrift SemiBold Condensed", "Arial Narrow", Arial, sans-serif`;
   const pad = Math.min(gW * 0.04, gH * 0.12);
   // time: elapsed, or (TIME) what's left of the song
   const pos = np ? npPosition() : bigTape.counter, dur = np && np.dur > 0 ? np.dur : 0;
@@ -158,10 +158,10 @@ function cdDisplay(ctx, gX, gY, gW, gH, play) {
     ctx.fillStyle = cd.remain ? FL : UNLIT; ctx.fillText('REMAIN', calR - rw, dY0 + dH * 0.72);
   }
   ctx.textAlign = 'left';
-  // the song, dot-matrix style; scrolls with a pause when it doesn't fit
+  // the song in dot-matrix letters; scrolls with a pause when it doesn't fit
   const song = np && np.title ? (np.artist ? np.artist + ' - ' : '') + np.title : 'DECK 90';
   const px = gH * 0.1, tX = gX + pad, tWd = gW - 2 * pad, tY = gY + gH * 0.6;
-  ctx.font = `${Math.max(7, Math.round(px))}px "Lucida Console", "Consolas", "Courier New", monospace`;
+  ctx.font = `${Math.max(9, Math.round(px * 1.3))}px "Deck90 Dots", "Lucida Console", "Consolas", monospace`;
   const tw = ctx.measureText(song).width;
   ctx.save(); ctx.beginPath(); ctx.rect(tX, tY - px, tWd, px * 2); ctx.clip();
   ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;

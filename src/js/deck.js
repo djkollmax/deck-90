@@ -273,7 +273,7 @@ function deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H) {
   const compact = fH < 60;                                 // a low display: digits, PLAY/METAL and the meters only
   const glow = Math.max(4, fH * 0.03);
   // condensed bold lettering, as printed on the FL glass
-  const face = px => `bold ${Math.max(6, Math.round(px))}px "Bahnschrift SemiBold Condensed", "Bahnschrift", "Arial Narrow", "Roboto Condensed", Arial, sans-serif`;
+  const face = px => `600 ${Math.max(6, Math.round(px * 1.08))}px "Deck90 Display", "Bahnschrift SemiBold Condensed", "Arial Narrow", Arial, sans-serif`;
   // the counter: deck A shows the song's m:ss, deck B its tape counter
   const timeMode = d.side === 'A' && !!np;
   const secs = Math.floor(d.counter);

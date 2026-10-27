@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.16.1
+
+### Changed
+- **Sharper lettering in the header and on the displays.** The song and artist at the top were drawn in whatever condensed font the PC had (or a plain fallback), with a wide, soft glow that blurred them. Deck 90 now brings its own: Barlow Condensed, a clean condensed face in the spirit of a '90s FL display, drawn with kerning and a tight glow so the letters stay crisp; the title is a little larger and the artist line more spaced. The same lettering is used for PLAY, TRACK, METAL, REEL and the other words on the DECK 90, SO-90 REEL and CD-90 displays, on the drawn cassette's display and on the phone.
+- **Real dot-matrix song names** on the CD-90 and SO-90 REEL displays (Doto), as on the mock-ups, instead of a typewriter font.
+- New screenshots in the README with the new lettering, and one of the CD-90.
+
 ## 6.16.0
 
 ### Added

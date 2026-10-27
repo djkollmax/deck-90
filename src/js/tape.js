@@ -313,7 +313,7 @@ function drawBigTape(canvas, ctx, live) {
   { const cx = dX0 + 2 * (dW + dGap) - dGap / 2, r = Math.max(1.4, dW * 0.08);
     ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 6;
     [0.33, 0.7].forEach(fy => { ctx.beginPath(); ctx.arc(cx, dY0 + dH * fy, r, 0, Math.PI * 2); ctx.fill(); }); ctx.shadowBlur = 0; }
-  ctx.font = `bold ${Math.max(8, Math.round(dH * 0.24))}px Arial, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = `600 ${Math.max(8, Math.round(dH * 0.26))}px "Deck90 Display", "Arial Narrow", Arial, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillStyle = play ? '#9dffc8' : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 6;
   ctx.fillText(play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■'), dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.3);
   ctx.shadowBlur = 0;
@@ -323,7 +323,7 @@ function drawBigTape(canvas, ctx, live) {
   const tStr = np ? ((np.artist ? np.artist + ' — ' : '') + (np.title || '')) : 'DECK 90';
   ctx.save();
   ctx.beginPath(); ctx.rect(iX + iW * 0.05, iY + dispH * 0.62, iW * 0.9, dispH * 0.2); ctx.clip();
-  ctx.font = `${Math.max(9, Math.round(dispH * 0.13))}px "Courier New", monospace`; ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 5;
+  ctx.font = `600 ${Math.max(9, Math.round(dispH * 0.15))}px "Deck90 Display", "Arial Narrow", Arial, sans-serif`; ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 5;
   const tw = ctx.measureText(tStr).width, room = iW * 0.9;
   const off = tw > room ? ((performance.now() / 40) % (tw + 60)) : 0;
   ctx.fillText(tStr, iX + iW * 0.05 - off, iY + dispH * 0.72);

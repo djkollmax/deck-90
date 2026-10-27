@@ -16,6 +16,8 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 
 ![SO-90 REEL](docs/screenshots/so90.jpg)
 
+![CD-90](docs/screenshots/cd90.jpg)
+
 **VU faces:** CREMA, AZUL, CINTA 70s and HI-FI 90s (and STUDIO and AZUL INTENSO).
 
 ![VU faces](docs/screenshots/vu-faces.jpg)
@@ -189,6 +191,7 @@ scripts/    packaging
   - Claude wrote the code: the audio engine, the meters and their calibration, the drawing, the cassette decks, the Windows/Linux now-playing bridges and the packaging.
 - Built for and alongside [Spotless](https://github.com/nix-codes/spotless) by Nico (nix-codes).
 - Runs on [Electron](https://www.electronjs.org/) (MIT). Release builds include Electron's and Chromium's license files (`LICENSE`, `LICENSES.chromium.html`).
+- Display lettering: [Barlow Condensed](https://github.com/jpt/barlow) by Jeremy Tribby and [Doto](https://github.com/oliverlalan/Doto) by Óliver Lalan, both under the [SIL Open Font License 1.1](https://openfontlicense.org/) (licence texts in `src/fonts/`). Bundled as Latin subsets.
 
 All product names in this project are generic. Deck 90 is not affiliated with any hardware or software maker.
 

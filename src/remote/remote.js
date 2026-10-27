@@ -253,5 +253,7 @@ applyOpts();
 setView(view);
 size();
 connect();
+// the decks' display lettering is a web font: ask for it now (the drawing loop picks it up once it's here)
+try { document.fonts.load("600 16px 'Deck90 Display'"); document.fonts.load("500 16px 'Deck90 Display'"); } catch (_) {}
 requestAnimationFrame(frame);
 document.addEventListener('click', () => keepAwake(), { once: true });

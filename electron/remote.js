@@ -24,8 +24,10 @@ const STATIC = {
   '/js/tape.js': 'js/tape.js',
   '/js/nowplaying.js': 'js/nowplaying.js',
   '/js/draw-spectrum.js': 'js/draw-spectrum.js',
+  '/fonts/barlow-condensed-semibold.woff2': 'fonts/barlow-condensed-semibold.woff2',   // the deck displays' lettering
+  '/fonts/barlow-condensed-medium.woff2': 'fonts/barlow-condensed-medium.woff2',
 };
-const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.woff2': 'font/woff2' };
 const CMDS = ['toggle', 'play', 'pause', 'stop', 'next', 'prev'];
 
 function lanAddresses() {
