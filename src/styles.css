@@ -839,3 +839,167 @@ body.is-app .rack-unit > .s-tl{ top:3px; left:4px; }
 body.is-app .rack-unit > .s-tr{ top:3px; right:4px; left:auto; }
 body.is-app .rack-unit > .s-bl{ bottom:3px; left:4px; top:auto; }
 body.is-app .rack-unit > .s-br{ bottom:3px; right:4px; top:auto; left:auto; }
+
+/* ═══════════════════════════════════════════════════════════
+   6.10 · MARCO: the frame of a premium '90s deck, in titanium, black or champagne
+   Brushed-metal plates; each display sits behind black glass in a polished, chamfered bevel; labels are
+   engraved above the windows. Only the frame changes: what the displays draw is the same.
+   html.chassis-ti turns it on; html.fin-black / html.fin-gold pick the finish (titanium otherwise).
+   ═══════════════════════════════════════════════════════════ */
+.chassis-ti{
+  --m-tex:url(img/metal-ti.jpg); --m-base:#57514a; --m-screw:url(img/screw-ti.png);
+  --m-hi:rgba(255,255,255,.17); --m-cut:rgba(0,0,0,.62); --m-shade:rgba(0,0,0,.06);
+  --b-out:#1c1814; --b-c1:#8e8274; --b-c2:#dcd1bf; --b-c3:#b8ac99; --b-c4:#6c6257; --b-r1:#120e0b; --b-r2:#2c241e;
+  --lbl:#d8d2c6; --lbl-sh:0 -1px 0 rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.10);
+  --key:linear-gradient(180deg,#3d3934 0%,#26231f 55%,#1d1b18 100%); --key-hover:linear-gradient(180deg,#4a453f,#2d2a26);
+  --key-fg:#cfc8bb; --key-edge:#0b0a08; --key-hi:rgba(255,255,255,.16);
+}
+.chassis-ti.fin-black{
+  --m-tex:url(img/metal-black.jpg); --m-base:#292929; --m-screw:url(img/screw-black.png);
+  --m-hi:rgba(255,255,255,.13); --m-cut:rgba(0,0,0,.75); --m-shade:rgba(0,0,0,.10);
+  --b-out:#171717; --b-c1:#3a3a3a; --b-c2:#bdbdbc; --b-c3:#929291; --b-c4:#565656; --b-r1:#050505; --b-r2:#202020;
+  --lbl:#ececea; --lbl-sh:0 -1px 0 rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.06);
+  --key:linear-gradient(180deg,#3b3b3b 0%,#232323 55%,#1a1a1a 100%); --key-hover:linear-gradient(180deg,#4a4a4a,#282828);
+  --key-fg:#e2e2e0; --key-edge:#050505; --key-hi:rgba(255,255,255,.18);
+}
+.chassis-ti.fin-gold{
+  --m-tex:url(img/metal-gold.jpg); --m-base:#d4ba90; --m-screw:url(img/screw-gold.png);
+  --m-hi:rgba(255,250,230,.55); --m-cut:rgba(70,48,20,.55); --m-shade:rgba(90,60,20,.10);
+  --b-out:#8a6f48; --b-c1:#c9b48c; --b-c2:#fff9d6; --b-c3:#f0e0b6; --b-c4:#b8965f; --b-r1:#3c2611; --b-r2:#7a5a35;
+  --lbl:#5e4826; --lbl-sh:0 1px 0 rgba(255,250,232,.65), 0 -1px 0 rgba(90,62,25,.35);   /* engraved: dark in the light metal */
+  --key:linear-gradient(180deg,#f3e6c4 0%,#dcc79c 55%,#c8b083 100%); --key-hover:linear-gradient(180deg,#fff4d8,#e0cc9f);
+  --key-fg:#3c2d17; --key-edge:#6e5732; --key-hi:rgba(255,255,255,.6);
+}
+.chassis-ti{
+  /* the window's bevel, from the glass outwards: black edge, dark recess, polished chamfer, the plate's cut */
+  --ti-bevel:
+    inset 0 0 0 1px var(--b-out),
+    inset 0 0 0 2px var(--b-c1),
+    inset 0 1px 0 2px var(--b-c2),
+    inset 0 0 0 3px var(--b-c3),
+    inset 0 0 0 4px var(--b-c4),
+    inset 0 0 0 5px var(--b-r1),
+    inset 0 0 0 7px var(--b-r2),
+    inset 0 0 0 8px #050404;
+  --ti-plate:
+    linear-gradient(180deg, rgba(255,255,255,.045), transparent 35%, var(--m-shade)),
+    var(--m-tex) 0 0 / 1024px 512px, var(--m-base);
+  --ti-plate-edge:
+    0 0 0 1px var(--m-cut),
+    inset 0 1px 0 var(--m-hi),
+    inset 0 -1px 0 rgba(0,0,0,.30),
+    0 2px 3px rgba(0,0,0,.30);
+}
+.chassis-ti body{ background:var(--m-base) var(--m-tex) 0 0 / 1024px 512px; }
+.chassis-ti .rack-unit{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), transparent 18%, transparent 82%, rgba(0,0,0,.18)),
+    var(--m-tex) 0 0 / 1024px 512px, var(--m-base);
+}
+.chassis-ti body.is-app .rack-unit{
+  padding:20px 26px 20px;
+  box-shadow:
+    inset 0 0 0 1px var(--b-out),
+    inset 0 0 0 2px var(--b-c3),
+    inset 0 1px 0 2px var(--b-c2),
+    inset 0 0 0 3px var(--b-c4),
+    inset 0 0 0 4px rgba(0,0,0,.30);
+}
+/* the four screws, on the plate's corners */
+.chassis-ti .rack-unit > .screw{
+  width:18px; height:18px; border:0; border-radius:50%;
+  background:var(--m-screw) center / 100% 100% no-repeat;
+  box-shadow:0 1px 1px rgba(255,255,255,.12), 0 -1px 1px rgba(0,0,0,.4);
+}
+.chassis-ti .rack-unit > .screw::after{ display:none; }
+.chassis-ti body.is-app .rack-unit > .s-tl{ top:5px; left:5px; }
+.chassis-ti body.is-app .rack-unit > .s-tr{ top:5px; right:5px; }
+.chassis-ti body.is-app .rack-unit > .s-bl{ bottom:5px; left:5px; }
+.chassis-ti body.is-app .rack-unit > .s-br{ bottom:5px; right:5px; }
+
+/* plates: each module is a plate of the front, cut from the one around it */
+.chassis-ti .panel,
+.chassis-ti body .spectrum-panel,
+.chassis-ti .title-bar,
+.chassis-ti .console,
+.chassis-ti .master-strip{
+  background:var(--ti-plate);
+  border:0; border-radius:2px; outline:0;
+  box-shadow:var(--ti-plate-edge);
+}
+.chassis-ti .panel::after{ display:none; }
+.chassis-ti .panel{ isolation:isolate; overflow:hidden; padding:14px 18px 16px; }
+/* the black glass, behind whatever the module draws */
+.chassis-ti .panel::before{
+  content:''; position:absolute; inset:6px 10px 8px 10px; height:auto; z-index:-1; border-radius:2px;
+  background:radial-gradient(ellipse at 50% 0%, #0d0d0d, #020202 70%);
+  box-shadow:var(--ti-bevel);
+}
+/* a labelled module: the label engraved on the plate, the window under it */
+.chassis-ti .panel:has(> .panel-label){ padding-top:32px; }
+.chassis-ti .panel:has(> .panel-label)::before{ top:24px; }
+.chassis-ti .panel > .panel-label{
+  position:absolute; top:6px; left:0; right:0; margin:0;
+  font:600 9px/12px 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; letter-spacing:4.5px;
+  color:var(--lbl); opacity:.88; text-shadow:var(--lbl-sh);
+}
+.chassis-ti .panel[data-mod="vu"] > .panel-label::before{ content:'LEVEL '; }
+/* the spectrum's window has a thin amber bezel inside the chamfer */
+.chassis-ti .spectrum-panel::before{
+  box-shadow:
+    inset 0 0 0 1px var(--b-out), inset 0 0 0 2px var(--b-c1), inset 0 1px 0 2px var(--b-c2), inset 0 0 0 3px var(--b-c3),
+    inset 0 0 0 4px var(--b-c4), inset 0 0 0 5px var(--b-r1),
+    inset 0 0 0 6px #6b4518, inset 0 0 0 7px #c48a3a, inset 0 0 0 8px #e0aa5c, inset 0 0 0 9px #050404;
+}
+/* the read-outs (loudness, peak, crest, phase): small windows on one plate */
+.chassis-ti .master-strip{ padding:8px 10px; gap:10px; }
+.chassis-ti .master-strip > .metric-card{ background:transparent; box-shadow:none; padding:10px 12px; }
+.chassis-ti .master-strip > .metric-card::before{ inset:0; }
+.chassis-ti .metric-title{ letter-spacing:3px; }
+
+/* the header: engraved name, the song in a black display slot, square keys */
+.chassis-ti .title-bar{ padding:8px 12px; }
+.chassis-ti .brand-name{
+  white-space:nowrap;
+  font:500 13px/1 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; letter-spacing:7px;
+  color:var(--lbl); text-shadow:var(--lbl-sh);
+}
+.chassis-ti #statusText{ white-space:nowrap; }
+.chassis-ti #ledPower{ box-shadow:0 0 0 2px var(--b-out), 0 0 0 3px var(--b-c1), 0 0 8px currentColor; }
+.chassis-ti .np{
+  flex:0 1 980px; background:#030303; border-radius:2px; padding:6px 16px; min-height:34px;
+  box-shadow:var(--ti-bevel), 0 1px 0 var(--m-hi);
+}
+.chassis-ti .win-ctl button{
+  border-radius:2px; border:1px solid var(--key-edge); background:var(--key); color:var(--key-fg);
+  box-shadow:inset 0 1px 0 var(--key-hi), inset 0 -1px 0 rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.55);
+}
+.chassis-ti .win-ctl button:hover{ background:var(--key-hover); color:var(--key-fg); }
+.chassis-ti .win-ctl button.close:hover{ color:#fff; background:linear-gradient(180deg,#c42b1c,#8e1a10); border-color:#e0533f; }
+/* the controls' plate and its tab */
+.chassis-ti .console{ padding:8px 10px; }
+.chassis-ti .console-tab{
+  background:var(--key); color:var(--key-fg); border-color:var(--key-edge);
+  box-shadow:inset 0 1px 0 var(--key-hi), 0 1px 2px rgba(0,0,0,.5);
+}
+/* champagne is light: the header's small print turns dark to stay readable */
+.chassis-ti.fin-gold .led-label{ color:#5a4524; text-shadow:0 1px 0 rgba(255,255,255,.35); }
+.chassis-ti.fin-gold #statusText{ color:#2f6b3c; text-shadow:0 1px 0 rgba(255,255,255,.4); }
+/* mini strip: the header plate and the strip's window */
+.chassis-ti body.mini .rack-unit{ padding:6px 8px; }
+.chassis-ti .mini-panel{ border-radius:2px; background:#030303; box-shadow:var(--ti-bevel); padding:8px; }
+/* a short window: a thinner frame and label strip, so the displays keep their height */
+@media (max-height:820px){
+  .chassis-ti body.is-app .rack-unit{ padding:14px 18px; }
+  .chassis-ti .panel{ padding-bottom:14px; }
+  .chassis-ti .panel:has(> .panel-label){ padding-top:26px; }
+  .chassis-ti .rack-unit .panel:has(> .panel-label)::before{ top:18px; }
+  .chassis-ti .panel > .panel-label{ top:4px; }
+  .chassis-ti .rack-unit .panel::before{ bottom:6px; }
+  .chassis-ti .master-strip{ padding:6px 8px; gap:8px; }
+  .chassis-ti .rack-unit .title-bar{ padding:5px 12px; }
+  .chassis-ti .rack-unit .console{ padding:6px 10px; }
+  .chassis-ti body.is-app .main-row{ min-height:140px; }
+  .chassis-ti body.is-app .osc-panel{ min-height:50px; }
+  .chassis-ti body.is-app .spectrum-panel{ min-height:80px; }
+}

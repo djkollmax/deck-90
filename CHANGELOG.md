@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.10.0
+
+### Added
+- **MARCO: the frame of a premium '90s deck**, in three finishes, **TITANIO** (the default), **NEGRO** and **CHAMPAGNE**, or the old **CLÁSICO**. Chosen in the ⚙ drawer and remembered. Each module is a brushed-metal plate with its name engraved above it (LEVEL L, LEVEL R, BPM, GONIO…), and what it shows sits behind black glass in a polished, chamfered bevel; the spectrum's window has a thin amber bezel, the song is in a black display slot in the header, the window keys are square metal keys, and four screws hold the plate at its corners. Only the frame changes: VU meters, spectrum and decks draw as before. The metal and the screws come from mock-ups of the panel; the bevels are drawn, so the frame fits any window size and follows the modules you switch on or off.
+
+### Fixed
+- In a very short window, displays now stay inside their frames instead of running over the bottom edge.
+
 ## 6.9.2
 
 ### Changed

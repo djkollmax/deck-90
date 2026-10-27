@@ -5,12 +5,23 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis })); } catch(_){}
 }
 function loadPrefs(){
   try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(_) { return {}; }
 }
 
+// The rack's frame: brushed-metal plates, each display behind glass in a polished bevel, as the premium
+// decks of the 90s, in TITANIO, NEGRO or CHAMPAGNE; or CLÁSICO, the dark rack of the first versions.
+// The displays themselves don't change.
+const CHASSIS = ['TI', 'BLACK', 'GOLD', 'CLASSIC'];
+let chassis = 'TI';
+function setChassis(v){
+  chassis = CHASSIS.includes(v) ? v : 'TI';
+  const h = document.documentElement.classList;
+  h.toggle('chassis-ti', chassis !== 'CLASSIC'); h.toggle('fin-black', chassis === 'BLACK'); h.toggle('fin-gold', chassis === 'GOLD');
+  requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+}
 function setDrawer(open){
   drawerOpen = open;
   document.getElementById('console').classList.toggle('open', open);
@@ -84,6 +95,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); }
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
   if (g === 'phone') phoneButton(v);
+  if (g === 'chassis') setChassis(v);
   if (g === 'preset') { presetButton(v, e.shiftKey); return; }
   if (g === 'tools') {
     if (v === 'fs') toggleFullscreen();
@@ -185,6 +197,7 @@ if (prefs.mods && typeof prefs.mods === 'object') {
   }
 }
 if (typeof prefs.deckDouble === 'boolean') deckDouble = prefs.deckDouble;
+setChassis(prefs.chassis);
 if (prefs.tapeStyle === 'CLEAR' || prefs.tapeStyle === 'REEL') tapeStyle = prefs.tapeStyle;
 if (prefs.drawerOpen) { drawerOpen = true; document.getElementById('console').classList.add('open'); }
 if (prefs.controlsHidden) { controlsHidden = true; document.querySelector('.rack-unit').classList.add('controls-hidden'); }

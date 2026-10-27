@@ -414,6 +414,7 @@ function syncConsole() {
     cal: String(vuCal),
     sens: String(flSensitivity),
     mode: String(spectrumModeIndex),
+    chassis: typeof chassis !== 'undefined' ? chassis : 'TI',
   };
   document.querySelectorAll('#console .seg').forEach(seg => {
     const g = seg.dataset.group;
