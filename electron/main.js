@@ -298,11 +298,18 @@ app.whenReady().then(() => {
   // Release check (DECK90_SMOKE=1): start, load the page, see that its scripts ran, report and quit.
   if (process.env.DECK90_SMOKE) {
     const pageErrors = [];
-    win.webContents.on('console-message', (e, level, message) => { if (level >= 3) pageErrors.push(message); });
+    // Electron 35+ puts level ('error'…) and message on the event; older ones passed them as arguments
+    win.webContents.on('console-message', (e, lvl, msg) => {
+      const level = e && e.level !== undefined ? e.level : lvl, message = e && e.message !== undefined ? e.message : msg;
+      if (level === 'error' || level >= 3) pageErrors.push(message);
+    });
     win.webContents.once('did-finish-load', () => setTimeout(async () => {
       let ok = false;
       try { ok = await win.webContents.executeJavaScript("typeof frame === 'function' && typeof applyPreset === 'function' && typeof historyCsv === 'function' && !!document.getElementById('mSpot')"); } catch (_) {}
-      console.log('DECK90_SMOKE ' + (ok && !pageErrors.length ? 'ok' : 'FAIL') + ' ' + app.getVersion() + (pageErrors.length ? ' errors: ' + pageErrors.join(' | ') : ''));
+      const line = 'DECK90_SMOKE ' + (ok && !pageErrors.length ? 'ok' : 'FAIL') + ' ' + app.getVersion() + ' electron ' + process.versions.electron + (pageErrors.length ? ' errors: ' + pageErrors.join(' | ') : '');
+      console.log(line);
+      // Windows doesn't always hand a windowed program's console output to the caller: write it to a file too
+      if (process.env.DECK90_SMOKE_OUT) { try { fs.writeFileSync(process.env.DECK90_SMOKE_OUT, line + '\n'); } catch (_) {} }
       app.isQuitting = true; app.exit(ok && !pageErrors.length ? 0 : 1);
     }, 4000));
   }

@@ -38,22 +38,22 @@ Say @{ ready = $true }
 # Spotless if it's open, else Windows' current session.
 $script:lastApp = ''
 function IsPlaying($s) { try { return ([string]$s.GetPlaybackInfo().PlaybackStatus) -eq 'Playing' } catch { return $false } }
-function Pick() {
-  $all = @($mgr.GetSessions())
+# The choice itself, apart from Windows: the sessions, Windows' current one and the app followed last.
+# (scripts/test-media.ps1 runs it against made-up sessions on GitHub's Windows machines.)
+function Choose($all, $cur, $lastApp) {
+  $all = @($all | Where-Object { $_ })
   $playing = @($all | Where-Object { IsPlaying $_ })
-  $pick = $null
   if ($playing.Count -gt 0) {
-    foreach ($s in $playing) { if ($s.SourceAppUserModelId -match 'spotless') { $pick = $s; break } }
-    if (-not $pick -and $script:lastApp) { foreach ($s in $playing) { if ($s.SourceAppUserModelId -eq $script:lastApp) { $pick = $s; break } } }
-    if (-not $pick) {
-      $cur = $mgr.GetCurrentSession()
-      if ($cur) { foreach ($s in $playing) { if ($s.SourceAppUserModelId -eq $cur.SourceAppUserModelId) { $pick = $s; break } } }
-    }
-    if (-not $pick) { $pick = $playing[0] }
-  } else {
-    foreach ($s in $all) { if ($s.SourceAppUserModelId -match 'spotless') { $pick = $s; break } }
-    if (-not $pick) { $pick = $mgr.GetCurrentSession() }
+    foreach ($s in $playing) { if ($s.SourceAppUserModelId -match 'spotless') { return $s } }
+    if ($lastApp) { foreach ($s in $playing) { if ($s.SourceAppUserModelId -eq $lastApp) { return $s } } }
+    if ($cur) { foreach ($s in $playing) { if ($s.SourceAppUserModelId -eq $cur.SourceAppUserModelId) { return $s } } }
+    return $playing[0]
   }
+  foreach ($s in $all) { if ($s.SourceAppUserModelId -match 'spotless') { return $s } }
+  return $cur
+}
+function Pick() {
+  $pick = Choose (@($mgr.GetSessions())) ($mgr.GetCurrentSession()) $script:lastApp
   if ($pick) { $script:lastApp = $pick.SourceAppUserModelId }
   return $pick
 }
