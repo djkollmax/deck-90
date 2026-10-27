@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.12.1
+
+### Changed
+- The SO-90 REEL's reels are a brighter, yellower gold (they looked brownish): richer colour, and a softer shade and glass reflection over them.
+
 ## 6.13.0
 
 ### Added

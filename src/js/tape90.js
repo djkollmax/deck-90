@@ -75,7 +75,7 @@ function drawBigTape90(ctx, W, H, play) {
     ctx.beginPath(); ctx.arc(x, y, P(161), 0, Math.PI * 2); ctx.fillStyle = light; ctx.fill();
     // the window's smoked glass: a reflection at the top left, a shadow along the frame
     const refl = ctx.createLinearGradient(x0, y0, x0 + w * 0.6, y0 + h * 0.6);
-    refl.addColorStop(0, 'rgba(255,255,255,.22)'); refl.addColorStop(.18, 'rgba(255,255,255,.04)'); refl.addColorStop(.19, 'rgba(255,255,255,0)');
+    refl.addColorStop(0, 'rgba(255,255,255,.15)'); refl.addColorStop(.18, 'rgba(255,255,255,.03)'); refl.addColorStop(.19, 'rgba(255,255,255,0)');
     ctx.fillStyle = refl; ctx.fillRect(x0, y0, w, h);
     ctx.lineWidth = P(10); ctx.strokeStyle = 'rgba(0,0,0,.35)'; rr(ctx, x0, y0, w, h, P(6)); ctx.stroke();
     ctx.restore();
