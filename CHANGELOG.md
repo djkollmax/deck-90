@@ -1,9 +1,9 @@
 # Changelog
 
-## 6.12.1
+## 6.13.1
 
 ### Changed
-- The SO-90 REEL's reels are a brighter, yellower gold (they looked brownish): richer colour, and a softer shade and glass reflection over them.
+- **The SO-90 REEL is the new cassette design**: the aluminium cassette with clear windows that show the case's inside (guides, rollers, the tape's path), natural brushed-gold reels with white hubs — rebuilt about their true centres, so they turn without wobbling — over the brown tape packs that change size as the side plays, and DECK 90 in serif along the right reel's rim. The cassette keeps its own outline (rounded corners, side steps). The label: side, the song, SO-90 REEL.
 
 ## 6.13.0
 

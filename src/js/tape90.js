@@ -7,7 +7,7 @@
 //  the panel's height; the display and the keys take the width that's left.
 //  Measurements are the mock-up's pixels (it is 725 px tall), scaled by H / 725.
 // ═══════════════════════════════════════════════════════════
-const T90 = {}, T90_FILES = { shell: 'shell.jpg', reel: 'reel.png', display: 'display.jpg', key: 'key.png' };
+const T90 = {}, T90_FILES = { shell: 'shell.jpg', shellMask: 'shell-mask.png', reel: 'reel.png', display: 'display.jpg', key: 'key.png' };
 let t90Loaded = 0;
 const T90_N = Object.keys(T90_FILES).length;
 for (const [k, f] of Object.entries(T90_FILES)) {
@@ -17,6 +17,19 @@ for (const [k, f] of Object.entries(T90_FILES)) {
   T90[k] = im;
 }
 const tape90Ready = () => t90Loaded === T90_N && typeof deck90Ready === 'function' && deck90Ready();
+// the cassette with its own outline: the photo (JPEG) and its shape (a grey mask) put together once
+let t90Shell = null;
+function tapeShell() {
+  if (t90Shell) return t90Shell;
+  const c = document.createElement('canvas'); c.width = T90.shell.width; c.height = T90.shell.height;
+  const x = c.getContext('2d');
+  x.drawImage(T90.shellMask, 0, 0, c.width, c.height);
+  const m = x.getImageData(0, 0, c.width, c.height);                 // grey → alpha
+  for (let i = 0; i < m.data.length; i += 4) { m.data[i + 3] = m.data[i]; }
+  x.putImageData(m, 0, 0);
+  x.globalCompositeOperation = 'source-in'; x.drawImage(T90.shell, 0, 0);
+  return (t90Shell = c);
+}
 const t90Patterns = new WeakMap();
 
 function drawBigTape90(ctx, W, H, play) {
@@ -34,63 +47,56 @@ function drawBigTape90(ctx, W, H, play) {
   ctx.fillStyle = shade; ctx.fillRect(0, 0, W, H);
   ctx.translate(0, oy);
 
-  // ── the SO-90 REEL cassette
-  const sX = P(52), sY = P(102), sW = P(896), sH = P(566);
-  ctx.save(); rr(ctx, sX, sY, sW, sH, P(20)); ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = P(18); ctx.shadowOffsetY = P(6);
-  ctx.fillStyle = '#000'; ctx.fill(); ctx.restore();
-  ctx.save(); rr(ctx, sX, sY, sW, sH, P(20)); ctx.clip(); ctx.drawImage(T90.shell, sX, sY, sW, sH); ctx.restore();
-  // its windows: what's behind the glass is drawn fresh — tape packs, the strands to the guides, the turning reels
-  const [rl, rr2] = reelRadii(bigTape.pos), PACK = 150;
-  const wins = [[79, 72, 334, 347, 250.5, 251.25, rl, bigTape.ang[0], false], [464, 72, 349, 347, 630.25, 249.25, rr2, bigTape.ang[1], true]];
-  wins.forEach(([wx, wy, ww, wh, cx, cy, rel, ang, brand]) => {
-    const x0 = sX + P(wx), y0 = sY + P(wy), w = P(ww), h = P(wh), x = sX + P(cx), y = sY + P(cy), R = P(rel * PACK);
-    ctx.save(); rr(ctx, x0, y0, w, h, P(6)); ctx.clip();
-    const bg = ctx.createRadialGradient(x, y, P(20), x, y, P(240));
-    bg.addColorStop(0, '#1d1814'); bg.addColorStop(1, '#060504');
-    ctx.fillStyle = bg; ctx.fillRect(x0, y0, w, h);
-    // the tape pack (seen through the reel's cut-outs) and the strand leaving it towards the bottom guide
-    const g = ctx.createRadialGradient(x, y, P(56), x, y, R);
-    g.addColorStop(0, '#24160e'); g.addColorStop(0.7, '#3b281b'); g.addColorStop(1, '#5a3f2a');
+  // ── the SO-90 REEL cassette: the photo as it is (aluminium, clear windows and the parts behind them);
+  // over each reel, the one that turns. Q() takes the photo's pixels (it is 934 px tall) to the canvas.
+  const sX = P(52), sY = P(102), sH = P(566), sW = sH * 1525 / 934, Q = v => P(v * 566 / 934);
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = P(18); ctx.shadowOffsetY = P(6);
+  ctx.drawImage(tapeShell(), sX, sY, sW, sH); ctx.restore();
+  const [rl, rr2] = reelRadii(bigTape.pos), PACK = 230;          // a full pack, in the photo's pixels
+  [[443.5, 432.5, rl, bigTape.ang[0], false], [1066.5, 429.5, rr2, bigTape.ang[1], true]].forEach(([cx, cy, rel, ang, brand]) => {
+    const x = sX + Q(cx), y = sY + Q(cy), R = Q(rel * PACK);
+    // what's behind the reel: the dark of the case, and the tape pack as it is now
+    const back = ctx.createRadialGradient(x, y, Q(90), x, y, Q(269));
+    back.addColorStop(0, '#191310'); back.addColorStop(1, '#080605');
+    ctx.beginPath(); ctx.arc(x, y, Q(269), 0, Math.PI * 2); ctx.fillStyle = back; ctx.fill();
+    const g = ctx.createRadialGradient(x, y, Q(95), x, y, R);
+    g.addColorStop(0, '#2a1a10'); g.addColorStop(0.7, '#42291a'); g.addColorStop(1, '#5e3f28');
     ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
-    ctx.strokeStyle = 'rgba(255,220,180,.05)'; ctx.lineWidth = Math.max(0.5, P(1));
-    for (let q = P(60); q < R - P(3); q += P(5)) { ctx.beginPath(); ctx.arc(x, y, q, 0, Math.PI * 2); ctx.stroke(); }
-    ctx.beginPath(); ctx.arc(x, y, R - P(1), 0, Math.PI * 2); ctx.strokeStyle = 'rgba(150,110,78,.7)'; ctx.lineWidth = Math.max(0.8, P(2.5)); ctx.stroke();
-    const side = brand ? 1 : -1;                         // left reel: strand on its left; right reel: on its right
-    ctx.strokeStyle = '#3a2618'; ctx.lineWidth = Math.max(1, P(3));
-    ctx.beginPath(); ctx.moveTo(x + side * R * 0.98, y + R * 0.2); ctx.lineTo(x + side * P(150), y0 + h + P(4)); ctx.stroke();
-    // the reel: gold flange and white hub, one piece turning about its centre
-    const D = P(328);
+    ctx.strokeStyle = 'rgba(255,215,175,.06)'; ctx.lineWidth = Math.max(0.5, Q(1.5));
+    for (let q = Q(100); q < R - Q(4); q += Q(8)) { ctx.beginPath(); ctx.arc(x, y, q, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x, y, R - Q(1.5), 0, Math.PI * 2); ctx.strokeStyle = 'rgba(160,118,82,.65)'; ctx.lineWidth = Math.max(0.8, Q(4)); ctx.stroke();
+    // the reel: gold flange and white hub, one piece turning about its true centre
+    const D = Q(540);
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     ctx.drawImage(T90.reel, -D / 2, -D / 2, D, D);
-    if (brand && P(18) >= 6) {                           // DECK 90 printed along the right reel's rim
-      ctx.font = `bold ${Math.round(P(18))}px "Segoe UI", Arial, sans-serif`; ctx.fillStyle = 'rgba(70,48,20,.82)';
+    if (brand && Q(34) >= 6) {                           // DECK 90 along the right reel's rim, as printed on it
+      ctx.font = `bold ${Math.round(Q(34))}px Georgia, "Times New Roman", serif`; ctx.fillStyle = 'rgba(58,40,16,.88)';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const txt = 'DECK 90', rad = P(140); let a0 = -Math.PI / 2 - 0.22;
-      for (const ch of txt) { const cw = ctx.measureText(ch).width / rad; ctx.save(); ctx.rotate(a0 + cw / 2); ctx.fillText(ch, 0, -rad); ctx.restore(); a0 += cw * 1.12; }
+      const rad = Q(226), txt = 'DECK 90';
+      let total = 0; for (const ch of txt) total += ctx.measureText(ch).width * 1.08 / rad;
+      let a0 = -1.95 - total / 2;
+      for (const ch of txt) { const cw = ctx.measureText(ch).width * 1.08 / rad; ctx.save(); ctx.rotate(a0 + cw / 2); ctx.fillText(ch, 0, -rad); ctx.restore(); a0 += cw; }
     }
     ctx.restore();
-    // the light on the reel stays put while it turns
-    const light = ctx.createLinearGradient(x - P(160), y - P(160), x + P(160), y + P(160));
-    light.addColorStop(0, 'rgba(255,240,200,.14)'); light.addColorStop(.5, 'rgba(255,255,255,0)'); light.addColorStop(1, 'rgba(0,0,0,.12)');
-    ctx.beginPath(); ctx.arc(x, y, P(161), 0, Math.PI * 2); ctx.fillStyle = light; ctx.fill();
-    // the window's smoked glass: a reflection at the top left, a shadow along the frame
-    const refl = ctx.createLinearGradient(x0, y0, x0 + w * 0.6, y0 + h * 0.6);
-    refl.addColorStop(0, 'rgba(255,255,255,.15)'); refl.addColorStop(.18, 'rgba(255,255,255,.03)'); refl.addColorStop(.19, 'rgba(255,255,255,0)');
-    ctx.fillStyle = refl; ctx.fillRect(x0, y0, w, h);
-    ctx.lineWidth = P(10); ctx.strokeStyle = 'rgba(0,0,0,.35)'; rr(ctx, x0, y0, w, h, P(6)); ctx.stroke();
-    ctx.restore();
+    // the light on it stays put; the clear window's glare over the top left
+    const light = ctx.createLinearGradient(x - Q(266), y - Q(266), x + Q(266), y + Q(266));
+    light.addColorStop(0, 'rgba(255,248,230,.10)'); light.addColorStop(.5, 'rgba(255,255,255,0)'); light.addColorStop(1, 'rgba(0,0,0,.10)');
+    ctx.beginPath(); ctx.arc(x, y, Q(267), 0, Math.PI * 2); ctx.fillStyle = light; ctx.fill();
+    const glare = ctx.createLinearGradient(x - Q(300), y - Q(300), x, y);
+    glare.addColorStop(0, 'rgba(255,255,255,.16)'); glare.addColorStop(.32, 'rgba(255,255,255,.03)'); glare.addColorStop(.33, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glare; ctx.fill();
   });
   // the label: side, the song, the tape's name
   const song = np && np.title ? (np.artist ? np.artist + ' – ' : '') + np.title : 'DECK 90';
-  if (P(26) >= 6) {
+  if (Q(46) >= 6) {
     ctx.textBaseline = 'middle';
-    ctx.font = `600 ${Math.round(P(25))}px "Segoe UI", "Helvetica Neue", Arial, sans-serif`; ctx.textAlign = 'right'; ctx.fillStyle = '#3c3c40';
-    ctx.fillText('SO-90 REEL', sX + P(835), sY + P(33));
-    const room = P(835 - 72) - ctx.measureText('SO-90 REEL').width - P(30);
-    ctx.font = `500 ${Math.round(P(26))}px "Segoe UI", "Helvetica Neue", Arial, sans-serif`; ctx.textAlign = 'left'; ctx.fillStyle = '#3f3f43';
-    let t = 'A  •  ' + song;
+    ctx.font = `500 ${Math.round(Q(44))}px "Segoe UI", "Helvetica Neue", Arial, sans-serif`; ctx.textAlign = 'right'; ctx.fillStyle = '#2b2b2e';
+    ctx.fillText('SO-90 REEL', sX + Q(1387), sY + Q(86));
+    const room = Q(1387 - 137) - ctx.measureText('SO-90 REEL').width - Q(50);
+    ctx.font = `500 ${Math.round(Q(46))}px "Segoe UI", "Helvetica Neue", Arial, sans-serif`; ctx.textAlign = 'left';
+    let t = 'A  ·  ' + song;
     if (ctx.measureText(t).width > room) { while (t.length > 6 && ctx.measureText(t + '…').width > room) t = t.slice(0, -1); t = t.trimEnd() + '…'; }
-    ctx.fillText(t, sX + P(72), sY + P(33));
+    ctx.fillText(t, sX + Q(137), sY + Q(86));
   }
 
   // ── the display, from the cassette to the right edge
