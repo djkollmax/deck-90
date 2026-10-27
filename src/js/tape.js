@@ -272,8 +272,12 @@ function drawBigTape(canvas, ctx, live) {
     turnReels(bigTape, T);
     bigTape.counter = np && np.status === 'Playing' ? npPosition() : bigTape.counter + T;
   }
+  // the CD-90, with the metal frames (CLÁSICO or a portrait panel: the REEL cassette instead)
+  if (tapeStyle === 'CD' && typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && typeof cd90Ready === 'function' && cd90Ready() && W / H >= 1.4) {
+    drawCD90(ctx, W, H, play); return;
+  }
   // the SO-90 REEL built from the mock-up, with the metal frames (not in a portrait panel: that keeps the drawn one)
-  if (tapeStyle === 'REEL' && typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && typeof tape90Ready === 'function' && tape90Ready() && W / H >= 1.4) {
+  if ((tapeStyle === 'REEL' || tapeStyle === 'CD') && typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && typeof tape90Ready === 'function' && tape90Ready() && W / H >= 1.4) {
     drawBigTape90(ctx, W, H, play); return;
   }
   // stage: dark felt with a warm spotlight
@@ -294,7 +298,7 @@ function drawBigTape(canvas, ctx, live) {
     cX = (W - cw) / 2; cY = H * 0.05;
     iX = W * 0.07; iW = W * 0.86; iY = cY + ch + H * 0.04; iH = H - iY - H * 0.03;
   }
-  if (tapeStyle === 'REEL') drawReelCassette(ctx, cX, cY, cw, ch, bigTape, decks[0].title, 'A');
+  if (tapeStyle !== 'CLEAR') drawReelCassette(ctx, cX, cY, cw, ch, bigTape, decks[0].title, 'A');
   else drawClearCassette(ctx, cX, cY, cw, ch, bigTape, decks[0].title, 'A');
 
   // ── info: FL time, scrolling title, meters, keys
@@ -314,7 +318,7 @@ function drawBigTape(canvas, ctx, live) {
   ctx.fillText(play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■'), dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.3);
   ctx.shadowBlur = 0;
   ctx.fillStyle = 'rgba(127,246,230,.55)';
-  ctx.fillText(tapeStyle === 'REEL' ? 'REEL · TYPE II' : 'CLEAR · TYPE II', dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.75);
+  ctx.fillText(tapeStyle === 'CLEAR' ? 'CLEAR · TYPE II' : 'REEL · TYPE II', dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.75);
   // scrolling title (marquee) when it doesn't fit
   const tStr = np ? ((np.artist ? np.artist + ' — ' : '') + (np.title || '')) : 'DECK 90';
   ctx.save();

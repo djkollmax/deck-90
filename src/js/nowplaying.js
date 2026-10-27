@@ -83,6 +83,7 @@ cDK.addEventListener('click', ev => {
 cTP.addEventListener('mousemove', ev => { cTP.style.cursor = tapeKeyAt(ev) ? 'pointer' : 'default'; });
 cTP.addEventListener('click', ev => {
   const h = tapeKeyAt(ev); if (!h) return;
+  if (h.local) { deckPressed[h.k] = performance.now(); h.local(); return; }     // the CD-90's own keys (TIME, REPEAT, eject)
   if (!window.nowPlaying) { toast('Las teclas manejan Spotless desde el programa (Deck 90.exe).', 3500); return; }
   deckPressed[h.k] = performance.now();
   const cmd = DECK_CMD[h.k]; if (cmd) window.nowPlaying.cmd(cmd);

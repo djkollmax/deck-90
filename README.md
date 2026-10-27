@@ -12,7 +12,7 @@ A desktop audio analyzer with a retro hi-fi look. It listens to whatever your co
 
 ![DECK 90 cassette deck, single and double](docs/screenshots/deck90.jpg)
 
-**The big tape, SO-90 REEL:** gold open reels over the tape packs that change as the side plays.
+**The big tape, SO-90 REEL:** gold open reels over the tape packs that change as the side plays. Or the **CD-90**: a steel CD panel and an FL display with the time, the track, the song, its progress and a live spectrum.
 
 ![SO-90 REEL](docs/screenshots/so90.jpg)
 

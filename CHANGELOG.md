@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.16.0
+
+### Added
+- **The CD-90**, a third style for the big CINTA module (⚙ → CINTA → CD), with the metal frames. A brushed-steel CD panel from the mock-up — tray, eject, the eight track keys (the current one lit), power with its LED (green while it plays), TIME and REPEAT — beside an FL display: the song's time, the track number (it counts the songs played since Deck 90 started), PLAY / PAUSE / STOP, CD, the track calendar, the song in dot-matrix letters (scrolling when long), the song's progress and a live spectrum with falling peaks; under it the five transport keys, which drive the player. TIME switches between elapsed and remaining time; REPEAT lights its indicator; eject only says the CD-90 just plays. The panel follows the height and the display and keys take the rest of the width; a narrow display leaves out the calendar first. With CLÁSICO, or on the phone, the REEL cassette stands in.
+
 ## 6.15.0
 
 ### Added

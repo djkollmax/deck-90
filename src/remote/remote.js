@@ -102,6 +102,7 @@ function applyFrame(f) {
   if (f.aud) lastAudible = performance.now();
   vuSkin = opts.vu === 'pc' ? (f.skin || vuSkin) : opts.vu;
   tapeStyle = opts.tape === 'pc' ? (f.tape || tapeStyle) : opts.tape;
+  if (tapeStyle === 'CD') tapeStyle = 'REEL';            // the phone draws the cassettes; the CD-90 is the PC's
   if (f.fl) for (let b = 0; b < flRawP.length; b++) flRawP[b] = f.fl[b];
   else flRawP.fill(FL_FLOOR);
   for (const [k, a] of [['L', f.L], ['R', f.R]]) {

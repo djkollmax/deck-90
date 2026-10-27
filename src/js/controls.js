@@ -198,7 +198,7 @@ if (prefs.mods && typeof prefs.mods === 'object') {
 }
 if (typeof prefs.deckDouble === 'boolean') deckDouble = prefs.deckDouble;
 setChassis(prefs.chassis);
-if (prefs.tapeStyle === 'CLEAR' || prefs.tapeStyle === 'REEL') tapeStyle = prefs.tapeStyle;
+if (['CLEAR', 'REEL', 'CD'].includes(prefs.tapeStyle)) tapeStyle = prefs.tapeStyle;
 if (prefs.drawerOpen) { drawerOpen = true; document.getElementById('console').classList.add('open'); }
 if (prefs.controlsHidden) { controlsHidden = true; document.querySelector('.rack-unit').classList.add('controls-hidden'); }
 applyModules();

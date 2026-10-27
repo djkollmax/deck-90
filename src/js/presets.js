@@ -54,7 +54,7 @@ function applyPreset(id) {
   if (Number.isInteger(s.mode)) setSpectrumMode(s.mode);
   if (s.cal === 'AUTO' || [18, 14, 10].includes(s.cal)) vuCal = s.cal;
   if (typeof s.deckDouble === 'boolean') deckDouble = s.deckDouble;
-  if (s.tapeStyle === 'REEL' || s.tapeStyle === 'CLEAR') tapeStyle = s.tapeStyle;
+  if (['REEL', 'CLEAR', 'CD'].includes(s.tapeStyle)) tapeStyle = s.tapeStyle;
   if (s.mods && typeof s.mods === 'object') {
     for (const k in mods) mods[k] = !!s.mods[k];
     if (!Object.values(mods).some(Boolean)) mods.vu = true;
