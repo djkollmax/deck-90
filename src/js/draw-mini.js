@@ -74,12 +74,12 @@ function drawMini(canvas, ctx, live) {
   ctx.fillStyle = '#79d9ff'; ctx.shadowColor = 'rgba(121,217,255,0.35)'; ctx.shadowBlur = 10;
   ctx.fillText(isFinite(m) && m > -70 ? m.toFixed(1) : '--.-', W - 8, wy + big * 0.32);
   ctx.shadowBlur = 0;
-  ctx.font = `${Math.max(7, Math.round(H * 0.11))}px Courier New`;
+  ctx.font = `${Math.max(7, Math.min(12, Math.round(H * 0.11)))}px Courier New`;   // capped like the big number
   ctx.fillStyle = 'rgba(160,170,180,0.55)';
   const I = live ? miniVals.i : -Infinity, tp = live ? miniVals.tp : -90;
   ctx.fillText('LUFS · I ' + (isFinite(I) ? I.toFixed(1) : '--.-'), W - 8, wy - big * 0.45);
   ctx.fillStyle = tp > -1 ? '#ff4a25' : 'rgba(160,170,180,0.55)';
-  ctx.fillText((tpAvailable ? 'TP ' : 'PK ') + (tp > -89 ? tp.toFixed(1) : '--.-'), W - 8, wy + big * 0.32 + Math.max(9, H * 0.16));
+  ctx.fillText((tpAvailable ? 'TP ' : 'PK ') + (tp > -89 ? tp.toFixed(1) : '--.-'), W - 8, wy + big * 0.32 + Math.max(9, Math.min(17, H * 0.16)));
 
   // L / R bars between them
   const bx = x0 + 14, bw = Math.max(40, rx - bx - 10), bh = Math.max(6, Math.min(14, H * 0.18));

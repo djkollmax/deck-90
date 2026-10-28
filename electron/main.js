@@ -86,6 +86,7 @@ app.whenReady().then(() => {
     setTimeout(finish, 700);                     // fallback if the event never comes
   });
   let miniOn = false, miniBusy = false, normalBounds = null, wasMax = false;
+  const MINI_MAX_H = 300;
   const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, 900, wa.width), height: Math.min(b.height, 300) });
   const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
     return b.x < a.x + a.width - 40 && b.x + b.width > a.x + 40 && b.y >= a.y - 10 && b.y < a.y + a.height - 40; });
@@ -101,6 +102,7 @@ app.whenReady().then(() => {
         if (wasMax) win.unmaximize();
         const wa = screen.getDisplayMatching(normalBounds).workArea;
         win.setMinimumSize(300, 96);
+        win.setMaximumSize(16384, MINI_MAX_H);     // a strip: never taller (dragging an edge, Windows moving it between screens)
         win.setMaximizable(false); win.setFullScreenable(false);
         win.setBounds(onScreen(saved.mini) ? clampMini(saved.mini, wa) : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 });
         win.setAlwaysOnTop(true, 'floating');
@@ -110,6 +112,7 @@ app.whenReady().then(() => {
         miniOn = false;            // before maximize(): on Windows its event fires right away, and the strip guard would undo it
         win.setAlwaysOnTop(false);
         win.setMaximizable(true); win.setFullScreenable(true);
+        win.setMaximumSize(16384, 16384);
         win.setMinimumSize(760, 600);
         if (normalBounds) win.setBounds(normalBounds);
         if (wasMax) win.maximize();
@@ -189,8 +192,14 @@ app.whenReady().then(() => {
     win.on('show', () => updater.maybeCheck(30 * 60 * 1000));         // and when it comes back from there
   });
 
-  // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …)
+  // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …) and never grows tall:
+  // the maximum size covers dragging; this covers anything that sets the size anyway (a screen coming back)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
+  win.on('resize', () => {
+    if (!miniOn || miniBusy || win.isDestroyed()) return;
+    const b = win.getBounds();
+    if (b.height > MINI_MAX_H) { mlog('mini: ' + b.width + '×' + b.height + ' is too tall for the strip, back to ' + MINI_MAX_H); win.setBounds({ x: b.x, y: b.y, width: Math.min(b.width, 900), height: MINI_MAX_H }); }
+  });
   // remember the normal window (not the mini strip, not full screen) a moment after it moves or resizes
   let normT = 0;
   const saveNormal = () => {
@@ -314,7 +323,10 @@ app.whenReady().then(() => {
     }, 4000));
   }
   // The bridge can report the track before the page is listening: hand it over once the page is up.
-  win.webContents.on('did-finish-load', () => { if (lastInfo) win.webContents.send('media', lastInfo); });
+  win.webContents.on('did-finish-load', () => {
+    if (lastInfo) win.webContents.send('media', lastInfo);
+    if (miniOn) win.webContents.send('mini', true);            // a page loaded again (after a crash) is still the strip
+  });
   win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
   // Links open in the real browser (https only); dropping a file or link on the window must not replace the rack.
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//i.test(url)) shell.openExternal(url); return { action: 'deny' }; });

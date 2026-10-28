@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.1.3
+
+### Fixed
+- **The mini strip could end up as big as the normal window**, with giant LUFS and TP figures (for example when Windows moves windows between screens, or an edge was dragged far down). The strip now never grows taller than 300 px, whatever resizes it, and its small figures keep their size at any height.
+- If the page loads again while the strip is on (after a graphics driver hiccup), it comes back as the strip.
+
 ## 7.1.2
 
 ### Changed
