@@ -1,235 +1,228 @@
-# Deck 90
+# Deck 90 — analizador de audio retro hi‑fi para Windows y Linux
 
-A desktop audio analyzer with a retro hi-fi look. It listens to whatever your computer is playing and shows it on VU meters, a spectrum analyzer, loudness meters, an oscilloscope and a pair of cassette decks whose tape actually turns. It also shows the track that's playing now, and pairs well with [Spotless](https://github.com/nix-codes/spotless).
+**Español** · [English](README.en.md)
 
-![Deck 90 — TITANIO frame, CREMA VU meters, the Spotify badge, FL 90s spectrum and the DECK 90 cassette deck](docs/screenshots/main.jpg)
+[![Última versión](https://img.shields.io/github/v/release/djkollmax/deck-90?label=versi%C3%B3n&color=d9bd73)](https://github.com/djkollmax/deck-90/releases/latest)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-2a6fdb)
+![Linux](https://img.shields.io/badge/Linux-x64-444)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-3c9)](LICENSE)
 
-**Clock and weather in the header:** the time in 7-segment digits with the day and date, the song in the middle, and the weather where you are, with its icon, the temperature, the sky, the city and today's high and low.
+**Deck 90 es un programa gratis y de código abierto que muestra lo que suena en tu computadora como un equipo de audio de los 90:** vúmetros de aguja, analizador de espectro, medidor de loudness (LUFS, true peak, LRA), BPM, goniómetro, osciloscopio y caseteras cuyas cintas giran de verdad. Funciona con Spotify, YouTube, Tidal, Apple Music o cualquier reproductor, **sin cables virtuales ni configuración**, y además muestra el tema que está sonando y maneja el reproductor desde las teclas de la casetera.
 
-![The header with the clock and five kinds of weather](docs/screenshots/header-weather.jpg)
+![Deck 90 en funcionamiento: vúmetros azules, espectro FL SHOWROOM y la casetera SO-90 REEL girando](docs/screenshots/demo.gif)
 
-**Three metal frames:** TITANIO, NEGRO and CHAMPAGNE (or the CLÁSICO dark rack). Every display sits behind glass in a polished bevel, its name engraved above it.
+### ⬇️ [Descargar Deck 90 (Windows o Linux)](https://github.com/djkollmax/deck-90/releases/latest)
 
-![TITANIO, NEGRO and CHAMPAGNE frames](docs/screenshots/finishes.jpg)
+1. En la página de la última versión bajá `Deck-90-…-win32-x64.zip` (Windows) o `Deck-90-…-linux-x64.zip` (Linux).
+2. Descomprimilo donde quieras. No hace falta instalar nada.
+3. Abrí `Deck 90.exe` (o `deck-90` en Linux), poné música en cualquier reproductor y listo: se pone a medir solo.
 
-**The DECK 90 cassette deck:** the tape's reels turn as a real C90's, the song is on the label and on the display, the level meters have yellow and red zones, and the keys drive the player. One deck or two.
+A partir de ahí **se actualiza solo**: cuando sale una versión nueva aparece un aviso y con un clic en **INSTALAR** queda al día.
 
-![DECK 90 cassette deck, single and double](docs/screenshots/deck90.jpg)
+---
 
-**The big tape, SO-90 REEL:** gold open reels over the tape packs that change as the side plays. Or the **CD-90**: a steel CD panel and an FL display with the time, the track, the song, its progress and a live spectrum.
+## ¿Para qué sirve?
+
+- **Para disfrutar la música mirándola.** Agujas que se mueven con la física de un vúmetro de verdad, displays fluorescentes como los de los equipos japoneses de los 90 y cintas que giran mientras suena el tema.
+- **Para saber cómo está mezclado y masterizado un tema.** Loudness integrado (LUFS) según la norma ITU‑R BS.1770 / EBU R128, picos verdaderos (dBTP), rango dinámico (LRA), factor de cresta y correlación de fase. Ideal para productores y estudios caseros que quieren comparar su master con lo que suena en las plataformas.
+- **Para ver cuánto le cambia Spotify el volumen a cada tema.** Spotify reproduce todo a −14 LUFS; Deck 90 te dice cuánto sube o baja cada canción, y lo guarda en un historial que se exporta a Excel.
+- **Para tener el BPM a mano.** Detecta el tempo en vivo, útil para DJs y para entrenar.
+- **Para decorar el escritorio.** Con el reloj, la fecha y el clima arriba, se convierte en el centro de un setup de escritorio o de un segundo monitor.
+
+---
+
+## Cómo se ve
+
+### El display de arriba: reloj, tema y clima
+
+La hora en dígitos de 7 segmentos con el día y la fecha, el tema que suena en el medio y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → RELOJ, escribiendo el nombre de tu ciudad.
+
+![El encabezado con el reloj y cinco climas distintos](docs/screenshots/header-weather.jpg)
+
+### Las caseteras DECK 90
+
+Una o dos caseteras negras de aluminio cepillado. La cinta gira como un casete C90 de verdad (los rollos cambian de tamaño a medida que avanza el lado), el tema aparece en la etiqueta y en el display fluorescente, los medidores tienen zona amarilla y roja, y las teclas manejan el reproductor: play, pausa, stop, siguiente y anterior.
+
+![Dos caseteras DECK 90 con las cintas girando](docs/screenshots/decks.gif)
+
+![La casetera DECK 90 simple y doble](docs/screenshots/deck90.jpg)
+
+### La cinta grande: SO‑90 REEL o CD‑90
+
+El **SO‑90 REEL** es un casete de aluminio con bobinas abiertas doradas sobre los rollos de cinta. El **CD‑90** es un panel de CD de acero con un display FL que muestra el tiempo, el número de tema, la canción, el avance y un espectro en vivo. En una ventana ancha el panel del CD‑90 también se estira.
 
 ![SO-90 REEL](docs/screenshots/so90.jpg)
 
 ![CD-90](docs/screenshots/cd90.jpg)
 
-In a wide window the CD-90's panel grows sideways too: a longer tray and wider keys.
+![Ventana ancha: vúmetros azul intenso, FL 90s y el CD-90 ancho](docs/screenshots/wide.jpg)
 
-![A wide window: AZUL INTENSO VU meters, FL 90s and the wide CD-90](docs/screenshots/wide.jpg)
+### Seis caras de vúmetro
 
-**VU faces:** CREMA, AZUL, CINTA 70s and HI-FI 90s (and STUDIO and AZUL INTENSO).
+Cada aguja tiene balística de resorte y amortiguación, como el instrumento real. CINTA 70s, AZUL, AZUL INTENSO y CREMA usan la escala clásica de −20 a +3 VU con la separación del instrumento; STUDIO y HI‑FI 90s suman una barra de LED. El 0 VU se calibra en AUTO, −18, −14 o −10 dBFS.
 
-![VU faces](docs/screenshots/vu-faces.jpg)
+![Las seis caras de vúmetro: Studio, Hi-Fi 90s, Cinta 70s, Azul, Azul intenso y Crema](docs/screenshots/vu-faces.jpg)
 
-**Six of the ten spectrum styles:** FL 90s, LED 80s, FL ÁMBAR (stereo), RTA 1/3 octave, LCD and the spectrogram.
+### Diez estilos de analizador de espectro
 
-![Spectrum styles](docs/screenshots/spectrums.jpg)
+Del display fluorescente de un minicomponente al analizador de tercio de octava de un estudio. La tecla `T` los recorre y el botón MÁS ▾ los lista. Los de estilo hardware (FL, LED, LCD, RTA) responden a la sensibilidad SENS (tecla `K`).
 
-**Phone display:** everything, FL 90s and the spectrogram, live from the PC.
+![Los diez estilos de espectro](docs/screenshots/spectrums.jpg)
 
-![Phone display](docs/screenshots/phone.png)
+### Cinco looks listos y tres tuyos
 
-**Track history** with the Spotify change for each track, exported to Excel.
+Cada look guarda todo: cara del vúmetro, estilo de espectro y sensibilidad, tono de pantalla, calibración, módulos visibles y estilo de casetera. Los cinco de fábrica están en `F1`–`F5`; en C1–C3 (`F6`–`F8`) guardás los tuyos.
 
-![Track history](docs/screenshots/history.png)
+![Los cinco looks de fábrica: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera y Mastering](docs/screenshots/looks.jpg)
+
+### Tres marcos de metal (o el rack clásico)
+
+TITANIO, NEGRO y CHAMPAGNE: cada display detrás de un vidrio con bisel pulido y su nombre grabado arriba. O el rack oscuro CLÁSICO de las primeras versiones.
+
+![Marcos TITANIO, NEGRO y CHAMPAGNE](docs/screenshots/finishes.jpg)
+
+![Deck 90 con marco TITANIO, vúmetros CREMA, el indicador de Spotify, espectro FL 90s y la casetera](docs/screenshots/main.jpg)
+
+### La consola
+
+Todo se maneja desde una sola consola: estilo de espectro, módulos visibles y looks en la fila de arriba; con ⚙ se abre el cajón con la fuente, el vúmetro, la calibración, la sensibilidad, las caseteras, el celular, el reloj, el marco y el tono de pantalla. La tecla `H` esconde la consola.
+
+![La consola con el cajón de ajustes abierto](docs/screenshots/console.jpg)
+
+### En el celular
+
+Activás CELULAR, escaneás el código QR y el celular o la tablet (en el mismo WiFi) muestra los vúmetros, el espectro, el espectrograma, la casetera y los números de loudness en vivo, vertical u horizontal. Las teclas de la casetera del celular también manejan el reproductor.
+
+![Deck 90 en el celular](docs/screenshots/phone.png)
+
+### Historial de temas y modo mini
+
+Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, pico, BPM y cuánto lo cambiaría Spotify; se exporta a Excel. El modo mini es una tira chica que queda arriba de las demás ventanas.
+
+![Historial de temas](docs/screenshots/history.png)
 
 | | |
 |---|---|
-| ![The CLÁSICO frame: the dark rack of the first versions](docs/screenshots/classic.jpg) | ![Mini mode: a strip that stays on top](docs/screenshots/mini.png) |
+| ![El rack CLÁSICO](docs/screenshots/classic.jpg) | ![Modo mini: una tira siempre arriba](docs/screenshots/mini.png) |
 
-*Screenshots use the built-in DEMO signal; track names are made up.*
-
-## Features
-
-- **System audio with no setup.** On Windows it uses WASAPI loopback, so there's no virtual cable and no picker dialog. On Linux it uses the PulseAudio/PipeWire *Monitor* source. Microphone input is also available.
-- **VU meters.** Each needle has spring-damper ballistics. Four faces: STUDIO, HI-FI 90s, CINTA 70s (warm backlit cream face, black needle) and AZUL (blue backlit face, amber needle); the last two use the classic −20…+3 VU scale spaced like the real instrument. The reference level can be AUTO, −18, −14 or −10 dBFS.
-- **Loudness.**
-  - Momentary, short-term and integrated LUFS (ITU-R BS.1770 / EBU R128 K-weighting and gating).
-  - Integrated LUFS and loudness range (LRA, EBU Tech 3342) restart on every new track.
-  - True peak in dBTP (BS.1770-4, 4x oversampling) with the track's maximum, plus crest factor and phase correlation.
-  - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB). With Spotless it allows for Spotless's own volume.
-- **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS (as heard and the master's, without Spotless's volume), LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
-- **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
-- **Spectrum** in ten styles (`T` steps through them, MÁS ▾ lists the newer ones):
-  - MODERN: smooth curve with peaks.
-  - RETRO 97: LED columns.
-  - COLUMNS: classic bars.
-  - FL 90s: wide segmented fluorescent bars.
-  - LED 80s: columns of rectangular LEDs, green, yellow and red, with a falling peak LED.
-  - FL SHOWROOM: the turquoise shop-window display; after a few seconds of silence it plays its demo patterns.
-  - FL ÁMBAR: stereo, the left channel rising from the middle and the right one hanging down, in warm amber.
-  - RTA 1/3: 31 ISO third-octave bands with the power of each band, like a studio real-time analyzer.
-  - LCD: a green dot-matrix panel.
-  - ESPECTROGRAMA: the track as a waterfall, time to the left, frequency upwards, colour for level.
-  - The hardware-style ones (FL, LED, LCD, RTA) follow the SENS setting (`K`).
-- **Oscilloscope.**
-- **Goniometer.** The stereo image as a cloud of dots: mono stands upright, wide stereo spreads out, out-of-phase content lies down. A correlation bar sits underneath.
-- **Cassette decks.** Choose one deck or two. A big CINTA cassette comes as REEL (aluminium open-reel look) or CLEAR. The tape runs only while music is actually playing.
-- **Now playing.**
-  - Shows the title, artist and cover from the system's media session: Spotless, Spotify, a browser tab (YouTube, SoundCloud…), Apple Music or any player that reports to Windows. The one that's playing wins (Spotless first if several play). Browser tab titles are cleaned up into the song and the artist.
-  - The deck keys control the player: play/pause, stop, next and previous.
-- **Modules.** Every module can be switched off, and the rest grow to fill the space.
-- **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
-- **The DECK 90 cassette deck.** With the metal frames, the DECK module is a black brushed deck with a DECK 90 tape whose reels turn as a real C90's (the packs change as the side plays) and the song on its label, an FL display, square transport keys that drive the player, knobs, power LED and phones jack. One or two decks, filling their panel.
-- **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Type your city in the ⚙ drawer (RELOJ). The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off. In a narrow window the weather's words go first, then the date, then the weather's icon, then the temperature (and in the narrowest the clock), so the song keeps its room; the mini strip keeps them too, as room allows.
-- **The frame of a premium '90s deck.** MARCO in the ⚙ drawer: brushed TITANIO, NEGRO or CHAMPAGNE plates with every display behind glass in a polished bevel and its name engraved above it, or the CLÁSICO dark rack.
-- **It remembers.** The look, the window's size and place (or maximized), the mini strip's place, the phone display and the tray choices all come back as you left them.
-- **Tray.** Deck 90 sits by the clock: on Windows ✕ leaves it measuring there (the phone display keeps working; Shift+✕ quits), and its menu shows the window, switches mini mode and the phone display, starts it with Windows (hidden, straight to the tray) and quits.
-- **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it (*Nueva clave para el celular* in the tray menu changes it, cutting off every phone that scanned the old one).
-- **Mini mode.** A small strip that stays on top of other windows: reels, L/R bars, loudness and true peak, with the track in the title bar. It remembers its size and place.
-- **Frameless window.** All controls sit in one console. Display modes: STD, ANALOG, CRT and OLED. Your settings are remembered.
-- **Updates itself.** It asks GitHub at start, every hour and when it comes back from the tray (or from the tray menu: *Buscar actualizaciones*). When a newer release is out, the program offers it; INSTALAR downloads a small package with the program's own files, checks its SHA-256 against the one GitHub publishes, keeps the previous version in `resources\app-anterior` and restarts. If the new version doesn't start (or its window hasn't loaded after 2 minutes), Deck 90 puts the previous one back by itself and doesn't offer that version again. A release that changes Electron itself asks you to download the full zip instead.
-
-## Download & run
-
-Grab the zip for your system from **Releases**, unzip it anywhere and run the program:
-
-- **Windows 10/11 (x64):** `Deck 90.exe`
-- **Linux (x64):** `deck-90`
-
-Nothing needs to be installed on Windows. Settings, the track history (`history.json`) and the log (`media.log`) are kept in your user folder:
-
-- Windows: `%APPDATA%\Deck 90`
-- Linux: `~/.config/Deck 90`
-
-## Platform support
-
-| | Windows 10/11 | Linux |
-|---|---|---|
-| System audio | WASAPI loopback ✅ | PulseAudio / PipeWire monitor source (implemented, field-testing welcome) |
-| Now playing + transport keys | System Media Transport Controls ✅ | MPRIS over D-Bus via `gdbus` ✅ |
-| Window, modules, all displays | ✅ | ✅ |
-
-On Linux the app needs a *Monitor* source (PulseAudio and PipeWire create one per output); without it, use the microphone input. `gdbus` ships with GLib and is present on practically every desktop.
-
-If the Linux build closes right away with a message about the *SUID sandbox helper* (Ubuntu 23.10+ and others that restrict user namespaces), give Electron's sandbox helper the permissions it expects, once:
-
-```sh
-cd "Deck 90-linux-x64"
-sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
-```
-
-`src/index.html` also opens in a browser, but browsers capture system audio poorly: on Chrome for Windows you must tick "share system audio", and Linux browsers can't capture it at all. The microphone input and DEMO work everywhere.
-
-## Phone display
-
-1. In Deck 90 open the settings drawer (⚙) and press **CELULAR → ON**. A QR code appears.
-2. Scan it with the phone's camera. The phone must be on the same Wi-Fi as the PC.
-3. Swipe sideways (or tap ◫) to switch views: everything, VU meters, FL 90s spectrum, cassette. Tap ⛶ for full screen.
-4. ⚙ holds the phone's own settings:
-   - VU face, cassette and FL sensitivity: follow the PC or pick your own.
-   - Whether the FL 90s shows in the "everything" view.
-   - A dim night mode.
-   - A short vibration on the cassette keys.
-
-A bar under the title shows the track's progress, with the time played and the time left.
-
-The first time, Windows asks whether Deck 90 may use the network: allow it on **private** networks. If the phone can't connect, check that the PC's network is set to *Private*. Port 9090 is used. Browsers keep phones awake only on secure pages, so for a permanent display set the phone's screen timeout, or use Android's *Stay awake while charging*.
-
-## Keys
-
-| Key | Action |
-|---|---|
-| `S` / `M` / `D` | System audio / microphone / demo |
-| `Space` / `Esc` | Stop analysis |
-| `1`–`8` | Toggle modules (VU, BPM, LUFS, spectrum, oscilloscope, deck, cassette, goniometer) |
-| `P` | Mini mode (always on top) / back |
-| `T` | Spectrum style (ten) |
-| `K` | FL sensitivity |
-| `V` | VU face (four) |
-| `C` | VU calibration |
-| `N` | Display mode (STD / ANALOG / CRT / OLED) |
-| `Z` | Cassette only |
-| `A` | Settings drawer |
-| `L` | Track history |
-| `F1`–`F5` | Favourite looks 1–5 |
-| `F6`–`F8` | Your looks C1–C3 (`Shift` + `F6`–`F8` saves the current look there) |
-| `H` | Hide the console |
-| `F` | Fullscreen |
-
-The deck keys (◀◀ ▶ ■ ▶▶ ❚❚) control the player that is playing.
-
-## About the numbers
-
-The meters were checked against generated test signals:
-
-- Peak, VU and crest are exact (crest is each channel's peak against its own RMS over 400 ms).
-- LUFS (momentary, short-term, integrated) follows ITU-R BS.1770: the K-weighting filters are designed for the sound card's rate and are the recommendation's own at 48 kHz. Tones read within 0.05 dB (997 Hz at −20 dBFS reads −20.0; 2 kHz −17.6; one channel alone −23.0).
-- True peak finds the peaks between samples: a 12 kHz tone at −6 dBFS sampled at 45° shows a sample peak of −9.0 and reads −6.0 dBTP. Near 20 kHz it can read about 0.2 dB high, within what BS.1770's filter allows.
-- LRA reads 10.0 and 5.0 LU on EBU Tech 3342's first two test cases.
-- Phase correlation is computed sample-aligned on the audio thread: mono reads +1.00, inverted −1.00.
-- BPM: steady beats at 97, 124 and 140 read exactly. Fast tracks (above ~160) may read at half tempo, as with most beat trackers.
-- What you measure is what the player sends to the system mix, so the player's own volume slider changes the readings. With **Spotless** the program reads its volume and levelling from Spotless's settings and takes the volume back out: the Spotify badge and the history's MASTER column are the master's own figures at any volume (Spotless's knob is a cubic curve over 60 dB: 71 % is −7.9 dB, 90 % −2.5 dB). With its *Volume levelling* on, Spotless already normalises the sound, and with its equaliser on (and not flat) it changes the sound by frequency, so in both cases the badge shows **SPOTIFY ?** until they're off. With other players, play at 100 % with their levelling off.
-
-## Build from source
-
-Requires Node.js 18+.
-
-```sh
-npm install
-npm start                  # run in development (the first run downloads Electron)
-npm run package:win        # → dist/Deck-90-<version>-win32-x64.zip
-npm run package:linux      # → dist/Deck-90-<version>-linux-x64.zip
-node scripts/package.mjs bundle   # → dist/Deck-90-<version>-app.bundle (the update package)
-```
-
-The packager downloads the official Electron release, checks it against Electron's published SHA-256 sums and puts the app inside it. Packaging uses `unzip`/`zip` on Linux and the built-in `tar` on Windows.
-
-### Checks
-
-`node scripts/check.mjs` compiles every script. On GitHub, every push also runs on a Windows machine: `scripts/test-media.ps1` checks the now-playing bridge (it parses, picks the right player among made-up sessions, starts, reports and quits), the built program is started once, and `scripts/test-update.mjs` runs the updater through a normal install, a new version that doesn't start, a damaged package and one that needs a new engine. A release is published only when all of it passes.
-
-### Layout
-
-```
-electron/   main process: window, loopback capture, now-playing bridges (media.ps1 for Windows, mpris.js for Linux)
-src/        the UI: index.html, styles.css, js/ (audio graph, meters, drawing, decks, controls)
-assets/     icon
-scripts/    packaging and checks
-```
-
-## Credits
-
-- Made by **Damián Koll** and **[Claude](https://claude.ai)** (Anthropic).
-  - Damián came up with the idea and the look, tested every version on real music and decided what stayed.
-  - Claude wrote the code: the audio engine, the meters and their calibration, the drawing, the cassette decks, the Windows/Linux now-playing bridges and the packaging.
-- Built for and alongside [Spotless](https://github.com/nix-codes/spotless) by Nico (nix-codes).
-- Runs on [Electron](https://www.electronjs.org/) (MIT). Release builds include Electron's and Chromium's license files (`LICENSE`, `LICENSES.chromium.html`).
-- Weather data by [Open-Meteo.com](https://open-meteo.com) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
-- Display lettering: [Barlow Condensed](https://github.com/jpt/barlow) by Jeremy Tribby and [Doto](https://github.com/oliverlalan/Doto) by Óliver Lalan, both under the [SIL Open Font License 1.1](https://openfontlicense.org/) (licence texts in `src/fonts/`). Bundled as Latin subsets.
-
-All product names in this project are generic. Deck 90 is not affiliated with any hardware or software maker.
-
-## License
-
-[MIT](LICENSE)
+*Las capturas usan la señal DEMO incluida; los nombres de temas son inventados.*
 
 ---
 
-### En español
+## Todas las funciones
 
-Deck 90 es un analizador de audio de escritorio con estética hi-fi retro. Escucha lo que suena en la compu y lo muestra en:
+- **Audio del sistema sin configurar nada.** En Windows usa la captura de loopback WASAPI: sin cable virtual (VB‑Cable, Voicemeeter) y sin ventanas para elegir. En Linux usa la fuente *Monitor* de PulseAudio o PipeWire. También puede medir el micrófono.
+- **Vúmetros** con balística de resorte y amortiguación, seis caras y calibración del 0 VU en AUTO, −18, −14 o −10 dBFS.
+- **Loudness:**
+  - LUFS momentáneo, de corto plazo e integrado (ITU‑R BS.1770 / EBU R128, con filtro K y compuerta).
+  - El LUFS integrado y el rango de loudness (LRA, EBU Tech 3342) vuelven a cero con cada tema nuevo.
+  - True peak en dBTP (BS.1770‑4, sobremuestreo ×4) con el máximo del tema, factor de cresta y correlación de fase.
+  - **Indicador de Spotify:** cuánto cambiaría Spotify el volumen del tema con su normalización (todo a −14 LUFS; un tema más bajo sube solo hasta que su pico llega a −1 dB). Con Spotless descuenta el volumen del propio reproductor.
+- **Historial de temas** con LUFS integrado (como sonó y el del master), LRA, pico, BPM y el cambio de Spotify. Se abre con `L` o ☰ y se exporta como CSV para Excel (separado con `;` y comas decimales).
+- **BPM** por detección de golpes en un AudioWorklet y autocorrelación de los últimos 8 segundos.
+- **Espectro en diez estilos:** MODERN, RETRO 97, COLUMNS, FL 90s, FL SHOWROOM (con su demo de vidriera cuando hay silencio), FL ÁMBAR (estéreo), LED 80s, RTA 1/3 (31 bandas ISO), LCD y ESPECTROGRAMA.
+- **Osciloscopio y goniómetro** (la imagen estéreo como nube de puntos, con barra de correlación).
+- **Caseteras:** una o dos DECK 90 y una cinta grande SO‑90 REEL, CLEAR o el reproductor CD‑90. La cinta corre solo mientras suena música.
+- **El tema que suena:** título, artista y tapa de Spotless, Spotify, una pestaña del navegador (YouTube, SoundCloud…), Apple Music o cualquier reproductor que se informe a Windows. Las teclas de la casetera hacen play/pausa, stop, siguiente y anterior.
+- **Módulos que se apagan** y el resto se agranda para ocupar el lugar.
+- **Looks:** cinco de fábrica (Estudio, Hi‑Fi 90s, Cinta 70s, Vidriera, Mastering) y tres tuyos.
+- **Reloj y clima** en el encabezado, con datos de [Open‑Meteo](https://open-meteo.com) cada 15 minutos (solo se envían el nombre de la ciudad, una vez, y sus coordenadas).
+- **Marcos de metal** TITANIO, NEGRO o CHAMPAGNE, o el rack CLÁSICO; tonos de pantalla STD, ANALOG, CRT y OLED.
+- **Bandeja del sistema:** en Windows la ✕ lo deja midiendo junto al reloj (Shift+✕ lo cierra), y puede arrancar con Windows directo a la bandeja.
+- **Pantalla en el celular** por la red local, con clave para que nadie más lo maneje.
+- **Modo mini** siempre arriba, con bobinas, barras L/R, loudness y true peak.
+- **Liviano:** lo que no se mueve se pinta una sola vez, minimizado o en la bandeja no dibuja (sigue midiendo) y con el tema en pausa baja el ritmo de cuadros.
+- **Se acuerda de todo:** el look, el tamaño y lugar de la ventana, el modo mini, el celular y la bandeja.
+- **Se actualiza solo** desde GitHub, comprobando el SHA‑256 del paquete; si una versión nueva no arranca, vuelve sola a la anterior.
 
-- VUmetros.
-- Espectro en cuatro estilos.
-- Medidores de sonoridad (LUFS), BPM y osciloscopio.
-- Caseteras cuya cinta gira mientras hay música.
-- Cuánto le cambiaría Spotify el volumen a cada tema, y un historial de temas que se exporta a Excel (`L`).
+## Teclas
 
-También muestra el tema que está sonando y controla el reproductor (ideal con Spotless).
+| Tecla | Acción |
+|---|---|
+| `S` / `M` / `D` | Audio del sistema / micrófono / demo |
+| `Espacio` / `Esc` | Detener |
+| `1`–`8` | Mostrar u ocultar módulos (VU, BPM, LUFS, espectro, osciloscopio, deck, cinta, goniómetro) |
+| `P` | Modo mini (siempre arriba) / volver |
+| `T` | Estilo de espectro (diez) |
+| `K` | Sensibilidad del FL |
+| `V` | Cara del vúmetro (seis) |
+| `C` | Calibración del vúmetro |
+| `N` | Tono de pantalla (STD / ANALOG / CRT / OLED) |
+| `Z` | Solo la cinta |
+| `A` | Cajón de ajustes |
+| `L` | Historial de temas |
+| `F1`–`F5` | Looks de fábrica |
+| `F6`–`F8` | Tus looks C1–C3 (`Shift` + `F6`–`F8` guarda lo que ves) |
+| `H` | Esconder la consola |
+| `F` | Pantalla completa |
 
-Hecho por Damián Koll junto con Claude (Anthropic), que escribió el código.
+## Pantalla en el celular
 
-Para usarlo, bajá el zip de **Releases**, descomprimilo y abrí el programa. Desde la 6.4 avisa solo cuando hay versión nueva y se actualiza con un clic.
+1. En Deck 90 abrí el cajón de ajustes (⚙) y tocá **CELULAR → ON**. Aparece un código QR.
+2. Escanealo con la cámara del celular, que tiene que estar en el mismo WiFi que la PC.
+3. Deslizá de costado (o tocá ◫) para cambiar de vista: todo, vúmetros, espectro FL 90s, espectrograma y casetera. ⛶ pone pantalla completa.
+4. En el ⚙ del celular elegís su propia cara de vúmetro, casetera y sensibilidad (o que siga a la PC), un modo noche y una vibración corta en las teclas.
 
-- **Windows:** el audio del sistema funciona sin configurar nada.
-- **Linux:** usa la fuente *Monitor* de PulseAudio/PipeWire. El "tema actual" se lee por MPRIS.
+La primera vez Windows pregunta si Deck 90 puede usar la red: permitilo en redes **privadas**. Si el celular no se conecta, revisá que la red de la PC esté como *Privada*. Usa el puerto 9090.
+
+## Sobre las mediciones
+
+Los medidores se verificaron con señales de prueba generadas:
+
+- Pico, VU y cresta son exactos.
+- El LUFS sigue ITU‑R BS.1770 con los filtros K diseñados para la frecuencia de la placa de sonido. Los tonos dan dentro de 0,05 dB (997 Hz a −20 dBFS da −20,0; 2 kHz, −17,6; un solo canal, −23,0).
+- El true peak encuentra los picos entre muestras: un tono de 12 kHz a −6 dBFS muestreado a 45° tiene un pico de muestra de −9,0 y da −6,0 dBTP.
+- El LRA da 10,0 y 5,0 LU en los dos primeros casos de prueba de EBU Tech 3342.
+- La correlación de fase se calcula muestra a muestra: mono da +1,00 e invertido −1,00.
+- El BPM da exacto con golpes regulares a 97, 124 y 140. Los temas muy rápidos (más de ~160) pueden leerse a la mitad, como en casi todos los detectores.
+- Se mide lo que el reproductor manda a la mezcla del sistema, así que el volumen del reproductor cambia las lecturas. Con **Spotless** el programa lee su volumen y lo descuenta; con otros reproductores, poné el volumen al 100 % y la normalización apagada.
+
+## Preguntas frecuentes
+
+**¿Es gratis?** Sí, gratis y de código abierto (licencia MIT).
+
+**¿Necesito VB‑Cable, Voicemeeter o algún cable virtual?** No. En Windows Deck 90 escucha directamente la salida de audio de la PC.
+
+**¿Funciona con Spotify, YouTube, Tidal, Deezer o Apple Music?** Sí, mide cualquier cosa que suene en la computadora. El tema que suena aparece si el reproductor se informa a Windows (Spotify, los navegadores y la mayoría lo hacen).
+
+**¿Por qué el LUFS cambia si muevo el volumen del reproductor?** Porque mide lo que sale por la PC, después del volumen del reproductor. Para medir el master, poné el reproductor al 100 % y sin normalización (con Spotless lo descuenta solo).
+
+**Windows dice "Windows protegió tu PC" al abrirlo.** Pasa con los programas nuevos que no compraron un certificado de firma. Tocá **Más información → Ejecutar de todas formas**. El código está entero acá, y cada versión se compila en los servidores de GitHub.
+
+**¿Consume muchos recursos?** Desde la 7.2.0 usa más o menos la mitad que antes: lo que no se mueve se pinta una sola vez, y minimizado o en la bandeja no dibuja.
+
+**¿Hay versión para Mac?** Por ahora no: Windows 10/11 y Linux de 64 bits.
+
+**¿Cómo lo actualizo?** Solo: al arrancar y cada hora se fija si hay versión nueva y te ofrece instalarla con un clic.
+
+## Compilar desde el código
+
+Hace falta Node.js 18 o más nuevo.
+
+```sh
+npm install
+npm start                  # lo abre en modo desarrollo (la primera vez baja Electron)
+npm run package:win        # → dist/Deck-90-<versión>-win32-x64.zip
+npm run package:linux      # → dist/Deck-90-<versión>-linux-x64.zip
+node scripts/package.mjs bundle   # → dist/Deck-90-<versión>-app.bundle (el paquete de actualización)
+```
+
+`node scripts/check.mjs` compila todos los scripts. En GitHub, cada cambio se prueba en una máquina con Windows (el puente del tema que suena, el arranque del programa y el actualizador) antes de publicar una versión. Los detalles técnicos están en la [versión en inglés](README.en.md#build-from-source).
+
+## ¿Ideas o problemas?
+
+Abrí un [issue](https://github.com/djkollmax/deck-90/issues) contando qué pasó o qué te gustaría ver. Si te gusta el proyecto, una ⭐ ayuda a que más gente lo encuentre.
+
+## Créditos
+
+- Hecho por **Damián Koll** y **[Claude](https://claude.ai)** (Anthropic). Damián tuvo la idea y el diseño, probó cada versión con música de verdad y decidió qué quedaba; Claude escribió el código.
+- Pensado para y junto con [Spotless](https://github.com/nix-codes/spotless), de Nico (nix-codes).
+- Corre sobre [Electron](https://www.electronjs.org/) (MIT).
+- Datos del clima de [Open‑Meteo.com](https://open-meteo.com) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
+- Letras de los displays: [Barlow Condensed](https://github.com/jpt/barlow) de Jeremy Tribby y [Doto](https://github.com/oliverlalan/Doto) de Óliver Lalan, con [SIL Open Font License 1.1](https://openfontlicense.org/).
+
+Los nombres de productos del proyecto son genéricos. Deck 90 no está afiliado a ningún fabricante de equipos ni de software.
+
+## Licencia
+
+[MIT](LICENSE) · [Novedades de cada versión](CHANGELOG.md)
