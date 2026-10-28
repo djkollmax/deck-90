@@ -25,47 +25,43 @@ function db2a(db) {
 let vuBox = null;
 const vuDims = canvas => vuBox ? [vuBox.w, vuBox.h] : [canvas.offsetWidth || canvas.width, canvas.offsetHeight || canvas.height];
 const vuFramed = () => typeof chassis !== 'undefined' && chassis !== 'CLASSIC';
-function drawVUHiFi90(canvas, ctx, st) {
-  const [W, H] = vuDims(canvas);
-  ctx.clearRect(0, 0, W, H);
-
+// in a frame, what moves stays inside the window by itself; only a glow that could reach past it is cut to it
+const vuClipWin = ctx => { if (vuBox) { ctx.beginPath(); ctx.roundRect(0, 0, vuBox.w, vuBox.h, vuBox.r); ctx.clip(); } };
+// the still part of the Hi-Fi 90s face: the faceplate, the scale and its glowing zones, the captions
+function hifiBack(x, W, H) {
+  const GAREA = H * 0.70, cx = W / 2, cy = GAREA * 0.94;
+  const R  = Math.max(20, Math.min(GAREA * 0.78, cy - 40, (W / 2 - 18) / 0.87 - 34));
   // High-end 90s Hi-Fi faceplate: champagne glass + blue fluorescent lower bar.
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  const bg = x.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, '#161a20');
   bg.addColorStop(.42, '#090d12');
   bg.addColorStop(1, '#020408');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
 
-  const glass = ctx.createLinearGradient(0, 0, W, H);
+  const glass = x.createLinearGradient(0, 0, W, H);
   glass.addColorStop(0, 'rgba(255,255,255,.10)');
   glass.addColorStop(.22, 'rgba(255,255,255,.025)');
   glass.addColorStop(.55, 'rgba(255,255,255,0)');
   glass.addColorStop(1, 'rgba(120,190,255,.035)');
-  ctx.fillStyle = glass; ctx.fillRect(0, 0, W, H);
-
-  const GAREA = H * 0.70;
-  const cx = W / 2;
-  const cy = GAREA * 0.94;
-  // keep the whole arc and its top labels inside the canvas, whatever the panel's shape
-  const R  = Math.max(20, Math.min(GAREA * 0.78, cy - 40, (W / 2 - 18) / 0.87 - 34));
+  x.fillStyle = glass; x.fillRect(0, 0, W, H);
 
   // warm printed scale plate
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, R + 30, A0, A1);
-  ctx.closePath();
-  const plate = ctx.createRadialGradient(cx, cy, 10, cx, cy, R + 35);
+  x.beginPath();
+  x.moveTo(cx, cy);
+  x.arc(cx, cy, R + 30, A0, A1);
+  x.closePath();
+  const plate = x.createRadialGradient(cx, cy, 10, cx, cy, R + 35);
   plate.addColorStop(0, 'rgba(255,220,145,.025)');
   plate.addColorStop(.65, 'rgba(255,220,145,.055)');
   plate.addColorStop(1, 'rgba(0,0,0,.55)');
-  ctx.fillStyle = plate; ctx.fill();
+  x.fillStyle = plate; x.fill();
 
   function drawZone(dbA, dbB, col, w, glow){
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, db2a(dbA), db2a(dbB));
-    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'butt';
-    ctx.shadowColor = col; ctx.shadowBlur = glow || 0;
-    ctx.stroke(); ctx.shadowBlur = 0;
+    x.beginPath();
+    x.arc(cx, cy, R, db2a(dbA), db2a(dbB));
+    x.strokeStyle = col; x.lineWidth = w; x.lineCap = 'butt';
+    x.shadowColor = col; x.shadowBlur = glow || 0;
+    x.stroke(); x.shadowBlur = 0;
   }
   drawZone(DB_LO, -8, 'rgba(65,170,255,.34)', 18, 10);
   drawZone(-8, -1, 'rgba(255,220,90,.52)', 18, 12);
@@ -87,21 +83,38 @@ function drawVUHiFi90(canvas, ctx, st) {
   ticks.forEach(({db,lbl,maj}) => {
     const ang = db2a(db), cos = Math.cos(ang), sin = Math.sin(ang);
     const ri = R - 18, ro = R + (maj ? 22 : 15);
-    ctx.beginPath(); ctx.moveTo(cx + ri*cos, cy + ri*sin); ctx.lineTo(cx + ro*cos, cy + ro*sin);
-    ctx.strokeStyle = maj ? 'rgba(210,235,255,.78)' : 'rgba(125,160,190,.42)';
-    ctx.lineWidth = maj ? 1.5 : 1; ctx.stroke();
+    x.beginPath(); x.moveTo(cx + ri*cos, cy + ri*sin); x.lineTo(cx + ro*cos, cy + ro*sin);
+    x.strokeStyle = maj ? 'rgba(210,235,255,.78)' : 'rgba(125,160,190,.42)';
+    x.lineWidth = maj ? 1.5 : 1; x.stroke();
     if(lbl){
-      ctx.font = (maj ? 'bold ' : '') + '9px Courier New';
-      ctx.fillStyle = db >= 0 ? '#ff9a6a' : '#c9e9ff';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = db >= 0 ? 'rgba(255,80,30,.55)' : 'rgba(70,170,255,.45)';
-      ctx.shadowBlur = 7;
-      ctx.fillText(lbl, cx + (ro+12)*cos, cy + (ro+12)*sin);
-      ctx.shadowBlur = 0;
+      x.font = (maj ? 'bold ' : '') + '9px Courier New';
+      x.fillStyle = db >= 0 ? '#ff9a6a' : '#c9e9ff';
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.shadowColor = db >= 0 ? 'rgba(255,80,30,.55)' : 'rgba(70,170,255,.45)';
+      x.shadowBlur = 7;
+      x.fillText(lbl, cx + (ro+12)*cos, cy + (ro+12)*sin);
+      x.shadowBlur = 0;
     }
   });
 
-  // Blue fluorescent lower LED bar, typical high-end 90s component stack.
+  // the captions (nothing that moves reaches them)
+  x.font = 'bold 8px Courier New'; x.textAlign = 'left'; x.textBaseline = 'middle';
+  if (W >= 300) {                                  // narrow panels: the scale needs the room
+    x.fillStyle = 'rgba(160,215,255,.62)'; x.fillText('HI-FI REFERENCE VU', 8, 13);
+    x.textAlign = 'right'; x.fillStyle = 'rgba(255,220,145,.50)'; x.fillText('CLASSIC 90s', W-8, 13);
+  }
+}
+function drawVUHiFi90(canvas, ctx, st) {
+  const [W, H] = vuDims(canvas);
+  const GAREA = H * 0.70;
+  const cx = W / 2;
+  const cy = GAREA * 0.94;
+  // keep the whole arc and its top labels inside the canvas, whatever the panel's shape
+  const R  = Math.max(20, Math.min(GAREA * 0.78, cy - 40, (W / 2 - 18) / 0.87 - 34));
+
+  if (!vuBox) blit(ctx, still('vu-face:' + canvas.id, W, H, 'HIFI90', x => hifiBack(x, W, H)));
+
+  // Blue fluorescent lower LED bar, typical high-end 90s component stack (each lit segment's glow a stamped sprite).
   const barX = 12, barY = GAREA + (H - GAREA) * 0.28;
   const barW = W - 24, barH = H - barY - 8;
   const N = 42;
@@ -114,12 +127,13 @@ function drawVUHiFi90(canvas, ctx, st) {
     if(segDb >= -7){ on = '#ffe66a'; off='rgba(72,61,16,.38)'; glow='rgba(255,230,106,.55)'; }
     if(segDb >= -1){ on = '#ff5a2e'; off='rgba(70,22,10,.38)'; glow='rgba(255,90,46,.62)'; }
     const sx = barX + i * (segW + 1.5);
-    ctx.fillStyle = lit ? on : isPk ? on : off;
-    ctx.globalAlpha = lit ? 1 : isPk ? .7 : 1;
-    ctx.shadowColor = lit || isPk ? glow : 'transparent';
-    ctx.shadowBlur = lit ? 7 : isPk ? 4 : 0;
-    ctx.fillRect(sx, barY, segW, barH);
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    if (lit) glowCell(ctx, sx, barY, segW, barH, 0, on, 7, glow);
+    else if (isPk) {                                 // the held peak: see-through, its glow showing under it
+      ctx.fillStyle = on; ctx.globalAlpha = .7; ctx.shadowColor = glow; ctx.shadowBlur = 4;
+      ctx.fillRect(sx, barY, segW, barH);
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    }
+    else { ctx.fillStyle = off; ctx.fillRect(sx, barY, segW, barH); }
     ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(sx, barY, segW, 1);
   }
 
@@ -156,16 +170,13 @@ function drawVUHiFi90(canvas, ctx, st) {
   ctx.fillStyle = st.lvl >= -1 ? '#ff9a6a' : '#9fd7ff';
   ctx.shadowColor = st.lvl >= -1 ? 'rgba(255,90,46,.7)' : 'rgba(70,180,255,.55)'; ctx.shadowBlur = 8;
   ctx.fillText(dbTxt + ' VU', W/2, GAREA + (H-GAREA)*.17); ctx.shadowBlur = 0;
-
   ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'left';
-  if (W >= 300) {                                  // narrow panels: the scale needs the room
-    ctx.fillStyle = 'rgba(160,215,255,.62)'; ctx.fillText('HI-FI REFERENCE VU', 8, 13);
-    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,220,145,.50)'; ctx.fillText('CLASSIC 90s', W-8, 13);
-  }
 
   if(st.clip){
+    ctx.save(); vuClipWin(ctx);
     ctx.beginPath(); ctx.arc(W-18, 28, 5, 0, Math.PI*2); ctx.fillStyle = '#ff4424';
     ctx.shadowColor = '#ff4424'; ctx.shadowBlur = 16; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.restore();
   }
 }
 
@@ -194,35 +205,20 @@ function vuT(db) {                                     // 0 … 1 along the scal
 }
 function drawVUClassic(canvas, ctx, st, th) {
   const [W, H] = vuDims(canvas);
-  ctx.clearRect(0, 0, W, H);
   const framed = vuFramed();
-  // bezel (framed: the meter's black frame, its edge catching the light)
-  const bz = ctx.createLinearGradient(0, 0, 0, H);
-  if (framed) { bz.addColorStop(0, '#1c1e22'); bz.addColorStop(1, '#0b0c0e'); }
-  else { bz.addColorStop(0, th.bezel[0]); bz.addColorStop(1, th.bezel[1]); }
-  ctx.fillStyle = bz; ctx.fillRect(0, 0, W, H);
   // the readout strip under the window; framed, a black window of its own
   const m = framed ? Math.max(6, Math.min(16, W * 0.022)) : 8;
   const READ = th.noRead ? 0 : framed ? Math.max(18, Math.min(46, H * 0.14)) : 18, rGap = framed && !th.noRead ? Math.max(3, m * 0.45) : 0;
   const wx = m, wy = m, ww = W - 2 * m, wh = H - 2 * m - READ - rGap;
   const rad = framed ? Math.max(6, Math.min(14, W * 0.014)) : 6;
-  if (ww < 40 || wh < 30) return;                       // too small to draw a meter (a panel still settling)
-  if (framed) vuFrameEdge(ctx, W, H);
-  ctx.save();
-  ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, rad); ctx.clip();
-  // the backlit face: brightest low in the middle, where the lamp sits
-  const face = ctx.createRadialGradient(W / 2, wy + wh * 1.05, 4, W / 2, wy + wh * .6, Math.max(ww, wh) * .95);
-  face.addColorStop(0, th.face[0]); face.addColorStop(.55, th.face[1]); face.addColorStop(1, th.face[2]);
-  ctx.fillStyle = face; ctx.fillRect(wx, wy, ww, wh);
-  const lamp = ctx.createRadialGradient(W / 2, wy + wh, 0, W / 2, wy + wh, wh * .9);
-  // fade to the lamp's own colour, transparent: fading to transparent black greys the middle of the face
-  lamp.addColorStop(0, th.glow); lamp.addColorStop(1, th.glow.replace(/,\s*[\d.]+\)$/, ',0)'));
-  ctx.fillStyle = lamp; ctx.fillRect(wx, wy, ww, wh);
-  if (th.vignette) {                                    // the face darkens towards its edges, away from the lamp
-    const vg = ctx.createRadialGradient(W / 2, wy + wh * .95, Math.min(ww, wh) * .25, W / 2, wy + wh * .7, Math.max(ww * .62, wh * 1.1));
-    vg.addColorStop(0, th.vignette.replace(/,\s*[\d.]+\)$/, ',0)')); vg.addColorStop(1, th.vignette);
-    ctx.fillStyle = vg; ctx.fillRect(wx, wy, ww, wh);
-  }
+  // bezel (framed: the meter's black frame, its edge catching the light)
+  const bezel = x => {
+    const bz = x.createLinearGradient(0, 0, 0, H);
+    if (framed) { bz.addColorStop(0, '#1c1e22'); bz.addColorStop(1, '#0b0c0e'); }
+    else { bz.addColorStop(0, th.bezel[0]); bz.addColorStop(1, th.bezel[1]); }
+    x.fillStyle = bz; x.fillRect(0, 0, W, H);
+  };
+  if (ww < 40 || wh < 30) { ctx.clearRect(0, 0, W, H); bezel(ctx); return; }   // too small to draw a meter (a panel still settling)
 
   // geometry: the pivot sits below the window, the scale is a wide shallow arc
   const half = 47 * Math.PI / 180;
@@ -243,97 +239,131 @@ function drawVUClassic(canvas, ctx, st, th) {
   const cx = W / 2, hubIn = cy < wy + wh - 2;
   const ang = t => -Math.PI / 2 - half + t * 2 * half;
   const P = (t, r) => [cx + Math.cos(ang(t)) * r, cy + Math.sin(ang(t)) * r];
-  // scale arcs: thin ink line, thick red band from 0 to +3
-  ctx.lineCap = 'butt';
   const fs = Math.max(8, Math.min(fsMax, R * .085, fs0));
   const k = framed ? fs / 13 : 1;                        // line weights follow the figures
   const lk = k * (th.lineK || 1);                        // AZUL INTENSO draws its scale thicker
-  ctx.beginPath(); ctx.arc(cx, cy, R, ang(0), ang(vuT(0))); ctx.strokeStyle = th.ink; ctx.lineWidth = 1.4 * lk; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, R + 3 * lk, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 6 * lk; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, R, ang(vuT(0)), ang(1)); ctx.strokeStyle = th.red; ctx.lineWidth = 1.4 * lk; ctx.stroke();
-  // ticks and numbers
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  [[-20, 1], [-10, 1], [-7, 1], [-5, 1], [-3, 1], [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 1], [-15, 0], [-4, 0], [-0.5, 0], [0.5, 0], [1.5, 0], [2.5, 0]].forEach(([db, major]) => {
-    const t = vuT(db), [x1, y1] = P(t, R), [x2, y2] = P(t, R + (major ? 11 : 6) * k);
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-    ctx.strokeStyle = db > 0 ? th.red : th.ink; ctx.lineWidth = (major ? 1.4 : 1) * lk; ctx.stroke();
-    const few = R < 70;                                   // a very small meter: only the main figures
-    if (major && (db >= -10 || db === -20) && !(R < 90 && (db === -2 || db === 2)) && !(few && ![-20, -10, -5, 0, 3].includes(db))) {
-      const [tx, ty] = P(t, R + 11 * k + fs * .9);
-      ctx.font = (db === 0 || framed ? 'bold ' : '') + fs + 'px Georgia, "Times New Roman", serif';
-      ctx.fillStyle = db > 0 ? th.red : th.ink;
-      ctx.fillText(db > 0 ? '+' + db : String(Math.abs(db)), tx, ty);
+  const lx = wx + ww - 16 * k, ly = wy + 14 * k;         // the peak lamp
+  const clipWin = x => { x.beginPath(); x.roundRect(wx, wy, ww, wh, rad); x.clip(); };
+  const key = vuSkin + '|' + framed;
+
+  // ── still, under the needle: the bezel, the backlit face, the scale, its figures and the unlit lamp
+  blit(ctx, still('vu-back:' + canvas.id, W, H, key, x => {
+    bezel(x);
+    if (framed) vuFrameEdge(x, W, H);
+    x.save();
+    clipWin(x);
+    // the backlit face: brightest low in the middle, where the lamp sits
+    const face = x.createRadialGradient(W / 2, wy + wh * 1.05, 4, W / 2, wy + wh * .6, Math.max(ww, wh) * .95);
+    face.addColorStop(0, th.face[0]); face.addColorStop(.55, th.face[1]); face.addColorStop(1, th.face[2]);
+    x.fillStyle = face; x.fillRect(wx, wy, ww, wh);
+    const lamp = x.createRadialGradient(W / 2, wy + wh, 0, W / 2, wy + wh, wh * .9);
+    // fade to the lamp's own colour, transparent: fading to transparent black greys the middle of the face
+    lamp.addColorStop(0, th.glow); lamp.addColorStop(1, th.glow.replace(/,\s*[\d.]+\)$/, ',0)'));
+    x.fillStyle = lamp; x.fillRect(wx, wy, ww, wh);
+    if (th.vignette) {                                    // the face darkens towards its edges, away from the lamp
+      const vg = x.createRadialGradient(W / 2, wy + wh * .95, Math.min(ww, wh) * .25, W / 2, wy + wh * .7, Math.max(ww * .62, wh * 1.1));
+      vg.addColorStop(0, th.vignette.replace(/,\s*[\d.]+\)$/, ',0)')); vg.addColorStop(1, th.vignette);
+      x.fillStyle = vg; x.fillRect(wx, wy, ww, wh);
     }
-  });
-  // the percent scale under the arc
-  ctx.font = Math.max(6, fs * .62) + 'px Georgia, serif'; ctx.fillStyle = th.soft;
-  [[0, '0'], [vuT(-6), '50'], [vuT(0), '100']].forEach(([t, l]) => { const [x, y] = P(t, R - 10); ctx.fillText(l, x, y); });
-  ctx.beginPath(); ctx.arc(cx, cy, R - 4, ang(0), ang(vuT(0))); ctx.strokeStyle = th.soft; ctx.lineWidth = .8; ctx.stroke();
-  // VU and the − / + signs
-  // the pivot below the window (a low meter): VU sits in the room left under the arc's top, sized to it,
-  // and the − / + by the arc's ends, never on the scale
-  const under = cy - R + 14 * k + fs * .9, room = wy + wh - 4 - under;
-  const tfs = hubIn ? fs * 1.9 : Math.max(9, Math.min(fs * 1.9, room * .5));
-  ctx.font = 'bold ' + Math.round(tfs) + 'px Georgia, "Times New Roman", serif'; ctx.fillStyle = th.ink;
-  if (R >= 60) ctx.fillText(th.title, cx, hubIn ? cy - R * .42 : under + room * .5);   // a tiny meter has no room for it
-  const sfs = hubIn ? fs * 1.3 : Math.max(8, Math.min(fs * 1.3, room * .35));
-  ctx.font = 'bold ' + Math.round(sfs) + 'px Georgia, serif';
-  if (hubIn || !big) {
-    const sr = R * .78;
-    { const [x, y] = P(-0.04, sr); ctx.fillText('−', x, Math.min(y, wy + wh * .86)); }
-    { const [x, y] = P(1.03, sr); ctx.fillStyle = th.red; ctx.fillText('+', x, Math.min(y, wy + wh * .86)); }
-  } else {                                              // under each end of the arc, at the height of VU
-    const sy = under + room * .5, [lx0] = P(0, R), [rx0] = P(1, R);
-    ctx.fillText('−', lx0 + (cx - lx0) * .32, sy);
-    ctx.fillStyle = th.red; ctx.fillText('+', rx0 - (rx0 - cx) * .32, sy);
-  }
-  // peak lamp (lights on a near-clip peak)
-  const lit = st.clip || st.samplePeak > -0.5;
-  const lx = wx + ww - 16 * k, ly = wy + 14 * k;
-  ctx.beginPath(); ctx.arc(lx, ly, 4.5 * k, 0, Math.PI * 2);
-  ctx.fillStyle = lit ? '#ff3a26' : 'rgba(90,20,15,.55)'; ctx.shadowColor = '#ff3a26'; ctx.shadowBlur = lit ? 14 : 0; ctx.fill(); ctx.shadowBlur = 0;
-  if (ww >= 180) { ctx.font = `bold ${Math.round(7 * k)}px ${framed ? 'Georgia, serif' : 'Arial, sans-serif'}`; ctx.fillStyle = framed ? th.ink : th.soft; ctx.textAlign = 'right'; ctx.fillText(th.sub, lx - 8 * k, ly + 1); }
-  // needle (thin, with a counterweight below the window)
-  const t = vuT(st.lvl), a = ang(t);
+    // scale arcs: thin ink line, thick red band from 0 to +3
+    x.lineCap = 'butt';
+    x.beginPath(); x.arc(cx, cy, R, ang(0), ang(vuT(0))); x.strokeStyle = th.ink; x.lineWidth = 1.4 * lk; x.stroke();
+    x.beginPath(); x.arc(cx, cy, R + 3 * lk, ang(vuT(0)), ang(1)); x.strokeStyle = th.red; x.lineWidth = 6 * lk; x.stroke();
+    x.beginPath(); x.arc(cx, cy, R, ang(vuT(0)), ang(1)); x.strokeStyle = th.red; x.lineWidth = 1.4 * lk; x.stroke();
+    // ticks and numbers
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    [[-20, 1], [-10, 1], [-7, 1], [-5, 1], [-3, 1], [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 1], [-15, 0], [-4, 0], [-0.5, 0], [0.5, 0], [1.5, 0], [2.5, 0]].forEach(([db, major]) => {
+      const t = vuT(db), [x1, y1] = P(t, R), [x2, y2] = P(t, R + (major ? 11 : 6) * k);
+      x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2);
+      x.strokeStyle = db > 0 ? th.red : th.ink; x.lineWidth = (major ? 1.4 : 1) * lk; x.stroke();
+      const few = R < 70;                                   // a very small meter: only the main figures
+      if (major && (db >= -10 || db === -20) && !(R < 90 && (db === -2 || db === 2)) && !(few && ![-20, -10, -5, 0, 3].includes(db))) {
+        const [tx, ty] = P(t, R + 11 * k + fs * .9);
+        x.font = (db === 0 || framed ? 'bold ' : '') + fs + 'px Georgia, "Times New Roman", serif';
+        x.fillStyle = db > 0 ? th.red : th.ink;
+        x.fillText(db > 0 ? '+' + db : String(Math.abs(db)), tx, ty);
+      }
+    });
+    // the percent scale under the arc
+    x.font = Math.max(6, fs * .62) + 'px Georgia, serif'; x.fillStyle = th.soft;
+    [[0, '0'], [vuT(-6), '50'], [vuT(0), '100']].forEach(([t, l]) => { const [px, py] = P(t, R - 10); x.fillText(l, px, py); });
+    x.beginPath(); x.arc(cx, cy, R - 4, ang(0), ang(vuT(0))); x.strokeStyle = th.soft; x.lineWidth = .8; x.stroke();
+    // VU and the − / + signs
+    // the pivot below the window (a low meter): VU sits in the room left under the arc's top, sized to it,
+    // and the − / + by the arc's ends, never on the scale
+    const under = cy - R + 14 * k + fs * .9, room = wy + wh - 4 - under;
+    const tfs = hubIn ? fs * 1.9 : Math.max(9, Math.min(fs * 1.9, room * .5));
+    x.font = 'bold ' + Math.round(tfs) + 'px Georgia, "Times New Roman", serif'; x.fillStyle = th.ink;
+    if (R >= 60) x.fillText(th.title, cx, hubIn ? cy - R * .42 : under + room * .5);   // a tiny meter has no room for it
+    const sfs = hubIn ? fs * 1.3 : Math.max(8, Math.min(fs * 1.3, room * .35));
+    x.font = 'bold ' + Math.round(sfs) + 'px Georgia, serif';
+    if (hubIn || !big) {
+      const sr = R * .78;
+      { const [px, py] = P(-0.04, sr); x.fillText('−', px, Math.min(py, wy + wh * .86)); }
+      { const [px, py] = P(1.03, sr); x.fillStyle = th.red; x.fillText('+', px, Math.min(py, wy + wh * .86)); }
+    } else {                                              // under each end of the arc, at the height of VU
+      const sy = under + room * .5, [lx0] = P(0, R), [rx0] = P(1, R);
+      x.fillText('−', lx0 + (cx - lx0) * .32, sy);
+      x.fillStyle = th.red; x.fillText('+', rx0 - (rx0 - cx) * .32, sy);
+    }
+    // the peak lamp, unlit
+    x.beginPath(); x.arc(lx, ly, 4.5 * k, 0, Math.PI * 2); x.fillStyle = 'rgba(90,20,15,.55)'; x.fill();
+    if (ww >= 180) { x.font = `bold ${Math.round(7 * k)}px ${framed ? 'Georgia, serif' : 'Arial, sans-serif'}`; x.fillStyle = framed ? th.ink : th.soft; x.textAlign = 'right'; x.fillText(th.sub, lx - 8 * k, ly + 1); }
+    x.restore();
+  }));
+
+  // ── what moves: the peak lamp (lights on a near-clip peak) and the needle (thin, with a counterweight below the window)
   ctx.save();
+  clipWin(ctx);
+  if (st.clip || st.samplePeak > -0.5) {
+    ctx.beginPath(); ctx.arc(lx, ly, 4.5 * k, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff3a26'; ctx.shadowColor = '#ff3a26'; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0;
+  }
+  const a = ang(vuT(st.lvl));
   ctx.shadowColor = th.needleGlow || 'rgba(0,0,0,.35)'; ctx.shadowBlur = th.needleGlow ? (th.lineK ? 10 : 6) : 3; ctx.shadowOffsetX = th.needleGlow ? 0 : 2; ctx.shadowOffsetY = th.needleGlow ? 0 : 2;
   ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (R + 9 * k), cy + Math.sin(a) * (R + 9 * k));
   ctx.strokeStyle = th.needle; ctx.lineWidth = th.needleW || 1.6; ctx.lineCap = 'round'; ctx.stroke();
   ctx.restore();
-  if (hubIn) {                                          // the pivot is in view: a small black hub on a plate
-    ctx.beginPath(); ctx.arc(cx, cy, 13, Math.PI, 0); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fillStyle = '#111'; ctx.fill();
-  }
-  // glass: a soft diagonal reflection and the top shade of the bezel
-  const gl = ctx.createLinearGradient(wx, wy, wx + ww * .7, wy + wh);
-  const ga = th.glass ?? 1;
-  gl.addColorStop(0, `rgba(255,255,255,${.22 * ga})`); gl.addColorStop(.35, `rgba(255,255,255,${.04 * ga})`); gl.addColorStop(.36, 'rgba(255,255,255,0)');
-  ctx.fillStyle = gl; ctx.fillRect(wx, wy, ww, wh);
-  const sh = ctx.createLinearGradient(0, wy, 0, wy + 14);
-  sh.addColorStop(0, 'rgba(0,0,0,.35)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = sh; ctx.fillRect(wx, wy, ww, 14);
-  ctx.restore();
+
+  // ── still, over the needle: its hub, the glass, the window's ring and the readout's black window
+  const rx = wx, ry = wy + wh + rGap, rh = H - m - ry;
+  blit(ctx, still('vu-front:' + canvas.id, W, H, key, x => {
+    x.save();
+    clipWin(x);
+    if (hubIn) {                                          // the pivot is in view: a small black hub on a plate
+      x.beginPath(); x.arc(cx, cy, 13, Math.PI, 0); x.fillStyle = 'rgba(0,0,0,.25)'; x.fill();
+      x.beginPath(); x.arc(cx, cy, 5, 0, Math.PI * 2); x.fillStyle = '#111'; x.fill();
+    }
+    // glass: a soft diagonal reflection and the top shade of the bezel
+    const gl = x.createLinearGradient(wx, wy, wx + ww * .7, wy + wh);
+    const ga = th.glass ?? 1;
+    gl.addColorStop(0, `rgba(255,255,255,${.22 * ga})`); gl.addColorStop(.35, `rgba(255,255,255,${.04 * ga})`); gl.addColorStop(.36, 'rgba(255,255,255,0)');
+    x.fillStyle = gl; x.fillRect(wx, wy, ww, wh);
+    const sh = x.createLinearGradient(0, wy, 0, wy + 14);
+    sh.addColorStop(0, 'rgba(0,0,0,.35)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = sh; x.fillRect(wx, wy, ww, 14);
+    x.restore();
+    if (!framed) { x.strokeStyle = 'rgba(0,0,0,.6)'; x.lineWidth = 2; x.beginPath(); x.roundRect(wx, wy, ww, wh, 6); x.stroke(); return; }
+    vuWindowRing(x, wx, wy, ww, wh, rad);
+    if (th.noRead) return;                                // AZUL INTENSO: the meter alone
+    x.beginPath(); x.roundRect(rx, ry, ww, rh, Math.max(3, rad * 0.5));
+    x.fillStyle = '#040405'; x.fill();
+    const ish = x.createLinearGradient(0, ry, 0, ry + rh * 0.5);
+    ish.addColorStop(0, 'rgba(0,0,0,.6)'); ish.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = ish; x.fill();
+    x.strokeStyle = 'rgba(255,255,255,.07)'; x.lineWidth = 1; x.stroke();
+  }));
+
+  // ── the readout: the level in mono figures
+  if (th.noRead) return;
   const dbTxt = st.lvl <= DB_LO + 1 ? '-∞' : (st.lvl >= 0 ? '+' : '') + st.lvl.toFixed(1);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (!framed) {
-    ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, 6); ctx.stroke();
-    if (th.noRead) return;
-    // readout on the bezel
-    ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 10px Courier New';
     ctx.fillStyle = st.lvl >= 0 ? '#ff8a6a' : th.read;
     ctx.fillText(dbTxt + ' VU', W / 2, H - READ / 2 - 3);
     return;
   }
-  vuWindowRing(ctx, wx, wy, ww, wh, rad);
-  if (th.noRead) return;                                // AZUL INTENSO: the meter alone
-  // the readout's black window, the level in mono figures
-  const ry = wy + wh + rGap, rh = H - m - ry;
-  ctx.beginPath(); ctx.roundRect(wx, ry, ww, rh, Math.max(3, rad * 0.5));
-  ctx.fillStyle = '#040405'; ctx.fill();
-  const ish = ctx.createLinearGradient(0, ry, 0, ry + rh * 0.5);
-  ish.addColorStop(0, 'rgba(0,0,0,.6)'); ish.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = ish; ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1; ctx.stroke();
   ctx.font = `${Math.max(9, Math.round(rh * 0.5))}px "Consolas", "Lucida Console", "DejaVu Sans Mono", "Courier New", monospace`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = st.lvl >= 0 ? '#ff8a6a' : th.read; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 4;
   ctx.fillText(dbTxt.replace('-', '−') + ' VU', W / 2, ry + rh / 2 + 1);
   ctx.shadowBlur = 0;
@@ -366,26 +396,45 @@ function drawVU(canvas, ctx, st) {
   // STUDIO and HI-FI 90s with the metal frames: the same black frame and polished ring round the whole face
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
   const m = Math.max(6, Math.min(16, W * 0.022)), r = Math.max(6, Math.min(14, W * 0.014));
-  ctx.clearRect(0, 0, W, H);
-  const bz = ctx.createLinearGradient(0, 0, 0, H); bz.addColorStop(0, '#1c1e22'); bz.addColorStop(1, '#0b0c0e');
-  ctx.fillStyle = bz; ctx.fillRect(0, 0, W, H);
-  vuFrameEdge(ctx, W, H);
-  if (W - 2 * m < 40 || H - 2 * m < 30) return;
-  ctx.save(); ctx.translate(m, m); ctx.beginPath(); ctx.roundRect(0, 0, W - 2 * m, H - 2 * m, r); ctx.clip();
-  vuBox = { w: W - 2 * m, h: H - 2 * m };
+  const small = W - 2 * m < 40 || H - 2 * m < 30;
+  // still: the frame with the face's still part inside its window, one layer
+  blit(ctx, still('vu-face:' + canvas.id, W, H, vuSkin + '|framed', x => {
+    const bz = x.createLinearGradient(0, 0, 0, H); bz.addColorStop(0, '#1c1e22'); bz.addColorStop(1, '#0b0c0e');
+    x.fillStyle = bz; x.fillRect(0, 0, W, H);
+    vuFrameEdge(x, W, H);
+    if (small) return;
+    x.save(); x.translate(m, m); x.beginPath(); x.roundRect(0, 0, W - 2 * m, H - 2 * m, r); x.clip();
+    (vuSkin === 'HIFI90' ? hifiBack : studioBack)(x, W - 2 * m, H - 2 * m);
+    x.restore();
+    vuWindowRing(x, m, m, W - 2 * m, H - 2 * m, r);
+  }));
+  if (small) return;
+  // what moves, over it (the needle, the bar and the figures never reach the ring)
+  ctx.save(); ctx.translate(m, m);
+  vuBox = { w: W - 2 * m, h: H - 2 * m, r };
   try { vuSkin === 'HIFI90' ? drawVUHiFi90(canvas, ctx, st) : drawVUStudio(canvas, ctx, st); }
   finally { vuBox = null; ctx.restore(); }
-  vuWindowRing(ctx, m, m, W - 2 * m, H - 2 * m, r);
+}
+// the still part of the Studio face: the panel and the dark gauge sector
+function studioBack(x, W, H) {
+  const GAREA = H * 0.69, cx = W / 2, cy = GAREA * 0.91;
+  const R  = Math.max(20, Math.min(GAREA * 0.73, cy - 34, (W / 2 - 18) / 0.87 - 28));
+  const bg = x.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0c0c16'); bg.addColorStop(1, '#060610');
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  x.beginPath();
+  x.moveTo(cx, cy);
+  x.arc(cx, cy, R + 26, A0, A1);
+  x.closePath();
+  const gaugeGrad = x.createRadialGradient(cx, cy, 0, cx, cy, R + 26);
+  gaugeGrad.addColorStop(0,   'rgba(8,8,20,0.0)');
+  gaugeGrad.addColorStop(0.7, 'rgba(8,8,20,0.5)');
+  gaugeGrad.addColorStop(1,   'rgba(8,8,20,0.9)');
+  x.fillStyle = gaugeGrad;
+  x.fill();
 }
 function drawVUStudio(canvas, ctx, st) {
   const [W, H] = vuDims(canvas);
-
-  ctx.clearRect(0, 0, W, H);
-
-  // Panel bg
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0c0c16'); bg.addColorStop(1, '#060610');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
   // ── GAUGE GEOMETRY ──
   const GAREA = H * 0.69;
@@ -393,17 +442,8 @@ function drawVUStudio(canvas, ctx, st) {
   const cy = GAREA * 0.91;
   const R  = Math.max(20, Math.min(GAREA * 0.73, cy - 34, (W / 2 - 18) / 0.87 - 28));
 
-  // Dark gauge sector background
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, R + 26, A0, A1);
-  ctx.closePath();
-  const gaugeGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R + 26);
-  gaugeGrad.addColorStop(0,   'rgba(8,8,20,0.0)');
-  gaugeGrad.addColorStop(0.7, 'rgba(8,8,20,0.5)');
-  gaugeGrad.addColorStop(1,   'rgba(8,8,20,0.9)');
-  ctx.fillStyle = gaugeGrad;
-  ctx.fill();
+  // still: the panel and the dark gauge sector (framed, drawVU has laid it in with the frame)
+  if (!vuBox) blit(ctx, still('vu-face:' + canvas.id, W, H, 'MODERN', x => studioBack(x, W, H)));
 
   // ── COLORED ZONES ──
   function drawZone(dbA, dbB, col, w) {
@@ -525,6 +565,8 @@ function drawVUStudio(canvas, ctx, st) {
 
   // ── CLIP LED ──
   const clipX = W - 18, clipY = 12;
+  ctx.save();
+  if (st.clip) vuClipWin(ctx);                       // its glow stays inside the window
   ctx.beginPath();
   ctx.arc(clipX, clipY, 5.5, 0, Math.PI * 2);
   if (st.clip) {
@@ -535,7 +577,7 @@ function drawVUStudio(canvas, ctx, st) {
     ctx.shadowBlur = 0;
   }
   ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.restore();
   ctx.font = '7px Courier New';
   ctx.fillStyle = st.clip ? '#ff8866' : '#2a1206';
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
@@ -564,21 +606,13 @@ function drawVUStudio(canvas, ctx, st) {
     else                   col = lit ? '#00cc44' : isPk ? '#007720' : '#071e0d';
 
     const sx = barX + i * (segW + 1);
-    ctx.fillStyle = col;
-    if (lit || isPk) {
-      ctx.shadowColor = col;
-      ctx.shadowBlur  = lit ? 5 : 3;
-    } else {
-      ctx.shadowBlur = 0;
-    }
-    ctx.fillRect(sx, barY, segW, barH);
+    if (lit || isPk) glowCell(ctx, sx, barY, segW, barH, 0, col, lit ? 5 : 3);   // the glow a stamped sprite
+    else { ctx.fillStyle = col; ctx.fillRect(sx, barY, segW, barH); }
     if (lit) {
-      ctx.shadowBlur = 0;
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(sx, barY, segW, 1);
     }
   }
-  ctx.shadowBlur = 0;
 
   // Bar frame
   ctx.strokeStyle = '#111120'; ctx.lineWidth = 1;

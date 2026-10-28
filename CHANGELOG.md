@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.2.0
+
+### Changed
+- **The same picture for about half the work.** What doesn't move in a display is now painted once and copied in every frame instead of being drawn again sixty times a second: the VU faces with their scales and figures, the FL glass with every unlit segment, the photos of the SO-90 and the CD-90, the deck's steel and the cassette shells, the frames, labels and captions. The glow of a lit segment is painted once per colour and size and then stamped, and the FL displays blur their glow on a quarter-size copy, only over the bars that are lit. Every display keeps its look (each one was compared with 7.1.3 pixel by pixel).
+- Measured on a slow test machine without a graphics card, the work per frame of a window with the VU meters, FL SHOWROOM and the SO-90 REEL went from about 31 ms to 16 ms, and the page needs about 85 MB less memory. Alone, each display: VU meters 31–50 → 17–18 ms, SO-90 REEL 65 → 24, CD-90 48 → 16, CLEAR cassette 35 → 19, deck 31 → 16, FL SHOWROOM 44 → 34, FL AMBER 49 → 25, LED 80s 36 → 22, LCD 33 → 19.
+- **In the tray or minimized nothing is drawn.** The rack keeps measuring (LUFS, LRA, BPM, the history, the phone) but doesn't paint what no one sees: in the test, the main thread went from 86 % busy to 4 %, the graphics process from 25 % to 1 %.
+- At most 60 drawn frames a second, also on 120 and 144 Hz screens, and 30 after a few seconds of silence (a paused song: the needles are at rest, the tape stands still). The measurements are the same: test tones from 0 to −55 dBFS read exactly as before, EBU 3342 included.
+- The readouts and the LEDs touch the page only when what they show changes, and still pictures no display has used for a while give their memory back.
+
 ## 7.1.3
 
 ### Fixed

@@ -77,34 +77,41 @@ function ledSprite(col, on, w, h) {
 const fLabel = f => f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1).replace('.0', '') + 'k' : String(Math.round(f));
 function drawLED80(canvas, ctx, levels) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#120708'); bg.addColorStop(1, '#060203');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
   const TOP = 20, BOT = 16, L = 10, R = 10;
   const cw = (W - L - R) / LED_N, ch = (H - TOP - BOT) / LED_ROWS;
   const lw = Math.max(3, cw * 0.72), lh = Math.max(2, ch * 0.62);
-  for (let b = 0; b < LED_N; b++) {
-    const lit = levels ? Math.round(levels[b] * LED_ROWS) : 0;
-    const pk = levels ? Math.round(ledPk[b] * LED_ROWS) : 0;
-    for (let row = 0; row < LED_ROWS; row++) {
-      const col = row >= LED_ROWS - 3 ? [255, 50, 40] : row >= LED_ROWS - 6 ? [255, 210, 40] : [60, 255, 90];
-      const on = row < lit || (row === pk - 1 && pk > lit);
-      const x = L + (b + 0.5) * cw, y = TOP + (LED_ROWS - row - 0.5) * ch;
-      const sp = ledSprite(col, on, lw, lh);
-      ctx.drawImage(sp, Math.round(x - sp.width / 2), Math.round(y - sp.height / 2));
+  const colOf = row => row >= LED_ROWS - 3 ? [255, 50, 40] : row >= LED_ROWS - 6 ? [255, 210, 40] : [60, 255, 90];
+  const put = (x, b, row, on) => {
+    const sp = ledSprite(colOf(row), on, lw, lh);
+    x.drawImage(sp, Math.round(L + (b + 0.5) * cw - sp.width / 2), Math.round(TOP + (LED_ROWS - row - 0.5) * ch - sp.height / 2));
+  };
+  // still: the red-black panel, every LED dark and the band names
+  blit(ctx, still('led-back:' + canvas.id, W, H, '', x => {
+    const bg = x.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#120708'); bg.addColorStop(1, '#060203');
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    for (let b = 0; b < LED_N; b++) {
+      for (let row = 0; row < LED_ROWS; row++) put(x, b, row, false);
+      if (cw > 22 || b % 2 === 0) {
+        x.font = '7px Arial, sans-serif'; x.fillStyle = 'rgba(235,225,225,.55)'; x.textAlign = 'center';
+        x.fillText(fLabel(Math.sqrt(ledEdges[b] * ledEdges[b + 1])), L + (b + .5) * cw, H - 5);
+      }
     }
-    if (cw > 22 || b % 2 === 0) {
-      ctx.font = '7px Arial, sans-serif'; ctx.fillStyle = 'rgba(235,225,225,.55)'; ctx.textAlign = 'center';
-      ctx.fillText(fLabel(Math.sqrt(ledEdges[b] * ledEdges[b + 1])), L + (b + .5) * cw, H - 5);
-    }
+  }));
+  // what moves: the lit LEDs and the one holding each band's peak
+  if (levels) for (let b = 0; b < LED_N; b++) {
+    const lit = Math.round(levels[b] * LED_ROWS), pk = Math.round(ledPk[b] * LED_ROWS);
+    for (let row = 0; row < LED_ROWS; row++) if (row < lit || (row === pk - 1 && pk > lit)) put(ctx, b, row, true);
   }
-  // smoked red window
-  const sm = ctx.createLinearGradient(0, 0, 0, H);
-  sm.addColorStop(0, 'rgba(255,255,255,.06)'); sm.addColorStop(.18, 'rgba(255,255,255,0)'); sm.addColorStop(1, 'rgba(120,0,0,.08)');
-  ctx.fillStyle = sm; ctx.fillRect(0, 0, W, H);
-  ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(240,230,230,.7)';
-  ctx.fillText('SPECTRUM ANALYZER', 10, 12);
-  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,90,70,.6)'; ctx.fillText('LED 80s', W - 10, 12);
+  // still, in front: the smoked red window and the captions
+  blit(ctx, still('led-front:' + canvas.id, W, H, '', x => {
+    const sm = x.createLinearGradient(0, 0, 0, H);
+    sm.addColorStop(0, 'rgba(255,255,255,.06)'); sm.addColorStop(.18, 'rgba(255,255,255,0)'); sm.addColorStop(1, 'rgba(120,0,0,.08)');
+    x.fillStyle = sm; x.fillRect(0, 0, W, H);
+    x.font = 'bold 8px Arial, sans-serif'; x.textAlign = 'left'; x.fillStyle = 'rgba(240,230,230,.7)';
+    x.fillText('SPECTRUM ANALYZER', 10, 12);
+    x.textAlign = 'right'; x.fillStyle = 'rgba(255,90,70,.6)'; x.fillText('LED 80s', W - 10, 12);
+  }));
 }
 function drawSpectrumLED80(canvas, ctx) {
   aMain.getFloatFrequencyData(bufFD);
@@ -155,10 +162,6 @@ const ambOutL = new Float32Array(AMB_N), ambOutR = new Float32Array(AMB_N);
 const ambPkL = new Float32Array(AMB_N), ambPkR = new Float32Array(AMB_N), ambTmL = new Float32Array(AMB_N), ambTmR = new Float32Array(AMB_N);
 function drawAmber(canvas, ctx, lvL, lvR) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
-  // glossy black front with a smoked window
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#16110c'); bg.addColorStop(.5, '#060403'); bg.addColorStop(1, '#100b07');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
   const LBL = 14, L = 22, R = 10, TOP = 16, BOT = 6;
   const mid = TOP + (H - TOP - BOT) / 2;
   const half = (H - TOP - BOT - LBL) / 2;
@@ -166,35 +169,45 @@ function drawAmber(canvas, ctx, lvL, lvR) {
   const segH = Math.max(2, Math.min(6, half / 16)), gap = segH > 3 ? 2 : 1;
   const segs = Math.max(4, Math.floor(half / (segH + gap)));
   const SEG = [['#ffb02e', 'rgba(70,36,6,.45)'], ['#ff8a1e', 'rgba(70,30,6,.45)'], ['#ff4e12', 'rgba(70,20,6,.45)']];
+  const segC = s => SEG[s > segs * .8 ? 2 : s > segs * .6 ? 1 : 0];
+  const segXY = (b, s, up) => [L + b * slot + (slot - bw) / 2, up ? mid - LBL / 2 - (s + 1) * (segH + gap) : mid + LBL / 2 + s * (segH + gap) + gap];
+  // still, behind: the glossy black front with a smoked window, every segment unlit
+  blit(ctx, still('amb-back:' + canvas.id, W, H, '', x => {
+    const bg = x.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#16110c'); bg.addColorStop(.5, '#060403'); bg.addColorStop(1, '#100b07');
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    for (const up of [true, false]) for (let b = 0; b < AMB_N; b++) for (let s = 0; s < segs; s++) {
+      const [sx, sy] = segXY(b, s, up);
+      x.fillStyle = segC(s)[1]; x.fillRect(sx, sy, bw, segH);
+    }
+  }));
+  // what moves: the lit segments and the held peaks, each with its glow (a stamped sprite)
   const draw = (lv, pk, up) => {
+    if (!lv) return;
     for (let b = 0; b < AMB_N; b++) {
-      const x = L + b * slot + (slot - bw) / 2;
-      const lit = lv ? Math.round(lv[b] * segs) : 0, p = lv ? Math.round(pk[b] * segs) : 0;
+      const lit = Math.round(lv[b] * segs), p = Math.round(pk[b] * segs);
       for (let s = 0; s < segs; s++) {
-        const c = SEG[s > segs * .8 ? 2 : s > segs * .6 ? 1 : 0];
-        const on = s < lit || (s === p - 1 && p > lit);
-        const y = up ? mid - LBL / 2 - (s + 1) * (segH + gap) : mid + LBL / 2 + s * (segH + gap) + gap;
-        ctx.fillStyle = on ? c[0] : c[1];
-        ctx.shadowColor = on ? c[0] : 'transparent'; ctx.shadowBlur = on ? 6 : 0;
-        ctx.fillRect(x, y, bw, segH);
+        if (!(s < lit || (s === p - 1 && p > lit))) continue;
+        const [sx, sy] = segXY(b, s, up);
+        glowCell(ctx, sx, sy, bw, segH, 0, segC(s)[0], 6);
       }
-      ctx.shadowBlur = 0;
     }
   };
   draw(lvL, ambPkL, true);
   draw(lvR, ambPkR, false);
-  // middle strip: band names
-  ctx.font = '7px Courier New'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,170,70,.62)';
-  for (let b = 0; b < AMB_N; b += slot < 26 ? 2 : 1) ctx.fillText(fLabel(Math.sqrt(ambEdges[b] * ambEdges[b + 1])), L + (b + .5) * slot, mid + 3);
-  ctx.font = 'bold 9px Courier New'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,176,46,.8)';
-  ctx.fillText('L', 6, mid - LBL / 2 - 4); ctx.fillText('R', 6, mid + LBL / 2 + 11);
-  ctx.font = 'bold 8px Courier New'; ctx.fillStyle = 'rgba(255,176,46,.7)'; ctx.fillText('STEREO SPECTRUM', 8, 11);
-  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,140,40,.55)'; ctx.fillText('FL AMBER', W - 8, 11);
-  // glass
-  const gl = ctx.createLinearGradient(0, 0, W, H);
-  gl.addColorStop(0, 'rgba(255,255,255,.07)'); gl.addColorStop(.3, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,140,40,.03)');
-  ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = 'rgba(255,150,50,.2)'; ctx.strokeRect(.5, .5, W - 1, H - 1);
+  // still, in front: band names in the middle strip, the captions and the glass
+  blit(ctx, still('amb-front:' + canvas.id, W, H, '', x => {
+    x.font = '7px Courier New'; x.textAlign = 'center'; x.fillStyle = 'rgba(255,170,70,.62)';
+    for (let b = 0; b < AMB_N; b += slot < 26 ? 2 : 1) x.fillText(fLabel(Math.sqrt(ambEdges[b] * ambEdges[b + 1])), L + (b + .5) * slot, mid + 3);
+    x.font = 'bold 9px Courier New'; x.textAlign = 'left'; x.fillStyle = 'rgba(255,176,46,.8)';
+    x.fillText('L', 6, mid - LBL / 2 - 4); x.fillText('R', 6, mid + LBL / 2 + 11);
+    x.font = 'bold 8px Courier New'; x.fillStyle = 'rgba(255,176,46,.7)'; x.fillText('STEREO SPECTRUM', 8, 11);
+    x.textAlign = 'right'; x.fillStyle = 'rgba(255,140,40,.55)'; x.fillText('FL AMBER', W - 8, 11);
+    const gl = x.createLinearGradient(0, 0, W, H);
+    gl.addColorStop(0, 'rgba(255,255,255,.07)'); gl.addColorStop(.3, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,140,40,.03)');
+    x.fillStyle = gl; x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(255,150,50,.2)'; x.strokeRect(.5, .5, W - 1, H - 1);
+  }));
 }
 function drawSpectrumAmber(canvas, ctx) {
   if (!bufFDL || bufFDL.length !== aL.frequencyBinCount) { bufFDL = new Float32Array(aL.frequencyBinCount); bufFDR = new Float32Array(aR.frequencyBinCount); }
@@ -221,41 +234,55 @@ let rtaGain = 0;
 const rtaRaw = new Float32Array(31), rtaLv = new Float32Array(31).fill(-140), rtaPk = new Float32Array(31).fill(-140), rtaTm = new Float32Array(31);
 function drawRTA(canvas, ctx, levels) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
-  ctx.fillStyle = '#0b0c0e'; ctx.fillRect(0, 0, W, H);
   const L = 30, R = 30, TOP = 16, BOT = 16;
   const PW = W - L - R, PH = H - TOP - BOT;
   const y = db => TOP + (RTA_TOP - Math.max(RTA_TOP - RTA_RANGE, Math.min(RTA_TOP, db))) / RTA_RANGE * PH;
-  // scale on both sides, every 6 dB
-  ctx.font = '7px Arial, sans-serif'; ctx.textBaseline = 'middle';
-  for (let d = RTA_TOP; d >= RTA_TOP - RTA_RANGE; d -= 6) {
-    const yy = Math.round(y(d)) + .5;
-    ctx.strokeStyle = d === -18 ? 'rgba(120,200,255,.18)' : 'rgba(255,255,255,.06)'; ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(W - R, yy); ctx.stroke();
-    ctx.fillStyle = 'rgba(200,205,210,.55)'; ctx.textAlign = 'right'; ctx.fillText(String(d), L - 4, yy); ctx.textAlign = 'left'; ctx.fillText(String(d), W - R + 4, yy);
-  }
-  ctx.textBaseline = 'alphabetic';
   const slot = PW / 31, bw = Math.max(2, slot * .74);
   const segH = Math.max(1.5, Math.min(4, PH / 40)), gap = 1, segs = Math.floor(PH / (segH + gap));
-  for (let b = 0; b < 31; b++) {
-    const x = L + b * slot + (slot - bw) / 2;
-    const lit = levels ? Math.round((levels[b] - (RTA_TOP - RTA_RANGE)) / RTA_RANGE * segs) : 0;
-    for (let s = 0; s < segs; s++) {
-      const db = RTA_TOP - RTA_RANGE + (s + .5) / segs * RTA_RANGE;
-      const on = s < lit;
-      const col = db > RTA_TOP - 6 ? (on ? '#ff3b30' : 'rgba(255,59,48,.10)') : db > RTA_TOP - 15 ? (on ? '#ffd02a' : 'rgba(255,208,42,.08)') : (on ? '#3cff7a' : 'rgba(60,255,122,.07)');
-      ctx.fillStyle = col;
-      ctx.fillRect(x, TOP + PH - (s + 1) * (segH + gap) + gap, bw, segH);
+  const segDb = s => RTA_TOP - RTA_RANGE + (s + .5) / segs * RTA_RANGE;
+  const zone = s => segDb(s) > RTA_TOP - 6 ? 2 : segDb(s) > RTA_TOP - 15 ? 1 : 0;
+  const ON = ['#3cff7a', '#ffd02a', '#ff3b30'], OFF = ['rgba(60,255,122,.07)', 'rgba(255,208,42,.08)', 'rgba(255,59,48,.10)'];
+  const segY = s => TOP + PH - (s + 1) * (segH + gap) + gap;
+  // still: the scale on both sides every 6 dB, every segment unlit, the band names and the caption
+  blit(ctx, still('rta-back:' + canvas.id, W, H, '', x => {
+    x.fillStyle = '#0b0c0e'; x.fillRect(0, 0, W, H);
+    x.font = '7px Arial, sans-serif'; x.textBaseline = 'middle';
+    for (let d = RTA_TOP; d >= RTA_TOP - RTA_RANGE; d -= 6) {
+      const yy = Math.round(y(d)) + .5;
+      x.strokeStyle = d === -18 ? 'rgba(120,200,255,.18)' : 'rgba(255,255,255,.06)'; x.beginPath(); x.moveTo(L, yy); x.lineTo(W - R, yy); x.stroke();
+      x.fillStyle = 'rgba(200,205,210,.55)'; x.textAlign = 'right'; x.fillText(String(d), L - 4, yy); x.textAlign = 'left'; x.fillText(String(d), W - R + 4, yy);
     }
-    if (levels && rtaPk[b] > RTA_TOP - RTA_RANGE) { ctx.fillStyle = '#e8f4ff'; ctx.fillRect(x, Math.round(y(rtaPk[b])), bw, 1.5); }
-    const f = RTA_F[b];
-    if (levels && f < 40) { ctx.fillStyle = 'rgba(11,12,14,.55)'; ctx.fillRect(x, TOP, bw, PH); }   // too few FFT bins down there: shown dimmed
-    if ([31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000].includes(f) || slot > 24) {
-      ctx.font = '7px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = f < 40 ? 'rgba(200,205,210,.3)' : 'rgba(200,205,210,.6)';
-      ctx.fillText(fLabel(f), x + bw / 2, H - 5);
+    x.textBaseline = 'alphabetic';
+    for (let b = 0; b < 31; b++) {
+      const bx = L + b * slot + (slot - bw) / 2;
+      for (let s = 0; s < segs; s++) { x.fillStyle = OFF[zone(s)]; x.fillRect(bx, segY(s), bw, segH); }
+      const f = RTA_F[b];
+      if ([31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000].includes(f) || slot > 24) {
+        x.font = '7px Arial, sans-serif'; x.textAlign = 'center'; x.fillStyle = f < 40 ? 'rgba(200,205,210,.3)' : 'rgba(200,205,210,.6)';
+        x.fillText(fLabel(f), bx + bw / 2, H - 5);
+      }
+    }
+    x.font = 'bold 8px Arial, sans-serif'; x.textAlign = 'left'; x.fillStyle = 'rgba(220,225,230,.75)';
+    x.fillText('RTA · 1/3 OCTAVE', L, 11);
+  }));
+  // what moves: the lit segments (one shape per colour), the peak lines, and the bands below 40 Hz dimmed
+  // (too few FFT bins down there)
+  if (levels) {
+    const lit = [new Path2D(), new Path2D(), new Path2D()], n = [0, 0, 0];
+    for (let b = 0; b < 31; b++) {
+      const bx = L + b * slot + (slot - bw) / 2;
+      const top = Math.min(segs, Math.round((levels[b] - (RTA_TOP - RTA_RANGE)) / RTA_RANGE * segs));
+      for (let s = 0; s < top; s++) { const z = zone(s); lit[z].rect(bx, segY(s), bw, segH); n[z]++; }
+    }
+    for (let z = 0; z < 3; z++) if (n[z]) { ctx.fillStyle = ON[z]; ctx.fill(lit[z]); }
+    for (let b = 0; b < 31; b++) {
+      const bx = L + b * slot + (slot - bw) / 2;
+      if (rtaPk[b] > RTA_TOP - RTA_RANGE) { ctx.fillStyle = '#e8f4ff'; ctx.fillRect(bx, Math.round(y(rtaPk[b])), bw, 1.5); }
+      if (RTA_F[b] < 40) { ctx.fillStyle = 'rgba(11,12,14,.55)'; ctx.fillRect(bx, TOP, bw, PH); }
     }
   }
-  ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(220,225,230,.75)';
-  ctx.fillText('RTA · 1/3 OCTAVE', L, 11);
-  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(160,170,180,.55)'; ctx.fillText(levels && rtaGain ? 'dBFS +' + rtaGain + ' dB' : 'dBFS', W - R, 11);
+  ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = 'rgba(160,170,180,.55)';
+  ctx.fillText(levels && rtaGain ? 'dBFS +' + rtaGain + ' dB' : 'dBFS', W - R, 11);
 }
 function drawSpectrumRTA(canvas, ctx) {
   aMain.getFloatFrequencyData(bufFD);
@@ -275,39 +302,48 @@ const lcdEdges = logEdges(LCD_N, 40, 16000);
 const lcdOut = new Float32Array(LCD_N), lcdRaw = new Float32Array(LCD_N), lcdDb = new Float32Array(LCD_N).fill(-140), lcdPk = new Float32Array(LCD_N), lcdTm = new Float32Array(LCD_N);
 function drawLCD(canvas, ctx, levels) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
-  // bezel
-  ctx.fillStyle = '#15171a'; ctx.fillRect(0, 0, W, H);
   const M = 8, x0 = M, y0 = M, w = W - 2 * M, h = H - 2 * M;
-  const glass = ctx.createLinearGradient(0, y0, 0, y0 + h);
-  glass.addColorStop(0, '#a9b98f'); glass.addColorStop(1, '#8c9c76');
-  ctx.fillStyle = glass; ctx.fillRect(x0, y0, w, h);
   const TOPTXT = 14, BOT = 12;
   const cols = LCD_N * 3, cw = (w - 12) / cols, ch = (h - TOPTXT - BOT) / LCD_ROWS;
   const px = Math.max(1.2, Math.min(cw, ch) * .88);
-  const pixel = (cx, cy, on) => {
-    const xx = x0 + 6 + cx * cw + (cw - px) / 2, yy = y0 + TOPTXT + cy * ch + (ch - px) / 2;
-    if (on) { ctx.fillStyle = 'rgba(30,40,25,.22)'; ctx.fillRect(xx + 1.2, yy + 1.2, px, px); }   // the shadow on the backplate
-    ctx.fillStyle = on ? 'rgba(22,32,20,.88)' : 'rgba(22,32,20,.07)';
-    ctx.fillRect(xx, yy, px, px);
-  };
-  for (let b = 0; b < LCD_N; b++) {
-    const lit = levels ? Math.round(levels[b] * LCD_ROWS) : 0;
-    const pk = levels ? Math.round(lcdPk[b] * LCD_ROWS) : 0;
-    for (let r = 0; r < LCD_ROWS; r++) {
-      const on = r < lit || (r === pk - 1 && pk > lit);
-      pixel(b * 3, LCD_ROWS - 1 - r, on); pixel(b * 3 + 1, LCD_ROWS - 1 - r, on);
-      pixel(b * 3 + 2, LCD_ROWS - 1 - r, false);
+  const pxX = cx => x0 + 6 + cx * cw + (cw - px) / 2, pxY = cy => y0 + TOPTXT + cy * ch + (ch - px) / 2;
+  // still: the bezel, the glass, every pixel dark-off, the caption and the band names
+  blit(ctx, still('lcd-back:' + canvas.id, W, H, '', x => {
+    x.fillStyle = '#15171a'; x.fillRect(0, 0, W, H);
+    const glass = x.createLinearGradient(0, y0, 0, y0 + h);
+    glass.addColorStop(0, '#a9b98f'); glass.addColorStop(1, '#8c9c76');
+    x.fillStyle = glass; x.fillRect(x0, y0, w, h);
+    x.fillStyle = 'rgba(22,32,20,.07)';
+    for (let cx = 0; cx < cols; cx++) for (let cy = 0; cy < LCD_ROWS; cy++) x.fillRect(pxX(cx), pxY(cy), px, px);
+    x.font = 'bold 9px Courier New'; x.textAlign = 'left'; x.fillStyle = 'rgba(22,32,20,.8)';
+    x.fillText('SPECTRUM', x0 + 6, y0 + 11);
+    x.font = '7px Courier New'; x.textAlign = 'center';
+    for (let b = 0; b < LCD_N; b += 4) x.fillText(fLabel(Math.sqrt(lcdEdges[b] * lcdEdges[b + 1])), x0 + 6 + (b * 3 + 1) * cw, y0 + h - 3);
+  }));
+  // what moves: the dark pixels, each with its faint shadow on the backplate (all shadows, then all pixels)
+  if (levels) {
+    const on = new Path2D(), sh = new Path2D();
+    for (let b = 0; b < LCD_N; b++) {
+      const lit = Math.round(levels[b] * LCD_ROWS), pk = Math.round(lcdPk[b] * LCD_ROWS);
+      for (let r = 0; r < LCD_ROWS; r++) {
+        if (!(r < lit || (r === pk - 1 && pk > lit))) continue;
+        for (const cx of [b * 3, b * 3 + 1]) {
+          const xx = pxX(cx), yy = pxY(LCD_ROWS - 1 - r);
+          sh.rect(xx + 1.2, yy + 1.2, px, px); on.rect(xx, yy, px, px);
+        }
+      }
     }
+    ctx.fillStyle = 'rgba(30,40,25,.22)'; ctx.fill(sh);
+    ctx.fillStyle = 'rgba(22,32,20,.88)'; ctx.fill(on);
   }
-  ctx.font = 'bold 9px Courier New'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(22,32,20,.8)';
-  ctx.fillText('SPECTRUM', x0 + 6, y0 + 11);
-  ctx.textAlign = 'right'; ctx.fillText(levels ? 'ON' : '--', x0 + w - 6, y0 + 11);
-  ctx.font = '7px Courier New'; ctx.textAlign = 'center';
-  for (let b = 0; b < LCD_N; b += 4) ctx.fillText(fLabel(Math.sqrt(lcdEdges[b] * lcdEdges[b + 1])), x0 + 6 + (b * 3 + 1) * cw, y0 + h - 3);
-  // reflection on the plastic window
-  const rf = ctx.createLinearGradient(x0, y0, x0 + w, y0 + h);
-  rf.addColorStop(0, 'rgba(255,255,255,.18)'); rf.addColorStop(.35, 'rgba(255,255,255,0)');
-  ctx.fillStyle = rf; ctx.fillRect(x0, y0, w, h);
+  ctx.font = 'bold 9px Courier New'; ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(22,32,20,.8)';
+  ctx.fillText(levels ? 'ON' : '--', x0 + w - 6, y0 + 11);
+  // still, in front: the reflection on the plastic window
+  blit(ctx, still('lcd-front:' + canvas.id, W, H, '', x => {
+    const rf = x.createLinearGradient(x0, y0, x0 + w, y0 + h);
+    rf.addColorStop(0, 'rgba(255,255,255,.18)'); rf.addColorStop(.35, 'rgba(255,255,255,0)');
+    x.fillStyle = rf; x.fillRect(x0, y0, w, h);
+  }));
 }
 function drawSpectrumLCD(canvas, ctx) {
   aMain.getFloatFrequencyData(bufFD);

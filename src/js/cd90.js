@@ -71,84 +71,100 @@ function drawCD90(ctx, W, H, play) {
   const wide = cdPanelWide(extra);
   if (np && npKey && npKey !== cd.key) { cd.key = npKey; cd.track++; }
   if (!cd.track) cd.track = 1;
-  ctx.save();
-  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  // the black brushed plate
-  let pat = t90Patterns.get(ctx);
-  if (!pat) { pat = ctx.createPattern(D90.plate, 'repeat'); t90Patterns.set(ctx, pat); }
-  if (pat.setTransform) pat.setTransform(new DOMMatrix().scaleSelf(Math.max(0.35, s * 1.3)));
-  ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H);
-  const shade = ctx.createLinearGradient(0, 0, 0, H);
-  shade.addColorStop(0, 'rgba(255,255,255,.04)'); shade.addColorStop(1, 'rgba(0,0,0,.25)');
-  ctx.fillStyle = shade; ctx.fillRect(0, 0, W, H);
-  ctx.translate(0, oy);
-
-  // ── the steel panel
   const pX = P(44), pY = P(66), pW = P(842 + extra), pH = P(567);
-  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = P(16); ctx.shadowOffsetY = P(5);
-  ctx.drawImage(wide.canvas, pX, pY, pW, pH); ctx.restore();
   // panel pixels → canvas, through the stretch of the band the point is in
   const bandAt = y => (y < 330 ? 0 : y < 440 ? 1 : 2);
   const Q = (x, y) => [pX + P(cdMapX(wide.maps[bandAt(y)], x)), pY + P(y)];
-  // power LED: green while it plays, dim otherwise
-  { const [lx, ly] = Q(176, 509), r = P(11);
-    ctx.beginPath(); ctx.arc(lx, ly, r, 0, Math.PI * 2);
-    if (running) { ctx.fillStyle = '#3dff6a'; ctx.shadowColor = '#3dff6a'; ctx.shadowBlur = P(18); }
-    else ctx.fillStyle = '#1d3a22';
-    ctx.fill(); ctx.shadowBlur = 0; }
-  // the current track's key glows (1–8)
   const cur = ((cd.track - 1) % 8);
-  { const [x, y] = Q(CD_KX[cur] + 4, 351), [x2] = Q(CD_KX[cur] + 87, 351);
-    ctx.save(); rr(ctx, x, y + P(4), x2 - x, P(64), P(6));
-    ctx.fillStyle = play ? 'rgba(95,243,234,.16)' : 'rgba(95,243,234,.08)'; ctx.shadowColor = '#5ff3ea'; ctx.shadowBlur = play ? P(14) : 0; ctx.fill(); ctx.restore(); }
-  // keys on the panel that do something here
-  const key = (x, y, w, h, k, act) => { const [a, b] = Q(x, y), [a2] = Q(x + w, y); tapeHits.push({ x: a, y: b + oy, w: a2 - a, h: P(h), k, local: act }); };
-  key(529, 476, 135, 64, 'TIME', () => { cd.remain = !cd.remain; });
-  key(670, 476, 135, 64, 'REPEAT', () => { cd.repeat = !cd.repeat; toast(cd.repeat ? 'REPEAT · <span>solo el indicador: el que repite es el reproductor</span>' : 'REPEAT apagado', 2400); });
-  key(698, 134, 87, 129, '⏏', () => toast('El CD-90 solo reproduce 🙂', 2000));
-  // pressed keys sink for a moment
-  ['TIME', 'REPEAT', '⏏'].forEach(k => {
-    if (performance.now() - (deckPressed[k] || 0) < 180) { const h = tapeHits.find(t => t.k === k); ctx.fillStyle = 'rgba(0,0,0,.28)'; rr(ctx, h.x, h.y - oy, h.w, h.h, P(6)); ctx.fill(); }
-  });
-
-  // ── the display, from the panel to the right edge (its bezel stretched in the middle only)
+  // the display, from the panel to the right edge, and the transport keys under it
   const dX = P(916 + extra), dY = P(88), dH = P(368), dW = Math.max(P(500), W - P(40) - dX);
-  const Dm = CD90.display, b = 34, bs = P(b), Dw = Dm.width, Dh = Dm.height;
-  const nine = (sx, sy, sw, sh, x, y, w, h) => { if (w > 0 && h > 0) ctx.drawImage(Dm, sx, sy, sw, sh, x, y, w, h); };
-  nine(0, 0, b, b, dX, dY, bs, bs); nine(Dw - b, 0, b, b, dX + dW - bs, dY, bs, bs);
-  nine(0, Dh - b, b, b, dX, dY + dH - bs, bs, bs); nine(Dw - b, Dh - b, b, b, dX + dW - bs, dY + dH - bs, bs, bs);
-  nine(b, 0, Dw - 2 * b, b, dX + bs, dY, dW - 2 * bs, bs); nine(b, Dh - b, Dw - 2 * b, b, dX + bs, dY + dH - bs, dW - 2 * bs, bs);
-  nine(0, b, b, Dh - 2 * b, dX, dY + bs, bs, dH - 2 * bs); nine(Dw - b, b, b, Dh - 2 * b, dX + dW - bs, dY + bs, bs, dH - 2 * bs);
-  nine(b, b, Dw - 2 * b, Dh - 2 * b, dX + bs, dY + bs, dW - 2 * bs, dH - 2 * bs);
   const gX = dX + P(26), gY = dY + P(26), gW = dW - P(52), gH = dH - P(52);
-  ctx.save(); rr(ctx, gX, gY, gW, gH, P(8)); ctx.clip();
-  cdDisplay(ctx, gX, gY, gW, gH, play);
-  ctx.restore();
-
-  // ── the transport keys (the SO-90's), under the display
   const keys = ['◀◀', '▶', '■', '▶▶', '❚❚'];
   const kY = P(476), kH = P(140), kGap = P(16);
   const kW = Math.min((dW - P(8) - kGap * (keys.length - 1)) / keys.length, P(380));
   const kRow = kW * keys.length + kGap * (keys.length - 1), kX0 = dX + (dW - kRow) / 2;
-  rr(ctx, kX0 - P(8), kY - P(8), kRow + P(16), kH + P(16), P(8)); ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fill();
-  keys.forEach((k, i) => {
-    const x = kX0 + i * (kW + kGap);
-    const lit = (k === '▶' && play) || (k === '■' && !running);
-    const pressed = performance.now() - (deckPressed[k] || 0) < 180, y = kY + (pressed ? P(3) : 0);
-    ctx.drawImage(T90.key, x, y, kW, kH);
-    if (pressed) { ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x, y, kW, kH); }
-    const green = '#3ff0b4', amber = '#ffb35a';
-    ctx.font = `bold ${Math.max(8, Math.round(P(46)))}px Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    if (lit) { ctx.fillStyle = k === '▶' ? green : amber; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = P(16); } else ctx.fillStyle = '#a3a5a8';
-    ctx.fillText(k, x + kW / 2, y + kH * 0.47); ctx.shadowBlur = 0;
-    if (lit && k === '▶') { ctx.fillStyle = green; ctx.shadowColor = green; ctx.shadowBlur = P(12); rr(ctx, x + kW * 0.28, y + kH * 0.82, kW * 0.44, Math.max(2, P(7)), P(3)); ctx.fill(); ctx.shadowBlur = 0; }
-    tapeHits.push({ x, y: kY + oy, w: kW, h: kH, k });
-  });
+  // keys on the panel that do something here
+  const panelKeys = [[529, 476, 135, 64, 'TIME', () => { cd.remain = !cd.remain; }],
+    [670, 476, 135, 64, 'REPEAT', () => { cd.repeat = !cd.repeat; toast(cd.repeat ? 'REPEAT · <span>solo el indicador: el que repite es el reproductor</span>' : 'REPEAT apagado', 2400); }],
+    [698, 134, 87, 129, '⏏', () => toast('El CD-90 solo reproduce 🙂', 2000)]];
+  const now = performance.now(), pressed = ['TIME', 'REPEAT', '⏏'].concat(keys).filter(k => now - (deckPressed[k] || 0) < 180).join(',');
+  const dur = np && np.dur > 0 ? np.dur : 0;
+  const stillKey = [extra, play, running, cd.track, cd.remain && !!dur, cd.repeat, pressed].join('|');
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+
+  // ── still: the plate, the steel panel and its lights, the display's bezel and still marks, the keys
+  blit(ctx, still('cd90:' + (ctx.canvas.id || ''), W, H, stillKey, x => {
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    // the black brushed plate
+    const pat = x.createPattern(D90.plate, 'repeat');
+    if (pat.setTransform) pat.setTransform(new DOMMatrix().scaleSelf(Math.max(0.35, s * 1.3)));
+    x.fillStyle = pat; x.fillRect(0, 0, W, H);
+    const shade = x.createLinearGradient(0, 0, 0, H);
+    shade.addColorStop(0, 'rgba(255,255,255,.04)'); shade.addColorStop(1, 'rgba(0,0,0,.25)');
+    x.fillStyle = shade; x.fillRect(0, 0, W, H);
+    x.translate(0, oy);
+    // the steel panel
+    x.save(); x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = P(16); x.shadowOffsetY = P(5);
+    x.drawImage(wide.canvas, pX, pY, pW, pH); x.restore();
+    // power LED: green while it plays, dim otherwise
+    { const [lx, ly] = Q(176, 509), r = P(11);
+      x.beginPath(); x.arc(lx, ly, r, 0, Math.PI * 2);
+      if (running) { x.fillStyle = '#3dff6a'; x.shadowColor = '#3dff6a'; x.shadowBlur = P(18); }
+      else x.fillStyle = '#1d3a22';
+      x.fill(); x.shadowBlur = 0; }
+    // the current track's key glows (1–8)
+    { const [kx, ky] = Q(CD_KX[cur] + 4, 351), [kx2] = Q(CD_KX[cur] + 87, 351);
+      x.save(); rr(x, kx, ky + P(4), kx2 - kx, P(64), P(6));
+      x.fillStyle = play ? 'rgba(95,243,234,.16)' : 'rgba(95,243,234,.08)'; x.shadowColor = '#5ff3ea'; x.shadowBlur = play ? P(14) : 0; x.fill(); x.restore(); }
+    // pressed keys sink for a moment
+    panelKeys.forEach(([px, py, w, h, k]) => {
+      if (!pressed.split(',').includes(k)) return;
+      const [a, b] = Q(px, py), [a2] = Q(px + w, py);
+      x.fillStyle = 'rgba(0,0,0,.28)'; rr(x, a, b, a2 - a, P(h), P(6)); x.fill();
+    });
+    // the display's bezel (stretched in the middle only)
+    const Dm = CD90.display, b = 34, bs = P(b), Dw = Dm.width, Dh = Dm.height;
+    const nine = (sx, sy, sw, sh, px, py, w, h) => { if (w > 0 && h > 0) x.drawImage(Dm, sx, sy, sw, sh, px, py, w, h); };
+    nine(0, 0, b, b, dX, dY, bs, bs); nine(Dw - b, 0, b, b, dX + dW - bs, dY, bs, bs);
+    nine(0, Dh - b, b, b, dX, dY + dH - bs, bs, bs); nine(Dw - b, Dh - b, b, b, dX + dW - bs, dY + dH - bs, bs, bs);
+    nine(b, 0, Dw - 2 * b, b, dX + bs, dY, dW - 2 * bs, bs); nine(b, Dh - b, Dw - 2 * b, b, dX + bs, dY + dH - bs, dW - 2 * bs, bs);
+    nine(0, b, b, Dh - 2 * b, dX, dY + bs, bs, dH - 2 * bs); nine(Dw - b, b, b, Dh - 2 * b, dX + dW - bs, dY + bs, bs, dH - 2 * bs);
+    nine(b, b, Dw - 2 * b, Dh - 2 * b, dX + bs, dY + bs, dW - 2 * bs, dH - 2 * bs);
+    x.save(); rr(x, gX, gY, gW, gH, P(8)); x.clip();
+    cdDisplay(x, gX, gY, gW, gH, play, 'still');
+    x.restore();
+    // the transport keys (the SO-90's), under the display
+    rr(x, kX0 - P(8), kY - P(8), kRow + P(16), kH + P(16), P(8)); x.fillStyle = 'rgba(0,0,0,.75)'; x.fill();
+    keys.forEach((k, i) => {
+      const kx = kX0 + i * (kW + kGap);
+      const lit = (k === '▶' && play) || (k === '■' && !running);
+      const down = pressed.split(',').includes(k), ky = kY + (down ? P(3) : 0);
+      x.drawImage(T90.key, kx, ky, kW, kH);
+      if (down) { x.fillStyle = 'rgba(0,0,0,.3)'; x.fillRect(kx, ky, kW, kH); }
+      const green = '#3ff0b4', amber = '#ffb35a';
+      x.font = `bold ${Math.max(8, Math.round(P(46)))}px Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+      if (lit) { x.fillStyle = k === '▶' ? green : amber; x.shadowColor = x.fillStyle; x.shadowBlur = P(16); } else x.fillStyle = '#a3a5a8';
+      x.fillText(k, kx + kW / 2, ky + kH * 0.47); x.shadowBlur = 0;
+      if (lit && k === '▶') { x.fillStyle = green; x.shadowColor = green; x.shadowBlur = P(12); rr(x, kx + kW * 0.28, ky + kH * 0.82, kW * 0.44, Math.max(2, P(7)), P(3)); x.fill(); x.shadowBlur = 0; }
+    });
+  }));
+  ctx.translate(0, oy);
+  panelKeys.forEach(([px, py, w, h, k, act]) => { const [a, b] = Q(px, py), [a2] = Q(px + w, py); tapeHits.push({ x: a, y: b + oy, w: a2 - a, h: P(h), k, local: act }); });
+  keys.forEach((k, i) => tapeHits.push({ x: kX0 + i * (kW + kGap), y: kY + oy, w: kW, h: kH, k }));
+
+  // ── what's lit on the display
+  ctx.save(); rr(ctx, gX, gY, gW, gH, P(8)); ctx.clip();
+  cdDisplay(ctx, gX, gY, gW, gH, play, 'live');
+  ctx.restore();
   ctx.restore();
 }
 
-function cdDisplay(ctx, gX, gY, gW, gH, play) {
+// The CD-90's display. `part` 'still' draws what's always there (unlit digits and cells, TRACK, CD, the track
+// calendar and the REMAIN / REPEAT flags); 'live' what lights up and moves (and keeps the spectrum's bands).
+function cdDisplay(ctx, gX, gY, gW, gH, play, part) {
   const FL = '#5ff3ea', GHOST = 'rgba(95,243,234,.045)', DIM = 'rgba(95,243,234,.6)', UNLIT = 'rgba(95,243,234,.12)', glow = Math.max(4, gH * 0.03);
+  const still = part === 'still', CLEAR = 'rgba(0,0,0,0)';
   const face = (px, w = 600) => `${w} ${Math.max(6, Math.round(px * 1.08))}px "Deck90 Display", "Bahnschrift SemiBold Condensed", "Arial Narrow", Arial, sans-serif`;
   const pad = Math.min(gW * 0.04, gH * 0.12);
   // time: elapsed, or (TIME) what's left of the song
@@ -156,24 +172,27 @@ function cdDisplay(ctx, gX, gY, gW, gH, play) {
   let t = cd.remain && dur ? Math.max(0, dur - pos) : pos; t = Math.floor(t);
   const dg = String(Math.floor(t / 60) % 100).padStart(2, '0') + String(t % 60).padStart(2, '0');
   const dH = gH * 0.36, dW = dH * 0.52, dGap = dW * 0.24, dX0 = gX + pad + (cd.remain && dur ? dW * 0.55 : 0), dY0 = gY + gH * 0.09;
-  if (cd.remain && dur) { ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow; ctx.fillRect(gX + pad, dY0 + dH * 0.47, dW * 0.4, Math.max(2, dW * 0.16)); ctx.shadowBlur = 0; }
-  for (let k = 0; k < 4; k++) draw7(ctx, dX0 + k * (dW + dGap), dY0, dW, dH, dg[k], FL, GHOST);
-  { const q = Math.max(1.6, dW * 0.13), cx = dX0 + 2 * (dW + dGap) - dGap / 2;
+  if (!still && cd.remain && dur) { ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow; ctx.fillRect(gX + pad, dY0 + dH * 0.47, dW * 0.4, Math.max(2, dW * 0.16)); ctx.shadowBlur = 0; }
+  for (let k = 0; k < 4; k++) draw7(ctx, dX0 + k * (dW + dGap), dY0, dW, dH, still ? ' ' : dg[k], FL, still ? GHOST : CLEAR);
+  if (!still) {
+    const q = Math.max(1.6, dW * 0.13), cx = dX0 + 2 * (dW + dGap) - dGap / 2;
     ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;
-    [0.36, 0.66].forEach(fy => ctx.fillRect(cx - q / 2, dY0 + dH * fy - q / 2, q, q)); ctx.shadowBlur = 0; }
+    ctx.beginPath(); [0.36, 0.66].forEach(fy => ctx.rect(cx - q / 2, dY0 + dH * fy - q / 2, q, q)); ctx.fill(); ctx.shadowBlur = 0;
+  }
   let x = dX0 + 4 * (dW + dGap) + gH * 0.08;
   // TRACK and its number
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = face(gH * 0.075); ctx.fillStyle = DIM; ctx.fillText('TRACK', x, dY0 + dH * 0.12);
+  if (still) { ctx.font = face(gH * 0.075); ctx.fillStyle = DIM; ctx.fillText('TRACK', x, dY0 + dH * 0.12); }
   const tr = String(Math.min(99, cd.track)).padStart(2, '0'), tH = dH * 0.72, tW = tH * 0.52;
-  for (let k = 0; k < 2; k++) draw7(ctx, x + k * (tW + tW * 0.24), dY0 + dH - tH, tW, tH, tr[k], FL, GHOST);
+  for (let k = 0; k < 2; k++) draw7(ctx, x + k * (tW + tW * 0.24), dY0 + dH - tH, tW, tH, still ? ' ' : tr[k], FL, still ? GHOST : CLEAR);
   x += 2 * tW * 1.24 + gH * 0.14;
   // PLAY / PAUSE / STOP, CD, REMAIN, REPEAT
   ctx.font = face(gH * 0.1);
-  const state = play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■');
-  ctx.fillStyle = play ? FL : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = glow;
-  ctx.fillText(state, x, dY0 + dH * 0.25); ctx.shadowBlur = 0;
-  ctx.fillStyle = FL; ctx.fillText('CD', x, dY0 + dH * 0.72);
+  if (!still) {
+    const state = play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■');
+    ctx.fillStyle = play ? FL : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = glow;
+    ctx.fillText(state, x, dY0 + dH * 0.25); ctx.shadowBlur = 0;
+  } else { ctx.fillStyle = FL; ctx.fillText('CD', x, dY0 + dH * 0.72); }
   const leftEnd = x + Math.max(ctx.measureText('PAUSE ❚❚').width, ctx.measureText('CD').width) + gH * 0.12;
   // right: the track calendar 1–8 (or the last eight), the current one bright; REMAIN and REPEAT under it.
   // Whatever doesn't fit beside PLAY/CD is left out (the calendar first).
@@ -181,7 +200,7 @@ function cdDisplay(ctx, gX, gY, gW, gH, play) {
   ctx.font = face(gH * 0.065, 500);
   const flagsW = ctx.measureText('REMAIN    ⟲ REPEAT').width;
   const showCal = calL > leftEnd, showFlags = calR - flagsW > leftEnd;
-  if (showCal) {
+  if (still && showCal) {
     const first = Math.max(1, cd.track - 7);
     ctx.font = face(gH * 0.08); ctx.textAlign = 'right';
     for (let k = 7; k >= 0; k--) {
@@ -191,53 +210,59 @@ function cdDisplay(ctx, gX, gY, gW, gH, play) {
       ctx.fillText(String(n), cx, dY0 + dH * 0.22); ctx.shadowBlur = 0;
     }
   }
-  if (showFlags) {
+  if (still && showFlags) {
     ctx.font = face(gH * 0.065, 500); ctx.textAlign = 'right';
     ctx.fillStyle = cd.repeat ? FL : UNLIT; ctx.fillText('⟲ REPEAT', calR, dY0 + dH * 0.72);
     const rw = ctx.measureText('⟲ REPEAT').width + gH * 0.12;
     ctx.fillStyle = cd.remain ? FL : UNLIT; ctx.fillText('REMAIN', calR - rw, dY0 + dH * 0.72);
   }
   ctx.textAlign = 'left';
-  // the song in dot-matrix letters; scrolls with a pause when it doesn't fit
-  const song = np && np.title ? (np.artist ? np.artist + ' - ' : '') + np.title : 'DECK 90';
   const px = gH * 0.1, tX = gX + pad, tWd = gW - 2 * pad, tY = gY + gH * 0.6;
-  ctx.font = `${Math.max(9, Math.round(px * 1.3))}px "Deck90 Dots", "Lucida Console", "Consolas", monospace`;
-  const tw = ctx.measureText(song).width;
-  ctx.save(); ctx.beginPath(); ctx.rect(tX, tY - px, tWd, px * 2); ctx.clip();
-  ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;
-  if (tw <= tWd) ctx.fillText(song, tX, tY);
-  else {
-    const gap = px * 4, loop = tw + gap, speed = px * 2.4, pause = 2, cycle = loop / speed + pause;
-    const ph = (performance.now() / 1000) % cycle, off = ph < pause ? 0 : (ph - pause) * speed;
-    ctx.fillText(song, tX - off, tY); ctx.fillText(song, tX - off + loop, tY);
+  if (!still) {
+    // the song in dot-matrix letters; scrolls with a pause when it doesn't fit
+    const song = np && np.title ? (np.artist ? np.artist + ' - ' : '') + np.title : 'DECK 90';
+    ctx.font = `${Math.max(9, Math.round(px * 1.3))}px "Deck90 Dots", "Lucida Console", "Consolas", monospace`;
+    const tw = ctx.measureText(song).width;
+    ctx.save(); ctx.beginPath(); ctx.rect(tX, tY - px, tWd, px * 2); ctx.clip();
+    ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = glow;
+    if (tw <= tWd) ctx.fillText(song, tX, tY);
+    else {
+      const gap = px * 4, loop = tw + gap, speed = px * 2.4, pause = 2, cycle = loop / speed + pause;
+      const ph = (performance.now() / 1000) % cycle, off = ph < pause ? 0 : (ph - pause) * speed;
+      ctx.fillText(song, tX - off, tY); ctx.fillText(song, tX - off + loop, tY);
+    }
+    ctx.restore(); ctx.shadowBlur = 0;
   }
-  ctx.restore(); ctx.shadowBlur = 0;
-  // the song's progress: a row of segments
+  // the song's progress (a row of segments) and the spectrum (segmented bands with falling peaks): the unlit
+  // cells are still; the lit ones glow as one shape
+  const cell = (cx, cy, w, h) => { if (still) ctx.rect(cx, cy, w, h); else glowCell(ctx, cx, cy, w, h, 0, FL, glow * .6); };
+  if (still) ctx.beginPath();
   const segs = 24, pY = gY + gH * 0.7, pH = gH * 0.035, pW = tWd * 0.78, pitch = pW / segs;
-  const lit = dur ? Math.round(Math.min(1, pos / dur) * segs) : 0;
-  for (let k = 0; k < segs; k++) { ctx.fillStyle = k < lit ? FL : UNLIT; if (k < lit) { ctx.shadowColor = FL; ctx.shadowBlur = glow * .6; } ctx.fillRect(tX + k * pitch, pY, pitch * 0.8, pH); ctx.shadowBlur = 0; }
-  // the spectrum: 22 bands, segmented, with falling peaks
+  const litP = dur ? Math.round(Math.min(1, pos / dur) * segs) : 0;
+  for (let k = 0; k < segs; k++) if (still || k < litP) cell(tX + k * pitch, pY, pitch * 0.8, pH);
   // as many bands as the width takes, each about as wide as in the mock-up
   const sTop = gY + gH * 0.76, sBot = gY + gH * 0.96, rows = 6;
   const bandsN = Math.max(16, Math.min(40, Math.round(tWd / (gH * 0.14)))), bw = tWd / bandsN;
   if (cd.edgesN !== bandsN) { cd.edgesN = bandsN; cd.edges = logEdges(bandsN, 40, 16000); cd.db = new Float32Array(bandsN); cd.bands = new Float32Array(bandsN); cd.peaks = new Float32Array(bandsN); cd.peakT = new Float32Array(bandsN); }
-  const T = typeof dtMs !== 'undefined' ? dtMs / 1000 : 0.016;
-  if (running && aMain) {
-    aMain.getFloatFrequencyData(bufFD); bandsMax(bufFD, cd.edges, cd.db);
-    for (let k = 0; k < bandsN; k++) {
-      const v = Math.max(0, Math.min(1, (cd.db[k] + 85) / 60));
-      cd.bands[k] = v > cd.bands[k] ? v : Math.max(v, cd.bands[k] - 1.6 * T);
-      if (cd.bands[k] >= cd.peaks[k]) { cd.peaks[k] = cd.bands[k]; cd.peakT[k] = 0.6; }
-      else if ((cd.peakT[k] -= T) < 0) cd.peaks[k] = Math.max(0, cd.peaks[k] - 0.8 * T);
-    }
-  } else for (let k = 0; k < bandsN; k++) { cd.bands[k] = Math.max(0, cd.bands[k] - 1.6 * T); cd.peaks[k] = Math.max(0, cd.peaks[k] - 0.8 * T); }
+  if (!still) {
+    const T = typeof dtMs !== 'undefined' ? dtMs / 1000 : 0.016;
+    if (running && aMain) {
+      aMain.getFloatFrequencyData(bufFD); bandsMax(bufFD, cd.edges, cd.db);
+      for (let k = 0; k < bandsN; k++) {
+        const v = Math.max(0, Math.min(1, (cd.db[k] + 85) / 60));
+        cd.bands[k] = v > cd.bands[k] ? v : Math.max(v, cd.bands[k] - 1.6 * T);
+        if (cd.bands[k] >= cd.peaks[k]) { cd.peaks[k] = cd.bands[k]; cd.peakT[k] = 0.6; }
+        else if ((cd.peakT[k] -= T) < 0) cd.peaks[k] = Math.max(0, cd.peaks[k] - 0.8 * T);
+      }
+    } else for (let k = 0; k < bandsN; k++) { cd.bands[k] = Math.max(0, cd.bands[k] - 1.6 * T); cd.peaks[k] = Math.max(0, cd.peaks[k] - 0.8 * T); }
+  }
   const rowH = (sBot - sTop) / rows;
   for (let k = 0; k < bandsN; k++) {
     const on = Math.round(cd.bands[k] * rows), pk = Math.min(rows - 1, Math.round(cd.peaks[k] * rows) - 1);
     for (let r = 0; r < rows; r++) {
-      const yy = sBot - (r + 1) * rowH, lit2 = r < on || (r === pk && pk >= on);
-      ctx.fillStyle = lit2 ? FL : UNLIT; if (lit2) { ctx.shadowColor = FL; ctx.shadowBlur = glow * .6; }
-      ctx.fillRect(tX + k * bw + bw * 0.12, yy + rowH * 0.18, bw * 0.76, rowH * 0.64); ctx.shadowBlur = 0;
+      if (!still && !(r < on || (r === pk && pk >= on))) continue;
+      cell(tX + k * bw + bw * 0.12, sBot - (r + 1) * rowH + rowH * 0.18, bw * 0.76, rowH * 0.64);
     }
   }
+  if (still) { ctx.fillStyle = UNLIT; ctx.fill(); }
 }

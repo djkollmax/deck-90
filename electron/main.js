@@ -192,6 +192,9 @@ app.whenReady().then(() => {
     win.on('show', () => updater.maybeCheck(30 * 60 * 1000));         // and when it comes back from there
   });
 
+  // In the tray or minimized nothing is seen: the page keeps measuring (history, phone) but stops drawing
+  const tellShown = () => { if (!win.isDestroyed()) win.webContents.send('shown', win.isVisible() && !win.isMinimized()); };
+  ['show', 'hide', 'minimize', 'restore'].forEach(ev => win.on(ev, tellShown));
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …) and never grows tall:
   // the maximum size covers dragging; this covers anything that sets the size anyway (a screen coming back)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
@@ -326,6 +329,7 @@ app.whenReady().then(() => {
   win.webContents.on('did-finish-load', () => {
     if (lastInfo) win.webContents.send('media', lastInfo);
     if (miniOn) win.webContents.send('mini', true);            // a page loaded again (after a crash) is still the strip
+    tellShown();
   });
   win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
   // Links open in the real browser (https only); dropping a file or link on the window must not replace the rack.

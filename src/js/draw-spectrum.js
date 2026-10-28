@@ -193,140 +193,165 @@ const FL_PAL = {
            glowA: 'rgba(255,150,40,.070)', glowB: 'rgba(255,90,20,.025)', cap: 'rgba(255,180,70,.75)', capGlow: 'rgba(255,160,50,.5)',
            title: 'FL AMBER', sub: 'SPECTRUM ANALYZER', lamps: ['POWER', 'STEREO', 'AUTO', 'PEAK'], lampOn: 'rgba(255,176,46,.95)', lampHot: 'rgba(255,90,20,.95)' },
 };
+// The glow under many lit shapes at once: they are blurred on a quarter-size canvas and laid under them. A glow
+// is soft anyway, and blurring a sixteenth of the pixels is what makes a big FL display cheap to light.
+// shapes: [[Path2D in the display's coordinates, glow colour], …]; blur as a canvas shadowBlur; y0..y1 the
+// band the shapes sit in (only that band, and the glow around it, is laid back: a quiet song lights a strip)
+let softGlowCanvas = null;
+function softGlow(ctx, W, H, shapes, blur, y0 = 0, y1 = H) {
+  if (!shapes.length) return;
+  const pr = ctx.getTransform().a || 1, q = 4, gw = Math.max(1, Math.ceil(W * pr / q)), gh = Math.max(1, Math.ceil(H * pr / q));
+  const m = blur * 2 + q, sy = Math.max(0, Math.floor((y0 - m) * pr / q)), ey = Math.min(gh, Math.ceil((y1 + m) * pr / q));
+  if (ey <= sy) return;
+  const g = softGlowCanvas || (softGlowCanvas = document.createElement('canvas'));
+  if (g.width !== gw || g.height !== gh) { g.width = gw; g.height = gh; }
+  const x = g.getContext('2d'), off = gw + 64;               // the shapes far to the left, only their shadows in view
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, sy, gw, ey - sy);
+  x.setTransform(pr / q, 0, 0, pr / q, -off, 0);
+  x.shadowOffsetX = off; x.shadowOffsetY = 0; x.shadowBlur = blur / q;
+  for (const [path, color] of shapes) { x.shadowColor = color; x.fillStyle = '#000'; x.fill(path); }
+  ctx.drawImage(g, 0, sy, gw, ey - sy, 0, sy * q / pr, gw * q / pr, (ey - sy) * q / pr);
+}
 function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
   pal = pal || FL_PAL.GREEN;
   const W = canvas.offsetWidth  || canvas.width;
   const H = canvas.offsetHeight || canvas.height;
   const PA = 24;
-
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, pal.bg[0]);
-  bg.addColorStop(.45, pal.bg[1]);
-  bg.addColorStop(1, pal.bg[2]);
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.fillStyle = 'rgba(' + pal.tint + ',.035)';
-  ctx.fillRect(0, 0, W, 18);
-
   const DFLOOR = FL_FLOOR, DCEIL = 0;
   const flBars = FL_BARS;
   function dbToY(db){ return (H - PA) * (1 - (db - DFLOOR) / (DCEIL - DFLOOR)); }
+  // evenly spaced bands like a hardware graphic display; bars take 72 % of their slot, so they
+  // grow with the window instead of staying thin
+  const slot = (W - 8) / flBars.length;
+  const bw = Math.max(3, slot * 0.72);
+  const segH = Math.max(3, Math.min(9, (H - PA) / 34));
+  const segGap = segH > 4 ? 2 : 1;
+  const segCount = Math.max(1, Math.floor((H - PA - 8) / (segH + segGap)));
+  const segY = s => H - PA - 8 - s * (segH + segGap);
+  const segC = s => pal.seg[s > segCount * .72 ? 2 : s > segCount * .55 ? 1 : 0];
+  const key = pal.title + '|' + canvas.id;
 
-  // display frame
-  ctx.strokeStyle = pal.frame;
-  ctx.lineWidth = 1;
-  ctx.strokeRect(.5, .5, W-1, H-1);
+  // ── still: the glass, the scale, every segment unlit and the band labels
+  blit(ctx, still('fl-back:' + canvas.id, W, H, key, x => {
+    const bg = x.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, pal.bg[0]);
+    bg.addColorStop(.45, pal.bg[1]);
+    bg.addColorStop(1, pal.bg[2]);
+    x.fillStyle = bg;
+    x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(' + pal.tint + ',.035)';
+    x.fillRect(0, 0, W, 18);
+    // display frame
+    x.strokeStyle = pal.frame;
+    x.lineWidth = 1;
+    x.strokeRect(.5, .5, W-1, H-1);
+    // horizontal reference lines
+    [-60,-48,-36,-24,-12,0].forEach(db => {
+      const y = dbToY(db);
+      x.beginPath(); x.moveTo(0, y); x.lineTo(W, y);
+      x.strokeStyle = db === 0 ? pal.zero : 'rgba(' + pal.tint + ',.10)';
+      x.stroke();
+      x.font = '7px Courier New';
+      x.fillStyle = 'rgba(' + pal.tint + ',.38)';
+      x.textAlign = 'left';
+      x.fillText(db + 'dB', 4, y - 2);
+    });
+    for (let b = 0; b < flBars.length; b++) {
+      const bx = 4 + b * slot + (slot - bw) / 2;
+      for (let s = 0; s < segCount; s++) {
+        const sy = segY(s);
+        x.fillStyle = segC(s)[1]; x.fillRect(bx, sy, bw, segH);
+        x.fillStyle = 'rgba(255,255,255,.025)'; x.fillRect(bx, sy, bw, 1);
+      }
+      // labels (fewer when the panel is narrow)
+      const f = flBars[b];
+      let lbl = f >= 1000 ? (f/1000).toFixed(f>=10000?0:1).replace('.0','') + 'k' : String(Math.round(f));
+      const every = slot < 16 ? 4 : 2;
+      if (b % every === 0 || f === 1000 || f === 16000) {
+        x.font = '8px Courier New';
+        x.fillStyle = 'rgba(' + pal.tint + ',.58)';
+        x.textAlign = 'center';
+        x.fillText(lbl, bx + bw / 2, H - 6);
+      }
+    }
+  }));
 
-  // horizontal reference lines
-  [-60,-48,-36,-24,-12,0].forEach(db => {
-    const y = dbToY(db);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
-    ctx.strokeStyle = db === 0 ? pal.zero : 'rgba(' + pal.tint + ',.10)';
-    ctx.stroke();
-    ctx.font = '7px Courier New';
-    ctx.fillStyle = 'rgba(' + pal.tint + ',.38)';
-    ctx.textAlign = 'left';
-    ctx.fillText(db + 'dB', 4, y - 2);
-  });
-
-  // segmented fluorescent bars
+  // ── what moves: the lit segments, glowing, and the peak caps. Each colour is filled as one shape, so its
+  // glow is blurred once a frame instead of once per segment (hundreds of blurs a frame before).
+  const litP = [new Path2D(), new Path2D(), new Path2D()], capP = [new Path2D(), new Path2D(), new Path2D()], hiP = new Path2D();
+  const litN = [0, 0, 0], capN = [0, 0, 0];
+  let litTop = H;
   for (let b = 0; b < flBars.length; b++) {
-    const f = flBars[b];
-    const maxDb = levels ? levels[b] : DFLOOR;
-
-    // evenly spaced bands like a hardware graphic display; bars take 72 % of their slot, so they
-    // grow with the window instead of staying thin
-    const slot = (W - 8) / flBars.length;
-    const bw = Math.max(3, slot * 0.72);
     const x = 4 + b * slot + (slot - bw) / 2;
-    const xCenter = x + bw / 2;
-    const y = dbToY(maxDb);
-    const segH = Math.max(3, Math.min(9, (H - PA) / 34));
-    const segGap = segH > 4 ? 2 : 1;
-    const segCount = Math.max(1, Math.floor((H - PA - 8) / (segH + segGap)));
+    const y = dbToY(levels ? levels[b] : DFLOOR);
     const litCount = levels ? Math.max(0, Math.round(((H - PA) - y) / (H - PA) * segCount)) : 0;
-
-    for (let s=0; s<segCount; s++) {
-      const sy = H - PA - 8 - s * (segH + segGap);
-      const lit = s < litCount;
-      const c = pal.seg[s > segCount * .72 ? 2 : s > segCount * .55 ? 1 : 0];
-      ctx.fillStyle = lit ? c[0] : c[1];
-      ctx.shadowColor = lit ? c[2] : 'transparent';
-      ctx.shadowBlur = lit ? 8 : 0;
-      ctx.fillRect(x, sy, bw, segH);
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = lit ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.025)';
-      ctx.fillRect(x, sy, bw, 1);
+    for (let s = 0; s < litCount && s < segCount; s++) {
+      const sy = segY(s), ci = s > segCount * .72 ? 2 : s > segCount * .55 ? 1 : 0;
+      litP[ci].rect(x, sy, bw, segH); litN[ci]++;
+      hiP.rect(x, sy, bw, 1);
+      if (sy < litTop) litTop = sy;
     }
-
-    // peak cap
     if (peaks && peaks[b] > DFLOOR) {
-      const py = dbToY(peaks[b]);
-      ctx.fillStyle = (peaks[b] > -12 ? pal.seg[2] : peaks[b] > -28 ? pal.seg[1] : pal.seg[0])[0];
-      ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 9;
-      ctx.fillRect(x, Math.max(4, py), bw, 2);
-      ctx.shadowBlur = 0;
-    }
-
-    // labels (fewer when the panel is narrow)
-    let lbl = f >= 1000 ? (f/1000).toFixed(f>=10000?0:1).replace('.0','') + 'k' : String(Math.round(f));
-    const every = slot < 16 ? 4 : 2;
-    if (b % every === 0 || f === 1000 || f === 16000) {
-      ctx.font = '8px Courier New';
-      ctx.fillStyle = 'rgba(' + pal.tint + ',.58)';
-      ctx.textAlign = 'center';
-      ctx.fillText(lbl, xCenter, H - 6);
+      const ci = peaks[b] > -12 ? 2 : peaks[b] > -28 ? 1 : 0;
+      capP[ci].rect(x, Math.max(4, dbToY(peaks[b])), bw, 2); capN[ci]++;
     }
   }
+  softGlow(ctx, W, H, [0, 1, 2].filter(ci => litN[ci]).map(ci => [litP[ci], pal.seg[ci][2]]), 8, litTop, segY(0) + segH);
+  for (let ci = 0; ci < 3; ci++) if (litN[ci]) { ctx.fillStyle = pal.seg[ci][0]; ctx.fill(litP[ci]); }
+  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill(hiP);
+  for (let ci = 0; ci < 3; ci++) if (capN[ci]) { ctx.fillStyle = ctx.shadowColor = pal.seg[ci][0]; ctx.shadowBlur = 9; ctx.fill(capP[ci]); }
+  ctx.shadowBlur = 0;
 
-  // vintage glass scanlines and fluorescent bloom
+  // ── vintage glass scanlines and fluorescent bloom, both screened over the display. They are kept as one
+  // layer, the bloom screened onto the scanlines: screening that is the same as screening them one by one.
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  for (let yy = 2; yy < H - PA; yy += 4) {
-    ctx.fillStyle = 'rgba(' + pal.tint + ',.022)';
-    ctx.fillRect(0, yy, W, 1);
-  }
-  const glow = ctx.createRadialGradient(W*.50, H*.42, 0, W*.50, H*.42, Math.max(W,H)*.62);
-  glow.addColorStop(0, pal.glowA);
-  glow.addColorStop(.48, pal.glowB);
-  glow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0,0,W,H);
+  blit(ctx, still('fl-glass:' + canvas.id, W, H, key, x => {
+    for (let yy = 2; yy < H - PA; yy += 4) { x.fillStyle = 'rgba(' + pal.tint + ',.022)'; x.fillRect(0, yy, W, 1); }
+    x.globalCompositeOperation = 'screen';
+    const glow = x.createRadialGradient(W*.50, H*.42, 0, W*.50, H*.42, Math.max(W,H)*.62);
+    glow.addColorStop(0, pal.glowA);
+    glow.addColorStop(.48, pal.glowB);
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = glow;
+    x.fillRect(0,0,W,H);
+  }));
   ctx.restore();
 
-  // indicator lamps (only when there is room for them and the caption); the last one blinks in demo
-  if (W > 420) {
-    pal.lamps.forEach((txt, i) => {
-      const lx = W - 230 + i * 58;
-      const on = i < 3 || !blink || (Math.floor(performance.now() / 500) % 2 === 0);
-      ctx.beginPath();
-      ctx.arc(lx, 10, 3.2, 0, Math.PI*2);
-      ctx.fillStyle = !on ? 'rgba(60,60,60,.5)' : i === 3 ? pal.lampHot : pal.lampOn;
-      ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = on ? 8 : 0;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.font = '6px Courier New';
-      ctx.fillStyle = 'rgba(' + pal.tint + ',.50)';
-      ctx.textAlign = 'left';
-      ctx.fillText(txt, lx + 7, 12);
-    });
-    ctx.font = 'bold 9px Courier New';
-    ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(' + pal.tint + ',.74)';
-    ctx.fillText(pal.sub, W - 8, 25);
-  }
-
-  // caption
-  ctx.font = 'bold 9px Courier New';
-  ctx.textAlign = 'left';
-  ctx.fillStyle = pal.cap;
-  ctx.shadowColor = pal.capGlow;
-  ctx.shadowBlur = 8;
-  ctx.fillText(pal.title, 8, 13);
-  ctx.shadowBlur = 0;
+  // ── still, on top: the indicator lamps (only when there is room for them and the caption; the last one
+  // blinks in demo) and the caption; all of it in the top strip, so the layer is only that tall
+  const lampOn = !blink || (Math.floor(performance.now() / 500) % 2 === 0);
+  blit(ctx, still('fl-top:' + canvas.id, W, Math.min(H, 44), key + '|' + lampOn, x => {
+    if (W > 420) {
+      pal.lamps.forEach((txt, i) => {
+        const lx = W - 230 + i * 58;
+        const on = i < 3 || lampOn;
+        x.beginPath();
+        x.arc(lx, 10, 3.2, 0, Math.PI*2);
+        x.fillStyle = !on ? 'rgba(60,60,60,.5)' : i === 3 ? pal.lampHot : pal.lampOn;
+        x.shadowColor = x.fillStyle;
+        x.shadowBlur = on ? 8 : 0;
+        x.fill();
+        x.shadowBlur = 0;
+        x.font = '6px Courier New';
+        x.fillStyle = 'rgba(' + pal.tint + ',.50)';
+        x.textAlign = 'left';
+        x.fillText(txt, lx + 7, 12);
+      });
+      x.font = 'bold 9px Courier New';
+      x.textAlign = 'right';
+      x.fillStyle = 'rgba(' + pal.tint + ',.74)';
+      x.fillText(pal.sub, W - 8, 25);
+    }
+    // caption
+    x.font = 'bold 9px Courier New';
+    x.textAlign = 'left';
+    x.fillStyle = pal.cap;
+    x.shadowColor = pal.capGlow;
+    x.shadowBlur = 8;
+    x.fillText(pal.title, 8, 13);
+    x.shadowBlur = 0;
+  }));
 }
 
 function drawSpectrum(canvas, ctx) {
@@ -341,8 +366,6 @@ function drawSpectrum(canvas, ctx) {
   const fd = bufFD;
   aMain.getFloatFrequencyData(fd);
 
-  ctx.fillStyle = (SPECTRUM_MODES[spectrumModeIndex] === 'OLED') ? '#010206' : '#06060f'; ctx.fillRect(0, 0, W, H);
-
   const nyq  = actx.sampleRate / 2;
   const bins = aMain.frequencyBinCount;
   const FMIN = 20, FMAX = 20000;
@@ -356,28 +379,32 @@ function drawSpectrum(canvas, ctx) {
 
   const DFLOOR = -80, DCEIL = 0;
 
-  // dB grid
-  [-60,-48,-36,-24,-12,0].forEach(db => {
-    const y = dbToY(db, DFLOOR, DCEIL);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
-    ctx.strokeStyle = db === 0 ? '#1a1a30' : '#0e0e1c'; ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.font = '7px Courier New'; ctx.fillStyle = '#3a3a60';
-    ctx.textAlign = 'left'; ctx.fillText(db + 'dB', 3, y - 2);
-  });
-
-  // Freq grid
-  const fgrid = [[50,'50'],[100,'100'],[200,'200'],[500,'500'],
-                 [1000,'1k'],[2000,'2k'],[5000,'5k'],[10000,'10k'],[20000,'20k']];
-  fgrid.forEach(([f, lbl]) => {
-    const x = fToX(f);
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H - PA);
-    ctx.strokeStyle = '#0e0e1c'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.font = '8px Courier New'; ctx.fillStyle = '#4a4a78';
-    // keep the edge labels (20k) inside the panel instead of half cut off
-    const half = ctx.measureText(lbl).width / 2 + 2;
-    ctx.textAlign = 'center'; ctx.fillText(lbl, Math.min(W - half, Math.max(half, x)), H - 4);
-  });
+  // still: the panel, the dB and frequency grids and their figures
+  const oled = SPECTRUM_MODES[spectrumModeIndex] === 'OLED';
+  blit(ctx, still('sp-back:' + canvas.id, W, H, String(oled), x => {
+    x.fillStyle = oled ? '#010206' : '#06060f'; x.fillRect(0, 0, W, H);
+    // dB grid
+    [-60,-48,-36,-24,-12,0].forEach(db => {
+      const y = dbToY(db, DFLOOR, DCEIL);
+      x.beginPath(); x.moveTo(0, y); x.lineTo(W, y);
+      x.strokeStyle = db === 0 ? '#1a1a30' : '#0e0e1c'; x.lineWidth = 1;
+      x.stroke();
+      x.font = '7px Courier New'; x.fillStyle = '#3a3a60';
+      x.textAlign = 'left'; x.fillText(db + 'dB', 3, y - 2);
+    });
+    // Freq grid
+    const fgrid = [[50,'50'],[100,'100'],[200,'200'],[500,'500'],
+                   [1000,'1k'],[2000,'2k'],[5000,'5k'],[10000,'10k'],[20000,'20k']];
+    fgrid.forEach(([f, lbl]) => {
+      const fx = fToX(f);
+      x.beginPath(); x.moveTo(fx, 0); x.lineTo(fx, H - PA);
+      x.strokeStyle = '#0e0e1c'; x.lineWidth = 1; x.stroke();
+      x.font = '8px Courier New'; x.fillStyle = '#4a4a78';
+      // keep the edge labels (20k) inside the panel instead of half cut off
+      const half = x.measureText(lbl).width / 2 + 2;
+      x.textAlign = 'center'; x.fillText(lbl, Math.min(W - half, Math.max(half, fx)), H - 4);
+    });
+  }));
 
   // Bars
   const contourPts = [];

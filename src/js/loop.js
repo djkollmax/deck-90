@@ -53,12 +53,20 @@ function guard(where, fn) {
   }
 }
 
-let lastRafAt = 0;
+let lastRafAt = 0, lastDrawAt = 0;
+// The window in the tray or minimized (the program says so): keep measuring, don't draw.
+let winShown = true;
+if (window.winCtl && window.winCtl.onShown) window.winCtl.onShown(v => { winShown = !!v; });
 function loop(ts) {
   if (!running) return;
   rafId = requestAnimationFrame(loop);          // schedule first: a failing frame can't freeze the next one
   lastRafAt = performance.now();
-  try { frame(true); } catch (e) { report('frame', e); }
+  // at most about 60 drawn frames a second (a 120 or 144 Hz screen gets one every other refresh), and 30
+  // while nothing has been heard for a few seconds (a paused song: the needles rest, the tape stands still)
+  const quiet = performance.now() - lastAudible > 2500;
+  if (ts - lastDrawAt < 1000 / (quiet ? 30 : 60) - 4) return;
+  lastDrawAt = ts;
+  try { frame(winShown); } catch (e) { report('frame', e); }
 }
 // Minimized (or fully covered) windows get no animation frames on Windows, even with background
 // throttling off. Without this the measuring stopped too: integrated LUFS, LRA and BPM froze and the
@@ -105,13 +113,12 @@ function frame(draw) {
   guard('meters', () => updateMasterMeters(now));
   guard('bpm', () => tickBPM(now));
   const bpmEl  = el('bpmValue');
-  const confEl = el('bpmConf');
   if (bpmVal > 0) {
-    bpmEl.textContent = Math.round(bpmVal);
-    confEl.textContent = bpmConfidence >= 0.45 ? '♩ LOCKED' : '♩ TRACKING';
+    setText('bpmValue', String(Math.round(bpmVal)));
+    setText('bpmConf', bpmConfidence >= 0.45 ? '♩ LOCKED' : '♩ TRACKING');
   } else {
-    bpmEl.textContent = '--';
-    confEl.textContent = Math.max(vu.L.lvl, vu.R.lvl) > -40 ? 'LISTENING…' : 'NO SIGNAL';
+    setText('bpmValue', '--');
+    setText('bpmConf', Math.max(vu.L.lvl, vu.R.lvl) > -40 ? 'LISTENING…' : 'NO SIGNAL');
   }
 
   // Beat flash: the four LEDs step through the bar like a hardware counter.
@@ -132,10 +139,11 @@ function frame(draw) {
   if (vuCal === 'AUTO' && now - (loop.calT || 0) > 500) {
     loop.calT = now;
     const ab = document.querySelector('.seg[data-group="cal"] button[data-v="AUTO"]');
-    if (ab) ab.textContent = 'AUTO −' + Math.round(autoRef);
+    const t = 'AUTO −' + Math.round(autoRef);
+    if (ab && ab.textContent !== t) ab.textContent = t;
   }
   phoneTick(now);
   const maxVu = Math.max(vu.L.lvl, vu.R.lvl);
-  el('ledSig').className  = maxVu > -40 ? 'led green' : 'led';
-  el('ledClip').className = (vu.L.clip || vu.R.clip) ? 'led red' : 'led';
+  setCls('ledSig', maxVu > -40 ? 'led green' : 'led');
+  setCls('ledClip', (vu.L.clip || vu.R.clip) ? 'led red' : 'led');
 }

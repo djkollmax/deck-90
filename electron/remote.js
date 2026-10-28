@@ -19,6 +19,7 @@ const STATIC = {
   '/remote/remote.css': 'remote/remote.css',
   '/remote/shim.js': 'remote/shim.js',
   '/remote/remote.js': 'remote/remote.js',
+  '/js/stills.js': 'js/stills.js',
   '/js/deck.js': 'js/deck.js',
   '/js/draw-vu.js': 'js/draw-vu.js',
   '/js/tape.js': 'js/tape.js',

@@ -212,7 +212,7 @@ hcEl.wx.addEventListener('click', () => { if (!drawerOpen) setDrawer(true); if (
 
 // the second hand: the colon blinks, the minutes turn
 (function tick() {
-  if (hcShown() && hcH) drawClock(new Date());
+  if (hcShown() && hcH && (typeof winShown === 'undefined' || winShown)) drawClock(new Date());
   setTimeout(tick, 500 - (Date.now() % 500) + 5);
 })();
 new ResizeObserver(() => requestAnimationFrame(layoutClock)).observe(hcEl.box);

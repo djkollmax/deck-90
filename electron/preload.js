@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('winCtl', {
   quit:  () => ipcRenderer.send('win', 'quit'),
   ready: () => ipcRenderer.send('win', 'ready'),
   onMini: cb => ipcRenderer.on('mini', (e, on) => cb(!!on)),
+  onShown: cb => ipcRenderer.on('shown', (e, on) => cb(!!on)),   // false in the tray or minimized: no drawing then
 });
 contextBridge.exposeInMainWorld('phoneDisplay', {
   set:   on => ipcRenderer.send('remote-set', !!on),

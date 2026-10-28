@@ -185,6 +185,9 @@ function setSpectrumMode(idx){
 // channel powers summed, gated windows not applied: this is the live momentary/short-term reading).
 const mEls = {};
 function el(id){ return mEls[id] || (mEls[id] = document.getElementById(id)); }
+// the readouts change many times a second: touch the page only when what they show changes
+function setText(id, v) { const e = el(id); if (e.textContent !== v) e.textContent = v; }
+function setCls(id, v) { const e = el(id); if (e.className !== v) e.className = v; }
 
 // Mean square of only the samples that arrived since the previous frame (no double counting).
 function freshMeanSquare(buf, n){
@@ -227,7 +230,7 @@ function updateMasterMeters(now){
     }
     const I = integratedLufs();
     miniVals.i = I;
-    el('mLufsI').textContent = isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-';
+    setText('mLufsI', isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-');
     const pg = playerGainFor(np);
     spotGain = isFinite(pg) ? spotifyGain(I - pg, trackPeakMax() - pg) : NaN;
     const sp = el('mSpot');
@@ -280,8 +283,8 @@ function updateMasterMeters(now){
 
   miniVals.m = lufsM; miniVals.s = lufsS; miniVals.tp = tpAvailable ? tpHoldDb : peakHoldDb;
   const silent = !isFinite(lufsM) || lufsM < -70;
-  el('mLufs').textContent = silent ? '--.-' : lufsM.toFixed(1);
-  el('mLufsS').textContent = (!isFinite(lufsS) || lufsS < -70) ? 'S --.-' : 'S ' + lufsS.toFixed(1);
+  setText('mLufs', silent ? '--.-' : lufsM.toFixed(1));
+  setText('mLufsS', (!isFinite(lufsS) || lufsS < -70) ? 'S --.-' : 'S ' + lufsS.toFixed(1));
   // Peak card: true peak (dBTP) when the audio thread measures it, sample peak (dBFS) otherwise.
   let shownDb = peakHoldDb;
   if (tpAvailable) {
@@ -291,19 +294,17 @@ function updateMasterMeters(now){
       if (counting && tpDb > -89) { tpNow = tpDb; if (tpDb > tpMaxDb) tpMaxDb = tpDb; }
     }
     shownDb = tpHoldDb;
-    el('mPeakTitle').textContent = 'True peak';
-    el('mPeakUnit').textContent = 'dBTP · MAX ' + (isFinite(tpMaxDb) ? tpMaxDb.toFixed(1) : '--.-');
+    setText('mPeakTitle', 'True peak');
+    setText('mPeakUnit', 'dBTP · MAX ' + (isFinite(tpMaxDb) ? tpMaxDb.toFixed(1) : '--.-'));
   }
   notePeaks(now, pkNow, tpNow);
-  const mPeak = el('mPeak');
-  mPeak.textContent = shownDb < -89 ? '--.-' : shownDb.toFixed(1);
-  mPeak.className = 'metric-value ' + (shownDb > -1 ? 'hot' : shownDb > -6 ? 'warn' : '');
-  el('mCrest').textContent = silent || !isFinite(crest) ? '--.-' : crest.toFixed(1);
-  const mPhase = el('mPhase');
-  if(silent){ mPhase.textContent = '--'; mPhase.className = 'metric-value good'; }
+  setText('mPeak', shownDb < -89 ? '--.-' : shownDb.toFixed(1));
+  setCls('mPeak', 'metric-value ' + (shownDb > -1 ? 'hot' : shownDb > -6 ? 'warn' : ''));
+  setText('mCrest', silent || !isFinite(crest) ? '--.-' : crest.toFixed(1));
+  if(silent){ setText('mPhase', '--'); setCls('mPhase', 'metric-value good'); }
   else {
-    mPhase.textContent = (phaseSm >= 0 ? '+' : '') + phaseSm.toFixed(2);
-    mPhase.className = 'metric-value ' + (phaseSm < 0 ? 'hot' : phaseSm < .25 ? 'warn' : 'good');
+    setText('mPhase', (phaseSm >= 0 ? '+' : '') + phaseSm.toFixed(2));
+    setCls('mPhase', 'metric-value ' + (phaseSm < 0 ? 'hot' : phaseSm < .25 ? 'warn' : 'good'));
   }
 }
 

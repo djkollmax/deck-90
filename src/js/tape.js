@@ -32,60 +32,66 @@ function drawSpokedHub(ctx, cx, cy, r, ang) {
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.stroke();
 }
 
-function drawClearCassette(ctx, cX, cY, cw, ch, st, title, side) {
+// part: 'under' (the shell under the moving parts), 'live' (packs, tape, hubs) or 'front' (label, screws, glare);
+// the big tape keeps the two still ones as layers. Without a part, all three.
+function drawClearCassette(ctx, cX, cY, cw, ch, st, title, side, part) {
   const R = cw * 0.03;
-  // soft shadow under the tape
-  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = ch * 0.12; ctx.shadowOffsetY = ch * 0.05;
-  rr(ctx, cX, cY, cw, ch, R); ctx.fillStyle = 'rgba(20,24,30,.55)'; ctx.fill(); ctx.restore();
-
   const reelY = cY + ch * 0.47, reelL = cX + cw * 0.2875, reelR = cX + cw * 0.7125;
   const rHub = ch * 0.1, rMin = rHub * 1.05, rMax = cw * 0.2;
-  const f = Math.max(0, Math.min(1, st.pos / SIDE_SECONDS));
-  const rLeft = Math.sqrt(rMin * rMin + (1 - f) * (rMax * rMax - rMin * rMin));   // paying out
-  const rRight = Math.sqrt(rMin * rMin + f * (rMax * rMax - rMin * rMin));        // winding up
+  if (!part || part === 'under') {
+    // soft shadow under the tape
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = ch * 0.12; ctx.shadowOffsetY = ch * 0.05;
+    rr(ctx, cX, cY, cw, ch, R); ctx.fillStyle = 'rgba(20,24,30,.55)'; ctx.fill(); ctx.restore();
 
-  // clear shell body (smoked, slightly blue)
-  rr(ctx, cX, cY, cw, ch, R);
-  const body = ctx.createLinearGradient(cX, cY, cX + cw, cY + ch);
-  body.addColorStop(0, 'rgba(190,210,240,.10)'); body.addColorStop(.5, 'rgba(160,180,210,.05)'); body.addColorStop(1, 'rgba(190,210,240,.09)');
-  ctx.fillStyle = body; ctx.fill();
+    // clear shell body (smoked, slightly blue)
+    rr(ctx, cX, cY, cw, ch, R);
+    const body = ctx.createLinearGradient(cX, cY, cX + cw, cY + ch);
+    body.addColorStop(0, 'rgba(190,210,240,.10)'); body.addColorStop(.5, 'rgba(160,180,210,.05)'); body.addColorStop(1, 'rgba(190,210,240,.09)');
+    ctx.fillStyle = body; ctx.fill();
 
-  // internal ribs and wells seen through the plastic
-  ctx.strokeStyle = 'rgba(210,225,250,.16)'; ctx.lineWidth = 1;
-  [[reelL, rMax * 1.05], [reelR, rMax * 1.05]].forEach(([x, r]) => { ctx.beginPath(); ctx.arc(x, reelY, r, 0, Math.PI * 2); ctx.stroke(); });
-  ctx.beginPath(); ctx.moveTo(cX + cw * 0.04, cY + ch * 0.2); ctx.lineTo(cX + cw * 0.96, cY + ch * 0.2); ctx.stroke();
+    // internal ribs and wells seen through the plastic
+    ctx.strokeStyle = 'rgba(210,225,250,.16)'; ctx.lineWidth = 1;
+    [[reelL, rMax * 1.05], [reelR, rMax * 1.05]].forEach(([x, r]) => { ctx.beginPath(); ctx.arc(x, reelY, r, 0, Math.PI * 2); ctx.stroke(); });
+    ctx.beginPath(); ctx.moveTo(cX + cw * 0.04, cY + ch * 0.2); ctx.lineTo(cX + cw * 0.96, cY + ch * 0.2); ctx.stroke();
+  }
+  if (!part || part === 'live') {
+    const f = Math.max(0, Math.min(1, st.pos / SIDE_SECONDS));
+    const rLeft = Math.sqrt(rMin * rMin + (1 - f) * (rMax * rMax - rMin * rMin));   // paying out
+    const rRight = Math.sqrt(rMin * rMin + f * (rMax * rMax - rMin * rMin));        // winding up
 
-  // tape packs
-  [[reelL, rLeft, st.ang[0]], [reelR, rRight, st.ang[1]]].forEach(([x, r, a]) => {
-    const g = ctx.createRadialGradient(x, reelY, rMin, x, reelY, r);
-    g.addColorStop(0, '#4e3524'); g.addColorStop(.7, '#3a2719'); g.addColorStop(.985, '#2a1b11'); g.addColorStop(1, '#7a5a3e');
-    ctx.beginPath(); ctx.arc(x, reelY, r, 0, Math.PI * 2); ctx.arc(x, reelY, rMin, 0, Math.PI * 2, true); ctx.fillStyle = g; ctx.fill();
-    ctx.strokeStyle = 'rgba(255,215,170,.07)';
-    for (let q = rMin + 2; q < r; q += 2.4) { ctx.beginPath(); ctx.arc(x, reelY, q, 0, Math.PI * 2); ctx.stroke(); }
-    // rotating sheen on the pack (shows the motion)
-    ctx.save(); ctx.translate(x, reelY); ctx.rotate(a * 0.5);
-    const sh = ctx.createLinearGradient(-r, 0, r, 0);
-    sh.addColorStop(0, 'rgba(255,230,190,0)'); sh.addColorStop(.48, 'rgba(255,230,190,.10)'); sh.addColorStop(.52, 'rgba(255,230,190,.10)'); sh.addColorStop(1, 'rgba(255,230,190,0)');
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.arc(0, 0, rMin, 0, Math.PI * 2, true); ctx.fillStyle = sh; ctx.fill();
-    ctx.restore();
-  });
+    // tape packs
+    [[reelL, rLeft, st.ang[0]], [reelR, rRight, st.ang[1]]].forEach(([x, r, a]) => {
+      const g = ctx.createRadialGradient(x, reelY, rMin, x, reelY, r);
+      g.addColorStop(0, '#4e3524'); g.addColorStop(.7, '#3a2719'); g.addColorStop(.985, '#2a1b11'); g.addColorStop(1, '#7a5a3e');
+      ctx.beginPath(); ctx.arc(x, reelY, r, 0, Math.PI * 2); ctx.arc(x, reelY, rMin, 0, Math.PI * 2, true); ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,215,170,.07)';
+      for (let q = rMin + 2; q < r; q += 2.4) { ctx.beginPath(); ctx.arc(x, reelY, q, 0, Math.PI * 2); ctx.stroke(); }
+      // rotating sheen on the pack (shows the motion)
+      ctx.save(); ctx.translate(x, reelY); ctx.rotate(a * 0.5);
+      const sh = ctx.createLinearGradient(-r, 0, r, 0);
+      sh.addColorStop(0, 'rgba(255,230,190,0)'); sh.addColorStop(.48, 'rgba(255,230,190,.10)'); sh.addColorStop(.52, 'rgba(255,230,190,.10)'); sh.addColorStop(1, 'rgba(255,230,190,0)');
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.arc(0, 0, rMin, 0, Math.PI * 2, true); ctx.fillStyle = sh; ctx.fill();
+      ctx.restore();
+    });
 
-  // tape path: packs → guide rollers → past the pressure pad
-  const gy = cY + ch * 0.86, gL = cX + cw * 0.115, gR = cX + cw * 0.885, gr = cw * 0.018;
-  ctx.strokeStyle = '#3f2b1c'; ctx.lineWidth = Math.max(1.6, ch * 0.01);
-  ctx.beginPath(); ctx.moveTo(reelL - rLeft * 0.97, reelY + rLeft * 0.25); ctx.lineTo(gL - gr, gy); ctx.lineTo(gL, gy + gr);
-  ctx.lineTo(gR, gy + gr); ctx.lineTo(gR + gr, gy); ctx.lineTo(reelR + rRight * 0.97, reelY + rRight * 0.25); ctx.stroke();
-  [gL, gR].forEach(x => {
-    ctx.beginPath(); ctx.arc(x, gy, gr, 0, Math.PI * 2); ctx.fillStyle = '#f0eee8'; ctx.fill();
-    ctx.beginPath(); ctx.arc(x, gy, gr * 0.4, 0, Math.PI * 2); ctx.fillStyle = '#9a968c'; ctx.fill();
-  });
-  // pressure pad on its bronze spring
-  ctx.fillStyle = '#b08d57'; ctx.fillRect(cX + cw * 0.44, gy - ch * 0.028, cw * 0.12, ch * 0.012);
-  ctx.fillStyle = '#d8d4c8'; ctx.fillRect(cX + cw * 0.475, gy - ch * 0.016, cw * 0.05, ch * 0.02);
+    // tape path: packs → guide rollers → past the pressure pad
+    const gy = cY + ch * 0.86, gL = cX + cw * 0.115, gR = cX + cw * 0.885, gr = cw * 0.018;
+    ctx.strokeStyle = '#3f2b1c'; ctx.lineWidth = Math.max(1.6, ch * 0.01);
+    ctx.beginPath(); ctx.moveTo(reelL - rLeft * 0.97, reelY + rLeft * 0.25); ctx.lineTo(gL - gr, gy); ctx.lineTo(gL, gy + gr);
+    ctx.lineTo(gR, gy + gr); ctx.lineTo(gR + gr, gy); ctx.lineTo(reelR + rRight * 0.97, reelY + rRight * 0.25); ctx.stroke();
+    [gL, gR].forEach(x => {
+      ctx.beginPath(); ctx.arc(x, gy, gr, 0, Math.PI * 2); ctx.fillStyle = '#f0eee8'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, gy, gr * 0.4, 0, Math.PI * 2); ctx.fillStyle = '#9a968c'; ctx.fill();
+    });
+    // pressure pad on its bronze spring
+    ctx.fillStyle = '#b08d57'; ctx.fillRect(cX + cw * 0.44, gy - ch * 0.028, cw * 0.12, ch * 0.012);
+    ctx.fillStyle = '#d8d4c8'; ctx.fillRect(cX + cw * 0.475, gy - ch * 0.016, cw * 0.05, ch * 0.02);
 
-  // spoked hubs
-  drawSpokedHub(ctx, reelL, reelY, rHub, st.ang[0]);
-  drawSpokedHub(ctx, reelR, reelY, rHub, st.ang[1]);
+    // spoked hubs
+    drawSpokedHub(ctx, reelL, reelY, rHub, st.ang[0]);
+    drawSpokedHub(ctx, reelR, reelY, rHub, st.ang[1]);
+  }
+  if (part && part !== 'front') return;
 
   // label strip (translucent)
   const lX = cX + cw * 0.06, lY = cY + ch * 0.055, lW = cw * 0.88, lH = ch * 0.13;
@@ -171,12 +177,9 @@ function drawOpenReel(ctx, cx, cy, rFlange, rPack, rMinPack, ang, tint) {
   ctx.restore();
 }
 
-function drawReelCassette(ctx, cX, cY, cw, ch, st, title, side) {
+// part: 'under', 'live' or 'front', as the clear one
+function drawReelCassette(ctx, cX, cY, cw, ch, st, title, side, part) {
   const R = cw * 0.025;
-  // shadow
-  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.75)'; ctx.shadowBlur = ch * 0.12; ctx.shadowOffsetY = ch * 0.05;
-  rr(ctx, cX, cY, cw, ch, R); ctx.fillStyle = '#9ca1a8'; ctx.fill(); ctx.restore();
-
   const wins = [[0.0875, 0.11, 0.40, 0.64], [0.5125, 0.11, 0.40, 0.64]];   // windows centred on the reels, thin bridge between
   const reelY = cY + ch * 0.43, reelL = cX + cw * 0.2875, reelR = cX + cw * 0.7125;
   const rFl = Math.min(cw * 0.185, ch * 0.30);
@@ -185,42 +188,50 @@ function drawReelCassette(ctx, cX, cY, cw, ch, st, title, side) {
   const rLeft = Math.sqrt(rMinPack * rMinPack + (1 - f) * (rMaxPack * rMaxPack - rMinPack * rMinPack));   // paying out
   const rRight = Math.sqrt(rMinPack * rMinPack + f * (rMaxPack * rMaxPack - rMinPack * rMinPack));        // winding up
 
-  // aluminium body with the two windows cut out (even-odd)
-  ctx.save();
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(cX, cY, cw, ch, R); else ctx.rect(cX, cY, cw, ch);
-  wins.forEach(([x, y, w, h]) => { if (ctx.roundRect) ctx.roundRect(cX + cw * x, cY + ch * y, cw * w, ch * h, cw * 0.012); else ctx.rect(cX + cw * x, cY + ch * y, cw * w, ch * h); });
-  const al = ctx.createLinearGradient(cX, cY, cX, cY + ch);
-  al.addColorStop(0, '#eef0f2'); al.addColorStop(.18, '#c9cdd2'); al.addColorStop(.55, '#b3b8bf'); al.addColorStop(1, '#d6d9dd');
-  ctx.fillStyle = al; ctx.fill('evenodd');
-  // brushed grain
-  ctx.clip('evenodd');
-  for (let xx = cX; xx < cX + cw; xx += 2) { ctx.fillStyle = `rgba(255,255,255,${(Math.sin(xx * 7.31) * 0.5 + 0.5) * 0.06})`; ctx.fillRect(xx, cY, 1, ch); }
-  ctx.restore();
-
-  // what's behind the windows: the dark deck well
-  wins.forEach(([x, y, w, h]) => {
+  if (!part || part === 'under') {
+    // shadow
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.75)'; ctx.shadowBlur = ch * 0.12; ctx.shadowOffsetY = ch * 0.05;
+    rr(ctx, cX, cY, cw, ch, R); ctx.fillStyle = '#9ca1a8'; ctx.fill(); ctx.restore();
+    // aluminium body with the two windows cut out (even-odd)
     ctx.save();
-    rr(ctx, cX + cw * x, cY + ch * y, cw * w, ch * h, cw * 0.012); ctx.clip();
-    const bg = ctx.createLinearGradient(0, cY + ch * y, 0, cY + ch * (y + h));
-    bg.addColorStop(0, '#15171b'); bg.addColorStop(1, '#0a0b0d');
-    ctx.fillStyle = bg; ctx.fillRect(cX + cw * x, cY + ch * y, cw * w, ch * h);
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(cX, cY, cw, ch, R); else ctx.rect(cX, cY, cw, ch);
+    wins.forEach(([x, y, w, h]) => { if (ctx.roundRect) ctx.roundRect(cX + cw * x, cY + ch * y, cw * w, ch * h, cw * 0.012); else ctx.rect(cX + cw * x, cY + ch * y, cw * w, ch * h); });
+    const al = ctx.createLinearGradient(cX, cY, cX, cY + ch);
+    al.addColorStop(0, '#eef0f2'); al.addColorStop(.18, '#c9cdd2'); al.addColorStop(.55, '#b3b8bf'); al.addColorStop(1, '#d6d9dd');
+    ctx.fillStyle = al; ctx.fill('evenodd');
+    // brushed grain
+    ctx.clip('evenodd');
+    for (let xx = cX; xx < cX + cw; xx += 2) { ctx.fillStyle = `rgba(255,255,255,${(Math.sin(xx * 7.31) * 0.5 + 0.5) * 0.06})`; ctx.fillRect(xx, cY, 1, ch); }
     ctx.restore();
-  });
-  // tape running under the reels to the bottom guides
-  const gy = cY + ch * 0.83;
-  ctx.save();                                   // the tape is only visible through the windows
-  ctx.beginPath();
-  wins.forEach(([x, y, w, h]) => ctx.rect(cX + cw * x, cY + ch * y, cw * w, ch * h));
-  ctx.clip();
-  ctx.strokeStyle = '#3f2b1c'; ctx.lineWidth = Math.max(1.6, ch * 0.01);
-  ctx.beginPath(); ctx.moveTo(reelL - rLeft * 0.96, reelY + rLeft * 0.28); ctx.lineTo(cX + cw * 0.1, gy);
-  ctx.lineTo(cX + cw * 0.9, gy); ctx.lineTo(reelR + rRight * 0.96, reelY + rRight * 0.28); ctx.stroke();
-  ctx.restore();
 
-  // the reels (gold on side A, silver on side B)
-  drawOpenReel(ctx, reelL, reelY, rFl, rLeft, rMinPack, st.ang[0], side === 'A' ? 'gold' : 'silver');
-  drawOpenReel(ctx, reelR, reelY, rFl, rRight, rMinPack, st.ang[1], side === 'A' ? 'gold' : 'silver');
+    // what's behind the windows: the dark deck well
+    wins.forEach(([x, y, w, h]) => {
+      ctx.save();
+      rr(ctx, cX + cw * x, cY + ch * y, cw * w, ch * h, cw * 0.012); ctx.clip();
+      const bg = ctx.createLinearGradient(0, cY + ch * y, 0, cY + ch * (y + h));
+      bg.addColorStop(0, '#15171b'); bg.addColorStop(1, '#0a0b0d');
+      ctx.fillStyle = bg; ctx.fillRect(cX + cw * x, cY + ch * y, cw * w, ch * h);
+      ctx.restore();
+    });
+  }
+  if (!part || part === 'live') {
+    // tape running under the reels to the bottom guides
+    const gy = cY + ch * 0.83;
+    ctx.save();                                   // the tape is only visible through the windows
+    ctx.beginPath();
+    wins.forEach(([x, y, w, h]) => ctx.rect(cX + cw * x, cY + ch * y, cw * w, ch * h));
+    ctx.clip();
+    ctx.strokeStyle = '#3f2b1c'; ctx.lineWidth = Math.max(1.6, ch * 0.01);
+    ctx.beginPath(); ctx.moveTo(reelL - rLeft * 0.96, reelY + rLeft * 0.28); ctx.lineTo(cX + cw * 0.1, gy);
+    ctx.lineTo(cX + cw * 0.9, gy); ctx.lineTo(reelR + rRight * 0.96, reelY + rRight * 0.28); ctx.stroke();
+    ctx.restore();
+
+    // the reels (gold on side A, silver on side B)
+    drawOpenReel(ctx, reelL, reelY, rFl, rLeft, rMinPack, st.ang[0], side === 'A' ? 'gold' : 'silver');
+    drawOpenReel(ctx, reelR, reelY, rFl, rRight, rMinPack, st.ang[1], side === 'A' ? 'gold' : 'silver');
+  }
+  if (part && part !== 'front') return;
 
   // window bevels
   wins.forEach(([x, y, w, h]) => {
@@ -280,12 +291,6 @@ function drawBigTape(canvas, ctx, live) {
   if ((tapeStyle === 'REEL' || tapeStyle === 'CD') && typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && typeof tape90Ready === 'function' && tape90Ready() && W / H >= 1.4) {
     drawBigTape90(ctx, W, H, play); return;
   }
-  // stage: dark felt with a warm spotlight
-  ctx.fillStyle = '#07080b'; ctx.fillRect(0, 0, W, H);
-  const spot = ctx.createRadialGradient(W * 0.4, -H * 0.1, H * 0.05, W * 0.4, H * 0.45, Math.max(W, H) * 0.8);
-  spot.addColorStop(0, play ? 'rgba(255,214,150,.16)' : 'rgba(255,214,150,.08)'); spot.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = spot; ctx.fillRect(0, 0, W, H);
-
   const wide = W / H >= 1.9;
   let cw, ch, cX, cY, iX, iY, iW, iH;
   if (wide) {
@@ -298,13 +303,34 @@ function drawBigTape(canvas, ctx, live) {
     cX = (W - cw) / 2; cY = H * 0.05;
     iX = W * 0.07; iW = W * 0.86; iY = cY + ch + H * 0.04; iH = H - iY - H * 0.03;
   }
-  if (tapeStyle !== 'CLEAR') drawReelCassette(ctx, cX, cY, cw, ch, bigTape, decks[0].title, 'A');
-  else drawClearCassette(ctx, cX, cY, cw, ch, bigTape, decks[0].title, 'A');
-
-  // ── info: FL time, scrolling title, meters, keys
+  const cassette = tapeStyle !== 'CLEAR' ? drawReelCassette : drawClearCassette, title = decks[0].title;
   const FL = '#7ff6e6', FLdim = 'rgba(127,246,230,.07)';
   const dispH = iH * 0.55;
-  rr(ctx, iX, iY, iW, dispH, 6); ctx.fillStyle = '#040707'; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.stroke();
+  const keys = ['◀◀', '▶', '■', '▶▶', '❚❚'];
+  const kY = iY + dispH + iH * 0.1, kH = Math.min(iH * 0.28, 46), kG = iW * 0.02, kW = (iW - kG * (keys.length - 1)) / keys.length;
+  const now = performance.now(), pressedKey = keys.find(k => now - (deckPressed[k] || 0) < 180) || '';
+
+  // ── still: the stage, the cassette's shell under its moving parts, the display's window and the keys
+  blit(ctx, still('tape-back:' + canvas.id, W, H, [tapeStyle, play, running, pressedKey].join('|'), x => {
+    // stage: dark felt with a warm spotlight
+    x.fillStyle = '#07080b'; x.fillRect(0, 0, W, H);
+    const spot = x.createRadialGradient(W * 0.4, -H * 0.1, H * 0.05, W * 0.4, H * 0.45, Math.max(W, H) * 0.8);
+    spot.addColorStop(0, play ? 'rgba(255,214,150,.16)' : 'rgba(255,214,150,.08)'); spot.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = spot; x.fillRect(0, 0, W, H);
+    cassette(x, cX, cY, cw, ch, bigTape, title, 'A', 'under');
+    rr(x, iX, iY, iW, dispH, 6); x.fillStyle = '#040707'; x.fill(); x.strokeStyle = 'rgba(255,255,255,.08)'; x.stroke();
+    // keys (lit like the deck's)
+    keys.forEach((k, i) => {
+      const lit = (k === '▶' && play) || (k === '■' && !running), pressed = k === pressedKey;
+      metalKey(x, iX + i * (kW + kG), kY + (pressed ? 1 : 0), kW, kH, k, lit || pressed, k === '▶' ? '#7dffb4' : '#ffb35a');
+    });
+  }));
+  // what moves in the cassette, then its still front (label, screws, glass) over it
+  cassette(ctx, cX, cY, cw, ch, bigTape, title, 'A', 'live');
+  stamp(ctx, 'tape-front:' + canvas.id, tapeStyle + '|' + title, cX - 3, cY - 3, cw + 6, ch + 6, x => cassette(x, cX, cY, cw, ch, bigTape, title, 'A', 'front'));
+  keys.forEach((k, i) => tapeHits.push({ x: iX + i * (kW + kG), y: kY, w: kW, h: kH, k }));
+
+  // ── info: FL time, scrolling title, meters
   const secs = Math.floor(bigTape.counter);
   const dg = String(Math.floor(secs / 60) % 100).padStart(2, '0') + String(secs % 60).padStart(2, '0');
   const dH = Math.min(dispH * 0.42, iW * 0.13), dW = dH * 0.52, dGap = dW * 0.3;
@@ -329,24 +355,15 @@ function drawBigTape(canvas, ctx, live) {
   ctx.fillText(tStr, iX + iW * 0.05 - off, iY + dispH * 0.72);
   if (tw > room) ctx.fillText(tStr, iX + iW * 0.05 - off + tw + 60, iY + dispH * 0.72);
   ctx.restore();
-  // meters
+  // meters (each lit segment's glow a stamped sprite)
   const segs = 30, mX = iX + iW * 0.08, mW = iW * 0.86, sH = Math.max(3, dispH * 0.05), gap = 1.5, sW = (mW - gap * (segs - 1)) / segs;
   [vu.L.lvl, vu.R.lvl].forEach((lv, row) => {
     const yy = iY + dispH * 0.84 + row * (sH + 3);
     for (let k = 0; k < segs; k++) {
       const db = -40 + k * 48 / (segs - 1), on = lv >= db, col = db >= 3 ? '#ff6a4d' : FL;
-      ctx.fillStyle = on ? col : FLdim; if (on) { ctx.shadowColor = col; ctx.shadowBlur = 4; }
-      ctx.fillRect(mX + k * (sW + gap), yy, sW, sH); ctx.shadowBlur = 0;
+      if (on) glowCell(ctx, mX + k * (sW + gap), yy, sW, sH, 0, col, 4);
+      else { ctx.fillStyle = FLdim; ctx.fillRect(mX + k * (sW + gap), yy, sW, sH); }
     }
-  });
-  // keys (live, like the deck)
-  const keys = ['◀◀', '▶', '■', '▶▶', '❚❚'];
-  const kY = iY + dispH + iH * 0.1, kH = Math.min(iH * 0.28, 46), kG = iW * 0.02, kW = (iW - kG * (keys.length - 1)) / keys.length;
-  keys.forEach((k, i) => {
-    const lit = (k === '▶' && play) || (k === '■' && !running);
-    const pressed = performance.now() - (deckPressed[k] || 0) < 180;
-    metalKey(ctx, iX + i * (kW + kG), kY + (pressed ? 1 : 0), kW, kH, k, lit || pressed, k === '▶' ? '#7dffb4' : '#ffb35a');
-    tapeHits.push({ x: iX + i * (kW + kG), y: kY, w: kW, h: kH, k });
   });
 }
 function tapeKeyAt(ev){
@@ -358,11 +375,31 @@ function drawDeck(canvas, ctx, live) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
   if (W < 60 || H < 40) return;                 // panel collapsed mid-resize
   deckHits = [];
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H);
   const n = deckDouble ? 2 : 1;
   const play = live && running && npPlaying();
   const levels = [vu.L.lvl, vu.R.lvl];
+  // the DECK 90 faceplate with the metal frames (once its pieces are loaded), the drawn one with CLÁSICO
+  const premium = typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && deck90Ready();
+  // each deck fills its half: as tall as the panel allows, and as wide as its half (the display and keys
+  // stretch); only a very wide half leaves some room at the sides, and a narrow one keeps it 2.4 : 1
+  const box = i => {
+    const slotW = W / n, pad = Math.min(8, slotW * 0.015), padY = Math.min(6, H * 0.03), minA = premium ? 2.7 : 2.4;
+    let dw = slotW - pad * 2, dh = H - padY * 2;
+    if (dw / dh > 7.2) dw = dh * 7.2; else if (dw / dh < minA) dh = dw / minA;
+    return [i * slotW + (slotW - dw) / 2, (H - dh) / 2, dw, dh];
+  };
+  if (premium) {                                 // what doesn't move, for both decks: one still layer
+    const now = performance.now(), pressed = ['◀◀', '▶', '■', '▶▶', '❚❚', '●'].filter(k => now - (deckPressed[k] || 0) < 180).join(',');
+    const prev = typeof trackHistory !== 'undefined' && trackHistory[0] ? trackHistory[0].title + '|' + trackHistory[0].artist : '';
+    const key = [n, play, pressed, np && np.title ? np.title + '|' + np.artist : '', prev, decks[0].title, decks[1].title].join('|');
+    blit(ctx, still('deck90:' + canvas.id, W, H, key, x => {
+      x.fillStyle = '#07080c'; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < n; i++) { const [dx, dy, dw, dh] = box(i); drawDeck90(x, dx, dy, dw, dh, decks[i], levels, play, 'still'); }
+    }));
+  } else {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H);
+  }
   for (let i = 0; i < n; i++) {
     const d = decks[i];
     if (play) {
@@ -375,14 +412,8 @@ function drawDeck(canvas, ctx, live) {
       }
       turnReels(d, T);                                             // as a real cassette: see reelRadii
     }
-    // each deck fills its half: as tall as the panel allows, and as wide as its half (the display and keys
-    // stretch); only a very wide half leaves some room at the sides, and a narrow one keeps it 2.4 : 1
-    // the DECK 90 faceplate with the metal frames (once its pieces are loaded), the drawn one with CLÁSICO
-    const premium = typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && deck90Ready();
-    const slotW = W / n, pad = Math.min(8, slotW * 0.015), padY = Math.min(6, H * 0.03), minA = premium ? 2.7 : 2.4;
-    let dw = slotW - pad * 2, dh = H - padY * 2;
-    if (dw / dh > 7.2) dw = dh * 7.2; else if (dw / dh < minA) dh = dw / minA;
-    const dx = i * slotW + (slotW - dw) / 2, dy = (H - dh) / 2;
-    (premium ? drawDeck90 : drawCassetteDeck)(ctx, dx, dy, dw, dh, d, levels, play);
+    const [dx, dy, dw, dh] = box(i);
+    if (premium) drawDeck90(ctx, dx, dy, dw, dh, d, levels, play, 'live');
+    else drawCassetteDeck(ctx, dx, dy, dw, dh, d, levels, play);
   }
 }
