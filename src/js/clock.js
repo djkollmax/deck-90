@@ -163,13 +163,13 @@ function layoutClock() {
   if (nh !== hcH) { hcH = nh; hcLast = ''; }
   drawClock(new Date());
   if (clockCfg.mode === 'weather') drawWeather();
-  // the song keeps its room: when it's cramped, the weather's words go, then the date, then the weather,
-  // and in the narrowest window the clock too
-  const steps = ['hc-tight', 'hc-tighter', 'hc-tightest', 'hc-gone'];
+  // the song keeps its room: when it's cramped, the weather's words go, then the date, then the weather's
+  // icon (the temperature stays), then the temperature, and in the narrowest window the clock too
+  const steps = ['hc-tight', 'hc-tighter', 'hc-noicon', 'hc-tightest', 'hc-gone'];
   box.classList.remove(...steps);
   const room = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   const song = box.classList.contains('on') ? Math.max(el('npTitle').scrollWidth, el('npArtist').scrollWidth) + 32 : 0;
-  const need = Math.max(200, Math.min(song, room * 0.45));       // a very long title doesn't push everything out
+  const need = Math.max(180, Math.min(song, room * 0.42));       // a very long title doesn't push everything out
   for (const st of steps) {
     const sides = hcEl.clock.offsetWidth + hcEl.wx.offsetWidth;   // 0 when hidden
     if (room - sides >= need) break;

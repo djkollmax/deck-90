@@ -1090,7 +1090,9 @@ html.chassis-ti.hdr-clock .np-text{ grid-column:3; }
 #hcDay, #hwCond{ font-weight:600; font-size:15px; letter-spacing:1.8px; color:#8ef8ea; text-shadow:0 0 1px rgba(142,248,234,.8), 0 0 5px rgba(127,246,230,.4); }
 .hw.hint .hw-text{ opacity:.75; }
 /* a narrow display leaves room for the song: the weather's words go first, then the date, then the weather */
-.np.hc-tight .hw-text, .np.hc-tighter .hc-date, .np.hc-tightest .hw, .np.hc-gone .hc{ display:none !important; }
+.np.hc-tight .hw-text, .np.hc-tighter .hc-date, .np.hc-noicon #hwIcon, .np.hc-tightest .hw, .np.hc-gone .hc{ display:none !important; }
+html.chassis-ti.hdr-clock .np.hc-tighter .hc{ padding-right:12px; }
+html.chassis-ti.hdr-wx .np.hc-tighter .hw{ padding-left:12px; }
 @media (max-height:820px){
   html.chassis-ti.hdr-clock .np{ min-height:42px; padding:3px 14px; }
   .hc-date, .hw-text{ font-size:11px; } #hcDay, #hwCond{ font-size:13px; }

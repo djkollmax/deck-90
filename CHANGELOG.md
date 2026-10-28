@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.1.2
+
+### Changed
+- **The temperature stays in narrower windows.** When the header display is short of room, the weather's words go first, then the date, then the weather's icon, and only then the temperature; the song gives up a little more room and the dividers come closer. In a window about 1080 px wide the clock, the song, the icon and the temperature now all fit (before, the weather went away there); down to about 950 px the temperature stays without its icon.
+
 ## 7.1.1
 
 ### Changed
