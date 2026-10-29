@@ -42,8 +42,9 @@ function drawDeck90(ctx, X, Y, W, H, d, levels, running, part) {
   const kRow = kW * keys.length + kGap * (keys.length - 1), kX0 = dX + (dW - kRow) / 2;
   const kbD = P(200), ksD = P(158), kbX = rX + P(127.5), knY = Y + P(285);
   const [rl, rr2] = reelRadii(d.pos), R_FULL = 128;
-  // the hubs' true centres (where each looks the same turned 60°): the spindles the reels turn on
-  const HUBS = [[195.5, 172.45], [480.33, 172.38]];
+  // the spindles the reels turn on: the photo's hub positions across, centred in the window's height (7.4: the
+  // hubs are smaller, with a margin to the label above and the window's edge below; the photo's own were erased)
+  const HUBS = [[195.5, 176.5], [480.33, 176.5]], HUB_D = 88;
 
   if (still) {
     // ── the faceplate: brushed black aluminium, a lit top edge, a dark cut all round
@@ -151,11 +152,11 @@ function drawDeck90(ctx, X, Y, W, H, d, levels, running, part) {
   stamp(ctx, 'd90-packs:' + d.side, [Math.round(P(packs[0][2]) * 4), Math.round(P(packs[1][2]) * 4), d.side].join('|'), cX + P(band[0]), cY + P(band[1]), P(band[2]), P(band[3]), c => {
     const pack = (alpha) => packs.forEach(([px, py, r]) => {
       const x = cX + P(px), y = cY + P(py), R = P(r);
-      const g = c.createRadialGradient(x, y, P(50), x, y, R);
+      const g = c.createRadialGradient(x, y, P(HUB_D / 2), x, y, R);
       g.addColorStop(0, `rgba(30,20,14,${alpha})`); g.addColorStop(0.75, `rgba(52,36,25,${alpha})`); g.addColorStop(1, `rgba(78,56,38,${alpha})`);
       c.beginPath(); c.arc(x, y, R, 0, Math.PI * 2); c.fillStyle = g; c.fill();
       c.strokeStyle = `rgba(255,225,190,${alpha * 0.07})`; c.lineWidth = Math.max(0.5, P(1));   // the wound layers
-      for (let q = P(58); q < R - P(3); q += P(6)) { c.beginPath(); c.arc(x, y, q, 0, Math.PI * 2); c.stroke(); }
+      for (let q = P(HUB_D / 2 + 6); q < R - P(3); q += P(6)) { c.beginPath(); c.arc(x, y, q, 0, Math.PI * 2); c.stroke(); }
       c.beginPath(); c.arc(x, y, R - P(1), 0, Math.PI * 2);                                     // the pack's edge catches the light
       c.strokeStyle = `rgba(150,112,80,${alpha * 0.8})`; c.lineWidth = Math.max(0.8, P(2.5)); c.stroke();
     });
@@ -175,15 +176,15 @@ function drawDeck90(ctx, X, Y, W, H, d, levels, running, part) {
   });
   // the hubs turn exactly about their centres (the image is centred on them to a fraction of a pixel and
   // made six-fold symmetric); the light on them doesn't turn, as on a real reel
-  const hubD = P(108);
+  const hubD = P(HUB_D), hl = HUB_D * 50 / 108;
   [[HUBS[0][0], HUBS[0][1], d.ang[0]], [HUBS[1][0], HUBS[1][1], d.ang[1]]].forEach(([hx, hy, a], i) => {
     const x = cX + P(hx), y = cY + P(hy);
     ctx.save(); ctx.translate(x, y); ctx.rotate(a);
     ctx.drawImage(D90.hub, -hubD / 2, -hubD / 2, hubD, hubD); ctx.restore();
-    stamp(ctx, 'd90-hublight:' + d.side + i, '', x - P(51), y - P(51), P(102), P(102), c => {
-      const light = c.createLinearGradient(x - P(40), y - P(40), x + P(40), y + P(40));
+    stamp(ctx, 'd90-hublight:' + d.side + i, '', x - P(hl + 1), y - P(hl + 1), P(hl * 2 + 2), P(hl * 2 + 2), c => {
+      const light = c.createLinearGradient(x - P(hl * .8), y - P(hl * .8), x + P(hl * .8), y + P(hl * .8));
       light.addColorStop(0, 'rgba(255,248,235,.16)'); light.addColorStop(.45, 'rgba(255,255,255,0)'); light.addColorStop(1, 'rgba(0,0,0,.24)');
-      c.beginPath(); c.arc(x, y, P(50), 0, Math.PI * 2); c.fillStyle = light; c.fill();
+      c.beginPath(); c.arc(x, y, P(hl), 0, Math.PI * 2); c.fillStyle = light; c.fill();
     });
   });
   if (d.side !== 'A') {                                    // the tape is printed with side A: deck B shows B

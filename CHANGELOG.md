@@ -4,6 +4,11 @@
 
 ### Added
 - **DÚO, a seventh VU face** (⚙ → VU → DÚO, or `V`): both meters side by side on one wide backlit cream face, like a cassette deck's level meter. A straight scale from −60 to +3 dB (0 and +3 in red) whose marks all lean toward the needles' pivot under the window, dB under each scale, LEVEL L and LEVEL R, DECK 90 in the middle, in a black brushed frame with a brass bevel. The L panel takes the whole width (the R panel is put away); on the phone each meter shows on its own.
+- **LED CIAN and LED VERDE, VU faces eight and nine**: both channels as two rows of glowing square LEDs on black glass, −40 to +3 dB, turning amber from −5 and red above 0, the scale in the meter's colour underneath. Like DÚO they take the whole width (and show one meter each on the phone).
+- **Each favourite preset has a second look.** Pressing 1–5 (F1–F5) while its look is on screen turns to the other one, and back: 1 Estudio / Estudio LED, 2 Hi-Fi 90s / Hi-Fi Spectrum (DÚO with FL SPECTRUM), 3 Cinta 70s / Casetera (DÚO, FL 90s and the SO-90 REEL), 4 Vidriera / Vidriera cian (LED CIAN, FL SPECTRUM CIAN and the CD-90), 5 Mastering / Mastering LED (LED VERDE and the spectrogram). The button lights with either; its tooltip names both and the message says which one it is (1/2, 2/2). Your C1–C3 stay exactly as you saved them.
+
+### Changed
+- **The DECK 90 cassette's hubs are smaller and centred in the window**, with a margin to the label above and to the window's edge below (the photo's own hubs were taken out, so only the turning ones show).
 
 ## 7.3.0
 

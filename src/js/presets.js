@@ -1,6 +1,7 @@
 'use strict';
 // ═══════════════════════════════════════════════════════════
-//  PRESETS: five favourite looks (1–5, fixed) and three of your own (C1–C3)
+//  PRESETS: five favourite slots (1–5, fixed, two looks each: pressing a slot again turns to its other look)
+//  and three of your own (C1–C3, one look each, as you saved them)
 //  A preset keeps the VU face, the spectrum style and its sensitivity, the screen tone, the VU
 //  calibration, which modules show, and the deck and cassette styles. 1–5 (F1–F5) and C1–C3 (F6–F8)
 //  load; GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there.
@@ -16,7 +17,16 @@ const FACTORY_PRESETS = [
   { name: 'Vidriera',  snap: { vuSkin: 'BLUE',   spectrumSkin: 'SHOWROOM', flSensitivity: 2, mode: 0, cal: 'AUTO', deckDouble: false, tapeStyle: 'CLEAR', mods: presetMods(['vu', 'bpm', 'spectrum', 'tape']) } },
   { name: 'Mastering', snap: { vuSkin: 'MODERN', spectrumSkin: 'RTA',      flSensitivity: 1, mode: 3, cal: 18,     deckDouble: true,  tapeStyle: 'REEL',  mods: presetMods(['vu', 'gonio', 'meters', 'spectrum', 'osc']) } },
 ];
-const vuName = v => ({ MODERN: 'Studio', HIFI90: 'Hi-Fi 90s', REEL70: 'Cinta 70s', BLUE: 'Azul', COBALT: 'Azul intenso', CREAM: 'Crema', DUO: 'Dúo' }[v] || v);
+// each slot's second look (7.4): pressing 1–5 while its look is on screen turns to the other one
+const FACTORY_ALT = [
+  { name: 'Estudio LED',    snap: { vuSkin: 'BARCYAN',  spectrumSkin: 'MODERN',   flSensitivity: 1, mode: 0, cal: 'AUTO', deckDouble: true,  tapeStyle: 'REEL',  mods: presetMods(['vu', 'bpm', 'gonio', 'meters', 'spectrum', 'osc']) } },
+  { name: 'Hi-Fi Spectrum', snap: { vuSkin: 'DUO',      spectrumSkin: 'FLSPEC',   flSensitivity: 1, mode: 0, cal: 'AUTO', deckDouble: true,  tapeStyle: 'REEL',  mods: presetMods(['vu', 'bpm', 'meters', 'spectrum', 'deck']) } },
+  { name: 'Casetera',       snap: { vuSkin: 'DUO',      spectrumSkin: 'FL90',     flSensitivity: 1, mode: 0, cal: 'AUTO', deckDouble: false, tapeStyle: 'REEL',  mods: presetMods(['vu', 'spectrum', 'tape']) } },
+  { name: 'Vidriera cian',  snap: { vuSkin: 'BARCYAN',  spectrumSkin: 'FLSPEC2',  flSensitivity: 2, mode: 0, cal: 'AUTO', deckDouble: false, tapeStyle: 'CD',    mods: presetMods(['vu', 'bpm', 'spectrum', 'tape']) } },
+  { name: 'Mastering LED',  snap: { vuSkin: 'BARGREEN', spectrumSkin: 'SPECTRO',  flSensitivity: 1, mode: 3, cal: 18,     deckDouble: true,  tapeStyle: 'REEL',  mods: presetMods(['vu', 'gonio', 'meters', 'spectrum', 'osc']) } },
+];
+const factoryLooks = n => [FACTORY_PRESETS[n - 1], FACTORY_ALT[n - 1]].filter(Boolean);
+const vuName = v => ({ MODERN: 'Studio', HIFI90: 'Hi-Fi 90s', REEL70: 'Cinta 70s', BLUE: 'Azul', COBALT: 'Azul intenso', CREAM: 'Crema', DUO: 'Dúo', BARCYAN: 'LED cian', BARGREEN: 'LED verde' }[v] || v);
 const skinName = s => (SPECTRUM_SKINS.find(x => x[0] === s) || [s, s])[1];
 
 function presetSnapshot() {
@@ -40,7 +50,12 @@ let customs = loadCustoms();
 let presetSaveArmed = false;
 function storeCustoms() { try { localStorage.setItem(PRESETS_KEY, JSON.stringify(customs)); } catch (_) {} }
 // slot ids: '1'…'5' the favourites, 'c1'…'c3' yours
-const presetOf = id => /^c[1-3]$/.test(id) ? customs[Number(id[1]) - 1] : FACTORY_PRESETS[Number(id) - 1];
+// a favourite slot gives the look after the one on screen (the first if neither is)
+function factoryNext(n) {
+  const looks = factoryLooks(n), now = presetSnapshot(), on = looks.findIndex(l => sameSnap(l.snap, now));
+  return looks[on >= 0 ? (on + 1) % looks.length : 0];
+}
+const presetOf = id => /^c[1-3]$/.test(id) ? customs[Number(id[1]) - 1] : factoryNext(Number(id));
 const presetLabel = id => /^c/.test(id) ? 'C' + id[1] : String(id);
 
 function applyPreset(id) {
@@ -48,7 +63,7 @@ function applyPreset(id) {
   if (!p) { toast('C' + id[1] + ' está vacío · <span>GUARDAR</span> y tocá C' + id[1] + ' para guardar ahí lo que ves', 3000); return; }
   const s = p.snap;
   if (modsBeforeTape) modsBeforeTape = null;
-  if (['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM', 'DUO'].includes(s.vuSkin)) setVUSkin(s.vuSkin);
+  if (VU_SKINS.includes(s.vuSkin)) setVUSkin(s.vuSkin);
   if (SPECTRUM_SKINS.some(x => x[0] === s.spectrumSkin)) setSpectrumSkin(s.spectrumSkin);
   if ([0, 1, 2].includes(s.flSensitivity)) setFlSensitivity(s.flSensitivity);
   if (Number.isInteger(s.mode)) setSpectrumMode(s.mode);
@@ -62,18 +77,22 @@ function applyPreset(id) {
   applyModules(); savePrefs(); syncConsole();
   if (typeof showSkinMenu === 'function' && skinMenu.classList.contains('show')) showSkinMenu(false);
   if (!running) drawIdle();
-  toast('PRESET ' + presetLabel(id) + ' · <span>' + p.name + '</span>', 1600);
+  const looks = /^c/.test(id) ? null : factoryLooks(Number(id));
+  toast('PRESET ' + presetLabel(id) + ' · <span>' + p.name + '</span>' + (looks && looks.length > 1 ? ' · ' + (looks.indexOf(p) + 1) + '/' + looks.length + ' · otra vez → ' + looks[(looks.indexOf(p) + 1) % looks.length].name : ''), 2200);
 }
 function savePreset(id) {
   presetSaveArmed = false;
   if (!/^c[1-3]$/.test(id)) { syncConsole(); toast('Los presets 1–5 son fijos · guardá tus looks en <span>C1, C2 o C3</span>', 3000); return; }
   const snap = presetSnapshot();
-  const fav = FACTORY_PRESETS.findIndex(f => sameSnap(f.snap, snap));
-  customs[Number(id[1]) - 1] = { name: fav >= 0 ? FACTORY_PRESETS[fav].name : vuName(snap.vuSkin) + ' · ' + skinName(snap.spectrumSkin), snap };
+  const fav = FACTORY_PRESETS.concat(FACTORY_ALT).find(f => sameSnap(f.snap, snap));
+  customs[Number(id[1]) - 1] = { name: fav ? fav.name : vuName(snap.vuSkin) + ' · ' + skinName(snap.spectrumSkin), snap };
   storeCustoms(); syncConsole();
   toast('Guardado en ' + presetLabel(id) + ' · <span>' + customs[Number(id[1]) - 1].name + '</span>', 2200);
 }
-function presetMatches(id) { const p = presetOf(id); return !!p && sameSnap(presetSnapshot(), p.snap); }
+function presetMatches(id) {
+  if (/^c/.test(id)) { const p = presetOf(id); return !!p && sameSnap(presetSnapshot(), p.snap); }
+  const now = presetSnapshot(); return factoryLooks(Number(id)).some(l => sameSnap(l.snap, now));
+}
 // the console segment: 1–5 and C1–C3 load (Shift+click on C saves), GUARDAR arms a save
 function presetButton(v, shift) {
   if (v === 'save') {
@@ -87,8 +106,9 @@ function presetButton(v, shift) {
 function presetTitles() {
   document.querySelectorAll('.seg[data-group="preset"] button[data-v]').forEach(b => {
     const id = b.dataset.v; if (id === 'save') return;
-    const p = presetOf(id), custom = /^c/.test(id), f = custom ? 5 + Number(id[1]) : Number(id);
+    const custom = /^c/.test(id), p = custom ? presetOf(id) : null, f = custom ? 5 + Number(id[1]) : Number(id);
     b.classList.toggle('empty', custom && !p);
-    b.title = (custom ? 'Tu preset ' : 'Preset ') + presetLabel(id) + ': ' + (p ? p.name : 'vacío') + ' (F' + f + ')' + (custom ? ' · Shift+clic guarda acá lo que ves' : '');
+    b.title = custom ? 'Tu preset ' + presetLabel(id) + ': ' + (p ? p.name : 'vacío') + ' (F' + f + ') · Shift+clic guarda acá lo que ves'
+      : 'Preset ' + id + ': ' + factoryLooks(Number(id)).map(l => l.name).join(' / ') + ' (F' + f + ') · otra vez: el otro look';
   });
 }

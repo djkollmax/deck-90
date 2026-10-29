@@ -39,11 +39,13 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![A wide window: AZUL INTENSO VU meters, FL 90s and the wide CD-90](docs/screenshots/wide.jpg)
 
-**Seven VU faces:** STUDIO, HI-FI 90s, CINTA 70s, AZUL, AZUL INTENSO and CREMA, and DÚO, both meters side by side on one wide cream face scaled −60 to +3 dB, like a cassette deck's level meter.
+**Nine VU faces:** STUDIO, HI-FI 90s, CINTA 70s, AZUL, AZUL INTENSO and CREMA; DÚO, both meters side by side on one wide cream face scaled −60 to +3 dB, like a cassette deck's level meter; and LED CIAN and LED VERDE, two rows of glowing square LEDs on black glass.
 
 ![The six VU faces](docs/screenshots/vu-faces.jpg)
 
 ![DÚO: both meters on one wide face](docs/screenshots/vu-duo.jpg)
+
+![LED CIAN and LED VERDE](docs/screenshots/vu-led.jpg)
 
 **Twelve spectrum styles,** from a mini system's fluorescent display to a studio's third-octave analyzer; the newest, FL SPECTRUM and FL SPECTRUM CIAN, are the classic green turning yellow and orange at the top, or turquoise with each bar's tip paler, both with orange peaks and a PEAK HOLD lamp.
 
@@ -108,7 +110,7 @@ From then on it **updates itself**: when a new release is out it says so, and on
   - Shows the title, artist and cover from the system's media session: Spotless, Spotify, a browser tab (YouTube, SoundCloud…), Apple Music or any player that reports to Windows. The one that's playing wins (Spotless first if several play). Browser tab titles are cleaned up into the song and the artist.
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
-- **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
+- **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed, two looks each (press again for the other): Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
 - **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Type your city in the ⚙ drawer (RELOJ). The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off.
 - **The frame of a premium '90s deck.** MARCO in the ⚙ drawer: brushed TITANIO, NEGRO or CHAMPAGNE plates with every display behind glass in a polished bevel and its name engraved above it, or the CLÁSICO dark rack.
 - **Light on the machine.** What doesn't move in a display is painted once and copied each frame; minimized or in the tray nothing is drawn (measuring goes on); at most 60 frames a second; and with a song paused, once everything has settled, nothing is drawn until something moves again.
@@ -177,7 +179,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `P` | Mini mode (always on top) / back |
 | `T` | Spectrum style (twelve) |
 | `K` | FL sensitivity |
-| `V` | VU face (seven) |
+| `V` | VU face (nine) |
 | `C` | VU calibration |
 | `N` | Display mode (STD / ANALOG / CRT / OLED) |
 | `Z` | Cassette only |

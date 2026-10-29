@@ -487,8 +487,103 @@ function drawVUDuo(canvas, ctx, st) {
   ctx.restore();
 }
 
+// ═══ LED CIAN / LED VERDE (7.4): a stereo LED bar meter, both channels on one wide black strip: 27 rounded
+// segments a row from −40 to +3 dB (the colour of the style up to −5, then amber, then red past 0), dark
+// when off, DECK 90 on top, L and R in front and the scale underneath. One panel for both, like DÚO.
+// Each segment's level, from where the reference puts the figures (segments 0…26):
+const BAR_N = 27, BAR_K = [[0, -40], [4.47, -30], [9.65, -20], [14.8, -10], [18.9, -5], [22.9, 0], [25.8, 3], [26, 3.2]];
+const barDb = k => { for (let i = 1; i < BAR_K.length; i++) if (k <= BAR_K[i][0]) { const [k0, d0] = BAR_K[i - 1], [k1, d1] = BAR_K[i]; return d0 + (d1 - d0) * (k - k0) / (k1 - k0); } return 3.2; };
+const BAR_STYLE = {
+  BARCYAN:  { on: '#6ff5e4', glow: 'rgba(80,240,225,.55)', off: 'rgba(40,120,115,.16)', ink: '#79e9dc', hot: '#ff5a36' },
+  BARGREEN: { on: '#7cf58a', glow: 'rgba(90,240,110,.55)', off: 'rgba(50,130,60,.16)',  ink: '#8de89a', hot: '#ff8a26' },
+};
+function drawVUBar(canvas, ctx, st, skin) {
+  const W = canvas.offsetWidth || 0, H = canvas.offsetHeight || 0;
+  if (W < 60 || H < 30) return;                        // put away (the R panel while one strip shows both)
+  const S = BAR_STYLE[skin] || BAR_STYLE.BARCYAN;
+  const both = canvas.id === 'vuL' && typeof applyModules === 'function' && W / H > 2.2;
+  const rows = both ? [['L', vu.L], ['R', vu.R]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];
+  if (W / H < 1.3) return drawVUBarTall(canvas, ctx, S, skin, rows, W, H);
+  // the strip: the rows, the scale under them, all centred in the window and as large as it allows
+  const m = Math.max(5, Math.min(12, H * .05)), wx = m, wy = m, ww = W - 2 * m, wh = H - 2 * m;
+  const x0 = wx + ww * .055, x1 = wx + ww * .957, pitch = (x1 - x0) / BAR_N, segW = pitch * .84;
+  const segH = Math.min(segW * .78, wh / (rows.length * 1.25 + 2.3)), rowGap = segH * .32;
+  const blockH = segH * .75 + rows.length * segH + (rows.length - 1) * rowGap + segH * 1.35;
+  const top = wy + (wh - blockH) / 2 + segH * .75;     // first row's top (DECK 90 sits above it)
+  // the glass hugs the strip; the rest of the panel stays dark
+  const gy = Math.max(wy, top - segH * 1.25), gh = Math.min(wy + wh, top - segH * .75 + blockH + segH * .55) - gy;
+  const rowY = i => top + i * (segH + rowGap), scaleY = rowY(rows.length - 1) + segH;
+  const col = k => { const d = barDb(k); return d >= .25 ? ['#ff6a3c', 'rgba(255,90,50,.6)', 'rgba(120,40,20,.30)'] : d >= -5.05 ? ['#ffd45a', 'rgba(255,205,80,.55)', 'rgba(120,90,20,.28)'] : [S.on, S.glow, S.off]; };
+  const fs = Math.max(8, Math.round(Math.min(segH * .62, pitch * .5)));
+  blit(ctx, still('vu-bar:' + canvas.id, W, H, skin + '|' + both, x => {
+    x.fillStyle = '#060707'; x.fillRect(0, 0, W, H);
+    // the window: black glass with a thin lit edge
+    x.fillStyle = '#0a0c0d'; x.beginPath(); x.roundRect(wx, gy, ww, gh, Math.min(10, gh * .08)); x.fill();
+    x.strokeStyle = 'rgba(255,255,255,.16)'; x.lineWidth = 1.5; x.stroke();
+    x.strokeStyle = 'rgba(0,0,0,.8)'; x.lineWidth = 1; x.beginPath(); x.roundRect(wx + 3, gy + 3, ww - 6, gh - 6, Math.min(8, gh * .07)); x.stroke();
+    x.textBaseline = 'middle'; x.textAlign = 'left';
+    x.font = `600 ${Math.max(7, Math.round(fs * .78))}px "Helvetica Neue", Arial, sans-serif`; x.fillStyle = '#868c8f';
+    x.fillText('DECK 90', wx + ww * .028, top - segH * .45);
+    rows.forEach(([name], i) => {
+      x.font = `500 ${Math.round(segH * .95)}px "Helvetica Neue", Arial, sans-serif`; x.fillStyle = S.ink; x.textAlign = 'center';
+      x.fillText(name, wx + ww * .04 - pitch * .1, rowY(i) + segH / 2);
+      for (let k = 0; k < BAR_N; k++) { x.fillStyle = col(k)[2]; x.beginPath(); x.roundRect(x0 + k * pitch, rowY(i), segW, segH, segH * .14); x.fill(); }
+    });
+    // the scale: a short mark and its figure under the segment where each level sits
+    x.font = `500 ${fs}px "Helvetica Neue", Arial, sans-serif`; x.textAlign = 'center';
+    for (const [k, d] of BAR_K.slice(0, 7)) {
+      const cx = x0 + k * pitch + segW / 2, c = d > 0 ? S.hot : d >= -5 ? '#ffd45a' : S.ink;
+      x.strokeStyle = c; x.lineWidth = 1; x.beginPath(); x.moveTo(cx, scaleY + segH * .3); x.lineTo(cx, scaleY + segH * .55); x.stroke();
+      x.fillStyle = c; x.fillText(d > 0 ? '+' + d : d < 0 ? '−' + -d : '0', cx, scaleY + segH * 1.05);
+    }
+    x.fillStyle = '#7d8386'; x.fillText('dB', x0 + BAR_N * pitch + pitch * .2, scaleY + segH * 1.05);
+  }));
+  // what moves: the lit segments, each with its glow (a stamped sprite)
+  rows.forEach(([, s], i) => {
+    for (let k = 0; k < BAR_N; k++) if (s.lvl >= barDb(k)) { const c = col(k); glowCell(ctx, x0 + k * pitch, rowY(i), segW, segH, segH * .14, c[0], Math.max(4, segH * .45), c[1]); }
+  });
+}
+
+// a tall window (the phone, a narrow column): the LEDs stand up, 0 near the top, the scale beside them
+function drawVUBarTall(canvas, ctx, S, skin, rows, W, H) {
+  const m = Math.max(5, Math.min(12, W * .05)), wx = m, wy = m, ww = W - 2 * m, wh = H - 2 * m;
+  const y0 = wy + wh * .12, y1 = wy + wh * .9, pitch = (y1 - y0) / BAR_N, segH = pitch * .8;
+  const fs = Math.max(8, Math.round(Math.min(pitch * 1.25, ww * .075)));
+  const segW = Math.min(ww * .3 / rows.length, pitch * 6), colGap = segW * .25;
+  const cols = rows.length * segW + (rows.length - 1) * colGap, scaleW = fs * 3.2;
+  const cx0 = wx + (ww - cols - scaleW) / 2, colX = i => cx0 + i * (segW + colGap), sx = cx0 + cols + fs * .5;
+  const segY = k => y1 - (k + 1) * pitch + (pitch - segH) / 2;
+  const col = k => { const d = barDb(k); return d >= .25 ? ['#ff6a3c', 'rgba(255,90,50,.6)', 'rgba(120,40,20,.30)'] : d >= -5.05 ? ['#ffd45a', 'rgba(255,205,80,.55)', 'rgba(120,90,20,.28)'] : [S.on, S.glow, S.off]; };
+  const rad = Math.min(segH, segW) * .18;
+  blit(ctx, still('vu-bar:' + canvas.id, W, H, skin + '|tall|' + rows.length, x => {
+    x.fillStyle = '#060707'; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#0a0c0d'; x.beginPath(); x.roundRect(wx, wy, ww, wh, Math.min(10, ww * .05)); x.fill();
+    x.strokeStyle = 'rgba(255,255,255,.16)'; x.lineWidth = 1.5; x.stroke();
+    x.strokeStyle = 'rgba(0,0,0,.8)'; x.lineWidth = 1; x.beginPath(); x.roundRect(wx + 3, wy + 3, ww - 6, wh - 6, Math.min(8, ww * .04)); x.stroke();
+    x.textBaseline = 'middle'; x.textAlign = 'center';
+    x.font = `600 ${Math.max(7, Math.round(fs * .8))}px "Helvetica Neue", Arial, sans-serif`; x.fillStyle = '#868c8f';
+    x.fillText('DECK 90', wx + ww / 2, wy + wh * .06);
+    rows.forEach(([name], i) => {
+      for (let k = 0; k < BAR_N; k++) { x.fillStyle = col(k)[2]; x.beginPath(); x.roundRect(colX(i), segY(k), segW, segH, rad); x.fill(); }
+      x.font = `500 ${Math.round(fs * 1.25)}px "Helvetica Neue", Arial, sans-serif`; x.fillStyle = S.ink;
+      x.fillText(name, colX(i) + segW / 2, wy + wh * .955);
+    });
+    x.font = `500 ${fs}px "Helvetica Neue", Arial, sans-serif`; x.textAlign = 'left';
+    for (const [k, d] of BAR_K.slice(0, 7)) {
+      const cy = y1 - (k + .5) * pitch, c = d > 0 ? S.hot : d >= -5 ? '#ffd45a' : S.ink;
+      x.strokeStyle = c; x.lineWidth = 1; x.beginPath(); x.moveTo(sx - fs * .35, cy); x.lineTo(sx - fs * .05, cy); x.stroke();
+      x.fillStyle = c; x.fillText(d > 0 ? '+' + d : d < 0 ? '−' + -d : '0', sx + fs * .15, cy);
+    }
+    x.fillStyle = '#7d8386'; x.fillText('dB', sx + fs * .15, wy + wh * .955);
+  }));
+  rows.forEach(([, s], i) => {
+    for (let k = 0; k < BAR_N; k++) if (s.lvl >= barDb(k)) { const c = col(k); glowCell(ctx, colX(i), segY(k), segW, segH, rad, c[0], Math.max(4, Math.min(segH, segW) * .9), c[1]); }
+  });
+}
+
 function drawVU(canvas, ctx, st) {
   if (vuSkin === 'DUO') return drawVUDuo(canvas, ctx, st);
+  if (vuSkin === 'BARCYAN' || vuSkin === 'BARGREEN') return drawVUBar(canvas, ctx, st, vuSkin);
   if (vuSkin === 'REEL70') return drawVUClassic(canvas, ctx, st, VU_THEMES.REEL70);
   if (vuSkin === 'BLUE') return drawVUClassic(canvas, ctx, st, VU_THEMES.BLUE);
   if (vuSkin === 'CREAM') return drawVUClassic(canvas, ctx, st, VU_THEMES.CREAM);

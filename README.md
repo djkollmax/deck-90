@@ -57,7 +57,7 @@ El **SO‑90 REEL** es un casete de aluminio con bobinas abiertas doradas sobre 
 
 ![Ventana ancha: vúmetros azul intenso, FL 90s y el CD-90 ancho](docs/screenshots/wide.jpg)
 
-### Siete caras de vúmetro
+### Nueve caras de vúmetro
 
 Cada aguja tiene balística de resorte y amortiguación, como el instrumento real. CINTA 70s, AZUL, AZUL INTENSO y CREMA usan la escala clásica de −20 a +3 VU con la separación del instrumento; STUDIO y HI‑FI 90s suman una barra de LED. El 0 VU se calibra en AUTO, −18, −14 o −10 dBFS.
 
@@ -67,15 +67,19 @@ Y la séptima, **DÚO**: los dos vúmetros lado a lado en una sola cara crema an
 
 ![DÚO: los dos vúmetros en una sola cara ancha](docs/screenshots/vu-duo.jpg)
 
+Y dos de LED, **LED CIAN** y **LED VERDE**: los dos canales en dos filas de LEDs cuadrados que brillan sobre vidrio negro, de −40 a +3 dB, ámbar desde −5 y rojo arriba de 0.
+
+![LED CIAN y LED VERDE](docs/screenshots/vu-led.jpg)
+
 ### Doce estilos de analizador de espectro
 
 Del display fluorescente de un minicomponente al analizador de tercio de octava de un estudio. Los más nuevos, FL SPECTRUM y FL SPECTRUM CIAN: el clásico verde que se pone amarillo y naranja arriba, o turquesa con la punta de cada barra más clara, los dos con picos naranjas y su lámpara PEAK HOLD. La tecla `T` los recorre y el botón MÁS ▾ los lista. Los de estilo hardware (FL, LED, LCD, RTA) responden a la sensibilidad SENS (tecla `K`).
 
 ![Los doce estilos de espectro](docs/screenshots/spectrums.jpg)
 
-### Cinco looks listos y tres tuyos
+### Diez looks listos y tres tuyos
 
-Cada look guarda todo: cara del vúmetro, estilo de espectro y sensibilidad, tono de pantalla, calibración, módulos visibles y estilo de casetera. Los cinco de fábrica están en `F1`–`F5`; en C1–C3 (`F6`–`F8`) guardás los tuyos.
+Cada look guarda todo: cara del vúmetro, estilo de espectro y sensibilidad, tono de pantalla, calibración, módulos visibles y estilo de casetera. Los cinco de fábrica están en `F1`–`F5` y cada uno tiene dos looks: tocalo otra vez y pasa al otro (Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED). En C1–C3 (`F6`–`F8`) guardás los tuyos, y esos no cambian.
 
 ![Los cinco looks de fábrica: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera y Mastering](docs/screenshots/looks.jpg)
 
@@ -116,7 +120,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 ## Todas las funciones
 
 - **Audio del sistema sin configurar nada.** En Windows usa la captura de loopback WASAPI: sin cable virtual (VB‑Cable, Voicemeeter) y sin ventanas para elegir. En Linux usa la fuente *Monitor* de PulseAudio o PipeWire. También puede medir el micrófono.
-- **Vúmetros** con balística de resorte y amortiguación, siete caras (DÚO pone los dos en una sola cara ancha) y calibración del 0 VU en AUTO, −18, −14 o −10 dBFS.
+- **Vúmetros** con balística de resorte y amortiguación, nueve caras (DÚO, LED CIAN y LED VERDE ponen los dos canales en una sola cara ancha) y calibración del 0 VU en AUTO, −18, −14 o −10 dBFS.
 - **Loudness:**
   - LUFS momentáneo, de corto plazo e integrado (ITU‑R BS.1770 / EBU R128, con filtro K y compuerta).
   - El LUFS integrado y el rango de loudness (LRA, EBU Tech 3342) vuelven a cero con cada tema nuevo.
@@ -149,7 +153,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 | `P` | Modo mini (siempre arriba) / volver |
 | `T` | Estilo de espectro (doce) |
 | `K` | Sensibilidad del FL |
-| `V` | Cara del vúmetro (siete) |
+| `V` | Cara del vúmetro (nueve) |
 | `C` | Calibración del vúmetro |
 | `N` | Tono de pantalla (STD / ANALOG / CRT / OLED) |
 | `Z` | Solo la cinta |
