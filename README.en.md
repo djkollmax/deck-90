@@ -185,6 +185,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `Z` | Cassette only |
 | `A` | Settings drawer |
 | `L` | Track history |
+| `I` | About Deck 90 and what's new in each version |
 | `F1`–`F5` | Favourite looks 1–5 |
 | `F6`–`F8` | Your looks C1–C3 (`Shift` + `F6`–`F8` saves the current look there) |
 | `H` | Hide the console |
@@ -249,4 +250,4 @@ All product names in this project are generic. Deck 90 is not affiliated with an
 
 ## License
 
-[MIT](LICENSE) · [What's new in each version](CHANGELOG.md)
+[MIT](LICENSE) · [What's new in each version](CHANGELOG.md) · [en español](src/novedades.md)

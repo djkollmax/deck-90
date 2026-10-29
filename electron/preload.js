@@ -34,6 +34,12 @@ contextBridge.exposeInMainWorld('appUpdate', {
   get:     () => ipcRenderer.send('upd-get'),
   install: () => ipcRenderer.send('upd-install'),
   open:    () => ipcRenderer.send('upd-open'),
+  check:   () => ipcRenderer.send('upd-check'),
+});
+// the tray's "Acerca de Deck 90" opens the about window
+contextBridge.exposeInMainWorld('appAbout', {
+  onOpen: cb => ipcRenderer.on('about', () => cb()),
+  info:   () => ipcRenderer.invoke('about-info'),            // { version, notes }
 });
 // the weather for the header display: find a place by name, and its weather now
 contextBridge.exposeInMainWorld('weather', {

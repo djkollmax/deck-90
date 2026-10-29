@@ -52,7 +52,7 @@ function cycleSkin(){
   const name = SPECTRUM_SKINS.find(s => s[0] === spectrumSkin)[1];
   toast('SPECTRUM · <span>' + name + '</span>', 1400);
 }
-// "MÁS ▾": the other six styles in a small menu under the button
+// "MÁS ▾": the other styles in a small menu under the button
 const skinMenu = document.getElementById('skinMenu');
 function showSkinMenu(on) {
   skinMenu.classList.toggle('show', on);
@@ -105,6 +105,7 @@ document.getElementById('console').addEventListener('click', e => {
     if (v === 'tapeonly') toggleTapeOnly();
     if (v === 'mini') toggleMini();
     if (v === 'history') showHistory(!histOpen());
+    if (v === 'about') showAbout(!aboutOpen());
   }
   savePrefs(); syncConsole();
   if (!running) drawIdle();
@@ -143,6 +144,11 @@ document.addEventListener('keydown', e => {
   if (e.target && e.target.closest && e.target.closest('input, textarea')) return;   // typing (the city) isn't a shortcut
   const k = e.key.toLowerCase();
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
+  if (aboutOpen()) {
+    if (k === 'escape' || k === 'i') { e.preventDefault(); showAbout(false); }
+    if (/^f[1-8]$/.test(k)) e.preventDefault();
+    return;
+  }
   if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {
     if (k === 'escape' || (k === 'l' && histOpen())) { e.preventDefault(); showHistory(false); showPhoneModal(false); if (presetSaveArmed) { presetSaveArmed = false; syncConsole(); } }
     if (/^f[1-8]$/.test(k)) e.preventDefault();
@@ -172,6 +178,7 @@ document.addEventListener('keydown', e => {
     n: () => { setSpectrumMode(spectrumModeIndex + 1); savePrefs(); syncConsole(); },
     a: () => setDrawer(!drawerOpen),
     l: () => { if (!miniMode) showHistory(true); },
+    i: () => { if (!miniMode) showAbout(true); },
     h: () => setControlsHidden(!controlsHidden),
     1: () => toggleModule('vu'), 2: () => toggleModule('bpm'), 3: () => toggleModule('meters'),
     4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), z: () => toggleTapeOnly(), p: () => { if (!e.repeat) toggleMini(); },
@@ -179,6 +186,12 @@ document.addEventListener('keydown', e => {
   }[k];
   if (act) { e.preventDefault(); act(); }
 });
+
+// A window dragged to a screen with another scale (100 % → 150 %) may not resize: size everything again
+// for the new density, or the still layers (painted at the new one) wouldn't match the canvases.
+(function watchDensity() {
+  try { matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)').addEventListener('change', () => { sizeCanvases(); if (!running) drawIdle(); watchDensity(); }, { once: true }); } catch (_) {}
+})();
 
 // ── INIT ────────────────────────────────────────────────────
 const prefs = loadPrefs();

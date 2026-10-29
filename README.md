@@ -159,6 +159,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 | `Z` | Solo la cinta |
 | `A` | Cajón de ajustes |
 | `L` | Historial de temas |
+| `I` | Acerca de Deck 90 y novedades de cada versión |
 | `F1`–`F5` | Looks de fábrica |
 | `F6`–`F8` | Tus looks C1–C3 (`Shift` + `F6`–`F8` guarda lo que ves) |
 | `H` | Esconder la consola |
@@ -233,4 +234,4 @@ Los nombres de productos del proyecto son genéricos. Deck 90 no está afiliado 
 
 ## Licencia
 
-[MIT](LICENSE) · [Novedades de cada versión](CHANGELOG.md)
+[MIT](LICENSE) · [Novedades de cada versión](src/novedades.md) · [Changelog (English)](CHANGELOG.md)

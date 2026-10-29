@@ -89,7 +89,7 @@
         <button data-v="RETRO">RETRO 97</button>
         <button data-v="COLUMNS">COLUMNS</button>
         <button data-v="FL90">FL 90s</button>
-        <button data-v="more" class="more" title="Más estilos: LED 80s, FL showroom, FL ámbar, RTA, LCD, espectrograma">MÁS ▾</button>
+        <button data-v="more" class="more" title="Más estilos: LED 80s, FL showroom, FL spectrum, FL spectrum cian, FL ámbar, RTA, LCD, espectrograma">MÁS ▾</button>
       </div>
       <div class="seg mods" data-group="mods" title="Prender / apagar módulos (1–8)">
         <span class="seg-label">VER</span>
@@ -121,6 +121,7 @@
         <button data-v="mini" title="Modo mini, siempre visible (P)">&#9707;</button>
         <button data-v="hide" title="Esconder controles (H)">▴</button>
         <button data-v="fs" title="Pantalla completa (F)">⛶</button>
+        <button data-v="about" title="Acerca de Deck 90 y novedades de cada versión (I)">ⓘ</button>
       </div>
     </div>
     <div class="console-drawer" id="drawer">
@@ -323,6 +324,24 @@
   </div>
 </div>
 
+<!-- ACERCA DE / NOVEDADES (I) -->
+<div id="aboutModal" role="dialog" aria-label="Acerca de Deck 90">
+  <div class="hist-card about-card">
+    <div class="hist-head">ACERCA DE DECK 90 <button id="aboutClose" title="Cerrar (Esc)">✕</button></div>
+    <div class="about-top">
+      <img class="about-logo" src="img/deck/logo.png" alt="DECK 90">
+      <div class="about-info">
+        <div class="about-ver" id="aboutVer"></div>
+        <div class="about-what">Analizador de audio para la PC: vúmetros, loudness (LUFS, LRA, true peak), espectro, BPM, fase y una casetera que sigue al tema que suena.</div>
+        <div class="about-links"><a href="https://github.com/djkollmax/deck-90" target="_blank">GITHUB</a> · <a href="https://github.com/djkollmax/deck-90/releases" target="_blank">TODAS LAS VERSIONES</a> · <span id="aboutTech"></span></div>
+      </div>
+      <button id="aboutCheck" class="hist-btn">BUSCAR ACTUALIZACIONES</button>
+    </div>
+    <div class="about-tabs"><button class="about-tab" data-tab="news">NOVEDADES</button><button class="about-tab" data-tab="keys">TECLAS</button></div>
+    <div class="hist-scroll about-body" id="aboutBody"></div>
+  </div>
+</div>
+
 <!-- UPDATES (program only) -->
 <div id="updBar" role="status" aria-live="polite"><span id="updText"></span><button id="updGo"></button><button id="updInfo">QUÉ CAMBIÓ</button><button id="updX" title="Ahora no">✕</button></div>
 
@@ -346,6 +365,7 @@
 <script src="js/history.js"></script>
 <script src="js/presets.js"></script>
 <script src="js/update.js"></script>
+<script src="js/about.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/idle.js"></script>
 <script src="js/controls.js"></script>

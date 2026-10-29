@@ -1,5 +1,17 @@
 # Changelog
 
+## 7.4.1
+
+### Added
+- **ⓘ ACERCA DE / NOVEDADES** (the ⓘ button beside ⛶, the `I` key, or the tray's "Acerca de Deck 90 y novedades"): the version, what Deck 90 is, links to GitHub, a BUSCAR ACTUALIZACIONES button, every key, and what changed in each of the 43 versions, in Spanish, newest first (yours marked LA TUYA). It opens by itself once after an update. The notes live in `src/novedades.md`.
+
+### Fixed
+- **DÚO, LED CIAN and LED VERDE could show only the left channel** when the VU panel wasn't wide (spectrum and OSC hidden, a narrow window): the R panel is put away for them, but they drew both only on a wide panel. Now the L panel always shows both: DÚO puts one face over the other, the LEDs stand up in two columns.
+- **After STOP those three faces stayed at the last level** (needles up, LEDs lit) instead of resting like the others.
+- Moving the window to a screen with another scale (100 % → 150 %) without it changing size could leave the displays painted at the wrong size: everything is now sized again for the new screen.
+- FL SPECTRUM and FL SPECTRUM CIAN redraw their name and PEAK HOLD lamp when the panel changes height.
+- The MÁS ▾ tooltip lists FL SPECTRUM and FL SPECTRUM CIAN.
+
 ## 7.4.0
 
 ### Added

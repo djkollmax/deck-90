@@ -404,25 +404,33 @@ function duoU(db) {
 }
 function drawVUDuo(canvas, ctx, st) {
   const W = canvas.offsetWidth || 0, H = canvas.offsetHeight || 0;
-  if (W < 60 || H < 40) return;                        // put away (the R panel while DÚO shows both)
-  const both = canvas.id === 'vuL' && typeof applyModules === 'function' && W / H > 2.2;   // (the phone shows one per canvas)
-  const sides = both ? [['L', vu.L], ['R', vu.R]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];
-  // the window inside the frame
-  const fm = Math.max(6, Math.min(18, H * .07)), wx = fm, wy = fm, ww = W - 2 * fm, wh = H - 2 * fm, r = Math.max(6, Math.min(16, H * .06));
-  // each meter's scale: its left end and width, the baseline, the tops of the marks, the pivot under the window
-  const meters = sides.map(([name, s], i) => {
-    const mx = both ? wx + ww * (i ? .585 : .1) : wx + ww * .12, mw = both ? ww * .3275 : ww * .76;
-    return { name, s, mx, mw, B: wy + wh * .6, T: wy + wh * .385, px: mx + mw / 2, py: wy + wh * 1.19 };
-  });
+  if (W < 60 || H < 40) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }   // put away (the R panel while DÚO shows both)
+  // On the PC the L panel shows both meters: side by side on one wide face, or one face over the other when
+  // the panel isn't wide enough. The phone shows one per canvas.
+  const pc = canvas.id === 'vuL' && typeof applyModules === 'function', both = pc && W / H > 2.2, stack = pc && !both;
+  const vL = pc && running ? vu.L : st, vR = pc && running ? vu.R : st;   // stopped: both at rest, as the idle state passed in
+  const faces = both ? [{ oy: 0, fh: H, sides: [['L', vL], ['R', vR]] }]
+    : stack ? [{ oy: 0, fh: H / 2, sides: [['L', vL]] }, { oy: H / 2, fh: H / 2, sides: [['R', vR]] }]
+    : [{ oy: 0, fh: H, sides: [[canvas.id === 'vuR' ? 'R' : 'L', st]] }];
+  for (const F of faces) {
+    // the window inside the frame
+    const fm = Math.max(6, Math.min(18, F.fh * .07)), wx = fm, wy = F.oy + fm, ww = W - 2 * fm, wh = F.fh - 2 * fm, r = Math.max(6, Math.min(16, F.fh * .06));
+    // each meter's scale: its left end and width, the baseline, the tops of the marks, the pivot under the window
+    F.g = { fm, wx, wy, ww, wh, r, meters: F.sides.map(([name, s], i) => {
+      const mx = both ? wx + ww * (i ? .585 : .1) : wx + ww * .12, mw = both ? ww * .3275 : ww * .76;
+      return { name, s, mx, mw, B: wy + wh * .6, T: wy + wh * .385, px: mx + mw / 2, py: wy + wh * 1.19 };
+    }) };
+  }
   const top = (m, db) => [m.mx + duoU(db) * m.mw, m.T];
   // where the ray from the pivot to a point crosses the height y
   const along = (m, p, y) => { const k = (m.py - y) / (m.py - p[1]); return [m.px + (p[0] - m.px) * k, y]; };
-  blit(ctx, still('vu-duo:' + canvas.id, W, H, String(both), x => {
+  blit(ctx, still('vu-duo:' + canvas.id, W, H, faces.length + '|' + both, x => { for (const F of faces) {
+    const { fm, wx, wy, ww, wh, r, meters } = F.g, oy = F.oy, fh = F.fh;
     // black brushed frame
-    x.save(); x.fillStyle = '#121315'; x.beginPath(); x.roundRect(0, 0, W, H, r + fm * .6); x.fill(); x.clip();
-    for (let yy = 1; yy < H; yy += 2) { x.fillStyle = `rgba(255,255,255,${((Math.sin(yy * 12.9898) * 43758.5453 % 1 + 1) % 1) * .035})`; x.fillRect(2, yy, W - 4, 1); }
+    x.save(); x.fillStyle = '#121315'; x.beginPath(); x.roundRect(0, oy, W, fh, r + fm * .6); x.fill(); x.clip();
+    for (let yy = 1; yy < fh; yy += 2) { x.fillStyle = `rgba(255,255,255,${((Math.sin(yy * 12.9898) * 43758.5453 % 1 + 1) % 1) * .035})`; x.fillRect(2, oy + yy, W - 4, 1); }
     x.restore();
-    x.strokeStyle = 'rgba(255,255,255,.10)'; x.lineWidth = 1; x.beginPath(); x.roundRect(.5, .5, W - 1, H - 1, r + fm * .6); x.stroke();
+    x.strokeStyle = 'rgba(255,255,255,.10)'; x.lineWidth = 1; x.beginPath(); x.roundRect(.5, oy + .5, W - 1, fh - 1, r + fm * .6); x.stroke();
     // the backlit face: pale in the middle, warming to amber at the edges
     x.save(); x.beginPath(); x.roundRect(wx, wy, ww, wh, r); x.clip();
     const f = x.createRadialGradient(wx + ww / 2, wy + wh * .55, 0, wx + ww / 2, wy + wh * .55, Math.max(ww, wh) * .62);
@@ -472,8 +480,9 @@ function drawVUDuo(canvas, ctx, st) {
     g.addColorStop(0, '#8a6a2c'); g.addColorStop(.15, '#e8cf8a'); g.addColorStop(.5, '#b08a42'); g.addColorStop(.85, '#f2dc9c'); g.addColorStop(1, '#7a5a22');
     x.strokeStyle = g; x.lineWidth = Math.max(1.5, fm * .28); x.beginPath(); x.roundRect(wx - x.lineWidth / 2, wy - x.lineWidth / 2, ww + x.lineWidth, wh + x.lineWidth, r + 1); x.stroke();
     x.strokeStyle = 'rgba(60,30,0,.35)'; x.lineWidth = 1; x.beginPath(); x.roundRect(wx + .5, wy + .5, ww - 1, wh - 1, r); x.stroke();
-  }));
+  } }));
   // what moves: the needles, from the pivot under the window up past the marks (cut to the window)
+  for (const { g: { wx, wy, ww, wh, r, meters } } of faces) {
   ctx.save(); ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, r); ctx.clip();
   ctx.lineCap = 'round';
   for (const m of meters) {
@@ -485,6 +494,7 @@ function drawVUDuo(canvas, ctx, st) {
     ctx.beginPath(); ctx.moveTo(m.px, m.py); ctx.lineTo(tip[0], tip[1]); ctx.stroke();
   }
   ctx.restore();
+  }
 }
 
 // ═══ LED CIAN / LED VERDE (7.4): a stereo LED bar meter, both channels on one wide black strip: 27 rounded
@@ -499,10 +509,10 @@ const BAR_STYLE = {
 };
 function drawVUBar(canvas, ctx, st, skin) {
   const W = canvas.offsetWidth || 0, H = canvas.offsetHeight || 0;
-  if (W < 60 || H < 30) return;                        // put away (the R panel while one strip shows both)
+  if (W < 60 || H < 30) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }   // put away (the R panel while one strip shows both)
   const S = BAR_STYLE[skin] || BAR_STYLE.BARCYAN;
-  const both = canvas.id === 'vuL' && typeof applyModules === 'function' && W / H > 2.2;
-  const rows = both ? [['L', vu.L], ['R', vu.R]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];
+  const both = canvas.id === 'vuL' && typeof applyModules === 'function';   // the PC: both rows on the L panel (the phone: one per canvas)
+  const rows = both ? [['L', running ? vu.L : st], ['R', running ? vu.R : st]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];   // stopped: at rest
   if (W / H < 1.3) return drawVUBarTall(canvas, ctx, S, skin, rows, W, H);
   // the strip: the rows, the scale under them, all centred in the window and as large as it allows
   const m = Math.max(5, Math.min(12, H * .05)), wx = m, wy = m, ww = W - 2 * m, wh = H - 2 * m;

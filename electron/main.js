@@ -185,6 +185,14 @@ app.whenReady().then(() => {
   ipcMain.on('upd-get', e => { if (ours(e.sender)) e.sender.send('update', updater.state()); });
   ipcMain.on('upd-install', e => { if (ours(e.sender)) updater.install(); });
   ipcMain.on('upd-open', e => { if (ours(e.sender)) shell.openExternal(updater.url()); });
+  ipcMain.on('upd-check', e => { if (ours(e.sender)) updater.check(true); });
+  // the about window: this version and the notes of every version (novedades.md, beside the page)
+  ipcMain.handle('about-info', e => {
+    if (!ours(e.sender)) return null;
+    let notes = '';
+    try { notes = fs.readFileSync(path.join(__dirname, '..', 'src', 'novedades.md'), 'utf8'); } catch (_) {}
+    return { version: app.getVersion(), notes };
+  });
   win.webContents.once('did-finish-load', () => {
     updater.confirmBoot();
     setTimeout(() => updater.maybeCheck(60 * 1000), 8000);
@@ -270,6 +278,7 @@ app.whenReady().then(() => {
       up.state === 'available' && up.auto
         ? { label: 'Instalar Deck 90 ' + up.version, click: () => { showWin(); updater.install(); } }
         : { label: 'Buscar actualizaciones', click: () => { updater.check(true); showWin(); } },
+      { label: 'Acerca de Deck 90 y novedades', click: () => { showWin(); if (miniOn) setMini(false); win.webContents.send('about'); } },
       { label: 'Salir', click: () => { app.isQuitting = true; app.quit(); } });
     tray.setContextMenu(Menu.buildFromTemplate(items));
     tray.setToolTip('Deck 90' + (st.on ? ' · celular ' + (st.clients ? 'conectado' : 'esperando') : ''));

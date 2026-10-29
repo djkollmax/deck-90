@@ -346,7 +346,7 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
   // ── still, on top: the indicator lamps (only when there is room for them and the caption; the last one
   // blinks in demo) and the caption; all of it in the top strip, so the layer is only that tall
   const lampOn = !blink || (Math.floor(performance.now() / 500) % 2 === 0);
-  blit(ctx, still('fl-top:' + canvas.id, W, Math.min(H, Math.max(44, TOP + 16)), key + '|' + lampOn, x => {
+  blit(ctx, still('fl-top:' + canvas.id, W, Math.min(H, Math.max(44, TOP + 16)), key + '|' + lampOn + '|' + TOP, x => {
     if (pal.clean) {                                    // the name on the left, one PEAK HOLD lamp on the right
       const fs = Math.max(10, Math.min(20, Math.round(TOP * .42)));
       x.textBaseline = 'middle';
