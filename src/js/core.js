@@ -168,7 +168,9 @@ function setFlSensitivity(next){
 }
 
 function setVUSkin(skin){
+  const duo = (skin === 'DUO') !== (vuSkin === 'DUO');
   vuSkin = skin;
+  if (duo && typeof applyModules === 'function') applyModules();   // DÚO puts both meters in the L panel
   if (!running && typeof drawIdle === 'function') drawIdle();
 }
 

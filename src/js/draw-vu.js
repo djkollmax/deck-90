@@ -387,7 +387,108 @@ function vuWindowRing(ctx, x, y, w, h, r) {
   ctx.beginPath(); ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, r); ctx.stroke();
 }
 
+// ═══ DÚO (7.4): both meters side by side on one wide cream face, the way a cassette deck's level meter
+// looks: a straight scale from −60 to +3 dB whose ticks all point at the needles' pivot below the window,
+// LEVEL L and LEVEL R under them and DECK 90 in the middle, in a black brushed frame with a brass bevel.
+// On the PC the L panel takes both meters (the R one is put away); a canvas on its own (the phone) shows one.
+// Scale: where each mark's top sits along a meter's width (taken from the reference face), in between
+// straight lines; the needle points at the same place as its mark.
+const DUO_U = [[-64, 0], [-60, .053], [-50, .186], [-40, .336], [-30, .489], [-20, .618], [-10, .763], [0, .878], [3, .985], [6, 1.06]];
+function duoU(db) {
+  if (db <= DUO_U[0][0]) return DUO_U[0][1];
+  for (let i = 1; i < DUO_U.length; i++) if (db <= DUO_U[i][0]) {
+    const [d0, u0] = DUO_U[i - 1], [d1, u1] = DUO_U[i];
+    return u0 + (u1 - u0) * (db - d0) / (d1 - d0);
+  }
+  return DUO_U[DUO_U.length - 1][1];
+}
+function drawVUDuo(canvas, ctx, st) {
+  const W = canvas.offsetWidth || 0, H = canvas.offsetHeight || 0;
+  if (W < 60 || H < 40) return;                        // put away (the R panel while DÚO shows both)
+  const both = canvas.id === 'vuL' && typeof applyModules === 'function' && W / H > 2.2;   // (the phone shows one per canvas)
+  const sides = both ? [['L', vu.L], ['R', vu.R]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];
+  // the window inside the frame
+  const fm = Math.max(6, Math.min(18, H * .07)), wx = fm, wy = fm, ww = W - 2 * fm, wh = H - 2 * fm, r = Math.max(6, Math.min(16, H * .06));
+  // each meter's scale: its left end and width, the baseline, the tops of the marks, the pivot under the window
+  const meters = sides.map(([name, s], i) => {
+    const mx = both ? wx + ww * (i ? .585 : .1) : wx + ww * .12, mw = both ? ww * .3275 : ww * .76;
+    return { name, s, mx, mw, B: wy + wh * .6, T: wy + wh * .385, px: mx + mw / 2, py: wy + wh * 1.19 };
+  });
+  const top = (m, db) => [m.mx + duoU(db) * m.mw, m.T];
+  // where the ray from the pivot to a point crosses the height y
+  const along = (m, p, y) => { const k = (m.py - y) / (m.py - p[1]); return [m.px + (p[0] - m.px) * k, y]; };
+  blit(ctx, still('vu-duo:' + canvas.id, W, H, String(both), x => {
+    // black brushed frame
+    x.save(); x.fillStyle = '#121315'; x.beginPath(); x.roundRect(0, 0, W, H, r + fm * .6); x.fill(); x.clip();
+    for (let yy = 1; yy < H; yy += 2) { x.fillStyle = `rgba(255,255,255,${((Math.sin(yy * 12.9898) * 43758.5453 % 1 + 1) % 1) * .035})`; x.fillRect(2, yy, W - 4, 1); }
+    x.restore();
+    x.strokeStyle = 'rgba(255,255,255,.10)'; x.lineWidth = 1; x.beginPath(); x.roundRect(.5, .5, W - 1, H - 1, r + fm * .6); x.stroke();
+    // the backlit face: pale in the middle, warming to amber at the edges
+    x.save(); x.beginPath(); x.roundRect(wx, wy, ww, wh, r); x.clip();
+    const f = x.createRadialGradient(wx + ww / 2, wy + wh * .55, 0, wx + ww / 2, wy + wh * .55, Math.max(ww, wh) * .62);
+    f.addColorStop(0, '#fff4d0'); f.addColorStop(.45, '#fbe3a6'); f.addColorStop(.8, '#f2c46c'); f.addColorStop(1, '#de9a3c');
+    x.fillStyle = f; x.fillRect(wx, wy, ww, wh);
+    const v = x.createLinearGradient(0, wy, 0, wy + wh);   // the top and bottom edges a little darker, as under a lip
+    v.addColorStop(0, 'rgba(150,80,10,.22)'); v.addColorStop(.12, 'rgba(150,80,10,0)'); v.addColorStop(.88, 'rgba(150,80,10,0)'); v.addColorStop(1, 'rgba(150,80,10,.20)');
+    x.fillStyle = v; x.fillRect(wx, wy, ww, wh);
+    const lw = Math.max(1, wh * .006), fs = Math.max(8, Math.round(Math.min(wh * .085, meters[0].mw * .042)));
+    for (const m of meters) {
+      // the baseline and the marks, each along its ray from the pivot
+      x.strokeStyle = '#1b1712'; x.lineWidth = Math.max(1.2, wh * .007); x.lineCap = 'butt';
+      x.beginPath(); x.moveTo(m.mx, m.B); x.lineTo(m.mx + m.mw, m.B); x.stroke();
+      const marks = [];
+      for (let d = -60; d <= -10; d += 5) marks.push([d, d % 10 === 0]);
+      marks.push([-7, false], [-5, false], [0, true], [1, false], [2, false], [3, true]);
+      for (const [d, major] of marks) {
+        const t = top(m, d), b = along(m, t, m.B), h = major ? 1 : .62;
+        const e = [b[0] + (t[0] - b[0]) * h, b[1] + (t[1] - b[1]) * h];
+        x.strokeStyle = d >= 0 ? '#d81e10' : '#1b1712'; x.lineWidth = lw * (major ? 1.15 : .95);
+        x.beginPath(); x.moveTo(b[0], b[1]); x.lineTo(e[0], e[1]); x.stroke();
+      }
+      // the figures over the major marks
+      x.font = `500 ${fs}px "Helvetica Neue", Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+      for (const d of [-60, -50, -40, -30, -20, -10, 0, 3]) {
+        const t = top(m, d);
+        x.fillStyle = d >= 0 ? '#d81e10' : '#1d1914';
+        x.fillText(d > 0 ? '+' + d : d < 0 ? '−' + -d : '0', t[0], wy + wh * .3);
+      }
+      x.fillStyle = '#1d1914'; x.font = `400 ${Math.round(fs * .85)}px "Helvetica Neue", Arial, sans-serif`;
+      x.fillText('dB', m.px - m.mw * .02, wy + wh * .71);
+      x.font = `600 ${Math.max(7, Math.round(fs * .52))}px "Helvetica Neue", Arial, sans-serif`; x.textAlign = 'left';
+      x.fillStyle = '#2a241c';
+      if ('letterSpacing' in x) x.letterSpacing = `${Math.round(fs * .1)}px`;
+      x.fillText('LEVEL ' + m.name, m.mx, wy + wh * .855);
+      if ('letterSpacing' in x) x.letterSpacing = '0px';
+    }
+    if (both) {
+      x.font = `600 ${Math.max(7, Math.round(fs * .52))}px "Helvetica Neue", Arial, sans-serif`; x.textAlign = 'center';
+      if ('letterSpacing' in x) x.letterSpacing = `${Math.round(fs * .12)}px`;
+      x.fillStyle = '#2a241c'; x.fillText('DECK 90', wx + ww / 2, wy + wh * .86);
+      if ('letterSpacing' in x) x.letterSpacing = '0px';
+    }
+    x.restore();
+    // the brass bevel round the window
+    const g = x.createLinearGradient(0, wy, 0, wy + wh);
+    g.addColorStop(0, '#8a6a2c'); g.addColorStop(.15, '#e8cf8a'); g.addColorStop(.5, '#b08a42'); g.addColorStop(.85, '#f2dc9c'); g.addColorStop(1, '#7a5a22');
+    x.strokeStyle = g; x.lineWidth = Math.max(1.5, fm * .28); x.beginPath(); x.roundRect(wx - x.lineWidth / 2, wy - x.lineWidth / 2, ww + x.lineWidth, wh + x.lineWidth, r + 1); x.stroke();
+    x.strokeStyle = 'rgba(60,30,0,.35)'; x.lineWidth = 1; x.beginPath(); x.roundRect(wx + .5, wy + .5, ww - 1, wh - 1, r); x.stroke();
+  }));
+  // what moves: the needles, from the pivot under the window up past the marks (cut to the window)
+  ctx.save(); ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, r); ctx.clip();
+  ctx.lineCap = 'round';
+  for (const m of meters) {
+    const t = top(m, Math.max(-64, Math.min(6, m.s.lvl)));
+    const tip = along(m, t, m.T + (m.B - m.T) * .1);
+    ctx.strokeStyle = 'rgba(80,40,0,.18)'; ctx.lineWidth = Math.max(2, wh * .016);       // its soft shadow on the face
+    ctx.beginPath(); ctx.moveTo(m.px + 2, m.py); ctx.lineTo(tip[0] + 2, tip[1] + 2); ctx.stroke();
+    ctx.strokeStyle = '#141210'; ctx.lineWidth = Math.max(1.4, wh * .009);
+    ctx.beginPath(); ctx.moveTo(m.px, m.py); ctx.lineTo(tip[0], tip[1]); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawVU(canvas, ctx, st) {
+  if (vuSkin === 'DUO') return drawVUDuo(canvas, ctx, st);
   if (vuSkin === 'REEL70') return drawVUClassic(canvas, ctx, st, VU_THEMES.REEL70);
   if (vuSkin === 'BLUE') return drawVUClassic(canvas, ctx, st, VU_THEMES.BLUE);
   if (vuSkin === 'CREAM') return drawVUClassic(canvas, ctx, st, VU_THEMES.CREAM);

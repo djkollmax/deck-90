@@ -39,9 +39,11 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![A wide window: AZUL INTENSO VU meters, FL 90s and the wide CD-90](docs/screenshots/wide.jpg)
 
-**Six VU faces:** STUDIO, HI-FI 90s, CINTA 70s, AZUL, AZUL INTENSO and CREMA.
+**Seven VU faces:** STUDIO, HI-FI 90s, CINTA 70s, AZUL, AZUL INTENSO and CREMA, and DÚO, both meters side by side on one wide cream face scaled −60 to +3 dB, like a cassette deck's level meter.
 
 ![The six VU faces](docs/screenshots/vu-faces.jpg)
+
+![DÚO: both meters on one wide face](docs/screenshots/vu-duo.jpg)
 
 **Twelve spectrum styles,** from a mini system's fluorescent display to a studio's third-octave analyzer; the newest, FL SPECTRUM and FL SPECTRUM CIAN, are the classic green turning yellow and orange at the top, or turquoise with each bar's tip paler, both with orange peaks and a PEAK HOLD lamp.
 
@@ -175,7 +177,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `P` | Mini mode (always on top) / back |
 | `T` | Spectrum style (twelve) |
 | `K` | FL sensitivity |
-| `V` | VU face (six) |
+| `V` | VU face (seven) |
 | `C` | VU calibration |
 | `N` | Display mode (STD / ANALOG / CRT / OLED) |
 | `Z` | Cassette only |

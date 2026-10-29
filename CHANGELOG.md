@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.4.0
+
+### Added
+- **DÚO, a seventh VU face** (⚙ → VU → DÚO, or `V`): both meters side by side on one wide backlit cream face, like a cassette deck's level meter. A straight scale from −60 to +3 dB (0 and +3 in red) whose marks all lean toward the needles' pivot under the window, dB under each scale, LEVEL L and LEVEL R, DECK 90 in the middle, in a black brushed frame with a brass bevel. The L panel takes the whole width (the R panel is put away); on the phone each meter shows on its own.
+
 ## 7.3.0
 
 ### Added

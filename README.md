@@ -57,11 +57,15 @@ El **SO‑90 REEL** es un casete de aluminio con bobinas abiertas doradas sobre 
 
 ![Ventana ancha: vúmetros azul intenso, FL 90s y el CD-90 ancho](docs/screenshots/wide.jpg)
 
-### Seis caras de vúmetro
+### Siete caras de vúmetro
 
 Cada aguja tiene balística de resorte y amortiguación, como el instrumento real. CINTA 70s, AZUL, AZUL INTENSO y CREMA usan la escala clásica de −20 a +3 VU con la separación del instrumento; STUDIO y HI‑FI 90s suman una barra de LED. El 0 VU se calibra en AUTO, −18, −14 o −10 dBFS.
 
 ![Las seis caras de vúmetro: Studio, Hi-Fi 90s, Cinta 70s, Azul, Azul intenso y Crema](docs/screenshots/vu-faces.jpg)
+
+Y la séptima, **DÚO**: los dos vúmetros lado a lado en una sola cara crema ancha, con escala de −60 a +3 dB, como el medidor de una casetera.
+
+![DÚO: los dos vúmetros en una sola cara ancha](docs/screenshots/vu-duo.jpg)
 
 ### Doce estilos de analizador de espectro
 
@@ -112,7 +116,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 ## Todas las funciones
 
 - **Audio del sistema sin configurar nada.** En Windows usa la captura de loopback WASAPI: sin cable virtual (VB‑Cable, Voicemeeter) y sin ventanas para elegir. En Linux usa la fuente *Monitor* de PulseAudio o PipeWire. También puede medir el micrófono.
-- **Vúmetros** con balística de resorte y amortiguación, seis caras y calibración del 0 VU en AUTO, −18, −14 o −10 dBFS.
+- **Vúmetros** con balística de resorte y amortiguación, siete caras (DÚO pone los dos en una sola cara ancha) y calibración del 0 VU en AUTO, −18, −14 o −10 dBFS.
 - **Loudness:**
   - LUFS momentáneo, de corto plazo e integrado (ITU‑R BS.1770 / EBU R128, con filtro K y compuerta).
   - El LUFS integrado y el rango de loudness (LRA, EBU Tech 3342) vuelven a cero con cada tema nuevo.
@@ -145,7 +149,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 | `P` | Modo mini (siempre arriba) / volver |
 | `T` | Estilo de espectro (doce) |
 | `K` | Sensibilidad del FL |
-| `V` | Cara del vúmetro (seis) |
+| `V` | Cara del vúmetro (siete) |
 | `C` | Calibración del vúmetro |
 | `N` | Tono de pantalla (STD / ANALOG / CRT / OLED) |
 | `Z` | Solo la cinta |

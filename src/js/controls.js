@@ -167,7 +167,7 @@ document.addEventListener('keydown', e => {
     escape: () => { if (skinMenu.classList.contains('show')) { showSkinMenu(false); return; } if (running && !document.fullscreenElement) stopAudio(); },
     f: toggleFullscreen,
     t: cycleSkin,
-    v: () => { const o = ['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM']; setVUSkin(o[(o.indexOf(vuSkin) + 1) % o.length]); savePrefs(); syncConsole(); },
+    v: () => { const o = ['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM', 'DUO']; setVUSkin(o[(o.indexOf(vuSkin) + 1) % o.length]); savePrefs(); syncConsole(); },
     k: () => { setFlSensitivity(); savePrefs(); syncConsole(); },
     n: () => { setSpectrumMode(spectrumModeIndex + 1); savePrefs(); syncConsole(); },
     a: () => setDrawer(!drawerOpen),
@@ -184,7 +184,7 @@ document.addEventListener('keydown', e => {
 const prefs = loadPrefs();
 setSpectrumMode(Number.isInteger(prefs.mode) ? prefs.mode : 0);
 setFlSensitivity(Number.isInteger(prefs.flSensitivity) ? prefs.flSensitivity : 1);
-setVUSkin(['HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM'].includes(prefs.vuSkin) ? prefs.vuSkin : 'MODERN');
+setVUSkin(['HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM', 'DUO'].includes(prefs.vuSkin) ? prefs.vuSkin : 'MODERN');
 setSpectrumSkin(SPECTRUM_SKINS.some(s => s[0] === prefs.spectrumSkin) ? prefs.spectrumSkin : 'MODERN');
 if ([18, 14, 10].includes(prefs.cal)) vuCal = prefs.cal;
 if (prefs.mods && typeof prefs.mods === 'object') {

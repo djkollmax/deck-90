@@ -391,6 +391,9 @@ function applyModules() {
   document.querySelectorAll('[data-mod]').forEach(e => e.classList.toggle('mod-off', !mods[e.dataset.mod]));
   const row = document.querySelector('.main-row');
   row.classList.toggle('no-vu', !mods.vu);
+  row.classList.toggle('vu-duo', vuSkin === 'DUO');               // both meters in one wide panel
+  const vuLabel = document.querySelector('.panel[data-mod="vu"] > .panel-label');
+  if (vuLabel) vuLabel.textContent = vuSkin === 'DUO' ? 'L · R' : 'L';
   row.classList.toggle('empty', !mods.vu && !mods.bpm && !mods.gonio);
   document.querySelector('.rack-unit').classList.toggle('no-bottom', !mods.spectrum && !mods.osc && !mods.deck && !mods.tape);
   // one deck: its panel asks for more height, so the deck can grow across the width too

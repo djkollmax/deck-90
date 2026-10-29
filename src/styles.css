@@ -709,6 +709,9 @@ body.is-app .console-tab{ -webkit-app-region:no-drag; }
 .main-row.no-vu #bpmValue{ font-size:clamp(70px, 16vh, 220px); }
 .gonio-panel canvas{ display:block; margin:0 auto; }
 @media(max-width:759px){ .main-row{ flex-wrap:wrap; } .main-row > .panel{ flex:1 1 45%; } }
+/* DÚO: one wide panel holds both meters; the R panel is put away */
+.main-row.vu-duo > .panel[data-mod="vu"] ~ .panel[data-mod="vu"]{ display:none; }
+.main-row.vu-duo > .panel[data-mod="vu"]{ flex:2.1 1 0; }
 
 /* v6.1 · mini mode: only the title bar and one strip; the window stays on top (program) */
 .mini-panel{ display:none; }
