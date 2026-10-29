@@ -1,5 +1,17 @@
 # Changelog
 
+## 7.3.0
+
+### Added
+- **Two new spectrum styles, FL SPECTRUM and FL SPECTRUM CIAN** (MÁS ▾): a clean black window in a thin gold line, nineteen bars, orange peak caps, the bands named underneath (32 … 16k) and one PEAK HOLD lamp. FL SPECTRUM is green turning yellow and orange near the top; CIAN is turquoise, each bar's top segments paler whatever its height. Both follow SENS, and the phone can show them too (⚙ → COLOR FL → SPECTRUM or CIAN).
+
+### Changed
+- **With the song paused, the rack stops drawing.** Once nothing comes in and every display has settled (the needles on their stop, the bars and their peaks on the floor, the tape still), the displays are left as they are, so drawing costs nothing, until a sound comes back, something on them changes (a new song, the time on the CD-90), the window changes or you touch anything. What moves by itself keeps moving: a song title too long for its display scrolls, the spectrogram runs, FL SHOWROOM plays its shop-window demo. Each display at rest was checked against a fresh drawing of the same moment: identical.
+- **True peak takes less than half the work** on the audio thread, and none at all in silence. The readings are bit for bit the same (checked sample by sample against the previous version on half a million samples, and with test tones).
+
+### Fixed
+- On phones with a very dense screen, the meters, the FL and the cassette on the phone display came out slightly larger than their frame (7.2.0) and lost their right edge.
+
 ## 7.2.0
 
 ### Changed

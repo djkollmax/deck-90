@@ -352,6 +352,7 @@ function drawBigTape(canvas, ctx, live) {
   ctx.font = `600 ${Math.max(9, Math.round(dispH * 0.15))}px "Deck90 Display", "Arial Narrow", Arial, sans-serif`; ctx.fillStyle = FL; ctx.shadowColor = FL; ctx.shadowBlur = 5;
   const tw = ctx.measureText(tStr).width, room = iW * 0.9;
   const off = tw > room ? ((performance.now() / 40) % (tw + 60)) : 0;
+  if (tw > room) restAnim = true;                // it scrolls by itself: keep drawing
   ctx.fillText(tStr, iX + iW * 0.05 - off, iY + dispH * 0.72);
   if (tw > room) ctx.fillText(tStr, iX + iW * 0.05 - off + tw + 60, iY + dispH * 0.72);
   ctx.restore();

@@ -325,6 +325,7 @@ function deckDisplay(ctx, fX, fY, fW, fH, d, levels, running, H, part) {
       else {
         const gap = px * 3, loop = tw + gap, speed = px * 2.2;                  // px per second
         const t = performance.now() / 1000, pause = 2, cycle = loop / speed + pause;
+        restAnim = true;                                     // it scrolls by itself: keep drawing
         const ph = t % cycle, off = ph < pause ? 0 : (ph - pause) * speed;
         ctx.fillText(txt, sX - off, y); ctx.fillText(txt, sX - off + loop, y);
         ctx.shadowBlur = 0;                                // soft edges where it enters and leaves

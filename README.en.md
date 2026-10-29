@@ -43,9 +43,9 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![The six VU faces](docs/screenshots/vu-faces.jpg)
 
-**Ten spectrum styles,** from a mini system's fluorescent display to a studio's third-octave analyzer.
+**Twelve spectrum styles,** from a mini system's fluorescent display to a studio's third-octave analyzer; the newest, FL SPECTRUM and FL SPECTRUM CIAN, are the classic green turning yellow and orange at the top, or turquoise with each bar's tip paler, both with orange peaks and a PEAK HOLD lamp.
 
-![The ten spectrum styles](docs/screenshots/spectrums.jpg)
+![The twelve spectrum styles](docs/screenshots/spectrums.jpg)
 
 **Five ready-made looks and three of your own** (`F1`–`F8`): Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering.
 
@@ -86,12 +86,13 @@ From then on it **updates itself**: when a new release is out it says so, and on
   - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB). With Spotless it allows for Spotless's own volume.
 - **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS (as heard and the master's, without Spotless's volume), LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
 - **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
-- **Spectrum** in ten styles (`T` steps through them, MÁS ▾ lists the newer ones):
+- **Spectrum** in twelve styles (`T` steps through them, MÁS ▾ lists the newer ones):
   - MODERN: smooth curve with peaks.
   - RETRO 97: LED columns.
   - COLUMNS: classic bars.
   - FL 90s: wide segmented fluorescent bars.
   - FL SHOWROOM: the turquoise shop-window display; after a few seconds of silence it plays its demo patterns.
+  - FL SPECTRUM: a clean black window in a gold line, green bars turning yellow and orange at the top, orange peak caps and a PEAK HOLD lamp. FL SPECTRUM CIAN is the same window in turquoise, each bar's top segments paler whatever its height.
   - FL ÁMBAR: stereo, the left channel rising from the middle and the right one hanging down, in warm amber.
   - LED 80s: columns of rectangular LEDs, green, yellow and red, with a falling peak LED.
   - RTA 1/3: 31 ISO third-octave bands with the power of each band, like a studio real-time analyzer.
@@ -108,7 +109,7 @@ From then on it **updates itself**: when a new release is out it says so, and on
 - **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera and Mastering. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
 - **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Type your city in the ⚙ drawer (RELOJ). The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off.
 - **The frame of a premium '90s deck.** MARCO in the ⚙ drawer: brushed TITANIO, NEGRO or CHAMPAGNE plates with every display behind glass in a polished bevel and its name engraved above it, or the CLÁSICO dark rack.
-- **Light on the machine.** What doesn't move in a display is painted once and copied each frame; minimized or in the tray nothing is drawn (measuring goes on); at most 60 frames a second, 30 while a song is paused.
+- **Light on the machine.** What doesn't move in a display is painted once and copied each frame; minimized or in the tray nothing is drawn (measuring goes on); at most 60 frames a second; and with a song paused, once everything has settled, nothing is drawn until something moves again.
 - **It remembers.** The look, the window's size and place (or maximized), the mini strip's place, the phone display and the tray choices all come back as you left them.
 - **Tray.** Deck 90 sits by the clock: on Windows ✕ leaves it measuring there (the phone display keeps working; Shift+✕ quits), and its menu shows the window, switches mini mode and the phone display, starts it with Windows (hidden, straight to the tray) and quits.
 - **Phone display.** Turn on *CELULAR* in the settings drawer and scan the QR code: a phone or tablet on the same network shows the VU meters, the spectrum, the spectrogram, the big cassette, the track and the loudness numbers live, in portrait or landscape, and its cassette keys control the player. It's off until you turn it on, and the address carries a key so nobody else on the network can drive it (*Nueva clave para el celular* in the tray menu changes it, cutting off every phone that scanned the old one).
@@ -172,7 +173,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `Space` / `Esc` | Stop analysis |
 | `1`–`8` | Toggle modules (VU, BPM, LUFS, spectrum, oscilloscope, deck, cassette, goniometer) |
 | `P` | Mini mode (always on top) / back |
-| `T` | Spectrum style (ten) |
+| `T` | Spectrum style (twelve) |
 | `K` | FL sensitivity |
 | `V` | VU face (six) |
 | `C` | VU calibration |

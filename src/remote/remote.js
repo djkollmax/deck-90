@@ -38,10 +38,15 @@ function setView(i) {
   store.set('view', VIEWS[view]);
   requestAnimationFrame(size);
 }
+// the phone draws at most at 2.5× (stills.js paints the still layers at this density too)
+function stillScale() { return Math.min(window.devicePixelRatio || 1, 2.5); }
 function size() {
-  const pr = Math.min(window.devicePixelRatio || 1, 2.5);
+  const pr = stillScale();
   for (const c of [cVL, cVR, cTP, cFL, cSG]) {
-    const p = c.parentElement, w = Math.max(10, p.clientWidth), h = Math.max(10, p.clientHeight);
+    // the box inside the panel's padding: a canvas as wide as the whole panel lost its right and bottom edges
+    const p = c.parentElement, cs = getComputedStyle(p);
+    const w = Math.max(10, p.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0));
+    const h = Math.max(10, p.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0));
     c.width = Math.round(w * pr); c.height = Math.round(h * pr);
     c.style.width = w + 'px'; c.style.height = h + 'px';
     c.getContext('2d').setTransform(pr, 0, 0, pr, 0, 0);

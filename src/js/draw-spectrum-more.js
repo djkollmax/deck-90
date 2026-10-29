@@ -398,6 +398,7 @@ function drawSpectrogram(canvas, ctx) {
     sgCol = sgCtx.createImageData(1, plotH);
   }
   aMain.getFloatFrequencyData(bufFD);
+  restAnim = true;                                            // it runs right to left by itself: keep drawing
   sgAcc += 60 * dtMs / 1000;                                  // 60 px a second, whatever the frame rate
   const dx = Math.min(plotW, Math.floor(sgAcc)); sgAcc -= dx;
   if (dx > 0) {
@@ -431,11 +432,13 @@ function spectrogramBands() {
 // ── the whole catalogue: what the console, T and the idle screen use ──
 const SPECTRUM_SKINS = [
   ['MODERN', 'MODERN'], ['RETRO', 'RETRO 97'], ['COLUMNS', 'COLUMNS'], ['FL90', 'FL 90s'],
-  ['LED80', 'LED 80s'], ['SHOWROOM', 'FL SHOWROOM'], ['AMBER', 'FL ÁMBAR'], ['RTA', 'RTA 1/3'], ['LCD', 'LCD'], ['SPECTRO', 'ESPECTROGRAMA'],
+  ['LED80', 'LED 80s'], ['SHOWROOM', 'FL SHOWROOM'], ['FLSPEC', 'FL SPECTRUM'], ['FLSPEC2', 'FL SPECTRUM CIAN'], ['AMBER', 'FL ÁMBAR'], ['RTA', 'RTA 1/3'], ['LCD', 'LCD'], ['SPECTRO', 'ESPECTROGRAMA'],
 ];
 function drawSpectrumMore(canvas, ctx) {
   if (spectrumSkin === 'LED80') { drawSpectrumLED80(canvas, ctx); return true; }
   if (spectrumSkin === 'SHOWROOM') { drawSpectrumShowroom(canvas, ctx); return true; }
+  if (spectrumSkin === 'FLSPEC') { drawSpectrumFL(canvas, ctx, FL_PAL.SPEC); return true; }
+  if (spectrumSkin === 'FLSPEC2') { drawSpectrumFL(canvas, ctx, FL_PAL.SPEC2); return true; }
   if (spectrumSkin === 'AMBER') { drawSpectrumAmber(canvas, ctx); return true; }
   if (spectrumSkin === 'RTA') { drawSpectrumRTA(canvas, ctx); return true; }
   if (spectrumSkin === 'LCD') { drawSpectrumLCD(canvas, ctx); return true; }
@@ -445,6 +448,8 @@ function drawSpectrumMore(canvas, ctx) {
 function drawIdleMore(canvas, ctx) {
   if (spectrumSkin === 'LED80') { ledPk.fill(0); drawLED80(canvas, ctx, null); return true; }
   if (spectrumSkin === 'SHOWROOM') { drawFLDisplay(canvas, ctx, null, null, FL_PAL.TURQ); return true; }
+  if (spectrumSkin === 'FLSPEC') { drawFLDisplay(canvas, ctx, null, null, FL_PAL.SPEC); return true; }
+  if (spectrumSkin === 'FLSPEC2') { drawFLDisplay(canvas, ctx, null, null, FL_PAL.SPEC2); return true; }
   if (spectrumSkin === 'AMBER') { drawAmber(canvas, ctx, null, null); return true; }
   if (spectrumSkin === 'RTA') { drawRTA(canvas, ctx, null); return true; }
   if (spectrumSkin === 'LCD') { drawLCD(canvas, ctx, null); return true; }

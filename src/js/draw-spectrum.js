@@ -169,12 +169,12 @@ function flPeaks(levels, peak, peakTm, scale) {
 }
 
 const flRaw = new Float32Array(FL_BARS.length), flShown = new Float32Array(FL_BARS.length);
-function drawSpectrumFL(canvas, ctx) {
+function drawSpectrumFL(canvas, ctx, pal) {
   flRawLevels(flRaw);
   const g = flGain(flSensitivity, audible());
   for (let b = 0; b < FL_BARS.length; b++) flShown[b] = Math.min(0, smoothBar(b, flRaw[b]) + g);
   flPeaks(flShown, spPeak, spPeakTm, frameScale);
-  drawFLDisplay(canvas, ctx, flShown, spPeak);
+  drawFLDisplay(canvas, ctx, flShown, spPeak, pal);
 }
 
 // Colour schemes of the fluorescent display. GREEN is the original FL 90s; TURQ is the shop-window
@@ -192,6 +192,17 @@ const FL_PAL = {
            bg: ['#0a0603', '#030201', '#0b0603'], tint: '255,170,70', frame: 'rgba(255,150,50,.24)', zero: 'rgba(255,90,20,.25)',
            glowA: 'rgba(255,150,40,.070)', glowB: 'rgba(255,90,20,.025)', cap: 'rgba(255,180,70,.75)', capGlow: 'rgba(255,160,50,.5)',
            title: 'FL AMBER', sub: 'SPECTRUM ANALYZER', lamps: ['POWER', 'STEREO', 'AUTO', 'PEAK'], lampOn: 'rgba(255,176,46,.95)', lampHot: 'rgba(255,90,20,.95)' },
+  // FL SPECTRUM (7.3): a clean black window in a gold line, green bars turning yellow and orange at the top,
+  // orange peak caps, the bands named underneath and one PEAK HOLD lamp. No scale: just the bars.
+  SPEC:  { seg: [['#22ec6a', 'rgba(14,40,22,.50)', 'rgba(40,236,110,.50)'], ['#f4ec42', 'rgba(52,50,12,.46)', 'rgba(244,236,66,.50)'], ['#ffae22', 'rgba(60,38,10,.46)', 'rgba(255,174,34,.58)']],
+           bg: ['#070707', '#020202', '#060605'], tint: '240,222,176', frame: 'rgba(205,165,82,.90)', zero: 'rgba(0,0,0,0)',
+           glowA: 'rgba(255,200,90,.030)', glowB: 'rgba(40,255,120,.018)', cap: '#efe2c0', capGlow: 'rgba(0,0,0,0)',
+           title: 'FL SPECTRUM', sub: '', lamps: ['PEAK HOLD'], lampOn: '#ff9c1c', lampHot: '#ff9c1c', clean: true, peakCap: '#ff9c1c', zones: [.6, .86] },
+  // FL SPECTRUM CIAN: the same window in turquoise; each bar's top segments glow paler, whatever its height
+  SPEC2: { seg: [['#18dcc8', 'rgba(8,38,38,.55)', 'rgba(30,226,210,.50)'], ['#5fece0', 'rgba(8,38,38,.55)', 'rgba(80,236,224,.50)'], ['#b4faf4', 'rgba(8,38,38,.55)', 'rgba(170,250,244,.55)']],
+           bg: ['#060707', '#020303', '#050606'], tint: '230,240,236', frame: 'rgba(205,165,82,.90)', zero: 'rgba(0,0,0,0)',
+           glowA: 'rgba(60,230,220,.030)', glowB: 'rgba(40,200,220,.018)', cap: '#f0b44c', label: '#e9e6dc', capGlow: 'rgba(0,0,0,0)',
+           title: 'FL SPECTRUM', sub: '', lamps: ['PEAK HOLD'], lampOn: '#ff9c1c', lampHot: '#ff9c1c', clean: true, peakCap: '#ff9c1c', topZones: [4, 7] },
 };
 // The glow under many lit shapes at once: they are blurred on a quarter-size canvas and laid under them. A glow
 // is soft anyway, and blurring a sixteenth of the pixels is what makes a big FL display cheap to light.
@@ -216,20 +227,22 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
   pal = pal || FL_PAL.GREEN;
   const W = canvas.offsetWidth  || canvas.width;
   const H = canvas.offsetHeight || canvas.height;
-  const PA = 24;
+  const PA = pal.clean ? Math.max(24, Math.min(36, H * .1)) : 24;
+  const TOP = pal.clean ? Math.max(20, Math.min(46, H * .13)) : 0;   // the clean one keeps a strip for its name
+  const [Z1, Z2] = pal.zones || [.55, .72];                   // where the yellow and the top colour begin
   const DFLOOR = FL_FLOOR, DCEIL = 0;
   const flBars = FL_BARS;
-  function dbToY(db){ return (H - PA) * (1 - (db - DFLOOR) / (DCEIL - DFLOOR)); }
+  function dbToY(db){ return TOP + (H - PA - TOP) * (1 - (db - DFLOOR) / (DCEIL - DFLOOR)); }
   // evenly spaced bands like a hardware graphic display; bars take 72 % of their slot, so they
   // grow with the window instead of staying thin
   const slot = (W - 8) / flBars.length;
   const bw = Math.max(3, slot * 0.72);
-  const segH = Math.max(3, Math.min(9, (H - PA) / 34));
+  const segH = Math.max(3, Math.min(9, (H - PA - TOP) / 34));
   const segGap = segH > 4 ? 2 : 1;
-  const segCount = Math.max(1, Math.floor((H - PA - 8) / (segH + segGap)));
+  const segCount = Math.max(1, Math.floor((H - PA - 8 - TOP) / (segH + segGap)));
   const segY = s => H - PA - 8 - s * (segH + segGap);
-  const segC = s => pal.seg[s > segCount * .72 ? 2 : s > segCount * .55 ? 1 : 0];
-  const key = pal.title + '|' + canvas.id;
+  const segC = s => pal.seg[pal.topZones ? 0 : s > segCount * Z2 ? 2 : s > segCount * Z1 ? 1 : 0];
+  const key = pal.title + '|' + pal.seg[0][0] + '|' + canvas.id;   // (two palettes share a name: FL SPECTRUM)
 
   // ── still: the glass, the scale, every segment unlit and the band labels
   blit(ctx, still('fl-back:' + canvas.id, W, H, key, x => {
@@ -239,14 +252,19 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
     bg.addColorStop(1, pal.bg[2]);
     x.fillStyle = bg;
     x.fillRect(0, 0, W, H);
+    if (pal.clean) {                                    // a dark steel edge and a thin gold line inside it
+      x.strokeStyle = 'rgba(70,72,76,.9)'; x.lineWidth = 3; x.strokeRect(1.5, 1.5, W - 3, H - 3);
+      x.strokeStyle = pal.frame; x.lineWidth = 1.5; x.strokeRect(4.25, 4.25, W - 8.5, H - 8.5);
+    } else {
     x.fillStyle = 'rgba(' + pal.tint + ',.035)';
     x.fillRect(0, 0, W, 18);
     // display frame
     x.strokeStyle = pal.frame;
     x.lineWidth = 1;
     x.strokeRect(.5, .5, W-1, H-1);
+    }
     // horizontal reference lines
-    [-60,-48,-36,-24,-12,0].forEach(db => {
+    if (!pal.clean) [-60,-48,-36,-24,-12,0].forEach(db => {
       const y = dbToY(db);
       x.beginPath(); x.moveTo(0, y); x.lineTo(W, y);
       x.strokeStyle = db === 0 ? pal.zero : 'rgba(' + pal.tint + ',.10)';
@@ -267,7 +285,12 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
       const f = flBars[b];
       let lbl = f >= 1000 ? (f/1000).toFixed(f>=10000?0:1).replace('.0','') + 'k' : String(Math.round(f));
       const every = slot < 16 ? 4 : 2;
-      if (b % every === 0 || f === 1000 || f === 16000) {
+      if (pal.clean) {                                  // every other band, big and cream
+        if (b % (slot < 30 ? 4 : 2) === 0) {
+          x.font = `bold ${Math.max(9, Math.min(18, Math.round(slot * .21), Math.round(PA * .62)))}px Courier New`; x.fillStyle = pal.label || pal.cap; x.textAlign = 'center';
+          x.fillText(lbl, bx + bw / 2, H - PA * .32);
+        }
+      } else if (b % every === 0 || f === 1000 || f === 16000) {
         x.font = '8px Courier New';
         x.fillStyle = 'rgba(' + pal.tint + ',.58)';
         x.textAlign = 'center';
@@ -284,22 +307,24 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
   for (let b = 0; b < flBars.length; b++) {
     const x = 4 + b * slot + (slot - bw) / 2;
     const y = dbToY(levels ? levels[b] : DFLOOR);
-    const litCount = levels ? Math.max(0, Math.round(((H - PA) - y) / (H - PA) * segCount)) : 0;
+    const litCount = levels ? Math.max(0, Math.round(((H - PA) - y) / (H - PA - TOP) * segCount)) : 0;
     for (let s = 0; s < litCount && s < segCount; s++) {
-      const sy = segY(s), ci = s > segCount * .72 ? 2 : s > segCount * .55 ? 1 : 0;
+      const top = Math.min(litCount, segCount) - 1 - s;            // (topZones: counted down from the bar's top)
+      const sy = segY(s), ci = pal.topZones ? (top < pal.topZones[0] ? 2 : top < pal.topZones[1] ? 1 : 0) : s > segCount * Z2 ? 2 : s > segCount * Z1 ? 1 : 0;
       litP[ci].rect(x, sy, bw, segH); litN[ci]++;
       hiP.rect(x, sy, bw, 1);
       if (sy < litTop) litTop = sy;
     }
     if (peaks && peaks[b] > DFLOOR) {
-      const ci = peaks[b] > -12 ? 2 : peaks[b] > -28 ? 1 : 0;
-      capP[ci].rect(x, Math.max(4, dbToY(peaks[b])), bw, 2); capN[ci]++;
+      const ci = pal.clean ? 2 : peaks[b] > -12 ? 2 : peaks[b] > -28 ? 1 : 0;   // the clean one: all orange
+      const ch = pal.clean ? Math.max(3, Math.round(segH * .6)) : 2;
+      capP[ci].rect(x, Math.max(TOP ? TOP - ch : 4, dbToY(peaks[b]) - (pal.clean ? ch - 2 : 0)), bw, ch); capN[ci]++;
     }
   }
   softGlow(ctx, W, H, [0, 1, 2].filter(ci => litN[ci]).map(ci => [litP[ci], pal.seg[ci][2]]), 8, litTop, segY(0) + segH);
   for (let ci = 0; ci < 3; ci++) if (litN[ci]) { ctx.fillStyle = pal.seg[ci][0]; ctx.fill(litP[ci]); }
   ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill(hiP);
-  for (let ci = 0; ci < 3; ci++) if (capN[ci]) { ctx.fillStyle = ctx.shadowColor = pal.seg[ci][0]; ctx.shadowBlur = 9; ctx.fill(capP[ci]); }
+  for (let ci = 0; ci < 3; ci++) if (capN[ci]) { ctx.fillStyle = ctx.shadowColor = pal.peakCap || pal.seg[ci][0]; ctx.shadowBlur = 9; ctx.fill(capP[ci]); }
   ctx.shadowBlur = 0;
 
   // ── vintage glass scanlines and fluorescent bloom, both screened over the display. They are kept as one
@@ -307,7 +332,7 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   blit(ctx, still('fl-glass:' + canvas.id, W, H, key, x => {
-    for (let yy = 2; yy < H - PA; yy += 4) { x.fillStyle = 'rgba(' + pal.tint + ',.022)'; x.fillRect(0, yy, W, 1); }
+    if (!pal.clean) for (let yy = 2; yy < H - PA; yy += 4) { x.fillStyle = 'rgba(' + pal.tint + ',.022)'; x.fillRect(0, yy, W, 1); }
     x.globalCompositeOperation = 'screen';
     const glow = x.createRadialGradient(W*.50, H*.42, 0, W*.50, H*.42, Math.max(W,H)*.62);
     glow.addColorStop(0, pal.glowA);
@@ -321,7 +346,21 @@ function drawFLDisplay(canvas, ctx, levels, peaks, pal, blink) {
   // ── still, on top: the indicator lamps (only when there is room for them and the caption; the last one
   // blinks in demo) and the caption; all of it in the top strip, so the layer is only that tall
   const lampOn = !blink || (Math.floor(performance.now() / 500) % 2 === 0);
-  blit(ctx, still('fl-top:' + canvas.id, W, Math.min(H, 44), key + '|' + lampOn, x => {
+  blit(ctx, still('fl-top:' + canvas.id, W, Math.min(H, Math.max(44, TOP + 16)), key + '|' + lampOn, x => {
+    if (pal.clean) {                                    // the name on the left, one PEAK HOLD lamp on the right
+      const fs = Math.max(10, Math.min(20, Math.round(TOP * .42)));
+      x.textBaseline = 'middle';
+      x.font = `bold ${fs}px Courier New`; x.textAlign = 'left'; x.fillStyle = pal.cap;
+      x.fillText(pal.title, 16, TOP * .55 + 2);
+      if (W > 300) {
+        x.font = `bold ${fs - 2}px Courier New`; x.textAlign = 'right';
+        x.fillText(pal.lamps[0], W - 16, TOP * .55 + 2);
+        const tw = x.measureText(pal.lamps[0]).width;
+        x.beginPath(); x.arc(W - 16 - tw - 10, TOP * .55 + 2, Math.max(3, fs * .3), 0, Math.PI * 2);
+        x.fillStyle = x.shadowColor = pal.lampOn; x.shadowBlur = 8; x.fill(); x.shadowBlur = 0;
+      }
+      return;
+    }
     if (W > 420) {
       pal.lamps.forEach((txt, i) => {
         const lx = W - 230 + i * 58;

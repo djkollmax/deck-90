@@ -63,11 +63,11 @@ Cada aguja tiene balística de resorte y amortiguación, como el instrumento rea
 
 ![Las seis caras de vúmetro: Studio, Hi-Fi 90s, Cinta 70s, Azul, Azul intenso y Crema](docs/screenshots/vu-faces.jpg)
 
-### Diez estilos de analizador de espectro
+### Doce estilos de analizador de espectro
 
-Del display fluorescente de un minicomponente al analizador de tercio de octava de un estudio. La tecla `T` los recorre y el botón MÁS ▾ los lista. Los de estilo hardware (FL, LED, LCD, RTA) responden a la sensibilidad SENS (tecla `K`).
+Del display fluorescente de un minicomponente al analizador de tercio de octava de un estudio. Los más nuevos, FL SPECTRUM y FL SPECTRUM CIAN: el clásico verde que se pone amarillo y naranja arriba, o turquesa con la punta de cada barra más clara, los dos con picos naranjas y su lámpara PEAK HOLD. La tecla `T` los recorre y el botón MÁS ▾ los lista. Los de estilo hardware (FL, LED, LCD, RTA) responden a la sensibilidad SENS (tecla `K`).
 
-![Los diez estilos de espectro](docs/screenshots/spectrums.jpg)
+![Los doce estilos de espectro](docs/screenshots/spectrums.jpg)
 
 ### Cinco looks listos y tres tuyos
 
@@ -120,7 +120,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
   - **Indicador de Spotify:** cuánto cambiaría Spotify el volumen del tema con su normalización (todo a −14 LUFS; un tema más bajo sube solo hasta que su pico llega a −1 dB). Con Spotless descuenta el volumen del propio reproductor.
 - **Historial de temas** con LUFS integrado (como sonó y el del master), LRA, pico, BPM y el cambio de Spotify. Se abre con `L` o ☰ y se exporta como CSV para Excel (separado con `;` y comas decimales).
 - **BPM** por detección de golpes en un AudioWorklet y autocorrelación de los últimos 8 segundos.
-- **Espectro en diez estilos:** MODERN, RETRO 97, COLUMNS, FL 90s, FL SHOWROOM (con su demo de vidriera cuando hay silencio), FL ÁMBAR (estéreo), LED 80s, RTA 1/3 (31 bandas ISO), LCD y ESPECTROGRAMA.
+- **Espectro en doce estilos:** MODERN, RETRO 97, COLUMNS, FL 90s, FL SHOWROOM (con su demo de vidriera cuando hay silencio), FL SPECTRUM (verde, amarillo y naranja con PEAK HOLD), FL SPECTRUM CIAN, FL ÁMBAR (estéreo), LED 80s, RTA 1/3 (31 bandas ISO), LCD y ESPECTROGRAMA.
 - **Osciloscopio y goniómetro** (la imagen estéreo como nube de puntos, con barra de correlación).
 - **Caseteras:** una o dos DECK 90 y una cinta grande SO‑90 REEL, CLEAR o el reproductor CD‑90. La cinta corre solo mientras suena música.
 - **El tema que suena:** título, artista y tapa de Spotless, Spotify, una pestaña del navegador (YouTube, SoundCloud…), Apple Music o cualquier reproductor que se informe a Windows. Las teclas de la casetera hacen play/pausa, stop, siguiente y anterior.
@@ -131,7 +131,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 - **Bandeja del sistema:** en Windows la ✕ lo deja midiendo junto al reloj (Shift+✕ lo cierra), y puede arrancar con Windows directo a la bandeja.
 - **Pantalla en el celular** por la red local, con clave para que nadie más lo maneje.
 - **Modo mini** siempre arriba, con bobinas, barras L/R, loudness y true peak.
-- **Liviano:** lo que no se mueve se pinta una sola vez, minimizado o en la bandeja no dibuja (sigue midiendo) y con el tema en pausa baja el ritmo de cuadros.
+- **Liviano:** lo que no se mueve se pinta una sola vez; minimizado o en la bandeja no dibuja (sigue midiendo), y con el tema en pausa, una vez que todo se quedó quieto, deja de dibujar hasta que algo vuelve a moverse.
 - **Se acuerda de todo:** el look, el tamaño y lugar de la ventana, el modo mini, el celular y la bandeja.
 - **Se actualiza solo** desde GitHub, comprobando el SHA‑256 del paquete; si una versión nueva no arranca, vuelve sola a la anterior.
 
@@ -143,7 +143,7 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 | `Espacio` / `Esc` | Detener |
 | `1`–`8` | Mostrar u ocultar módulos (VU, BPM, LUFS, espectro, osciloscopio, deck, cinta, goniómetro) |
 | `P` | Modo mini (siempre arriba) / volver |
-| `T` | Estilo de espectro (diez) |
+| `T` | Estilo de espectro (doce) |
 | `K` | Sensibilidad del FL |
 | `V` | Cara del vúmetro (seis) |
 | `C` | Calibración del vúmetro |
@@ -189,7 +189,7 @@ Los medidores se verificaron con señales de prueba generadas:
 
 **Windows dice "Windows protegió tu PC" al abrirlo.** Pasa con los programas nuevos que no compraron un certificado de firma. Tocá **Más información → Ejecutar de todas formas**. El código está entero acá, y cada versión se compila en los servidores de GitHub.
 
-**¿Consume muchos recursos?** Desde la 7.2.0 usa más o menos la mitad que antes: lo que no se mueve se pinta una sola vez, y minimizado o en la bandeja no dibuja.
+**¿Consume muchos recursos?** Desde la 7.2.0 usa más o menos la mitad que antes: lo que no se mueve se pinta una sola vez, y minimizado o en la bandeja no dibuja. Desde la 7.3.0, con el tema en pausa casi no gasta nada.
 
 **¿Hay versión para Mac?** Por ahora no: Windows 10/11 y Linux de 64 bits.
 

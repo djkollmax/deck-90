@@ -229,6 +229,7 @@ function cdDisplay(ctx, gX, gY, gW, gH, play, part) {
     else {
       const gap = px * 4, loop = tw + gap, speed = px * 2.4, pause = 2, cycle = loop / speed + pause;
       const ph = (performance.now() / 1000) % cycle, off = ph < pause ? 0 : (ph - pause) * speed;
+      restAnim = true;                                     // it scrolls by itself: keep drawing
       ctx.fillText(song, tX - off, tY); ctx.fillText(song, tX - off + loop, tY);
     }
     ctx.restore(); ctx.shadowBlur = 0;

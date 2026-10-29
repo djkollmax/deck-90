@@ -113,30 +113,37 @@ const TP_H = [
 class StereoCorr extends AudioWorkletProcessor {
   constructor() {
     super(); this.n = 0; this.ll = 0; this.rr = 0; this.lr = 0; this.tp = 0;
-    this.hl = new Float32Array(12); this.hr = new Float32Array(12); this.pos = 0;   // input history, newest at pos
+    // input history, each sample written twice (at pos and pos + 12) so the last 12 are always in a row
+    this.hl = new Float32Array(24); this.hr = new Float32Array(24); this.pos = 0;
+    this.c = TP_H.map(r => Float64Array.from(r));
     // the history starts empty while the audio is already playing: that step makes the filter overshoot
     // (up to +1 dB), so no true peak until it holds 12 real samples
     this.warm = 12;
+    this.zeros = 0;                      // samples in a row that were silent on both sides
   }
-  peak(h, pos) {
+  peak(h, s) {                           // s: index of the oldest of the last 12 samples
     let m = 0;
     for (let k = 0; k < 4; k++) {
-      const c = TP_H[k]; let y = 0;
-      for (let j = 0; j < 12; j++) y += c[j] * h[(pos - j + 12) % 12];
-      if (y < 0) y = -y; if (y > m) m = y;
+      const c = this.c[k];
+      const y = c[0] * h[s + 11] + c[1] * h[s + 10] + c[2] * h[s + 9] + c[3] * h[s + 8] + c[4] * h[s + 7] + c[5] * h[s + 6]
+              + c[6] * h[s + 5] + c[7] * h[s + 4] + c[8] * h[s + 3] + c[9] * h[s + 2] + c[10] * h[s + 1] + c[11] * h[s];
+      const a = y < 0 ? -y : y; if (a > m) m = a;
     }
     return m;
   }
   process(inputs) {
     const inp = inputs[0];
     if (inp && inp.length) {
-      const l = inp[0], r = inp[1] || inp[0];
+      const l = inp[0], r = inp[1] || inp[0], hl = this.hl, hr = this.hr;
       for (let i = 0; i < l.length; i++) {
         const a = l[i], b = r[i];
         this.ll += a * a; this.rr += b * b; this.lr += a * b;
-        this.pos = (this.pos + 1) % 12; this.hl[this.pos] = a; this.hr[this.pos] = b;
+        const p0 = this.pos = this.pos === 11 ? 0 : this.pos + 1;
+        hl[p0] = hl[p0 + 12] = a; hr[p0] = hr[p0 + 12] = b;
+        this.zeros = a === 0 && b === 0 ? this.zeros + 1 : 0;
         if (this.warm > 0) { this.warm--; continue; }
-        const p = Math.max(this.peak(this.hl, this.pos), this.peak(this.hr, this.pos));
+        if (this.zeros >= 12) continue;  // twelve silent samples filter to silence: nothing to find
+        const s = p0 + 1, pl = this.peak(hl, s), pr = this.peak(hr, s), p = pl > pr ? pl : pr;
         if (p > this.tp) this.tp = p;
       }
       this.n += l.length;
@@ -447,7 +454,7 @@ function syncConsole() {
   const ab = document.querySelector('.seg[data-group="cal"] button[data-v="AUTO"]');
   if (ab && (vuCal !== 'AUTO' || !activeSource)) ab.textContent = 'AUTO';
   const sens = document.querySelector('.seg[data-group="sens"]');
-  if (sens) sens.classList.toggle('dim', !['FL90', 'LED80', 'SHOWROOM', 'AMBER', 'LCD', 'RTA'].includes(spectrumSkin));
+  if (sens) sens.classList.toggle('dim', !['FL90', 'LED80', 'SHOWROOM', 'FLSPEC', 'FLSPEC2', 'AMBER', 'LCD', 'RTA'].includes(spectrumSkin));
 }
 
 // ═══════════════════════════════════════════════════════════

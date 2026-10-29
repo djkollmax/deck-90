@@ -7,8 +7,13 @@
 //  style, the frame…) they are painted again.
 // ═══════════════════════════════════════════════════════════
 const stillLayers = new Map();
+// a display that moves by itself (a scrolling title, the spectrogram) sets this while it draws: the rack
+// then keeps drawing even when nothing else changes (loop.js)
+let restAnim = false;
+// the density the displays' canvases are sized at (the phone page caps it: it defines stillScale)
+const stillPr = () => (typeof stillScale === 'function' ? stillScale() : window.devicePixelRatio) || 1;
 function still(id, W, H, key, paint) {
-  const pr = window.devicePixelRatio || 1, k = key + '|' + W + 'x' + H + '@' + pr;
+  const pr = stillPr(), k = key + '|' + W + 'x' + H + '@' + pr;
   let L = stillLayers.get(id);
   if (!L) stillLayers.set(id, L = { c: document.createElement('canvas'), k: '' });
   L.t = performance.now();
@@ -49,7 +54,8 @@ function stamp(ctx, id, key, x0, y0, w, h, paint) {
 // layers nothing has shown for a while (another style chosen, a module put away, the window in the tray) give
 // their memory back; one that is needed again is painted again
 setInterval(() => {
-  const t = performance.now();
+  // the displays' own clock (loop.js): it stands still while they rest, so a resting rack keeps its layers
+  const t = typeof displaysDrawnAt !== 'undefined' && (typeof winShown === 'undefined' || winShown) ? displaysDrawnAt : performance.now();
   stillLayers.forEach((L, id) => { if (t - L.t > 20000) stillLayers.delete(id); });
 }, 10000);
 // a display font that arrives after a still layer was painted: paint them all again with it

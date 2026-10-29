@@ -56,7 +56,47 @@ function guard(where, fn) {
 let lastRafAt = 0, lastDrawAt = 0;
 // The window in the tray or minimized (the program says so): keep measuring, don't draw.
 let winShown = true;
-if (window.winCtl && window.winCtl.onShown) window.winCtl.onShown(v => { winShown = !!v; });
+if (window.winCtl && window.winCtl.onShown) window.winCtl.onShown(v => { winShown = !!v; wakeDisplays(); });
+
+// ── Displays at rest are left as they are
+// With nothing coming in (a paused song), every display settles within seconds: the needles on their stop,
+// the bars and their peaks on the floor, the tape still. Once a frame changes nothing that any display shows
+// (twenty frames in a row, so the phosphor trails have faded too), the displays are not drawn again until
+// something they show moves, a sound comes in, the window changes or you do something. Anything that moves
+// by itself (a scrolling song title, the spectrogram, the shop-window demo) keeps them drawing.
+let lastSound = 0;                       // the last frame with any signal at all (above −80 dBFS)
+let wakeUntil = 0;                       // drawing stays on until then
+let restSig = 0, restSame = 0;    // (restAnim, set by a display that moves by itself, lives in stills.js)
+let displaysDrawnAt = 0;                 // the last time the displays were drawn (the still layers' clock)
+function wakeDisplays(ms = 1500) { wakeUntil = Math.max(wakeUntil, performance.now() + ms); restSame = 0; }
+['pointerdown', 'pointermove', 'keydown', 'wheel'].forEach(ev => window.addEventListener(ev, () => wakeDisplays(), { capture: true, passive: true }));
+window.addEventListener('resize', () => wakeDisplays());
+if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => wakeDisplays());
+// everything the displays show that can change without a sound or a click, as one number
+function restSignature() {
+  try { return restSignatureOf(); } catch (_) { return NaN; }   // never equal: the displays keep drawing
+}
+function restSignatureOf() {
+  let h = 17;
+  // (levels under −100 dB are under every display's floor: they count as one)
+  const num = v => { h = (Math.imul(h, 31) + (isFinite(v) ? Math.round(Math.max(-100, v) * 100) : -999999)) | 0; };
+  const arr = a => { if (a) for (let i = 0; i < a.length; i++) num(a[i]); };
+  for (const st of [vu.L, vu.R]) { num(st.lvl); num(st.peak); num(st.samplePeak); num(st.clip ? 1 : 0); }
+  arr(spPeak); arr(spLvl); arr(colLevels); arr(rtLevels); arr(flShown);
+  if (typeof ledLv !== 'undefined') [ledLv, ledPk, ambL, ambR, ambPkL, ambPkR, rtaLv, rtaPk, lcdDb, lcdPk].forEach(arr);
+  if (typeof cd !== 'undefined') { arr(cd.bands); arr(cd.peaks); num(cd.track); num(cd.remain ? 1 : 0); num(cd.repeat ? 1 : 0); }
+  num(bigTape.pos); arr(bigTape.ang); num(bigTape.counter);
+  decks.forEach(d => { num(d.pos); arr(d.ang); num(d.counter); });
+  num(miniAngle); num(miniVals.m); num(miniVals.i); num(miniVals.tp);
+  num(gonioGain); num(phaseSm);
+  num(running ? 1 : 0); num(npPlaying() ? 1 : 0);
+  if (np) { num(npPosition() * 10); num(np.dur); }
+  // the words and the choices on screen (a new song, a style picked from the tray or the phone)
+  const words = [np && np.title, np && np.artist, np && np.status, decks.map(d => d.title).join('|'), miniMode, vuSkin, spectrumSkin,
+    tapeStyle, deckDouble, typeof chassis !== 'undefined' && chassis, flSensitivity, spectrumModeIndex, vuCal, Object.values(mods).join('')].join('·');
+  for (let i = 0; i < words.length; i++) h = (Math.imul(h, 31) + words.charCodeAt(i)) | 0;
+  return h;
+}
 function loop(ts) {
   if (!running) return;
   rafId = requestAnimationFrame(loop);          // schedule first: a failing frame can't freeze the next one
@@ -85,6 +125,7 @@ function frame(draw) {
   const inL = readChannel(aL, bufL, vu.L), inR = readChannel(aR, bufR, vu.R);
   const loud = Math.max(vu.L.dbfs, vu.R.dbfs);
   if (loud > -50) lastAudible = now;
+  if (loud > -80) lastSound = now;
   if (loud > -55) {                       // ignore silence and fades
     autoRms += (loud - autoRms) * (1 - Math.exp(-dtMs / 6000));
     autoRef = Math.max(4, Math.min(24, -autoRms - 4));
@@ -97,17 +138,26 @@ function frame(draw) {
     phoneTick(now);
     return;
   }
-  if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
-  else {
-    if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
-    if (mods.gonio) guard('gonio', () => drawGonio(cGO, xGO, true));
-    // Spectrum + Osc + decks
-    if (mods.spectrum) guard('spectrum', () => drawSpectrum(cSP, xSP));
-    if (mods.osc) guard('osc', () => drawOsc(cOS, xOS));
-    if (mods.deck) guard('deck', () => drawDeck(cDK, xDK, true));
-    if (mods.tape) guard('tape', () => drawBigTape(cTP, xTP, true));
-    if (mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
+  // at rest (nothing heard for a second, nothing touched, the last twenty frames the same): leave the displays
+  const silent = now - lastSound > 1000;
+  const resting = silent && now > wakeUntil && !restAnim && restSame >= 20 && restSignature() === restSig;
+  if (!resting) {
+    restAnim = false;                    // a display that moves by itself says so while it draws
+    displaysDrawnAt = now;
+    if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
+    else {
+      if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
+      if (mods.gonio) guard('gonio', () => drawGonio(cGO, xGO, true));
+      // Spectrum + Osc + decks
+      if (mods.spectrum) guard('spectrum', () => drawSpectrum(cSP, xSP));
+      if (mods.osc) guard('osc', () => drawOsc(cOS, xOS));
+      if (mods.deck) guard('deck', () => drawDeck(cDK, xDK, true));
+      if (mods.tape) guard('tape', () => drawBigTape(cTP, xTP, true));
+    }
+    if (silent) { const sig = restSignature(); restSame = sig === restSig ? restSame + 1 : 0; restSig = sig; }
+    else restSame = 0;
   }
+  if (!miniMode && mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));
