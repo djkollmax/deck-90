@@ -124,14 +124,24 @@ jobs:
           DECK90_SMOKE=1 timeout 90 xvfb-run -a ./deck-90 --no-sandbox --user-data-dir="$RUNNER_TEMP/deck90-smoke" 2>&1 | tee smoke.log
           grep -q "DECK90_SMOKE ok" smoke.log
 
-      - name: Release notes from CHANGELOG.md
+      - name: Release notes from src/novedades.md (Spanish) and CHANGELOG.md
         if: env.NEEDED == 'yes'
         run: |
-          awk -v v="$VERSION" '
+          section() { awk -v v="$VERSION" '
             $0 ~ "^## "v" " || $0 == "## "v { on=1; next }
             on && /^## / { exit }
-            on { print }' CHANGELOG.md > notes.md
-          printf '\n**Download, unzip, run:** Windows → `Deck 90.exe`, Linux → `deck-90`.\n' >> notes.md
+            on { print }' "$1"; }
+          {
+            es="$(section src/novedades.md)"
+            if [ -n "$(printf '%s' "$es" | tr -d '[:space:]')" ]; then
+              printf '%s\n\n---\n\n<details><summary>In English</summary>\n\n' "$es"
+              section CHANGELOG.md
+              printf '\n</details>\n'
+            else
+              section CHANGELOG.md
+            fi
+            printf '\n**Bajalo, descomprimilo y abrilo** (Windows → `Deck 90.exe`, Linux → `deck-90`). Si ya lo tenés, Deck 90 te ofrece **INSTALAR** solo.\n'
+          } > notes.md
           cat notes.md
 
       - name: Publish the release

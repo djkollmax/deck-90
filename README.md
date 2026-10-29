@@ -113,6 +113,12 @@ Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, p
 |---|---|
 | ![El rack CLÁSICO](docs/screenshots/classic.jpg) | ![Modo mini: una tira siempre arriba](docs/screenshots/mini.png) |
 
+### Novedades adentro del programa
+
+El botón ⓘ (o la tecla `I`) abre ACERCA DE: la versión, un botón para buscar actualizaciones, todas las teclas y lo que cambió en cada versión, en español. Después de cada actualización se abre solo una vez. Las mismas novedades están en [src/novedades.md](src/novedades.md).
+
+![Acerca de Deck 90 y novedades](docs/screenshots/about.jpg)
+
 *Las capturas usan la señal DEMO incluida; los nombres de temas son inventados.*
 
 ---

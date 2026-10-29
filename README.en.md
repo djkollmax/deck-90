@@ -73,6 +73,8 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![Track history](docs/screenshots/history.png)
 
+**About and what's new** (ⓘ or `I`): the version, an update check, every key and the notes of each version, in Spanish ([src/novedades.md](src/novedades.md)); it opens by itself once after an update.
+
 | | |
 |---|---|
 | ![The CLÁSICO frame: the dark rack of the first versions](docs/screenshots/classic.jpg) | ![Mini mode: a strip that stays on top](docs/screenshots/mini.png) |
