@@ -1,0 +1,17 @@
+name: Una idea
+description: Un estilo nuevo, una medición, algo que te gustaría que haga (a feature request — English is fine too)
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Qué te gustaría?
+      description: Si es un estilo de display o de vúmetro, una foto del aparato real ayuda muchísimo.
+    validations:
+      required: true
+  - type: textarea
+    id: para-que
+    attributes:
+      label: ¿Para qué lo usarías?
+      description: Con qué música, en qué situación, qué te falta hoy.

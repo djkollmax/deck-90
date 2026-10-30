@@ -439,6 +439,7 @@ function syncConsole() {
       if (g === 'vupick' || g === 'skinpick') return;
       if (g === 'preset') {
         if (b.dataset.v === 'save') b.classList.toggle('on', typeof presetSaveArmed !== 'undefined' && presetSaveArmed);
+        else if (b.dataset.v === 'rotate') b.classList.toggle('on', typeof rotateCfg === 'object' && rotateCfg.on);
         else b.classList.toggle('on', typeof presetMatches === 'function' && presetMatches(b.dataset.v));
         return;
       }

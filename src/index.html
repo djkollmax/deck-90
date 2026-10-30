@@ -114,6 +114,7 @@
         <button data-v="c2" class="custom">C2</button>
         <button data-v="c3" class="custom">C3</button>
         <button data-v="save" class="save" title="Guardar lo que ves: tocá GUARDAR y después C1, C2 o C3">GUARDAR</button>
+        <button data-v="rotate" class="rotate" title="Modo vidriera: los looks rotan solos mientras suena música (R)">↻ ROTAR</button>
       </div>
       <div class="seg tools" data-group="tools">
         <button data-v="drawer" title="Ajustes (A)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h7M12 4h2M2 8h2M7 8h7M2 12h9M14 12h0"/><circle cx="10.5" cy="4" r="1.5"/><circle cx="5.5" cy="8" r="1.5"/><circle cx="12.5" cy="12" r="1.5"/></svg></button>
@@ -283,6 +284,7 @@
 
 <!-- the VU and spectrum pickers: every style with its picture -->
 <div class="style-menu" id="styleMenu" role="menu"><div class="style-head"></div><div class="style-grid"></div><div class="style-foot"></div></div>
+<div class="style-menu rotate-menu" id="rotateMenu" role="menu" aria-label="Looks que rotan solos"></div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -394,6 +396,7 @@
 <script src="js/phone.js"></script>
 <script src="js/history.js"></script>
 <script src="js/presets.js"></script>
+<script src="js/rotate.js"></script>
 <script src="js/update.js"></script>
 <script src="js/about.js"></script>
 <script src="js/welcome.js"></script>

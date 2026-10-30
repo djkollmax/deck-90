@@ -9,7 +9,7 @@
 
 **Deck 90 is a free, open-source desktop audio analyzer with a '90s hi‑fi look.** It listens to whatever your computer is playing and shows it on needle VU meters, a spectrum analyzer, a loudness meter (LUFS, true peak, LRA), BPM, a goniometer, an oscilloscope and cassette decks whose tape actually turns. It works with Spotify, YouTube, Tidal, Apple Music or any player, **with no virtual cable and no setup**; it also shows the track that's playing and drives the player from the deck's keys. It pairs well with [Spotless](https://github.com/nix-codes/spotless).
 
-![Deck 90 running: blue VU meters, the FL SHOWROOM spectrum and the SO-90 REEL tape turning](docs/screenshots/demo.gif)
+![Deck 90 running: the console, a VU face picked by its picture and the looks changing by themselves](docs/screenshots/demo.gif)
 
 ### ⬇️ [Download Deck 90 (Windows or Linux)](https://github.com/djkollmax/deck-90/releases/latest)
 
@@ -113,6 +113,7 @@ From then on it **updates itself**: when a new release is out it says so, and on
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
 - **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed, two looks each (press again for the other): Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
+- **Showroom mode** (↻ ROTAR in LOOKS, or `R`): the looks change by themselves every 1, 3, 5 or 10 minutes of music, with a short fade: the ten favourites, your C1–C3 or all of them. It holds still while the music is paused.
 - **A welcome on the first start** (where it listens, which look, the weather and the phone) and **a copy of your settings** in a file to take to another PC (⚙ → EXTRAS → AJUSTES).
 - **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Turn it on in ⚙ → PANTALLA → RELOJ (+ CLIMA) and type your city beside it. The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off.
 - **The frame of a premium '90s deck.** MARCO in the ⚙ drawer: brushed TITANIO, NEGRO or CHAMPAGNE plates with every display behind glass in a polished bevel and its name engraved above it, or the CLÁSICO dark rack.
@@ -189,6 +190,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `A` | Settings drawer |
 | `L` | Track history |
 | `I` | About Deck 90 and what's new in each version |
+| `R` | Showroom mode: the looks turn by themselves |
 | `F1`–`F5` | Favourite looks 1–5 |
 | `F6`–`F8` | Your looks C1–C3 (`Shift` + `F6`–`F8` saves the current look there) |
 | `H` | Hide the console |
@@ -237,7 +239,7 @@ scripts/    packaging and checks
 
 ## Ideas or problems?
 
-Open an [issue](https://github.com/djkollmax/deck-90/issues). If you like the project, a ⭐ helps other people find it.
+[Report a problem](https://github.com/djkollmax/deck-90/issues/new?template=problema.yml) or [suggest an idea](https://github.com/djkollmax/deck-90/issues/new?template=idea.yml) (the forms are in Spanish; English answers are welcome). If you like the project, a ⭐ helps other people find it.
 
 ## Credits
 

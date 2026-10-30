@@ -5,7 +5,7 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: typeof rotateCfg === 'object' ? rotateCfg : undefined })); } catch(_){}
 }
 function loadPrefs(){
   try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(_) { return {}; }
@@ -219,7 +219,8 @@ document.addEventListener('keydown', e => {
     m: () => { closeSplash(); startAudio('mic'); },
     d: () => { closeSplash(); startDemo(); },
     ' ': () => { if (running) stopAudio(); },
-    escape: () => { if (skinMenu.classList.contains('show')) { showSkinMenu(false); return; } if (running && !document.fullscreenElement) stopAudio(); },
+    r: () => { if (!e.repeat) setRotate(!rotateCfg.on); },
+    escape: () => { if (rotateMenuOpen()) { showRotateMenu(false); return; } if (skinMenu.classList.contains('show')) { showSkinMenu(false); return; } if (running && !document.fullscreenElement) stopAudio(); },
     f: toggleFullscreen,
     t: cycleSkin,
     v: () => { const o = VU_SKINS; setVUSkin(o[(o.indexOf(vuSkin) + 1) % o.length]); savePrefs(); syncConsole(); },

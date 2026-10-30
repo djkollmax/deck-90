@@ -1,0 +1,57 @@
+name: Algo anda mal
+description: Un error, algo que se ve raro o una medición que no cierra (a bug — English is fine too)
+title: "[Problema] "
+labels: ["problema"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. Con estos datos lo puedo reproducir más rápido.
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Deck 90
+      description: La ves en ⓘ (o la tecla I), arriba de todo.
+      placeholder: "7.6.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: Sistema
+      options:
+        - Windows 11
+        - Windows 10
+        - Linux
+        - Otro
+    validations:
+      required: true
+  - type: dropdown
+    id: instalado
+    attributes:
+      label: Cómo lo tenés
+      options:
+        - Con el instalador (setup.exe)
+        - Con el zip
+        - Compilado desde el código
+  - type: textarea
+    id: que-paso
+    attributes:
+      label: ¿Qué pasó?
+      description: Qué hiciste, qué esperabas y qué viste. Una captura ayuda mucho.
+    validations:
+      required: true
+  - type: textarea
+    id: como
+    attributes:
+      label: ¿Cómo lo repito?
+      placeholder: |
+        1. Elegí el VU DÚO
+        2. Escondí el espectro (tecla 4)
+        3. …
+  - type: textarea
+    id: log
+    attributes:
+      label: Registro (opcional)
+      description: El archivo media.log de %APPDATA%\Deck 90 (Windows) o ~/.config/Deck 90 (Linux), si tiene algo raro.
+      render: text

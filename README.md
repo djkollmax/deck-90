@@ -9,7 +9,7 @@
 
 **Deck 90 es un programa gratis y de código abierto que muestra lo que suena en tu computadora como un equipo de audio de los 90:** vúmetros de aguja, analizador de espectro, medidor de loudness (LUFS, true peak, LRA), BPM, goniómetro, osciloscopio y caseteras cuyas cintas giran de verdad. Funciona con Spotify, YouTube, Tidal, Apple Music o cualquier reproductor, **sin cables virtuales ni configuración**, y además muestra el tema que está sonando y maneja el reproductor desde las teclas de la casetera.
 
-![Deck 90 en funcionamiento: vúmetros azules, espectro FL SHOWROOM y la casetera SO-90 REEL girando](docs/screenshots/demo.gif)
+![Deck 90 en funcionamiento: la consola, el vúmetro elegido por su foto y los looks que cambian solos](docs/screenshots/demo.gif)
 
 ### ⬇️ [Descargar Deck 90 (Windows o Linux)](https://github.com/djkollmax/deck-90/releases/latest)
 
@@ -80,6 +80,8 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 ### Diez looks listos y tres tuyos
 
 Cada look guarda todo: cara del vúmetro, estilo de espectro y sensibilidad, tono de pantalla, calibración, módulos visibles y estilo de casetera. Los cinco de fábrica están en `F1`–`F5` y cada uno tiene dos looks: tocalo otra vez y pasa al otro (Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED). En C1–C3 (`F6`–`F8`) guardás los tuyos, y esos no cambian.
+
+**Modo vidriera:** con ↻ ROTAR (o la tecla `R`) los looks van cambiando solos cada 1, 3, 5 o 10 minutos de música, con un fundido corto: los diez de fábrica, los tuyos o todos. Con la música en pausa se queda quieto.
 
 ![Los cinco looks de fábrica: Estudio, Hi-Fi 90s, Cinta 70s, Vidriera y Mastering](docs/screenshots/looks.jpg)
 
@@ -169,6 +171,7 @@ El botón ⓘ (o la tecla `I`) abre ACERCA DE: la versión, un botón para busca
 | `A` | Cajón de ajustes |
 | `L` | Historial de temas |
 | `I` | Acerca de Deck 90 y novedades de cada versión |
+| `R` | Modo vidriera: los looks rotan solos |
 | `F1`–`F5` | Looks de fábrica |
 | `F6`–`F8` | Tus looks C1–C3 (`Shift` + `F6`–`F8` guarda lo que ves) |
 | `H` | Esconder la consola |
@@ -231,7 +234,7 @@ node scripts/package.mjs bundle   # → dist/Deck-90-<versión>-app.bundle (el p
 
 ## ¿Ideas o problemas?
 
-Abrí un [issue](https://github.com/djkollmax/deck-90/issues) contando qué pasó o qué te gustaría ver. Si te gusta el proyecto, una ⭐ ayuda a que más gente lo encuentre.
+[Contá qué anda mal](https://github.com/djkollmax/deck-90/issues/new?template=problema.yml) o [proponé una idea](https://github.com/djkollmax/deck-90/issues/new?template=idea.yml): son dos formularios cortos en español. Si te gusta el proyecto, una ⭐ ayuda a que más gente lo encuentre.
 
 ## Créditos
 

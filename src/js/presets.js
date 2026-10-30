@@ -61,7 +61,13 @@ const presetLabel = id => /^c/.test(id) ? 'C' + id[1] : String(id);
 function applyPreset(id) {
   const p = presetOf(id);
   if (!p) { toast('C' + id[1] + ' está vacío · <span>GUARDAR</span> y tocá C' + id[1] + ' para guardar ahí lo que ves', 3000); return; }
-  const s = p.snap;
+  applySnap(p.snap);
+  if (typeof rotateCfg === 'object') rotateLeft = rotateCfg.min * 60e3;   // a look chosen by hand gets its full turn
+  const looks = /^c/.test(id) ? null : factoryLooks(Number(id));
+  toast('PRESET ' + presetLabel(id) + ' · <span>' + p.name + '</span>' + (looks && looks.length > 1 ? ' · ' + (looks.indexOf(p) + 1) + '/' + looks.length + ' · otra vez → ' + looks[(looks.indexOf(p) + 1) % looks.length].name : ''), 2200);
+}
+// put a look on screen (a preset's, or the next one of the rotation)
+function applySnap(s) {
   if (modsBeforeTape) modsBeforeTape = null;
   if (VU_SKINS.includes(s.vuSkin)) setVUSkin(s.vuSkin);
   if (SPECTRUM_SKINS.some(x => x[0] === s.spectrumSkin)) setSpectrumSkin(s.spectrumSkin);
@@ -77,8 +83,6 @@ function applyPreset(id) {
   applyModules(); savePrefs(); syncConsole();
   if (typeof showSkinMenu === 'function' && skinMenu.classList.contains('show')) showSkinMenu(false);
   if (!running) drawIdle();
-  const looks = /^c/.test(id) ? null : factoryLooks(Number(id));
-  toast('PRESET ' + presetLabel(id) + ' · <span>' + p.name + '</span>' + (looks && looks.length > 1 ? ' · ' + (looks.indexOf(p) + 1) + '/' + looks.length + ' · otra vez → ' + looks[(looks.indexOf(p) + 1) % looks.length].name : ''), 2200);
 }
 function savePreset(id) {
   presetSaveArmed = false;
@@ -95,6 +99,7 @@ function presetMatches(id) {
 }
 // the console segment: 1–5 and C1–C3 load (Shift+click on C saves), GUARDAR arms a save
 function presetButton(v, shift) {
+  if (v === 'rotate') { showRotateMenu(!rotateMenuOpen()); return; }
   if (v === 'save') {
     presetSaveArmed = !presetSaveArmed; syncConsole();
     if (presetSaveArmed) toast('Tocá <span>C1, C2 o C3</span> para guardar ahí lo que está en pantalla', 3000);

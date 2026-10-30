@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.6.0
+
+### Added
+- **Showroom mode: the looks turn by themselves.** ↻ ROTAR, beside GUARDAR in LOOKS (or the `R` key), opens a small menu: on or off, every 1, 3, 5 or 10 minutes, and which looks: the ten favourites (each slot's two), your C1–C3, or all of them. The rack goes to the next one with a short fade and says its name. Only music time counts: with the song paused, in the mini strip, with the big tape alone, the window hidden or a menu open, it holds still. A look chosen by hand gets its full turn; it's remembered with your settings (and in their copy).
+- Spanish forms on GitHub for a problem or an idea.
+
+### Changed
+- A new GIF at the top of the README: the console, a VU face picked by its picture and a look changing with the fade.
+
 ## 7.5.2
 
 ### Changed

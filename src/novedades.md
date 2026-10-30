@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.6.0 — 2026-10-30
+
+### Nuevo
+- **Modo vidriera: los looks rotan solos.** ↻ ROTAR, al lado de GUARDAR en LOOKS (o la tecla `R`), abre un menú chico: prendido o apagado, cada 1, 3, 5 o 10 minutos, y cuáles: los diez de fábrica (los dos de cada número), tus C1–C3 o todos. El rack pasa al siguiente con un fundido corto y te dice el nombre. Solo cuenta el tiempo de música: con el tema en pausa, en la tira mini, con la cinta grande sola, la ventana escondida o un menú abierto, se queda quieto. Un look que elegís a mano tiene su turno completo; se recuerda con tus ajustes (y en su copia).
+- Formularios en español en GitHub para contar un problema o proponer una idea.
+
+### Cambios
+- Un GIF nuevo arriba del README: la consola, un vúmetro elegido por su foto y un look que cambia con el fundido.
+
 ## 7.5.2 — 2026-10-30
 
 ### Cambios

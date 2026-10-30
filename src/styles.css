@@ -1263,3 +1263,16 @@ body.is-app .seg input{ -webkit-app-region:no-drag; }
 /* 7.5.2 · the clock and its city on one row (PANTALLA): the four blocks come out even, two by two */
 .drawer-block .seg.clock-seg button{ flex:0 1 auto; min-width:52px; }
 .drawer-block .seg.clock-seg input{ flex:1 1 90px; }
+
+/* ── modo vidriera: ↻ ROTAR and its menu, and the fade between looks ── */
+.console .seg.preset button.rotate{ font-size:11px; letter-spacing:1.5px; }
+.rotate-menu{ width:auto; min-width:380px; max-width:calc(100vw - 16px); }
+.rot-row{ display:flex; align-items:stretch; gap:0; border-radius:5px; overflow:hidden; border:1px solid rgba(255,255,255,.085); background:#0a0d14; }
+.rot-row span{ flex:0 0 74px; display:flex; align-items:center; padding:0 10px; font:600 10px 'Deck90 Display', sans-serif; letter-spacing:2px; color:rgba(226,200,132,.78); background:rgba(217,189,115,.04); border-right:1px solid rgba(255,255,255,.06); }
+.rot-row button{ flex:1 1 auto; padding:7px 10px; border:0; border-left:1px solid rgba(255,255,255,.05); background:transparent; color:#a39f90; cursor:pointer;
+  font:500 12.5px 'Deck90 Display', sans-serif; letter-spacing:1.2px; white-space:nowrap; }
+.rot-row button:first-of-type{ border-left:0; }
+.rot-row button:hover{ color:#f2d991; background:rgba(217,189,115,.07); }
+.rot-row button.on{ color:#120e05; font-weight:600; background:linear-gradient(180deg,#f3dc95,#c99f45); }
+.rack-unit .panel, .rack-unit .master-strip{ transition:opacity .26s ease; }
+.rack-unit.look-fade .panel, .rack-unit.look-fade .master-strip{ opacity:0; }
