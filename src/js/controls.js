@@ -50,25 +50,65 @@ function cycleSkin(){
   setSpectrumSkin(ids[(ids.indexOf(spectrumSkin) + 1) % ids.length]); savePrefs(); syncConsole();
   if (skinMenu.classList.contains('show')) showSkinMenu(false);
   const name = SPECTRUM_SKINS.find(s => s[0] === spectrumSkin)[1];
-  toast('SPECTRUM · <span>' + name + '</span>', 1400);
+  toast('ESPECTRO · <span>' + name + '</span>', 1400);
 }
-// "MÁS ▾": the other styles in a small menu under the button
-const skinMenu = document.getElementById('skinMenu');
-function showSkinMenu(on) {
-  skinMenu.classList.toggle('show', on);
-  if (on) {
-    const b = document.querySelector('.seg[data-group="skin"] .more').getBoundingClientRect();
-    skinMenu.style.left = Math.max(8, Math.min(window.innerWidth - skinMenu.offsetWidth - 8, b.left)) + 'px';
-    skinMenu.style.top = (b.bottom + 4) + 'px';
-    skinMenu.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === spectrumSkin));
+// The VU and spectrum pickers: a button with a picture of the style in use; the menu shows every style with
+// its picture (img/thumbs, taken from the displays themselves) and a line about it.
+const VU_INFO = {
+  MODERN: ['STUDIO', 'arco verde y barra de LEDs'], HIFI90: ['HI-FI 90s', 'arco azul de minicomponente, con barra'],
+  REEL70: ['CINTA 70s', 'crema de grabador a cinta'], BLUE: ['AZUL', 'retroiluminado azul'], COBALT: ['AZUL INTENSO', 'azul profundo, aguja naranja'],
+  CREAM: ['CREMA', 'marfil clásico con arco rojo'], DUO: ['DÚO', 'los dos en una cara ancha'],
+  BARCYAN: ['LED CIAN', 'dos filas de LEDs turquesa'], BARGREEN: ['LED VERDE', 'dos filas de LEDs verdes'],
+};
+const SKIN_INFO = {
+  MODERN: 'curva de colores con sus picos', RETRO: 'barras con picos, como en el 97', COLUMNS: 'columnas blancas',
+  FL90: 'display fluorescente verde', LED80: 'columnas de LEDs del minicomponente', SHOWROOM: 'turquesa de vidriera, con demo en silencio',
+  FLSPEC: 'verde, amarillo y naranja, con PEAK HOLD', FLSPEC2: 'turquesa, la punta de cada barra más clara',
+  AMBER: 'estéreo: izquierdo arriba, derecho abajo', RTA: '31 bandas de estudio', LCD: 'matriz de puntos verde', SPECTRO: 'el tema como cascada de colores',
+};
+const pickerList = which => which === 'vu' ? VU_SKINS.map(id => [id, VU_INFO[id][0], VU_INFO[id][1]])
+  : SPECTRUM_SKINS.map(([id, name]) => [id, name, SKIN_INFO[id] || '']);
+const pickerThumb = (which, id) => 'img/thumbs/' + (which === 'vu' ? 'vu-' : 'sp-') + id + '.jpg';
+const skinMenu = document.getElementById('styleMenu');
+let pickerOpen = null;
+function syncPickers() {
+  for (const which of ['vu', 'skin']) {
+    const p = document.querySelector('.seg.picker[data-picker="' + which + '"]'); if (!p) continue;
+    const cur = which === 'vu' ? vuSkin : spectrumSkin, it = pickerList(which).find(x => x[0] === cur) || [cur, cur];
+    const img = p.querySelector('.picker-thumb'), src = pickerThumb(which, it[0]);
+    if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+    p.querySelector('.picker-name').textContent = it[1];
+    p.querySelector('.picker-btn').classList.toggle('open', pickerOpen === which && skinMenu.classList.contains('show'));
   }
 }
+function renderPicker(which) {
+  const cur = which === 'vu' ? vuSkin : spectrumSkin;
+  skinMenu.querySelector('.style-head').textContent = which === 'vu' ? 'CARA DEL VÚMETRO' : 'ESTILO DEL ESPECTRO';
+  skinMenu.querySelector('.style-grid').innerHTML = pickerList(which).map(([id, name, desc]) =>
+    '<button data-v="' + id + '"' + (id === cur ? ' class="on"' : '') + '><img src="' + pickerThumb(which, id) + '" alt=""><b>' + name + '</b><span>' + desc + '</span></button>').join('');
+  skinMenu.querySelector('.style-foot').innerHTML = which === 'vu'
+    ? 'Con el teclado: <kbd>V</kbd> pasa a la siguiente cara. Cada look (1–5, C1–C3) guarda la suya.'
+    : 'Con el teclado: <kbd>T</kbd> pasa al siguiente estilo, <kbd>K</kbd> cambia la sensibilidad de los FL, LED, LCD y RTA.';
+}
+function showSkinMenu(on, which) {
+  if (on) {
+    pickerOpen = which || pickerOpen || 'skin';
+    renderPicker(pickerOpen);
+    skinMenu.classList.add('show');
+    const b = document.querySelector('.seg.picker[data-picker="' + pickerOpen + '"]').getBoundingClientRect();
+    skinMenu.style.left = Math.max(8, Math.min(window.innerWidth - skinMenu.offsetWidth - 8, b.left)) + 'px';
+    skinMenu.style.top = Math.max(8, Math.min(window.innerHeight - skinMenu.offsetHeight - 8, b.bottom + 6)) + 'px';
+  } else skinMenu.classList.remove('show');
+  syncPickers();
+}
 skinMenu.addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  setSpectrumSkin(b.dataset.v); showSkinMenu(false); savePrefs(); syncConsole();
-  if (!mods.spectrum) toggleModule('spectrum');
+  const b = e.target.closest('.style-grid button'); if (!b) return;
+  if (pickerOpen === 'vu') { setVUSkin(b.dataset.v); if (!mods.vu) toggleModule('vu'); }
+  else { setSpectrumSkin(b.dataset.v); if (!mods.spectrum) toggleModule('spectrum'); }
+  showSkinMenu(false); savePrefs(); syncConsole();
+  if (!running) drawIdle();
 });
-document.addEventListener('click', e => { if (skinMenu.classList.contains('show') && !e.target.closest('#skinMenu') && !e.target.closest('.more')) showSkinMenu(false); });
+document.addEventListener('click', e => { if (skinMenu.classList.contains('show') && !e.target.closest('#styleMenu') && !e.target.closest('.seg.picker')) showSkinMenu(false); });
 function toggleFullscreen(){
   if (window.winCtl && window.winCtl.fs) { window.winCtl.fs(); return; }   // program: native window full screen
   if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
@@ -86,7 +126,11 @@ document.getElementById('console').addEventListener('click', e => {
     else startAudio(v);
     return;
   }
-  if (g === 'skin') { if (v === 'more') { showSkinMenu(!skinMenu.classList.contains('show')); return; } setSpectrumSkin(v); }
+  if (g === 'vupick' || g === 'skinpick') {
+    const which = g === 'vupick' ? 'vu' : 'skin';
+    showSkinMenu(!(skinMenu.classList.contains('show') && pickerOpen === which), which); return;
+  }
+  if (g === 'skin') setSpectrumSkin(v);
   if (g === 'vu')   setVUSkin(v);
   if (g === 'cal')  vuCal = v === 'AUTO' ? 'AUTO' : Number(v);
   if (g === 'sens') setFlSensitivity(Number(v));

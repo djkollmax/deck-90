@@ -1152,3 +1152,67 @@ body.mini .hc-date, body.mini .hw-text{ font-size:10.5px; } body.mini #hcDay, bo
 .seg input::placeholder{ color:rgba(217,189,115,.42); }
 .seg input:focus{ background:rgba(0,0,0,.6); box-shadow:inset 0 0 0 1px rgba(217,189,115,.55); }
 body.is-app .seg input{ -webkit-app-region:no-drag; }
+
+/* ═══ 7.5 · the console, tidied: one type (the decks' condensed lettering), one colour code (gold = chosen,
+   blue = shown, green = listening), drawn icons, the VU and spectrum chosen by their pictures, and the
+   ⚙ drawer in four blocks with their labels in one column ═══ */
+.console .seg button, .console .seg-label, .console .seg input, .style-menu, .console-tab{
+  font-family:'Deck90 Display', 'Barlow Condensed', 'Segoe UI', Arial, sans-serif;
+}
+.console .seg{ height:30px; border-radius:5px; }
+.console .seg-label{ font-size:10px; font-weight:600; letter-spacing:2px; color:rgba(226,200,132,.78); padding:0 10px; }
+.console .seg button{ font-size:12.5px; font-weight:500; letter-spacing:1.2px; padding:0 11px; color:#a39f90; }
+.console .seg button:hover{ color:#f2d991; }
+.console .seg button.on{ font-weight:600; text-shadow:none; color:#120e05; }
+.console .seg.src button.on{ color:#03140a; }
+.console .seg.mods button.on{ color:#06121c; }
+.console .seg.src button.stop{ color:#c27a66; }
+.console .row-break{ flex-basis:100%; height:0; }
+.console .seg.preset button.custom{ color:#a39f90; }
+.console .seg.preset button.custom.on{ color:#120e05; }
+.console .seg.preset button.save{ font-size:11px; letter-spacing:1.5px; }
+.console .seg input{ font-weight:600; font-size:12.5px; letter-spacing:1.2px; }
+/* drawn icons in the tools */
+.console .seg.tools button{ width:34px; padding:0; display:flex; align-items:center; justify-content:center; color:#b4af9c; }
+.console .seg.tools svg{ flex:0 0 auto; }
+.console .seg.tools svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.console .seg.tools svg .fill{ fill:currentColor; stroke:none; }
+.console .seg.tools button.on{ color:#120e05; }
+/* the pickers: a picture of the style in use and its name */
+.console .seg.picker .picker-btn{ display:flex; align-items:center; gap:8px; padding:0 9px 0 4px; min-width:150px; }
+.picker-thumb{ width:52px; height:21px; border-radius:2px; object-fit:cover; box-shadow:0 0 0 1px rgba(255,255,255,.12); background:#000; }
+.picker-name{ flex:1 1 auto; text-align:left; color:#f2d991; font-weight:600; }
+.picker-caret{ width:0; height:0; border:4px solid transparent; border-top:5px solid rgba(226,200,132,.75); border-bottom:0; margin-left:2px; }
+.console .seg.picker .picker-btn.open{ background:rgba(217,189,115,.1); }
+/* the drawer: four blocks, each a titled column of controls, the labels lined up */
+.console-drawer{ display:none; }
+.console.open .console-drawer{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; align-items:start; }
+@media (max-width:1299px){ .console.open .console-drawer{ grid-template-columns:repeat(2, 1fr); } }
+@media (max-width:720px){ .console.open .console-drawer{ grid-template-columns:1fr; } }
+.drawer-block{ display:flex; flex-direction:column; gap:6px; padding:8px 10px 10px; border-radius:6px;
+  background:rgba(0,0,0,.22); box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); }
+.block-title{ font:600 10px 'Deck90 Display', 'Barlow Condensed', sans-serif; letter-spacing:3px; color:rgba(226,200,132,.62); padding:0 2px 2px; }
+.drawer-block .seg{ display:flex; width:100%; }
+.app-boot .drawer-block .seg.src-drawer{ display:flex; }
+.drawer-block .seg-label{ flex:0 0 74px; }
+.drawer-block .seg button{ flex:1 1 0; padding:0 6px; }
+.drawer-block .seg button.stop{ flex:0 0 34px; }
+.drawer-block .seg input{ flex:1 1 auto; width:auto; min-width:0; }
+.chassis-ti .drawer-block{ background:rgba(0,0,0,.16); }
+.chassis-ti.fin-gold .block-title{ color:#5a4524; }
+/* the style menu: every look with its picture */
+.style-menu{ position:fixed; z-index:8800; display:none; flex-direction:column; gap:8px; padding:10px; border-radius:8px; width:min(660px, calc(100vw - 16px));
+  max-height:calc(100vh - 24px); overflow:auto;
+  background:linear-gradient(180deg,#171a22,#0b0d12); border:1px solid rgba(217,189,115,.32); box-shadow:0 16px 40px rgba(0,0,0,.65); -webkit-app-region:no-drag; }
+.style-menu.show{ display:flex; }
+.style-head{ font:600 11px 'Deck90 Display', sans-serif; letter-spacing:3px; color:#f2d991; padding:0 2px; }
+.style-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.style-grid button{ display:flex; flex-direction:column; gap:3px; padding:5px 5px 7px; border-radius:6px; text-align:left; cursor:pointer;
+  background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); color:#c9c3ad; font-family:inherit; }
+.style-grid button img{ width:100%; aspect-ratio:2.5; border-radius:3px; object-fit:cover; background:#000; display:block; margin-bottom:3px; }
+.style-grid button b{ font-size:13px; font-weight:600; letter-spacing:1.2px; color:#f2d991; padding:0 2px; }
+.style-grid button span{ font-size:11.5px; font-weight:500; letter-spacing:.3px; color:rgba(170,176,186,.72); padding:0 2px; line-height:1.25; }
+.style-grid button:hover{ border-color:rgba(217,189,115,.4); background:rgba(217,189,115,.05); }
+.style-grid button.on{ border-color:#d9b973; background:linear-gradient(180deg,rgba(243,220,149,.14),rgba(201,159,69,.06)); box-shadow:0 0 0 1px #d9b973; }
+.style-foot{ font:500 11px 'Deck90 Display', sans-serif; letter-spacing:.8px; color:rgba(170,176,186,.6); padding:0 2px; }
+.style-foot kbd{ font-family:inherit; color:#f2d991; border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:0 4px; }

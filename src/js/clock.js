@@ -124,7 +124,7 @@ function drawWeather() {
   const old = !wx || Date.now() - wxAt > 3 * 3600e3;            // three hours without news: don't show stale numbers
   if (!clockCfg.place) {
     hcEl.wx.classList.add('hint'); hcCanvas(hcEl.icon, 0, 0); hcCanvas(hcEl.temp, 0, 0);
-    hcEl.cond.textContent = 'CLIMA'; hcEl.range.textContent = '⚙ → RELOJ → CIUDAD';
+    hcEl.cond.textContent = 'CLIMA'; hcEl.range.textContent = '⚙ → EXTRAS → CIUDAD';
     return;
   }
   hcEl.wx.classList.remove('hint');
@@ -137,7 +137,7 @@ function drawWeather() {
   // the city, and today's high and low
   hcEl.range.textContent = clockCfg.place.name.toUpperCase() +
     (old || wx.max === null || wx.min === null ? '' : ' · ↑' + Math.round(wx.max) + '° ↓' + Math.round(wx.min) + '°');
-  hcEl.wx.title = clockCfg.place.name + (clockCfg.place.area ? ', ' + clockCfg.place.area : '') + ' · datos de Open-Meteo.com (⚙ → RELOJ para cambiar la ciudad)';
+  hcEl.wx.title = clockCfg.place.name + (clockCfg.place.area ? ', ' + clockCfg.place.area : '') + ' · datos de Open-Meteo.com (⚙ → EXTRAS → CIUDAD para cambiarla)';
 }
 
 async function fetchWeather() {

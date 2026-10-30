@@ -436,6 +436,7 @@ function syncConsole() {
     seg.querySelectorAll('button').forEach(b => {
       if (g === 'src' && b.dataset.v === 'stop') { b.disabled = !activeSource; return; }
       if (g === 'mods') { b.classList.toggle('on', !!mods[b.dataset.v]); return; }
+      if (g === 'vupick' || g === 'skinpick') return;
       if (g === 'preset') {
         if (b.dataset.v === 'save') b.classList.toggle('on', typeof presetSaveArmed !== 'undefined' && presetSaveArmed);
         else b.classList.toggle('on', typeof presetMatches === 'function' && presetMatches(b.dataset.v));
@@ -454,6 +455,7 @@ function syncConsole() {
     });
   });
   if (typeof presetTitles === 'function') presetTitles();
+  if (typeof syncPickers === 'function') syncPickers();
   const ab = document.querySelector('.seg[data-group="cal"] button[data-v="AUTO"]');
   if (ab && (vuCal !== 'AUTO' || !activeSource)) ab.textContent = 'AUTO';
   const sens = document.querySelector('.seg[data-group="sens"]');
