@@ -41,6 +41,12 @@ contextBridge.exposeInMainWorld('appAbout', {
   onOpen: cb => ipcRenderer.on('about', () => cb()),
   info:   () => ipcRenderer.invoke('about-info'),            // { version, notes }
 });
+// a copy of the settings in a file (a save and an open dialog in the program)
+contextBridge.exposeInMainWorld('appSettings', {
+  save: text => ipcRenderer.invoke('settings-save', String(text)),
+  open: () => ipcRenderer.invoke('settings-open'),
+  reload: () => ipcRenderer.send('settings-reload'),
+});
 // the weather for the header display: find a place by name, and its weather now
 contextBridge.exposeInMainWorld('weather', {
   find: q => ipcRenderer.invoke('weather-find', String(q).slice(0, 80)),

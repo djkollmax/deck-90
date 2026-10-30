@@ -2,6 +2,10 @@
 
 ## 7.5.0 — 2026-10-30
 
+### Nuevo
+- **Una bienvenida la primera vez que se abre** (tres pasos): de dónde escucha Deck 90 (la PC, el micrófono o la DEMO), los cinco looks con su foto para probarlos en el rack de atrás, y dos extras: la ciudad para el clima y el QR de la pantalla en el celular. Aparece una sola vez; ⓘ → VER LA BIENVENIDA la vuelve a mostrar.
+- **Una copia de tus ajustes en un archivo**: ⚙ → EXTRAS → AJUSTES → GUARDAR COPIA guarda el look que tenés en pantalla, tus C1–C3, el reloj y la ciudad; CARGAR (tocalo dos veces, porque reemplaza lo que tenés) lo trae de vuelta, para otra PC o después de reinstalar. El historial de temas se exporta aparte, a Excel.
+
 ### Cambios
 - **Una consola más prolija.** La cara del VU y el estilo del espectro ahora son un botón cada uno, con la foto y el nombre del que estás usando; al tocarlo se abren todos con su foto (sacada de los propios displays) y una línea que lo describe. `V` y `T` los siguen recorriendo. Arriba quedan VU, ESPECTRO y VER; abajo, LOOKS (los presets) y las herramientas.
 - **Los ajustes ⚙ en cuatro bloques**: SONIDO (fuente, calibración 0 VU, SENS), PANTALLA (marco y tono), CASETERA Y CINTA, y EXTRAS (celular, reloj y la ciudad, que ahora tiene su propio campo). Las etiquetas en una columna y los botones de cada fila del mismo ancho; en ventanas de menos de 1300 px van de a dos bloques.

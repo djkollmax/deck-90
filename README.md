@@ -142,6 +142,7 @@ El botón ⓘ (o la tecla `I`) abre ACERCA DE: la versión, un botón para busca
 - **El tema que suena:** título, artista y tapa de Spotless, Spotify, una pestaña del navegador (YouTube, SoundCloud…), Apple Music o cualquier reproductor que se informe a Windows. Las teclas de la casetera hacen play/pausa, stop, siguiente y anterior.
 - **Módulos que se apagan** y el resto se agranda para ocupar el lugar.
 - **Looks:** cinco de fábrica (Estudio, Hi‑Fi 90s, Cinta 70s, Vidriera, Mastering) y tres tuyos.
+- **Bienvenida** la primera vez (de dónde escucha, qué look, clima y celular) y **copia de tus ajustes** en un archivo para pasarlos a otra PC (⚙ → EXTRAS → AJUSTES).
 - **Reloj y clima** en el encabezado, con datos de [Open‑Meteo](https://open-meteo.com) cada 15 minutos (solo se envían el nombre de la ciudad, una vez, y sus coordenadas).
 - **Marcos de metal** TITANIO, NEGRO o CHAMPAGNE, o el rack CLÁSICO; tonos de pantalla STD, ANALOG, CRT y OLED.
 - **Bandeja del sistema:** en Windows la ✕ lo deja midiendo junto al reloj (Shift+✕ lo cierra), y puede arrancar con Windows directo a la bandeja.

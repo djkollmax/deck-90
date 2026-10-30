@@ -188,6 +188,11 @@ document.addEventListener('keydown', e => {
   if (e.target && e.target.closest && e.target.closest('input, textarea')) return;   // typing (the city) isn't a shortcut
   const k = e.key.toLowerCase();
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
+  if (typeof welcomeOpen === 'function' && welcomeOpen()) {
+    if (k === 'escape') { e.preventDefault(); showWelcome(false); }
+    if (/^f[1-8]$/.test(k)) e.preventDefault();
+    return;
+  }
   if (aboutOpen()) {
     if (k === 'escape' || k === 'i') { e.preventDefault(); showAbout(false); }
     if (/^f[1-8]$/.test(k)) e.preventDefault();

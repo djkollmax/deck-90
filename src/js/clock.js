@@ -180,7 +180,7 @@ function layoutClock() {
 function setClockMode(v) {
   if (!CLOCK_MODES.includes(v)) return;
   clockCfg.mode = v; saveClock(); syncClockSeg(); layoutClock();
-  if (v === 'weather') { if (clockCfg.place) fetchWeather(); else { hcEl.city.focus(); toast('Escribí tu ciudad en <span>RELOJ</span> y Enter', 2600); } }
+  if (v === 'weather') { if (clockCfg.place) fetchWeather(); else { hcEl.city.focus(); toast('Escribí tu ciudad en <span>CIUDAD</span> y Enter', 2600); } }
 }
 function syncClockSeg() {
   document.querySelectorAll('.seg[data-group="clock"] button').forEach(b => b.classList.toggle('on', b.dataset.v === clockCfg.mode));
@@ -191,21 +191,26 @@ hcEl.city.addEventListener('keydown', async e => {
   if (e.key === 'Escape') { hcEl.city.blur(); syncClockSeg(); return; }
   if (e.key !== 'Enter') return;
   e.preventDefault();
-  const q = hcEl.city.value.trim();
-  if (!q) return;
-  if (!window.weather) { toast('El clima funciona en el programa, no en el navegador.', 2800); return; }
+  if (await lookupCity(hcEl.city.value)) hcEl.city.blur();
+});
+// look a city up by name and keep the first match (the drawer's field and the welcome both use it)
+async function lookupCity(text) {
+  const q = String(text || '').trim();
+  if (!q) return false;
+  if (!window.weather) { toast('El clima funciona en el programa, no en el navegador.', 2800); return false; }
   toast('Buscando <span>' + q.replace(/[<>&]/g, '') + '</span>…', 1500);
   let found = null;
   try { found = await window.weather.find(q); } catch (_) {}
-  if (found === null) { toast('⚠ No pude consultar el clima: ¿hay internet?', 3200); return; }
-  if (!found.length) { toast('⚠ No encontré <span>' + q.replace(/[<>&]/g, '') + '</span>. Probá con otro nombre.', 3200); return; }
+  if (found === null) { toast('⚠ No pude consultar el clima: ¿hay internet?', 3200); return false; }
+  if (!found.length) { toast('⚠ No encontré <span>' + q.replace(/[<>&]/g, '') + '</span>. Probá con otro nombre.', 3200); return false; }
   const p = found[0];
   clockCfg.place = { name: p.name, area: p.area, lat: p.lat, lon: p.lon };
   if (clockCfg.mode !== 'weather') clockCfg.mode = 'weather';
-  wx = null; wxAt = 0; saveClock(); hcEl.city.blur(); syncClockSeg(); layoutClock();
+  wx = null; wxAt = 0; saveClock(); syncClockSeg(); layoutClock();
   toast('CLIMA · <span>' + p.name.replace(/[<>&]/g, '') + (p.area ? ', ' + p.area.replace(/[<>&]/g, '') : '') + '</span>', 3000);
   fetchWeather();
-});
+  return p;
+}
 hcEl.city.addEventListener('blur', syncClockSeg);
 // clicking the weather (or its hint) opens the drawer at the city
 hcEl.wx.addEventListener('click', () => { if (!drawerOpen) setDrawer(true); if (controlsHidden) setControlsHidden(false); setTimeout(() => hcEl.city.focus(), 50); });

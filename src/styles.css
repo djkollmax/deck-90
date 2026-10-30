@@ -736,7 +736,7 @@ body.mini:not(.is-app) .win-ctl button:not([data-w="mini"]){ display:none; }
 
 /* v6.2 · phone display */
 body:not(.is-app) .phone-seg{ display:none; }
-#phoneModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
+#phoneModal{ position:fixed; inset:0; z-index:9200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
 #phoneModal.show{ display:flex; }
 .phone-card{ width:min(420px,92vw); background:linear-gradient(180deg,#151821,#0a0c11); border:1px solid rgba(217,189,115,.35); border-radius:10px;
   padding:16px 18px 18px; text-align:center; color:#c9c3ad; box-shadow:0 20px 60px rgba(0,0,0,.8); font-size:11px; letter-spacing:.5px; }
@@ -818,7 +818,7 @@ details.about-ver summary i{ font-style:normal; font-size:9px; letter-spacing:1.
 .about-empty{ padding:28px; text-align:center; color:rgba(160,170,180,.55); font-size:11px; }
 
 /* ── update bar (program only) ── */
-#updBar{ position:fixed; right:14px; bottom:14px; z-index:8500; display:none; align-items:center; gap:8px; padding:7px 8px 7px 12px; border-radius:8px;
+#updBar{ position:fixed; right:14px; bottom:14px; z-index:9300; display:none; align-items:center; gap:8px; padding:7px 8px 7px 12px; border-radius:8px;
   background:#14120c; border:1px solid rgba(217,189,115,.45); box-shadow:0 8px 30px rgba(0,0,0,.5); font-size:10px; letter-spacing:1px; color:#f2d991; -webkit-app-region:no-drag; max-width:min(560px,92vw); }
 #updBar.show{ display:flex; }
 #updBar.err{ border-color:rgba(255,138,106,.5); color:#ffb39d; }
@@ -1216,3 +1216,46 @@ body.is-app .seg input{ -webkit-app-region:no-drag; }
 .style-grid button.on{ border-color:#d9b973; background:linear-gradient(180deg,rgba(243,220,149,.14),rgba(201,159,69,.06)); box-shadow:0 0 0 1px #d9b973; }
 .style-foot{ font:500 11px 'Deck90 Display', sans-serif; letter-spacing:.8px; color:rgba(170,176,186,.6); padding:0 2px; }
 .style-foot kbd{ font-family:inherit; color:#f2d991; border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:0 4px; }
+
+/* ── bienvenida (the first start) ── */
+#welcomeModal{ position:fixed; inset:0; z-index:9100; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); -webkit-app-region:no-drag; }
+#welcomeModal.show{ display:flex; }
+.welcome-card{ width:min(760px,94vw); font-family:'Deck90 Display', 'Barlow Condensed', 'Segoe UI', Arial, sans-serif; }
+.welcome-card .hist-head{ font-size:12px; }
+.welcome-card .hist-head b{ color:#79e9dc; font-weight:600; }
+.welcome-dots{ display:flex; gap:6px; justify-content:center; margin:10px 0 4px; }
+.welcome-dots i{ width:22px; height:3px; border-radius:2px; background:rgba(255,255,255,.12); }
+.welcome-dots i.on{ background:#d9b973; }
+.welcome-step{ display:none; padding:6px 4px 4px; }
+.welcome-step.on{ display:block; }
+.welcome-step h3{ font-size:20px; font-weight:600; letter-spacing:1px; color:#f2d991; margin:6px 0 6px; }
+.welcome-step p{ font-size:14px; line-height:1.45; color:#c9c3ad; letter-spacing:.3px; margin:0 0 12px; }
+.welcome-src, .welcome-looks, .welcome-extra{ display:grid; gap:8px; }
+.welcome-src{ grid-template-columns:repeat(3,1fr); }
+.welcome-looks{ grid-template-columns:repeat(5,1fr); }
+.welcome-extra{ grid-template-columns:1fr 1fr; }
+.welcome-src button, .welcome-looks button{ display:flex; flex-direction:column; gap:4px; text-align:left; padding:10px; border-radius:7px; cursor:pointer;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); color:#c9c3ad; font-family:inherit; }
+.welcome-looks button{ padding:6px 6px 8px; }
+.welcome-src button b, .welcome-looks button b{ font-size:15px; font-weight:600; letter-spacing:1px; color:#f2d991; }
+.welcome-src button span, .welcome-looks button span{ font-size:12.5px; color:rgba(170,176,186,.75); }
+.welcome-looks img{ width:100%; aspect-ratio:2.5; object-fit:cover; border-radius:3px; display:block; background:#000; }
+.welcome-src button:hover, .welcome-looks button:hover{ border-color:rgba(217,189,115,.4); }
+.welcome-src button.on, .welcome-looks button.on{ border-color:#d9b973; box-shadow:0 0 0 1px #d9b973; background:linear-gradient(180deg,rgba(243,220,149,.13),rgba(201,159,69,.05)); }
+.welcome-extra > div{ display:flex; flex-direction:column; gap:6px; padding:12px; border-radius:7px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+.welcome-extra b{ font-size:14px; font-weight:600; letter-spacing:1.5px; color:#f2d991; }
+.welcome-extra span{ font-size:13px; line-height:1.4; color:#bdb8a6; flex:1 1 auto; }
+.welcome-extra .hist-btn{ align-self:flex-start; font-family:inherit; font-size:12px; }
+.welcome-city{ display:flex; gap:6px; }
+.welcome-city input{ flex:1 1 auto; min-width:0; padding:6px 10px; border-radius:5px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.4); color:#f2d991;
+  font:600 13px 'Deck90 Display', sans-serif; letter-spacing:1.2px; text-transform:uppercase; outline:none; }
+.welcome-city input:focus{ border-color:rgba(217,189,115,.6); }
+.welcome-tip{ margin-top:12px !important; font-size:13px !important; color:rgba(170,176,186,.8) !important; }
+.welcome-tip kbd{ font-family:inherit; color:#f2d991; border:1px solid rgba(255,255,255,.15); border-radius:3px; padding:0 5px; }
+.welcome-foot{ display:flex; align-items:center; gap:8px; margin-top:14px; }
+.welcome-foot span{ flex:1 1 auto; }
+.welcome-foot .hist-btn{ font-family:inherit; font-size:12.5px; padding:7px 18px; }
+.welcome-foot .hist-btn.go{ color:#120e05; border-color:transparent; background:linear-gradient(180deg,#f3dc95,#c99f45); font-weight:600; }
+.welcome-foot .hist-btn.go:hover{ color:#120e05; filter:brightness(1.08); }
+@media (max-width:700px){ .welcome-looks{ grid-template-columns:repeat(3,1fr); } .welcome-extra, .welcome-src{ grid-template-columns:1fr; } }
+.about-btns{ display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }

@@ -177,6 +177,27 @@ app.whenReady().then(() => {
     catch (err) { return { error: err.code === 'EBUSY' ? 'el archivo está abierto en Excel' : err.message }; }
   });
 
+  // ── a copy of the settings (looks, C1–C3, the city…) in a file, and back ──
+  ipcMain.handle('settings-save', async (e, text) => {
+    if (!ours(e.sender) || typeof text !== 'string' || text.length > 1e6) return { error: 'datos no válidos' };
+    const r = await dialog.showSaveDialog(win, { title: 'Guardar los ajustes de Deck 90', defaultPath: path.join(app.getPath('documents'), 'Deck 90 - ajustes.json'),
+                                                 filters: [{ name: 'Ajustes de Deck 90', extensions: ['json'] }] });
+    if (r.canceled || !r.filePath) return { canceled: true };
+    try { fs.writeFileSync(r.filePath, text, 'utf8'); return { ok: true, path: r.filePath }; } catch (err) { return { error: err.message }; }
+  });
+  // settings loaded from a file: the page starts again with them (a reload from the page itself is a navigation, refused)
+  ipcMain.on('settings-reload', e => { if (ours(e.sender)) win.webContents.reload(); });
+  ipcMain.handle('settings-open', async e => {
+    if (!ours(e.sender)) return { error: 'no' };
+    const r = await dialog.showOpenDialog(win, { title: 'Cargar ajustes de Deck 90', defaultPath: app.getPath('documents'), properties: ['openFile'],
+                                                 filters: [{ name: 'Ajustes de Deck 90', extensions: ['json'] }] });
+    if (r.canceled || !r.filePaths || !r.filePaths[0]) return { canceled: true };
+    try {
+      if (fs.statSync(r.filePaths[0]).size > 1e6) return { error: 'el archivo es demasiado grande' };
+      return { ok: true, text: fs.readFileSync(r.filePaths[0], 'utf8') };
+    } catch (err) { return { error: err.message }; }
+  });
+
   // ── Updates: GitHub, a few seconds after start and every 6 hours ──
   const updater = createUpdater({ app, net, log: mlog,
     // after an update, come back visible (a start with Windows passes --oculto, which the restart would repeat)

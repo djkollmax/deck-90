@@ -198,6 +198,11 @@
         <span class="seg-label">CIUDAD</span>
           <input id="cityInput" type="text" maxlength="60" placeholder="ESCRIBILA Y ENTER" spellcheck="false" autocomplete="off">
       </div>
+      <div class="seg" data-group="backup" title="Una copia de tus ajustes (looks, C1–C3, ciudad, marco…) en un archivo, para otra PC o por las dudas">
+        <span class="seg-label">AJUSTES</span>
+        <button data-v="save">GUARDAR COPIA</button>
+        <button data-v="load">CARGAR</button>
+      </div>
       </div>
     </div>
   </div>
@@ -319,6 +324,39 @@
   </div>
 </div>
 
+<!-- BIENVENIDA: the first start, three steps (js/welcome.js) -->
+<div id="welcomeModal" role="dialog" aria-label="Bienvenida a Deck 90">
+  <div class="hist-card welcome-card">
+    <div class="hist-head"><span>BIENVENIDO A <b>DECK 90</b></span><button id="welcomeClose" title="Saltar (Esc)">✕</button></div>
+    <div class="welcome-dots"><i></i><i></i><i></i></div>
+    <section class="welcome-step" data-step="0">
+      <h3>1 · Escucha lo que suena en tu PC</h3>
+      <p>Spotify, YouTube, un video, lo que sea: Deck 90 lo mide solo, sin configurar nada. Si querés, podés usar el micrófono o probar con la señal DEMO.</p>
+      <div class="welcome-src">
+        <button data-src="sys"><b>◉ SISTEMA</b><span>lo que suena en la PC</span></button>
+        <button data-src="mic"><b>♪ MICRÓFONO</b><span>lo que escucha el micrófono</span></button>
+        <button data-src="demo"><b>◇ DEMO</b><span>señal de prueba a 124 BPM</span></button>
+      </div>
+    </section>
+    <section class="welcome-step" data-step="1">
+      <h3>2 · Elegí cómo se ve</h3>
+      <p>Cinco looks listos: tocá uno y mirá el rack atrás. Cada uno tiene un segundo look (tocá su número otra vez) y en LOOKS podés guardar tres tuyos.</p>
+      <div class="welcome-looks"></div>
+    </section>
+    <section class="welcome-step" data-step="2">
+      <h3>3 · Dos extras</h3>
+      <div class="welcome-extra">
+        <div><b>CLIMA EN EL DISPLAY</b><span>La hora, la fecha y el clima de tu ciudad arriba de todo.</span>
+          <div class="welcome-city"><input id="welcomeCity" type="text" maxlength="60" placeholder="TU CIUDAD" spellcheck="false" autocomplete="off"><button id="welcomeCityGo" class="hist-btn">BUSCAR</button></div></div>
+        <div><b>PANTALLA EN EL CELULAR</b><span>Los vúmetros, el espectro y la cinta en el celular o la tablet, en la misma red WiFi.</span>
+          <button id="welcomePhone" class="hist-btn">VER EL QR</button></div>
+      </div>
+      <p class="welcome-tip">Todo esto queda en los ajustes: el primer botón de las herramientas, o la tecla <kbd>A</kbd>. La tecla <kbd>I</kbd> muestra todas las teclas y las novedades de cada versión.</p>
+    </section>
+    <div class="welcome-foot"><button id="welcomeBack" class="hist-btn">ATRÁS</button><span></span><button id="welcomeNext" class="hist-btn go">SIGUIENTE</button></div>
+  </div>
+</div>
+
 <!-- ACERCA DE / NOVEDADES (I) -->
 <div id="aboutModal" role="dialog" aria-label="Acerca de Deck 90">
   <div class="hist-card about-card">
@@ -330,7 +368,7 @@
         <div class="about-what">Analizador de audio para la PC: vúmetros, loudness (LUFS, LRA, true peak), espectro, BPM, fase y una casetera que sigue al tema que suena.</div>
         <div class="about-links"><a href="https://github.com/djkollmax/deck-90" target="_blank">GITHUB</a> · <a href="https://github.com/djkollmax/deck-90/releases" target="_blank">TODAS LAS VERSIONES</a> · <span id="aboutTech"></span></div>
       </div>
-      <button id="aboutCheck" class="hist-btn">BUSCAR ACTUALIZACIONES</button>
+      <div class="about-btns"><button id="aboutCheck" class="hist-btn">BUSCAR ACTUALIZACIONES</button><button id="aboutWelcome" class="hist-btn">VER LA BIENVENIDA</button></div>
     </div>
     <div class="about-tabs"><button class="about-tab" data-tab="news">NOVEDADES</button><button class="about-tab" data-tab="keys">TECLAS</button></div>
     <div class="hist-scroll about-body" id="aboutBody"></div>
@@ -361,6 +399,8 @@
 <script src="js/presets.js"></script>
 <script src="js/update.js"></script>
 <script src="js/about.js"></script>
+<script src="js/welcome.js"></script>
+<script src="js/backup.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/idle.js"></script>
 <script src="js/controls.js"></script>

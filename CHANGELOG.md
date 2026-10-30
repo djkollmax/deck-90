@@ -2,6 +2,10 @@
 
 ## 7.5.0
 
+### Added
+- **A welcome on the first start** (three steps): where Deck 90 listens (the PC, the microphone or the DEMO), the five looks with their pictures to try on the rack behind, and two extras: the city for the weather and the phone display's QR. It shows once; ⓘ → VER LA BIENVENIDA shows it again.
+- **A copy of your settings in a file**: ⚙ → EXTRAS → AJUSTES → GUARDAR COPIA writes the look on screen, your C1–C3 and the clock and city to a file; CARGAR (tap twice: it replaces what you have) reads one back, for another PC or after reinstalling. The track history exports on its own, to Excel.
+
 ### Changed
 - **A tidier console.** The VU face and the spectrum style are now one button each, showing a picture of the one in use and its name; it opens every style with its picture (taken from the displays themselves) and a line about it. `V` and `T` still step through them. The top row is VU, ESPECTRO and VER; the second, LOOKS (the presets) and the tools.
 - **The ⚙ settings in four blocks**: SONIDO (source, 0 VU calibration, SENS), PANTALLA (frame and screen tone), CASETERA Y CINTA, and EXTRAS (phone, clock and the city, now a field of its own). Labels in one column, the buttons of a row the same width; two blocks a row in windows under 1300 px.
