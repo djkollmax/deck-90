@@ -61,7 +61,7 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![Deck 90 — TITANIO frame, CREMA VU meters, the Spotify badge, FL 90s spectrum and the DECK 90 cassette deck](docs/screenshots/main.jpg)
 
-**One console** for everything; ⚙ opens the drawer with the finer settings.
+**One console** for everything: the VU face and spectrum style are picked from pictures, and ⚙ opens the finer settings in four blocks (SONIDO, PANTALLA, CASETERA Y CINTA, EXTRAS).
 
 ![The console with its settings drawer open](docs/screenshots/console.jpg)
 
@@ -92,7 +92,7 @@ From then on it **updates itself**: when a new release is out it says so, and on
   - **Spotify badge:** how much Spotify's loudness normalisation would change the track's volume (everything is played at −14 LUFS; a quieter track is raised only until its peak reaches −1 dB). With Spotless it allows for Spotless's own volume.
 - **Track history.** Every track heard for at least 30 s is logged with its integrated LUFS (as heard and the master's, without Spotless's volume), LRA, peak, BPM and the Spotify change. Open it with `L` or ☰ and export it as a CSV that Excel opens (`;` between fields, decimal commas).
 - **BPM.** Onset detection runs in an AudioWorklet. Tempo is found by autocorrelation over the last 8 s.
-- **Spectrum** in twelve styles (`T` steps through them, MÁS ▾ lists the newer ones):
+- **Spectrum** in twelve styles (the ESPECTRO button shows them all with a picture of each; `T` steps through them):
   - MODERN: smooth curve with peaks.
   - RETRO 97: LED columns.
   - COLUMNS: classic bars.
@@ -113,7 +113,7 @@ From then on it **updates itself**: when a new release is out it says so, and on
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
 - **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed, two looks each (press again for the other): Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
-- **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Type your city in the ⚙ drawer (RELOJ). The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off.
+- **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Type your city in ⚙ → EXTRAS → CIUDAD. The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off.
 - **The frame of a premium '90s deck.** MARCO in the ⚙ drawer: brushed TITANIO, NEGRO or CHAMPAGNE plates with every display behind glass in a polished bevel and its name engraved above it, or the CLÁSICO dark rack.
 - **Light on the machine.** What doesn't move in a display is painted once and copied each frame; minimized or in the tray nothing is drawn (measuring goes on); at most 60 frames a second; and with a song paused, once everything has settled, nothing is drawn until something moves again.
 - **It remembers.** The look, the window's size and place (or maximized), the mini strip's place, the phone display and the tray choices all come back as you left them.

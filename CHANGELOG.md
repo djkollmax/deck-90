@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.5.0
+
+### Changed
+- **A tidier console.** The VU face and the spectrum style are now one button each, showing a picture of the one in use and its name; it opens every style with its picture (taken from the displays themselves) and a line about it. `V` and `T` still step through them. The top row is VU, ESPECTRO and VER; the second, LOOKS (the presets) and the tools.
+- **The ⚙ settings in four blocks**: SONIDO (source, 0 VU calibration, SENS), PANTALLA (frame and screen tone), CASETERA Y CINTA, and EXTRAS (phone, clock and the city, now a field of its own). Labels in one column, the buttons of a row the same width; two blocks a row in windows under 1300 px.
+- Drawn icons for the tools (settings, history, big tape only, mini mode, hide, full screen, about) instead of text symbols that looked different on each PC.
+- The console's lettering is the decks' condensed type instead of Courier, larger and easier to read, and one colour code throughout: gold for what's chosen, blue for the modules shown, green for the source that's listening.
+- What you touch is in Spanish: ESPECTRO and CASETERA in VER, LOOKS for the presets; each module button says its key. The weather's hints point to ⚙ → EXTRAS → CIUDAD.
+
 ## 7.4.1
 
 ### Added

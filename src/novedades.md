@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.5.0 — 2026-10-30
+
+### Cambios
+- **Una consola más prolija.** La cara del VU y el estilo del espectro ahora son un botón cada uno, con la foto y el nombre del que estás usando; al tocarlo se abren todos con su foto (sacada de los propios displays) y una línea que lo describe. `V` y `T` los siguen recorriendo. Arriba quedan VU, ESPECTRO y VER; abajo, LOOKS (los presets) y las herramientas.
+- **Los ajustes ⚙ en cuatro bloques**: SONIDO (fuente, calibración 0 VU, SENS), PANTALLA (marco y tono), CASETERA Y CINTA, y EXTRAS (celular, reloj y la ciudad, que ahora tiene su propio campo). Las etiquetas en una columna y los botones de cada fila del mismo ancho; en ventanas de menos de 1300 px van de a dos bloques.
+- Íconos dibujados para las herramientas (ajustes, historial, solo la cinta, modo mini, esconder, pantalla completa, acerca de) en vez de símbolos de texto que se veían distinto en cada PC.
+- La letra de la consola es la condensada de las caseteras en lugar de la Courier, más grande y fácil de leer, y un solo código de colores: dorado para lo elegido, azul para los módulos que se ven, verde para la fuente que está escuchando.
+- Todo lo que se toca está en español: ESPECTRO y CASETERA en VER, LOOKS para los presets; cada botón de módulo dice su tecla. Los avisos del clima te mandan a ⚙ → EXTRAS → CIUDAD.
+
 ## 7.4.1 — 2026-10-29
 
 ### Nuevo

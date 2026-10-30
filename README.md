@@ -35,7 +35,7 @@ A partir de ahí **se actualiza solo**: cuando sale una versión nueva aparece u
 
 ### El display de arriba: reloj, tema y clima
 
-La hora en dígitos de 7 segmentos con el día y la fecha, el tema que suena en el medio y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → RELOJ, escribiendo el nombre de tu ciudad.
+La hora en dígitos de 7 segmentos con el día y la fecha, el tema que suena en el medio y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → EXTRAS: RELOJ lo prende y en CIUDAD escribís la tuya.
 
 ![El encabezado con el reloj y cinco climas distintos](docs/screenshots/header-weather.jpg)
 
@@ -73,7 +73,7 @@ Y dos de LED, **LED CIAN** y **LED VERDE**: los dos canales en dos filas de LEDs
 
 ### Doce estilos de analizador de espectro
 
-Del display fluorescente de un minicomponente al analizador de tercio de octava de un estudio. Los más nuevos, FL SPECTRUM y FL SPECTRUM CIAN: el clásico verde que se pone amarillo y naranja arriba, o turquesa con la punta de cada barra más clara, los dos con picos naranjas y su lámpara PEAK HOLD. La tecla `T` los recorre y el botón MÁS ▾ los lista. Los de estilo hardware (FL, LED, LCD, RTA) responden a la sensibilidad SENS (tecla `K`).
+Del display fluorescente de un minicomponente al analizador de tercio de octava de un estudio. Los más nuevos, FL SPECTRUM y FL SPECTRUM CIAN: el clásico verde que se pone amarillo y naranja arriba, o turquesa con la punta de cada barra más clara, los dos con picos naranjas y su lámpara PEAK HOLD. El botón ESPECTRO los muestra todos con su foto para elegir, y la tecla `T` los recorre. Los de estilo hardware (FL, LED, LCD, RTA) responden a la sensibilidad SENS (tecla `K`).
 
 ![Los doce estilos de espectro](docs/screenshots/spectrums.jpg)
 
@@ -93,9 +93,11 @@ TITANIO, NEGRO y CHAMPAGNE: cada display detrás de un vidrio con bisel pulido y
 
 ### La consola
 
-Todo se maneja desde una sola consola: estilo de espectro, módulos visibles y looks en la fila de arriba; con ⚙ se abre el cajón con la fuente, el vúmetro, la calibración, la sensibilidad, las caseteras, el celular, el reloj, el marco y el tono de pantalla. La tecla `H` esconde la consola.
+Todo se maneja desde una sola consola. Arriba, la cara del vúmetro y el estilo de espectro (cada botón muestra el que usás y abre todos con su foto), qué módulos se ven, los looks y las herramientas. Con ⚙ se abren los ajustes en cuatro bloques: SONIDO (fuente, calibración, sensibilidad), PANTALLA (marco y tono), CASETERA Y CINTA, y EXTRAS (celular, reloj y ciudad). La tecla `H` esconde la consola.
 
-![La consola con el cajón de ajustes abierto](docs/screenshots/console.jpg)
+![La consola con los ajustes abiertos](docs/screenshots/console.jpg)
+
+![Elegir el estilo del espectro mirándolos](docs/screenshots/console-picker.jpg)
 
 ### En el celular
 
