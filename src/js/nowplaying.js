@@ -59,7 +59,14 @@ function onNowPlaying(info){
   box.classList.toggle('paused', info.status !== 'Playing' && !audible());
   document.title = info.title ? (info.artist ? info.artist + ' – ' : '') + info.title + ' · Deck 90' : 'Deck 90';
 }
-if (window.nowPlaying) window.nowPlaying.on(info => guard('nowPlaying', () => onNowPlaying(info)));
+// The player can speak before the page has finished loading its scripts (guard lives in loop.js, further
+// down): what comes that early waits for the page's load and is handled then.
+let npEarly = null;
+if (window.nowPlaying) window.nowPlaying.on(info => {
+  if (typeof guard !== 'function') { npEarly = info; return; }
+  guard('nowPlaying', () => onNowPlaying(info));
+});
+window.addEventListener('load', () => { if (npEarly) { const i = npEarly; npEarly = null; guard('nowPlaying', () => onNowPlaying(i)); } });
 
 // Deck keys are live: they drive Spotless (or whatever player Windows reports).
 let deckHits = [];

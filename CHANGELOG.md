@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.6.1
+
+### Fixed
+- Sometimes, at start, the player's first message reached the page before it had finished loading and caused an error (the song showed up a moment later). Now it waits for the page and is shown right away.
+
 ## 7.6.0
 
 ### Added

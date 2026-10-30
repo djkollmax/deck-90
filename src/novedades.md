@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.6.1 — 2026-10-30
+
+### Arreglos
+- A veces, al arrancar, el primer aviso del reproductor llegaba antes de que la página terminara de cargar y daba un error (el tema aparecía un momento después). Ahora espera a la página y se muestra enseguida.
+
 ## 7.6.0 — 2026-10-30
 
 ### Nuevo
