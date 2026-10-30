@@ -1186,8 +1186,8 @@ body.is-app .seg input{ -webkit-app-region:no-drag; }
 .console .seg.picker .picker-btn.open{ background:rgba(217,189,115,.1); }
 /* the drawer: four blocks, each a titled column of controls, the labels lined up */
 .console-drawer{ display:none; }
-.console.open .console-drawer{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; align-items:start; }
-@media (max-width:1299px){ .console.open .console-drawer{ grid-template-columns:repeat(2, 1fr); } }
+.console.open .console-drawer{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; align-items:stretch; }
+@media (max-width:1649px){ .console.open .console-drawer{ grid-template-columns:repeat(2, 1fr); } }
 @media (max-width:720px){ .console.open .console-drawer{ grid-template-columns:1fr; } }
 .drawer-block{ display:flex; flex-direction:column; gap:6px; padding:8px 10px 10px; border-radius:6px;
   background:rgba(0,0,0,.22); box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); }
@@ -1259,3 +1259,7 @@ body.is-app .seg input{ -webkit-app-region:no-drag; }
 .welcome-foot .hist-btn.go:hover{ color:#120e05; filter:brightness(1.08); }
 @media (max-width:700px){ .welcome-looks{ grid-template-columns:repeat(3,1fr); } .welcome-extra, .welcome-src{ grid-template-columns:1fr; } }
 .about-btns{ display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }
+
+/* 7.5.2 · the clock and its city on one row (PANTALLA): the four blocks come out even, two by two */
+.drawer-block .seg.clock-seg button{ flex:0 1 auto; min-width:52px; }
+.drawer-block .seg.clock-seg input{ flex:1 1 90px; }

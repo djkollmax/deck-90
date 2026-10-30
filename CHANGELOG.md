@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.5.2
+
+### Changed
+- **The ⚙ settings come out even.** The clock and its city share one row in PANTALLA (OFF · HORA · + CLIMA and the city beside them), and EXTRAS keeps the phone and the copy of the settings: the four blocks pair up three and three, two and two. Two by two up to 1650 px wide (they were four across from 1300, and the source and clock rows got cramped), four across above that, each pair the same height. The weather's hints point to ⚙ → PANTALLA → RELOJ.
+
 ## 7.5.1
 
 ### Added

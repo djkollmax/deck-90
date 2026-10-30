@@ -35,7 +35,7 @@ A partir de ahí **se actualiza solo**: cuando sale una versión nueva aparece u
 
 ### El display de arriba: reloj, tema y clima
 
-La hora en dígitos de 7 segmentos con el día y la fecha, el tema que suena en el medio y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → EXTRAS: RELOJ lo prende y en CIUDAD escribís la tuya.
+La hora en dígitos de 7 segmentos con el día y la fecha, el tema que suena en el medio y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → PANTALLA → RELOJ: + CLIMA, y al lado escribís tu ciudad.
 
 ![El encabezado con el reloj y cinco climas distintos](docs/screenshots/header-weather.jpg)
 
@@ -93,7 +93,7 @@ TITANIO, NEGRO y CHAMPAGNE: cada display detrás de un vidrio con bisel pulido y
 
 ### La consola
 
-Todo se maneja desde una sola consola. Arriba, la cara del vúmetro y el estilo de espectro (cada botón muestra el que usás y abre todos con su foto), qué módulos se ven, los looks y las herramientas. Con ⚙ se abren los ajustes en cuatro bloques: SONIDO (fuente, calibración, sensibilidad), PANTALLA (marco y tono), CASETERA Y CINTA, y EXTRAS (celular, reloj y ciudad). La tecla `H` esconde la consola.
+Todo se maneja desde una sola consola. Arriba, la cara del vúmetro y el estilo de espectro (cada botón muestra el que usás y abre todos con su foto), qué módulos se ven, los looks y las herramientas. Con ⚙ se abren los ajustes en cuatro bloques: SONIDO (fuente, calibración, sensibilidad), PANTALLA (marco, tono, y el reloj con tu ciudad), CASETERA Y CINTA, y EXTRAS (celular y copia de los ajustes). La tecla `H` esconde la consola.
 
 ![La consola con los ajustes abiertos](docs/screenshots/console.jpg)
 

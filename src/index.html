@@ -55,10 +55,10 @@
       <div class="brand-name">DECK 90</div>
     </div>
     <div class="np" id="np">
-      <div class="hc" id="hcBox" title="Hora y fecha (⚙ → EXTRAS → RELOJ)"><canvas id="hcDigits"></canvas><div class="hc-date"><span id="hcDay"></span><span id="hcDate"></span></div></div>
+      <div class="hc" id="hcBox" title="Hora y fecha (⚙ → PANTALLA → RELOJ)"><canvas id="hcDigits"></canvas><div class="hc-date"><span id="hcDay"></span><span id="hcDate"></span></div></div>
       <img id="npCover" alt="">
       <div class="np-text" title="Lo que está sonando (según Windows)"><span id="npTitle"></span><span id="npArtist"></span></div>
-      <div class="hw" id="hwBox" title="Clima (⚙ → EXTRAS → CIUDAD) · datos de Open-Meteo.com"><canvas id="hwIcon"></canvas><canvas id="hwTemp"></canvas><div class="hw-text"><span id="hwCond"></span><span id="hwRange"></span></div></div>
+      <div class="hw" id="hwBox" title="Clima (⚙ → PANTALLA → RELOJ, tu ciudad y Enter) · datos de Open-Meteo.com"><canvas id="hwIcon"></canvas><canvas id="hwTemp"></canvas><div class="hw-text"><span id="hwCond"></span><span id="hwRange"></span></div></div>
     </div>
     <div class="title-right">
       <span id="statusText">STANDBY</span>
@@ -165,6 +165,13 @@
         <button data-v="2">CRT</button>
         <button data-v="3">OLED</button>
       </div>
+      <div class="seg clock-seg" data-group="clock" title="Hora, fecha y clima en el display de arriba (con los marcos de metal). Escribí tu ciudad y Enter">
+        <span class="seg-label">RELOJ</span>
+        <button data-v="off">OFF</button>
+        <button data-v="clock">HORA</button>
+        <button data-v="weather">+ CLIMA</button>
+        <input id="cityInput" type="text" maxlength="60" placeholder="TU CIUDAD + ENTER" spellcheck="false" autocomplete="off">
+      </div>
       </div>
       <div class="drawer-block">
         <div class="block-title">CASETERA Y CINTA</div>
@@ -187,16 +194,6 @@
         <button data-v="off">OFF</button>
         <button data-v="on">ON</button>
         <button data-v="qr">QR</button>
-      </div>
-      <div class="seg clock-seg" data-group="clock" title="Hora, fecha y clima en el display de arriba (con los marcos de metal). Escribí tu ciudad y Enter">
-        <span class="seg-label">RELOJ</span>
-        <button data-v="off">OFF</button>
-        <button data-v="clock">HORA</button>
-        <button data-v="weather">+ CLIMA</button>
-      </div>
-      <div class="seg city-seg" data-group="city" title="Tu ciudad para el clima: escribila y Enter">
-        <span class="seg-label">CIUDAD</span>
-          <input id="cityInput" type="text" maxlength="60" placeholder="ESCRIBILA Y ENTER" spellcheck="false" autocomplete="off">
       </div>
       <div class="seg" data-group="backup" title="Una copia de tus ajustes (looks, C1–C3, ciudad, marco…) en un archivo, para otra PC o por las dudas">
         <span class="seg-label">AJUSTES</span>

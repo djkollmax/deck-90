@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.5.2 — 2026-10-30
+
+### Cambios
+- **Los ajustes ⚙ quedan parejos.** El reloj y la ciudad comparten una fila en PANTALLA (OFF · HORA · + CLIMA y la ciudad al lado) y EXTRAS queda con el celular y la copia de los ajustes: los cuatro bloques quedan de a pares, tres y tres, dos y dos. Van de a dos hasta 1650 px de ancho (antes se ponían los cuatro en fila desde 1300 y las filas de la fuente y del reloj quedaban apretadas), y de a cuatro con más ancho, cada par de la misma altura. Los avisos del clima te mandan a ⚙ → PANTALLA → RELOJ.
+
 ## 7.5.1 — 2026-10-30
 
 ### Nuevo

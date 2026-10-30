@@ -124,7 +124,7 @@ function drawWeather() {
   const old = !wx || Date.now() - wxAt > 3 * 3600e3;            // three hours without news: don't show stale numbers
   if (!clockCfg.place) {
     hcEl.wx.classList.add('hint'); hcCanvas(hcEl.icon, 0, 0); hcCanvas(hcEl.temp, 0, 0);
-    hcEl.cond.textContent = 'CLIMA'; hcEl.range.textContent = '⚙ → EXTRAS → CIUDAD';
+    hcEl.cond.textContent = 'CLIMA'; hcEl.range.textContent = '⚙ → PANTALLA → RELOJ';
     return;
   }
   hcEl.wx.classList.remove('hint');
@@ -137,7 +137,7 @@ function drawWeather() {
   // the city, and today's high and low
   hcEl.range.textContent = clockCfg.place.name.toUpperCase() +
     (old || wx.max === null || wx.min === null ? '' : ' · ↑' + Math.round(wx.max) + '° ↓' + Math.round(wx.min) + '°');
-  hcEl.wx.title = clockCfg.place.name + (clockCfg.place.area ? ', ' + clockCfg.place.area : '') + ' · datos de Open-Meteo.com (⚙ → EXTRAS → CIUDAD para cambiarla)';
+  hcEl.wx.title = clockCfg.place.name + (clockCfg.place.area ? ', ' + clockCfg.place.area : '') + ' · datos de Open-Meteo.com (⚙ → PANTALLA → RELOJ para cambiarla)';
 }
 
 async function fetchWeather() {
@@ -180,7 +180,7 @@ function layoutClock() {
 function setClockMode(v) {
   if (!CLOCK_MODES.includes(v)) return;
   clockCfg.mode = v; saveClock(); syncClockSeg(); layoutClock();
-  if (v === 'weather') { if (clockCfg.place) fetchWeather(); else { hcEl.city.focus(); toast('Escribí tu ciudad en <span>CIUDAD</span> y Enter', 2600); } }
+  if (v === 'weather') { if (clockCfg.place) fetchWeather(); else { hcEl.city.focus(); toast('Escribí tu ciudad al lado de <span>+ CLIMA</span> y Enter', 2600); } }
 }
 function syncClockSeg() {
   document.querySelectorAll('.seg[data-group="clock"] button').forEach(b => b.classList.toggle('on', b.dataset.v === clockCfg.mode));
