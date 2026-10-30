@@ -4,6 +4,7 @@
 
 ### Added
 - **A welcome on the first start** (three steps): where Deck 90 listens (the PC, the microphone or the DEMO), the five looks with their pictures to try on the rack behind, and two extras: the city for the weather and the phone display's QR. It shows once; ⓘ → VER LA BIENVENIDA shows it again.
+- **A Windows installer** beside the zip: `Deck-90-…-setup.exe` installs Deck 90 for your user, without administrator rights, in `%LOCALAPPDATA%\Programs\Deck 90` (a folder it can update itself in, as INSTALAR does), with a Start menu entry, an optional desktop icon and an uninstaller in Settings → Apps that also takes away its "Arrancar con Windows" entry (your settings stay). Each release's installer is built and tested on Windows: installed, started and uninstalled.
 - **A copy of your settings in a file**: ⚙ → EXTRAS → AJUSTES → GUARDAR COPIA writes the look on screen, your C1–C3 and the clock and city to a file; CARGAR (tap twice: it replaces what you have) reads one back, for another PC or after reinstalling. The track history exports on its own, to Excel.
 
 ### Changed

@@ -13,9 +13,9 @@
 
 ### ⬇️ [Descargar Deck 90 (Windows o Linux)](https://github.com/djkollmax/deck-90/releases/latest)
 
-1. En la página de la última versión bajá `Deck-90-…-win32-x64.zip` (Windows) o `Deck-90-…-linux-x64.zip` (Linux).
-2. Descomprimilo donde quieras. No hace falta instalar nada.
-3. Abrí `Deck 90.exe` (o `deck-90` en Linux), poné música en cualquier reproductor y listo: se pone a medir solo.
+1. **Windows:** en la página de la última versión bajá `Deck-90-…-setup.exe` y abrilo. Se instala para tu usuario (no pide permisos de administrador), con su acceso en el menú Inicio y para desinstalarlo desde Configuración → Aplicaciones. Si preferís sin instalar, está el `Deck-90-…-win32-x64.zip`: descomprimilo donde quieras y abrí `Deck 90.exe`.
+2. **Linux:** bajá `Deck-90-…-linux-x64.zip`, descomprimilo y abrí `deck-90`.
+3. Poné música en cualquier reproductor y listo: se pone a medir solo. La primera vez, una bienvenida de tres pasos te muestra lo principal.
 
 A partir de ahí **se actualiza solo**: cuando sale una versión nueva aparece un aviso y con un clic en **INSTALAR** queda al día.
 
@@ -221,6 +221,8 @@ Hace falta Node.js 18 o más nuevo.
 npm install
 npm start                  # lo abre en modo desarrollo (la primera vez baja Electron)
 npm run package:win        # → dist/Deck-90-<versión>-win32-x64.zip
+# el instalador, en Windows con Inno Setup 6:
+# iscc /DAppVersion=<versión> installer\deck90.iss   → dist/Deck-90-<versión>-setup.exe
 npm run package:linux      # → dist/Deck-90-<versión>-linux-x64.zip
 node scripts/package.mjs bundle   # → dist/Deck-90-<versión>-app.bundle (el paquete de actualización)
 ```

@@ -126,12 +126,12 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ## Download & run
 
-Grab the zip for your system from **[Releases](https://github.com/djkollmax/deck-90/releases/latest)**, unzip it anywhere and run the program:
+From **[Releases](https://github.com/djkollmax/deck-90/releases/latest)**:
 
-- **Windows 10/11 (x64):** `Deck 90.exe`
-- **Linux (x64):** `deck-90`
+- **Windows 10/11 (x64):** `Deck-90-…-setup.exe` installs it for your user (no administrator rights), with a Start menu entry and an uninstaller in Settings → Apps. Or take the `…-win32-x64.zip`, unzip it anywhere and run `Deck 90.exe`, nothing installed.
+- **Linux (x64):** the `…-linux-x64.zip`; run `deck-90`.
 
-Nothing needs to be installed on Windows. If Windows SmartScreen says "Windows protected your PC" (it does for new programs without a paid signing certificate), click **More info → Run anyway**; every release is built on GitHub's servers from the code here.
+Either way it updates itself (INSTALAR). If Windows SmartScreen says "Windows protected your PC" (it does for new programs without a paid signing certificate), click **More info → Run anyway**; every release is built on GitHub's servers from the code here.
 
 Settings, the track history (`history.json`) and the log (`media.log`) are kept in your user folder:
 

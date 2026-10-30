@@ -61,6 +61,46 @@ jobs:
           Get-Content "$env:RUNNER_TEMP\deck90-smoke\media.log" -ErrorAction SilentlyContinue
           if ($p.ExitCode -ne 0 -or "$line" -notmatch 'DECK90_SMOKE ok') { exit 1 }
 
+      - name: Build the installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null; if ($LASTEXITCODE) { exit 1 } }
+          $version = node -p "require('./package.json').version"
+          & $iscc /Qp "/DAppVersion=$version" "/DSourceDir=..\dist\Deck 90-win32-x64" "/DOutputDir=..\dist" installer\deck90.iss
+          if ($LASTEXITCODE) { exit 1 }
+          Get-Item "dist\Deck-90-$version-setup.exe" | Format-List Name, Length
+
+      - name: Install, start and uninstall it
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $dir = "$env:RUNNER_TEMP\deck90-installed"
+          $p = Start-Process -FilePath "dist\Deck-90-$version-setup.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$dir" -PassThru -Wait
+          if ($p.ExitCode) { throw "setup exit code $($p.ExitCode)" }
+          if (-not (Test-Path "$dir\Deck 90.exe")) { throw 'Deck 90.exe was not installed' }
+          if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Deck 90.lnk")) { throw 'no Start menu entry' }
+          $env:DECK90_SMOKE = '1'
+          $env:DECK90_SMOKE_OUT = "$env:RUNNER_TEMP\smoke-installed.txt"
+          $s = Start-Process -FilePath "$dir\Deck 90.exe" -ArgumentList "--user-data-dir=$env:RUNNER_TEMP\deck90-smoke2" -PassThru
+          $null = $s.Handle
+          if (-not $s.WaitForExit(120000)) { Stop-Process -Id $s.Id -Force; throw 'the installed Deck 90 did not finish its start check' }
+          $line = Get-Content "$env:RUNNER_TEMP\smoke-installed.txt" -ErrorAction SilentlyContinue
+          Write-Host "installed: $line"
+          if ("$line" -notmatch 'DECK90_SMOKE ok') { exit 1 }
+          New-Item -ItemType Directory -Force "$dir\resources\app-anterior" | Out-Null   # as an update leaves it
+          $u = Start-Process -FilePath "$dir\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru -Wait
+          for ($i = 0; $i -lt 30 -and (Test-Path "$dir\Deck 90.exe"); $i++) { Start-Sleep 1 }   # the uninstaller finishes from a copy of itself
+          if (Test-Path "$dir\Deck 90.exe") { throw 'the uninstaller left Deck 90.exe' }
+          if (Test-Path "$dir\resources") { throw 'the uninstaller left the resources folder' }
+          Write-Host 'installer: install, start and uninstall ok'
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # v4.6.2
+        with:
+          name: installer
+          path: dist/Deck-90-*-setup.exe
+          retention-days: 7
+
       - name: Updates (install, rescue, damaged package, new engine)
         shell: pwsh
         run: |
@@ -117,6 +157,13 @@ jobs:
           node scripts/package.mjs bundle
           ls -la dist/*.zip dist/*.bundle
 
+      - name: The Windows installer, built and tested on Windows
+        if: env.NEEDED == 'yes'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093   # v4.3.0
+        with:
+          name: installer
+          path: dist
+
       - name: Start the Linux build once
         if: env.NEEDED == 'yes'
         run: |
@@ -140,7 +187,7 @@ jobs:
             else
               section CHANGELOG.md
             fi
-            printf '\n**Bajalo, descomprimilo y abrilo** (Windows → `Deck 90.exe`, Linux → `deck-90`). Si ya lo tenés, Deck 90 te ofrece **INSTALAR** solo.\n'
+            printf '\n**Windows:** bajá `Deck-90-%s-setup.exe` y abrilo (o el zip, si preferís sin instalar). **Linux:** el zip, y abrí `deck-90`. Si ya lo tenés, Deck 90 te ofrece **INSTALAR** solo.\n' "$VERSION"
           } > notes.md
           cat notes.md
 
@@ -150,8 +197,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/*.zip dist/*.bundle --clobber
+            gh release upload "$TAG" dist/*-setup.exe dist/*.zip dist/*.bundle --clobber
             gh release edit "$TAG" --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --draft=false --latest
           else
-            gh release create "$TAG" dist/*.zip dist/*.bundle --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --latest
+            gh release create "$TAG" dist/*-setup.exe dist/*.zip dist/*.bundle --target "$GITHUB_SHA" --title "Deck 90 $TAG" --notes-file notes.md --latest
           fi
