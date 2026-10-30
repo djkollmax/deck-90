@@ -1,10 +1,14 @@
 # Novedades
 
+## 7.5.1 — 2026-10-30
+
+### Nuevo
+- **Un instalador de Windows** además del zip: `Deck-90-…-setup.exe` instala Deck 90 para tu usuario, sin pedir permisos de administrador, en `%LOCALAPPDATA%\Programs\Deck 90` (una carpeta donde se puede actualizar solo con INSTALAR), con su acceso en el menú Inicio, un ícono en el escritorio si querés y un desinstalador en Configuración → Aplicaciones que también saca lo de "Arrancar con Windows" (tus ajustes quedan). El instalador de cada versión se arma y se prueba en Windows: se instala, arranca y se desinstala.
+
 ## 7.5.0 — 2026-10-30
 
 ### Nuevo
 - **Una bienvenida la primera vez que se abre** (tres pasos): de dónde escucha Deck 90 (la PC, el micrófono o la DEMO), los cinco looks con su foto para probarlos en el rack de atrás, y dos extras: la ciudad para el clima y el QR de la pantalla en el celular. Aparece una sola vez; ⓘ → VER LA BIENVENIDA la vuelve a mostrar.
-- **Un instalador de Windows** además del zip: `Deck-90-…-setup.exe` instala Deck 90 para tu usuario, sin pedir permisos de administrador, en `%LOCALAPPDATA%\Programs\Deck 90` (una carpeta donde se puede actualizar solo con INSTALAR), con su acceso en el menú Inicio, un ícono en el escritorio si querés y un desinstalador en Configuración → Aplicaciones que también saca lo de "Arrancar con Windows" (tus ajustes quedan). El instalador de cada versión se arma y se prueba en Windows: se instala, arranca y se desinstala.
 - **Una copia de tus ajustes en un archivo**: ⚙ → EXTRAS → AJUSTES → GUARDAR COPIA guarda el look que tenés en pantalla, tus C1–C3, el reloj y la ciudad; CARGAR (tocalo dos veces, porque reemplaza lo que tenés) lo trae de vuelta, para otra PC o después de reinstalar. El historial de temas se exporta aparte, a Excel.
 
 ### Cambios
