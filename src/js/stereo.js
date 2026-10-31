@@ -111,6 +111,13 @@ radioAudio.preload = 'none';
 let radioNow = null, radioTop = null, radioTopAt = -1, radioScan = 0, radioTry = 0;
 const radioPlaying = () => !radioAudio.paused && !!radioNow;
 const shortName = n => String(n || '').replace(/\b(fm|radio|am)\b/gi, '').replace(/\s+/g, ' ').trim().slice(0, 12) || 'RADIO';
+// what the radio does goes to media.log (a station that won't start says why there)
+const radioLog = m => { try { if (window.appLog) window.appLog('radio: ' + m); } catch (_) {} };
+// Windows lists Deck 90 itself as a player while the radio sounds: it shows the station there (and the bridge leaves
+// Deck 90's own session out of "what plays on the PC")
+function radioSession(st) {
+  try { if ('mediaSession' in navigator) navigator.mediaSession.metadata = st ? new MediaMetadata({ title: st.name, artist: 'Deck 90 · radio' + (st.freq ? ' ' + st.freq : ''), album: radioMem.band }) : null; } catch (_) {}
+}
 async function radioResolve(st) {
   if (st.url) return [st.url];
   if (!window.radio) return null;
@@ -125,22 +132,24 @@ async function radioTune(st, label) {
   toast('RADIO · <span>' + (st.freq ? st.freq + ' ' : '') + st.name.replace(/[<>&]/g, '') + '</span>' + (label ? ' · ' + label : ''), 1800);
   const urls = await radioResolve(st);
   if (t !== radioTry) return;                                  // another station was chosen meanwhile
-  if (!urls) { toast('⚠ No pude buscar la radio: ¿hay internet?', 3200); return; }
-  if (!urls.length) { toast('⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser', 3200); return; }
+  if (!urls) { radioLog('no lookup for ' + st.name); toast('⚠ No pude buscar la radio: ¿hay internet?', 3200); return; }
+  if (!urls.length) { radioLog('not found: ' + st.name); toast('⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser', 3200); return; }
   for (const u of urls) {
     try {
       radioAudio.src = u; await radioAudio.play();
       if (t !== radioTry) return;
+      radioLog('playing ' + st.name + ' · ' + u.slice(0, 120));
+      radioSession(st);
       if (!st.url) { st.url = u; saveRadio(); }
       if (typeof activeSource !== 'undefined' && activeSource !== 'sys' && window.winCtl) startAudio('sys');   // the meters follow it through the PC's sound
       stereoText(true); return;
-    } catch (_) { if (t !== radioTry) return; }
+    } catch (err) { radioLog(st.name + ' failed at ' + u.slice(0, 120) + ': ' + (err && (err.name + ' ' + err.message))); if (t !== radioTry) return; }
   }
   if (st.url) { st.url = ''; saveRadio(); }                    // an old address: look it up again next time
   toast('⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora', 3200);
 }
 function radioStop() {
-  radioTry++; radioScan = 0; radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); stereoText(true);
+  radioTry++; radioScan = 0; radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); stereoText(true); radioSession(null);
   if (typeof tunerStopped === 'function') tunerStopped();      // the rack's tuner shows it off too
 }
 radioAudio.addEventListener('pause', () => stereoText(true));

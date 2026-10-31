@@ -43,7 +43,10 @@ function IsPlaying($s) { try { return ([string]$s.GetPlaybackInfo().PlaybackStat
 # The choice itself, apart from Windows: the sessions, Windows' current one and the app followed last.
 # (scripts/test-media.ps1 runs it against made-up sessions on GitHub's Windows machines.)
 function Choose($all, $cur, $lastApp) {
-  $all = @($all | Where-Object { $_ })
+  # Deck 90 itself (its radio and CD files) is never "what plays on the PC": following it, the window's title
+  # (the song plus " · Deck 90") came back as the song, growing each time, and pausing "the PC" paused the radio
+  $all = @($all | Where-Object { $_ -and $_.SourceAppUserModelId -notmatch 'deck ?90' })
+  if ($cur -and $cur.SourceAppUserModelId -match 'deck ?90') { $cur = $null }
   $playing = @($all | Where-Object { IsPlaying $_ })
   if ($playing.Count -gt 0) {
     foreach ($s in $playing) { if ($s.SourceAppUserModelId -match 'spotless') { return $s } }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.8.8
+
+### Fixed
+- **The tuner's layout was lost in 7.8.7** (a later edit of the stylesheet cut it): the DT-90 kept its full height and pushed the rack past the window's bottom (its memory keys 1–6 out of reach), and `9` / VER → RADIO couldn't hide it. It shrinks with the window again and hides.
+- **Deck 90 followed itself as "the PC's player":** while the radio played, Windows listed Deck 90 as a media player, the bridge took it as what plays on the PC, and the window's title (the song plus " · Deck 90") came back as the song, longer each time. Deck 90's own session is left out now, and Windows shows the station's name for it.
+- What the radio does (the station playing, or why one didn't start) is written to media.log.
+
 ## 7.8.7
 
 ### Added

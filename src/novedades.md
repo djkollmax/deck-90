@@ -1,5 +1,12 @@
 # Novedades
 
+## 7.8.8 — 2026-10-31
+
+### Arreglos
+- **El diseño del sintonizador se había perdido en la 7.8.7** (una edición posterior de los estilos lo cortó): el DT-90 quedaba con su alto completo y empujaba el rack más allá del borde de la ventana (las memorias 1–6 fuera de alcance), y `9` / VER → RADIO no lo escondían. Ahora se achica con la ventana y se esconde.
+- **Deck 90 se seguía a sí mismo como "el reproductor de la PC":** mientras sonaba la radio, Windows mostraba a Deck 90 como reproductor, el puente lo tomaba como lo que suena en la PC y el título de la ventana (el tema más " · Deck 90") volvía como el tema, cada vez más largo. Ahora la sesión propia de Deck 90 queda afuera, y Windows muestra el nombre de la radio.
+- Lo que hace la radio (la radio que suena, o por qué una no arrancó) queda escrito en media.log.
+
 ## 7.8.7 — 2026-10-31
 
 ### Nuevo

@@ -1357,3 +1357,14 @@ body.stereo #updBar{ display:none; }
 .st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#8a3f00; }
 .st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="12"],
 .st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#a3140c; }
+
+/* SINTONIZADOR DT-90 (7.8.7): a rack unit of its own, its faceplate drawn by the component (vendor/dt90-tuner.js);
+   up to 200 px tall, giving up height like the other modules: the faceplate keeps its shape, smaller and centred.
+   Laid over its panel (absolute), so its own size never pushes the rack past the window's bottom.
+   Hidden with 9, in tape-only mode and in the mini. */
+.tuner-panel{ flex:0 1 200px; min-height:104px; max-height:200px; margin-top:7px; position:relative; overflow:hidden; }
+#tuner{ position:absolute; inset:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+#tuner svg{ width:100% !important; height:100% !important; }
+.tuner-panel.mod-off, .rack-unit.only-tape .tuner-panel{ display:none; }
+.tuner-panel.gold #tuner{ --face:#d9cba6; --face-top:#efe4c8; --face-bottom:#a8996f; --key-top:#efe6cf; --key-bottom:#a49470;
+  --edge:#9a8a63; --label:#3a3222; --label-dim:#6d5f43; }

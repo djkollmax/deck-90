@@ -436,6 +436,7 @@ function cleanInfo(info) {
   return o;
 }
 function sendMedia(info) {
+  if (info && !info.none && /deck ?90/i.test(info.app || '')) info = { none: true };   // Deck 90's own radio is not the PC's player
   info = cleanInfo(info);
   const st = info.none ? 'none' : (info.app || '?') + ' · ' + (info.status || '?') + ' · ' + (info.title || '');
   if (!info.ready && st !== lastStatus) { mlog('player: ' + st); lastStatus = st; }
