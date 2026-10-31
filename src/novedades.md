@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.9.3 — 2026-10-31
+
+### Nuevo
+- **La radio muestra el tema que está pasando y su calidad**, en el sintonizador y en el estéreo. Las radios mandan el artista y el tema dentro del stream, y el formato y la calidad en sus encabezados, pero una página no puede leer ninguno de los dos: ahora la radio pasa por un pequeño intermediario local del programa (en 127.0.0.1, con una sola conexión como antes) que deja pasar el audio y se queda con lo que dice la radio. La línea del sintonizador dice "LOS PERICOS - PARA XIMENA · MP3 128"; la línea del estéreo debajo de la frecuencia muestra el tema y, cada tanto, la radio con su calidad. Si una radio no informa su calidad, se mide del stream (en unos 12 s); una que no puede pasar por el intermediario (una lista HLS) suena directo con lo que dice Radio Browser. Las memorias guardan la calidad.
+
+### Cambios
+- **El CD salta de pista más rápido.** Cada orden a la lectora le preguntaba a Windows cuál era la lectora (una consulta WMI, unos cientos de milisegundos y a veces más) antes de hacer nada: ahora un salto va directo a la lectora ya abierta. Y varios toques seguidos de |◀◀ ▶▶| muestran cada pista al instante pero le mandan a la lectora solo la última, así busca una sola vez.
+
 ## 7.9.2 — 2026-10-31
 
 ### Nuevo

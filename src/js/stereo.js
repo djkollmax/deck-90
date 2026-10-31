@@ -100,7 +100,7 @@ let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: R
 try {
   const r = JSON.parse(localStorage.getItem(RADIO_KEY));
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
-    if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: 6 }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '' } : null);
+    if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: 6 }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0 } : null);
     if (RADIO_BANDS.includes(r.band)) radioMem.band = r.band;
     if (r.slot >= 0 && r.slot <= 6) radioMem.slot = r.slot | 0;
   }
@@ -132,8 +132,33 @@ async function radioResolve(st) {
   if (!window.radio) return null;
   const found = await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc);
   if (!found) return null;
+  radioFound = {}; found.forEach(f => { radioFound[f.url] = f; });   // Radio Browser's format and bitrate, for each address
   return found.map(f => f.url);
 }
+// What the station says (7.9.3): its format and bitrate, and the song it's playing. They come from the local
+// proxy the radio plays through (electron/radioproxy.js), tagged with the tune they belong to; a station that
+// plays directly keeps what Radio Browser said about it.
+let radioMeta = { id: -1, codec: '', kbps: 0, title: '' }, radioFound = {};
+const radioQuality = st => {
+  const codec = radioMeta.id === radioTry && radioMeta.codec || (st && st.codec) || '';
+  const kbps = radioMeta.id === radioTry && radioMeta.kbps || (st && st.kbps) || 0;
+  return (codec + (kbps ? ' ' + kbps : '')).trim();
+};
+const radioSong = () => radioMeta.id === radioTry && radioPlaying() ? radioMeta.title : '';
+if (window.radio && window.radio.onMeta) window.radio.onMeta(m => {
+  if (!m || String(m.id) !== String(radioTry)) return;           // an earlier station's
+  if (m.codec) radioMeta.codec = m.codec;
+  if (m.kbps && !(m.measured && radioMeta.kbps)) radioMeta.kbps = m.kbps;
+  if (typeof m.title === 'string') {
+    // "Artist - Song" as the station writes it; an ad or the station's own name says nothing
+    const t = m.title.trim(), st = radioNow;
+    radioMeta.title = !t || (st && t.toLowerCase().replace(/\W/g, '') === st.name.toLowerCase().replace(/\W/g, '')) ? '' : t;
+    if (radioMeta.title) radioLog('song ' + (st ? st.name : '') + ': ' + radioMeta.title.slice(0, 120));
+  }
+  const st = radioNow;
+  if (st && (radioMeta.codec || radioMeta.kbps)) { st.codec = radioMeta.codec || st.codec || ''; st.kbps = radioMeta.kbps || st.kbps || 0; }
+  stereoText(true); if (typeof tunerSync === 'function') tunerSync();
+});
 async function radioTune(st, label, retry) {
   if (!st) return;
   const t = ++radioTry;
@@ -143,18 +168,27 @@ async function radioTune(st, label, retry) {
   if (t !== radioTry) return;                                  // another station was chosen meanwhile
   if (!urls) { radioLog('no lookup for ' + st.name); toast('⚠ No pude buscar la radio: ¿hay internet?', 3200); return; }
   if (!urls.length) { radioLog('not found: ' + st.name); toast('⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser', 3200); return; }
+  radioMeta = { id: t, codec: '', kbps: 0, title: '' };
   for (const u of urls) {
+    // through the local proxy first (the station's song and bitrate), straight when that can't play it
+    const proxied = !/\.m3u8?(\?|$)/i.test(u) && window.radio && window.radio.proxy ? await window.radio.proxy(u, t).catch(() => null) : null;
+    if (t !== radioTry) return;
+    for (const src of proxied ? [proxied, u] : [u]) {
     try {
-      radioLog('tuning ' + st.name + ' · ' + u.slice(0, 120));
-      radioAudio.src = u;
+      radioLog('tuning ' + st.name + ' · ' + u.slice(0, 120) + (src === proxied ? ' (proxy)' : ''));
+      radioAudio.src = src;
       await Promise.race([radioAudio.play(), new Promise((_, no) => setTimeout(() => no(new Error('no answer in 12 s')), 12000))]);
       if (t !== radioTry) return;
+      const rb = radioFound[u];
+      if (rb && !radioMeta.codec) { st.codec = rb.codec || st.codec || ''; }
+      if (rb && !radioMeta.kbps && rb.bitrate) { st.kbps = rb.bitrate; }
       radioLog('playing ' + st.name + ' · ' + u.slice(0, 120));
       radioSession(st);
       if (!st.url) { st.url = u; saveRadio(); }
       if (typeof activeSource !== 'undefined' && activeSource !== 'sys' && window.winCtl) startAudio('sys');   // the meters follow it through the PC's sound
       stereoText(true); return;
-    } catch (err) { radioLog(st.name + ' failed at ' + u.slice(0, 120) + ': ' + (err && (err.name + ' ' + err.message))); if (t !== radioTry) return; }
+    } catch (err) { radioLog(st.name + ' failed at ' + u.slice(0, 120) + (src === proxied ? ' (proxy)' : '') + ': ' + (err && (err.name + ' ' + err.message))); if (t !== radioTry) return; }
+    }
   }
   if (st.url) {                                                 // an old address: look the station up again, once
     st.url = ''; saveRadio();
@@ -180,7 +214,7 @@ function radioMemory(n, hold) {
   const list = radioMem[radioMem.band];
   if (hold) {
     if (!radioNow) { toast('Primero sintonizá una radio (TUNE ◀ ▶) y después mantené apretado el número', 3000); return; }
-    list[n - 1] = { name: radioNow.name, freq: radioNow.freq || '', q: radioNow.q || radioNow.name, cc: radioNow.cc || '', url: radioNow.url || '' };
+    list[n - 1] = { name: radioNow.name, freq: radioNow.freq || '', q: radioNow.q || radioNow.name, cc: radioNow.cc || '', url: radioNow.url || '', codec: radioNow.codec || '', kbps: radioNow.kbps || 0 };
     radioMem.slot = n; saveRadio(); stereoText(true);
     toast('Guardada en <span>' + radioMem.band + '-' + n + '</span> · ' + radioNow.name.replace(/[<>&]/g, ''), 2200);
     return;
@@ -228,10 +262,16 @@ function cdTrack(d) {
   cdGo(tr[i].n);
 }
 let cdJump = null;                                             // the track asked for, until the drive is there
+// A jump shows at once; the drive gets it at once too, unless it's one of quick presses in a row (|◀◀ ▶▶| ▶▶|):
+// then only the last one goes, 0.25 s after the presses stop, so the drive seeks once instead of on every press.
+let cdGoT = 0, cdGoAt = 0;
 function cdGo(n) {
-  window.cdrom.cmd('cd-play ' + n);
-  cdJump = { n, until: performance.now() + 4000 };
-  cdState = { state: 'seeking', track: n, pos: 0, at: performance.now() };
+  const now = performance.now(), send = () => { cdGoT = 0; window.cdrom.cmd('cd-play ' + n); cdJump = { n, until: performance.now() + 4000 }; };
+  clearTimeout(cdGoT);
+  if (now - cdGoAt > 600) send(); else cdGoT = setTimeout(send, 250);
+  cdGoAt = now;
+  cdJump = { n, until: now + 4600 };
+  cdState = { state: 'seeking', track: n, pos: 0, at: now };
   stereoText(true);
 }
 function cdToggle() {
@@ -371,11 +411,14 @@ function stereoText(force) {
     const st = radioNow || (radioMem[radioMem.band][(radioMem.slot || 1) - 1]) || RADIO_DEFAULTS[0];
     const live = radioPlaying();
     const freq = st.freq ? st.freq : shortName(st.name).toUpperCase();
-    key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot;
+    const q = live ? radioQuality(st) : '', song = radioSong();
+    // the line under the frequency is short: the song, and every few seconds the station with its quality
+    const line = !live ? '' : song && Math.floor(Date.now() / 4000) % 3 !== 2 ? song : [st.name, q].filter(Boolean).join(' · ');
+    key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot + '|' + line;
     if (key !== stereoShown || force) {
       stereoShown = key;
       stereoDisplay.setPlayback(false);
-      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: live ? st.name : '', mono: radioMem.band === 'AM' });
+      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, mono: radioMem.band === 'AM' });
     }
   } else {
     const playing = stereoPlaying();

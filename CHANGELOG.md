@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.9.3
+
+### Added
+- **The radio shows the song it's playing and its quality**, in the tuner and the car stereo. Stations send the artist and song inside the stream, and the format and bitrate in its headers, but a page can't read either: the radio now plays through a small local proxy in the program (on 127.0.0.1, one connection as before) that passes the audio on and keeps what the station says. The tuner's line reads "LOS PERICOS - PARA XIMENA · MP3 128"; the stereo's line under the frequency shows the song, and every few seconds the station with its quality. A station that doesn't say its bitrate gets it measured from the stream (after about 12 s); one that can't come through the proxy (an HLS playlist) plays directly with what Radio Browser says about it. Memories keep the quality.
+
+### Changed
+- **CD track jumps are quicker.** Every command to the drive asked Windows which drive it was (a WMI query, a few hundred milliseconds, sometimes more) before doing anything: a jump goes straight to the drive already open now. And quick presses of |◀◀ ▶▶| in a row show each track at once but send the drive only the last one, so it seeks once.
+
 ## 7.9.2
 
 ### Added

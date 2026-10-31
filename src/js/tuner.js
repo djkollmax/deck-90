@@ -103,7 +103,9 @@ function tunerLine() {
   }
   const st = tunerStation();
   const name = st ? st.name : radioMem.band + ' VACÍA';
-  const text = !tunerPower ? 'STANDBY' : radioPlaying() ? (tunerDial(st).f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO') : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
+  // live: the song the station sends (or EN VIVO) and its quality, "LOS PERICOS - PARA XIMENA · MP3 128"
+  const live = radioPlaying(), q = live ? radioQuality(st) : '', song = live ? radioSong() : '';
+  const text = !tunerPower ? 'STANDBY' : live ? [song || (tunerDial(st).f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO'), q].filter(Boolean).join(' · ') : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
   return { name, text };
 }
 // the dial: the station's own frequency, or one in its name ("La 100 - 99.9 FM", "Radio 10 AM 710"); none (a station

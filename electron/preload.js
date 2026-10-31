@@ -62,5 +62,8 @@ contextBridge.exposeInMainWorld('cdrom', {
 contextBridge.exposeInMainWorld('radio', {
   find: (q, cc) => ipcRenderer.invoke('radio-find', String(q).slice(0, 60), String(cc || '').slice(0, 2)),
   top:  () => ipcRenderer.invoke('radio-top'),
+  // 7.9.3: the stream through Deck 90's local proxy, and what the station says (song, format, bitrate)
+  proxy: (u, id) => ipcRenderer.invoke('radio-proxy', String(u).slice(0, 1200), String(id).slice(0, 20)),
+  onMeta: cb => ipcRenderer.on('radio-meta', (e, m) => cb(m)),
 });
 contextBridge.exposeInMainWorld('appLog', msg => ipcRenderer.send('app-log', String(msg).slice(0, 800)));

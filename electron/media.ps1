@@ -81,7 +81,10 @@ function CdDrive() {
   if ($in.Count -gt 0) { return $in[0] }
   return $d[0]
 }
-function CdOpen() {
+# CdOpen: the drive, opened for MCI. Finding it asks Windows (WMI, a few hundred ms, sometimes more), so a command
+# on a drive already open uses it as it is: a track jump goes straight to the drive (7.9.3); cd-info looks again.
+function CdOpen([switch]$Fresh) {
+  if (-not $Fresh -and $script:cdOpen -and $script:cdDrive) { return [pscustomobject]@{ Drive = $script:cdDrive } }
   $d = CdDrive
   if (-not $d) { return $null }
   if ($script:cdOpen -and $script:cdDrive -eq $d.Drive) { return $d }
@@ -98,7 +101,7 @@ function CdSecs([string]$t) {                     # mm:ss:ff (75 frames a second
   return [int]$p[0] * 60 + [int]$p[1] + $f
 }
 function CdInfo() {
-  $d = CdOpen
+  $d = CdOpen -Fresh
   if (-not $d) { return @{ cd = @{ drive = $null } } }
   $o = [ordered]@{ drive = [string]$d.Drive; name = [string]$d.Caption; present = $false; tracks = @(); files = @() }
   if ($script:cdOpen -and (CdSend 'status d90cd media present wait') -eq 'true') {

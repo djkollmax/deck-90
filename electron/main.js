@@ -9,6 +9,7 @@ const { createMpris } = require('./mpris');
 const { createRemote } = require('./remote');
 const { createTrackLog } = require('./tracklog');
 const { createUpdater, recoverOnStart } = require('./updater');
+const { createRadioProxy } = require('./radioproxy');
 const crypto = require('crypto');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -547,6 +548,16 @@ ipcMain.handle('radio-find', async (e, q, cc) => {
   if (!name) return [];
   try { return radioList(await radioBrowser('name=' + encodeURIComponent(name) + (country ? '&countrycode=' + country : '') + '&hidebroken=true&order=clickcount&reverse=true&limit=8')); }
   catch (err) { mlog('radio find: ' + (err && err.message || err)); return null; }
+});
+// the radio through the local proxy (radioproxy.js): the song a station sends, and its format and bitrate
+let radioProxy = null;
+ipcMain.handle('radio-proxy', async (e, u, id) => {
+  if (!fromWin(e) || !/^https?:\/\//i.test(String(u || '')) || String(u).length > 1200) return null;
+  if (!radioProxy) radioProxy = createRadioProxy({
+    net, log: mlog, agent: 'Deck90/' + app.getVersion(),
+    onMeta: m => { if (win && !win.isDestroyed()) win.webContents.send('radio-meta', m); },
+  });
+  return (await radioProxy.start()) ? radioProxy.url(String(u), String(id || '').slice(0, 20)) : null;
 });
 ipcMain.handle('radio-top', async e => {
   if (!fromWin(e)) return null;
