@@ -222,7 +222,8 @@ while ($true) {
   }
   # the CD playing: its track and position, about once a second (and once more when it stops)
   if ($script:cdPlaying -and ($beat % 2) -eq 0) {
-    try { $st = CdStatus; Say $st; if ($st.cd.state -ne 'playing') { $script:cdPlaying = $false } } catch { $script:cdPlaying = $false }
+    # 'seeking' and 'not ready' come right after a jump to another track: keep following it
+    try { $st = CdStatus; Say $st; if (@('playing', 'seeking', 'not ready') -notcontains $st.cd.state) { $script:cdPlaying = $false } } catch { $script:cdPlaying = $false }
   }
   $beat++
   if ($beat -ge 12) { Say @{ hb = 1 }; $beat = 0 }

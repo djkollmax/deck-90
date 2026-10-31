@@ -1300,3 +1300,27 @@ body.stereo .stereo-panel{ display:flex; flex:1 1 auto; min-height:0; align-item
 body.stereo #toast{ top:auto; bottom:6px; padding:3px 12px; font-size:10px; line-height:1.3; letter-spacing:.6px; max-width:90%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 body.stereo #toast br{ display:none; }
 body.stereo #updBar{ display:none; }
+
+/* The stereo's yellow, as strong as the real glass (7.8.3): a saturated yellow, the 16-segment letters a touch
+   thicker, the lit labels the same yellow. Every colour of SDM starts from it. */
+.st-display polygon[fill="#ffdf4f"]{ fill:#ffe414; stroke:#ffe414; stroke-width:1.1; stroke-linejoin:round; }
+.st-display text[fill="#ffdd50"], .st-display text[fill="#ffdf4f"]{ fill:#ffe41c; }
+
+/* SDM 7 · HD (7.8.3): black glass, yellow letters. The display draws
+   its own colours as attributes; these rules restyle them by value (CSS beats a presentation attribute). */
+.st-display.hd{ background:#030303; }
+.st-display.hd rect[fill*="lcd-film"]{ fill:#070605; }
+.st-display.hd polygon[fill="#ffdf4f"]{ fill:#ffd400; stroke:#ffd400; }
+.st-display.hd polygon[fill="#62751e"]{ fill:#3a3114; opacity:.26; }
+.st-display.hd text{ fill:#ffcf2e; }
+.st-display.hd text[fill="#809641"]{ fill:#5e4c17; }
+.st-display.hd text[data-layer="artist"]{ fill:#e8c35a; }
+.st-display.hd g[data-channel] > g[fill="#35544b"]{ fill:#2a2716; }
+.st-display.hd g[data-channel] > g[fill="#c5f4df"]{ fill:#d9f5ea; }
+/* the meters' last stretch, in every colour of the stereo: two yellow, one amber, two red (true in colour 1 and HD;
+   the other colours tint them like the rest of the glass) */
+.st-display g[data-channel] > g[fill="#c5f4df"][data-level="9"],
+.st-display g[data-channel] > g[fill="#c5f4df"][data-level="10"]{ fill:#ffd21f; }
+.st-display g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#ff9a1a; }
+.st-display g[data-channel] > g[fill="#c5f4df"][data-level="12"],
+.st-display g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#ff3b26; }

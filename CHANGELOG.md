@@ -5,6 +5,14 @@
 ### Changed
 - **On a CD, the numbers are its tracks:** 1–6 play tracks 1–6, and held for a second, 7–12 (the numbers printed above the keys). On a disc of MP3s, its files. In RADIO they're still the memories.
 - **AM lights MONO** on the display (STEREO goes dark), as an AM station sounds; FM, the CD and the PC keep STEREO.
+- **HDB has a brighter level:** NORMAL → HIGH → MEDIUM → LOW, with the level named on the screen.
+- **SDM has a seventh look, HD:** the glass goes black and the letters yellow, like a high-end display. The other six colours stay.
+- **The stereo's meters are shaped like the real DP940's:** curved columns that step up from the inside out (the bottom rows long, reaching in under TRACK, the top ones short), instead of three even columns. Their last five steps go yellow, amber and red, in every colour (true in colour 1 and HD).
+- **A stronger yellow on the stereo's display:** the 16-segment letters and the lit labels are a saturated yellow, a touch thicker, as on the real glass.
+
+### Fixed
+- **CD track skipping:** TRACK ▶ ▶ ▶ pressed quickly went one track only (each press counted from the track the drive still reported), and the drive was followed only while 'playing', so a jump that sat in 'seeking' left the display stuck. Now each press counts from the one asked for and shows it at once, the bridge keeps following the drive while it seeks, the ends of the disc wrap (▶ on the last track goes to the first, ◀ on the first to the last) and data tracks are skipped.
+- The update test from 7.8.2 read the page before it had loaded ("ok" case on Windows).
 
 ## 7.8.2
 

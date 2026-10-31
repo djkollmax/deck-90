@@ -83,7 +83,7 @@ La tecla `E` (o el botón de la radio en las herramientas) cierra el rack y la v
 
 - **Modo PC:** el tema que suena con letras de 16 segmentos, el artista y el tiempo; los vúmetros L/R se mueven con el audio real. DISP cambia entre la pantalla normal, la hora, la temperatura, los BPM y el loudness, en cualquier modo.
 - **Modo RADIO** (MODE): radios argentinas por internet. FM1 viene con Aspen 102.3, 80s80s (de Hamburgo, solo por internet), Metro 95.1, Rock & Pop 95.9, La 100 99.9 y Vorterix 92.1 en 1–6, y Con Vos 89.9 en FM2-1. TUNE ◀ ▶ recorre las más escuchadas del país, SCAN las prueba de a 8 segundos, manteniendo apretado un número guardás la que suena y BAND pasa por FM1, FM2, FM3 y AM (Mitre 790, Radio 10 710, Continental 590, Rivadavia 630, Nacional 870 y La Red 910). Las direcciones de las radios salen de [Radio Browser](https://www.radio-browser.info) (solo se envía el nombre que se busca).
-- **VOL ▲ ▼** (o la rueda del mouse) es el volumen de Windows, **ATT** silencia, **SEL** pausa, **SDM** cambia el color del display y **HDB** su brillo. **PWR** vuelve al rack.
+- **VOL ▲ ▼** (o la rueda del mouse) es el volumen de Windows, **ATT** silencia, **SEL** pausa, **SDM** cambia el color del display (seis colores y **HD**: negro con letras amarillas) y **HDB** su brillo (normal, alto, medio, bajo). **PWR** vuelve al rack.
 - **Modo CD** (MODE, o tocar la ranura): la lectora de CD/DVD de la PC, en Windows. Un CD de audio suena desde la lectora con TRACK ◀ ▶, SEL y los números (1–6, y 7–12 manteniéndolos), y el display muestra TRACK 03 y su tiempo; un disco con MP3 reproduce sus archivos con el nombre de cada uno. **⏏** abre la bandeja.
 
 ![El estéreo DP940: un tema de la PC arriba, la radio Aspen 102.3 abajo](docs/screenshots/stereo.jpg)

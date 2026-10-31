@@ -77,9 +77,10 @@ async function run(name) {
       };
     }, [bundle.toString('base64'), sha, to]);
     const page = await app.firstWindow();
+    await page.waitForLoadState('domcontentloaded');
     if (engine !== await app.evaluate(() => process.versions.electron)) throw new Error('the version file is not this Electron');
 
-    const bar = () => page.evaluate(() => ({ show: document.getElementById('updBar').classList.contains('show'), text: document.getElementById('updText').innerText, go: document.getElementById('updGo').textContent }));
+    const bar = () => page.evaluate(() => { const b = document.getElementById('updBar'); return b ? { show: b.classList.contains('show'), text: document.getElementById('updText').innerText, go: document.getElementById('updGo').textContent } : { show: false, text: '', go: '' }; });
     const offer = await until('the offer of ' + to, async () => { const b = await bar(); return b.show && b.go === 'INSTALAR' ? b : null; }, 45000);
     console.log(`  offered: ${offer.text}`);
     await page.click('#updGo');

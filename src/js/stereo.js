@@ -21,7 +21,9 @@
 const STEREO_DISP = ['song', 'clock', 'temp', 'bpm', 'lufs'];
 const STEREO_DISP_NAME = { song: 'NORMAL', clock: 'HORA', temp: 'TEMPERATURA', bpm: 'BPM', lufs: 'LOUDNESS' };
 const STEREO_HUES = [0, 38, 150, 196, 248, 300];          // SDM: the original burgundy and amber, then five more lights
-const STEREO_DIM = [1, .72, .48];                          // HDB: the display's brightness
+const STEREO_DIM = [1, 1.32, .72, .48];                    // HDB: the display's brightness (normal, high, medium, low)
+const STEREO_DIM_NAME = ['NORMAL', 'ALTO', 'MEDIO', 'BAJO'];
+const STEREO_COLORS = 7;                                   // SDM: six lights, then 7 = HD (black glass, yellow letters)
 const RADIO_KEY = 'deck90-radio';
 // FM1 comes with Buenos Aires stations and 80s80s (Hamburg, internet only: no dial, the display shows its name);
 // each is looked up by name in Radio Browser when first tuned (cc: the country, '' for anywhere)
@@ -43,8 +45,8 @@ let stereoCfg = { disp: 'song', color: 1, dim: 0, mode: 'pc' };
 try {
   const c = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).stereo;
   if (c && typeof c === 'object') stereoCfg = {
-    disp: STEREO_DISP.includes(c.disp) ? c.disp : 'song', color: c.color >= 1 && c.color <= 6 ? c.color | 0 : 1,
-    dim: c.dim >= 0 && c.dim <= 2 ? c.dim | 0 : 0, mode: ['radio', 'cd'].includes(c.mode) ? c.mode : 'pc' };
+    disp: STEREO_DISP.includes(c.disp) ? c.disp : 'song', color: c.color >= 1 && c.color <= STEREO_COLORS ? c.color | 0 : 1,
+    dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd'].includes(c.mode) ? c.mode : 'pc' };
 } catch (_) {}
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
 let radioMem = { band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: Array(6).fill(null), AM: RADIO_AM.slice() };
@@ -125,7 +127,7 @@ const cdAudio = new Audio();
 let cdInfo = null, cdState = { state: '', track: 0, pos: 0, at: 0 }, cdFile = 0, cdAsked = 0;
 const cdAudioTracks = () => cdInfo && cdInfo.tracks ? cdInfo.tracks.filter(t => t.audio) : [];
 const cdFiles = () => cdInfo && cdInfo.files ? cdInfo.files : [];
-const cdPlaying = () => cdState.state === 'playing' || (!cdAudio.paused && !!cdAudio.getAttribute('src'));
+const cdPlaying = () => ['playing', 'seeking', 'not ready'].includes(cdState.state) || (!cdAudio.paused && !!cdAudio.getAttribute('src'));
 const fileUrl = p => 'file:///' + String(p).replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/').replace(/^([A-Za-z])%3A/, '$1:');
 const mmss = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function cdAsk() {
@@ -145,22 +147,34 @@ function cdPlayFile(i) {
   cdAudio.play().catch(() => toast('⚠ No pude leer ese archivo del disco', 2600));
   stereoText(true);
 }
-function cdTrack(d) {                                          // TRACK ◀ ▶: a track (or file) before or after
+// TRACK ◀ ▶: the audio track (or file) before or after, around the disc's ends; ◀ in a track's first 3 s goes to
+// the one before, later to the start of the same one. The jump shows at once (quick presses add up), before the
+// drive confirms it.
+function cdTrack(d) {
   if (cdFiles().length) { cdPlayFile(d < 0 && cdAudio.currentTime > 3 ? cdFile : cdFile + d); return; }
-  const tr = cdAudioTracks(); if (!tr.length) return;
-  const cur = cdState.track || tr[0].n, pos = cdPosition();
-  let n = d < 0 && pos > 3 ? cur : cur + d;
-  n = Math.max(tr[0].n, Math.min(tr[tr.length - 1].n, n));
+  const tr = cdAudioTracks(); if (!tr.length || !window.cdrom) return;
+  const cur = cdState.track || tr[0].n;
+  let i = tr.findIndex(t => t.n === cur); if (i < 0) i = 0;
+  if (!(d < 0 && cdPosition() > 3)) i = (i + d + tr.length) % tr.length;
+  cdGo(tr[i].n);
+}
+let cdJump = null;                                             // the track asked for, until the drive is there
+function cdGo(n) {
   window.cdrom.cmd('cd-play ' + n);
+  cdJump = { n, until: performance.now() + 4000 };
+  cdState = { state: 'seeking', track: n, pos: 0, at: performance.now() };
+  stereoText(true);
 }
 function cdToggle() {
   if (cdFiles().length) { if (cdAudio.paused) { if (cdAudio.getAttribute('src')) cdAudio.play().catch(() => {}); else cdPlayFile(0); } else cdAudio.pause(); return; }
   const tr = cdAudioTracks(); if (!tr.length || !window.cdrom) return;
-  window.cdrom.cmd(cdState.state === 'playing' ? 'cd-pause' : cdState.state === 'paused' ? 'cd-resume' : 'cd-play ' + tr[0].n);
+  if (cdState.state === 'paused') window.cdrom.cmd('cd-resume');
+  else if (cdPlaying()) window.cdrom.cmd('cd-pause');
+  else cdGo(cdState.track || tr[0].n);
 }
 function cdPosition() {
   if (cdFiles().length) return cdAudio.currentTime || 0;
-  return cdState.pos + (cdState.state === 'playing' ? (performance.now() - cdState.at) / 1000 : 0);
+  return cdState.pos + (cdState.state === 'playing' ? (performance.now() - cdState.at) / 1000 : 0);   // between the drive's reports
 }
 if (window.cdrom) window.cdrom.on(m => {
   if (!m || typeof m !== 'object') return;
@@ -175,7 +189,12 @@ if (window.cdrom) window.cdrom.on(m => {
   }
   if (m.state) {
     if (m.state === 'ejected') { cdInfo = { drive: cdInfo && cdInfo.drive, present: false }; cdState = { state: '', track: 0, pos: 0, at: 0 }; }
-    else cdState = { state: m.state, track: m.track | 0, pos: m.pos || 0, at: performance.now() };
+    else if (cdJump && m.track !== cdJump.n && performance.now() < cdJump.until && ['playing', 'seeking', 'not ready'].includes(m.state)) {
+      cdState = { state: 'seeking', track: cdJump.n, pos: 0, at: performance.now() };   // still on the way: a report from before the jump
+    } else {
+      if (cdJump && (m.track === cdJump.n || performance.now() >= cdJump.until)) cdJump = null;
+      cdState = { state: m.state, track: m.track | 0, pos: m.pos || 0, at: performance.now() };
+    }
     stereoText(true);
   }
 });
@@ -207,7 +226,9 @@ function toggleStereo() {
 }
 function stereoPaint() {
   const p = document.getElementById('stereo');
-  p.style.setProperty('--st-hue', STEREO_HUES[stereoCfg.color - 1] + 'deg');
+  const hd = stereoCfg.color === 7;
+  p.style.setProperty('--st-hue', (hd ? 0 : STEREO_HUES[stereoCfg.color - 1]) + 'deg');
+  document.getElementById('stDisplay').classList.toggle('hd', hd);
   p.style.setProperty('--st-dim', STEREO_DIM[stereoCfg.dim]);
   p.classList.toggle('aux-on', !!running || radioPlaying() || cdPlaying());
 }
@@ -374,8 +395,12 @@ function stereoKey(k, hold) {
     toast('DISP · <span>' + STEREO_DISP_NAME[stereoCfg.disp] + '</span>' + (stereoCfg.disp === 'temp' && !stereoTemp() ? ' · prendé el clima en ⚙ PANTALLA → RELOJ' : ''), stereoCfg.disp === 'temp' && !stereoTemp() ? 3200 : 1500);
     return stereoText(true);
   }
-  if (k === 'hdb') { stereoCfg.dim = (stereoCfg.dim + 1) % STEREO_DIM.length; savePrefs(); return stereoPaint(); }
-  if (k === 'sdm') { stereoCfg.color = stereoCfg.color % 6 + 1; savePrefs(); toast('COLOR · <span>' + stereoCfg.color + '</span> de 6', 1200); return stereoPaint(); }
+  if (k === 'hdb') { stereoCfg.dim = (stereoCfg.dim + 1) % STEREO_DIM.length; savePrefs(); toast('HDB · brillo <span>' + STEREO_DIM_NAME[stereoCfg.dim] + '</span>', 1200); return stereoPaint(); }
+  if (k === 'sdm') {
+    stereoCfg.color = stereoCfg.color % STEREO_COLORS + 1; savePrefs();
+    toast(stereoCfg.color === 7 ? 'SDM · <span>HD</span>: negro, letras amarillas, vúmetros con punta amarilla y roja' : 'SDM · color <span>' + stereoCfg.color + '</span> de ' + STEREO_COLORS, stereoCfg.color === 7 ? 2400 : 1200);
+    return stereoPaint();
+  }
   if (k === 'band') {
     radioMem.band = RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]; radioMem.slot = 0; saveRadio();
     toast('BAND · <span>' + radioMem.band + '</span> · seis memorias (1–6)', 1500);
@@ -385,7 +410,7 @@ function stereoKey(k, hold) {
     const n = Number(k[1]) + (hold ? 6 : 0);
     if (cdFiles().length) { if (n <= cdFiles().length) cdPlayFile(n - 1); else toast('El disco tiene ' + cdFiles().length + ' archivos', 1600); return; }
     const tr = cdAudioTracks();
-    if (tr.some(t => t.n === n)) { window.cdrom.cmd('cd-play ' + n); toast('TRACK · <span>' + String(n).padStart(2, '0') + '</span>', 1200); }
+    if (tr.some(t => t.n === n)) { cdGo(n); toast('TRACK · <span>' + String(n).padStart(2, '0') + '</span>', 1200); }
     else toast(tr.length ? 'El CD tiene ' + tr.length + ' pistas' : 'No hay un CD de audio', 1600);
     return;
   }

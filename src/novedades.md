@@ -5,6 +5,13 @@
 ### Cambios
 - **Con un CD, los números son sus pistas:** 1–6 ponen las pistas 1 a 6 y, manteniéndolos apretados un segundo, la 7 a la 12 (los números impresos arriba de las teclas). En un disco con MP3, sus archivos. En RADIO siguen siendo las memorias.
 - **En AM el display prende MONO** (STEREO se apaga), como suena una AM; FM, el CD y la PC quedan en STEREO.
+- **HDB tiene un brillo más alto:** NORMAL → ALTO → MEDIO → BAJO, y el display dice cuál quedó.
+- **SDM tiene un séptimo modo, HD:** el vidrio pasa a negro y las letras a amarillo, como un display de gama alta. Los otros seis colores siguen.
+- **Los vúmetros del estéreo tienen la forma de los del DP940 real:** columnas curvas que van escalando de adentro hacia afuera (las filas de abajo largas, metiéndose debajo de TRACK, las de arriba cortas), en lugar de tres columnas parejas. Los últimos cinco escalones van amarillo, ámbar y rojo, en todos los colores (tal cual en el color 1 y en HD).
+- **Un amarillo más intenso en el display del estéreo:** las letras de 16 segmentos y los carteles prendidos son de un amarillo saturado y un poco más gruesos, como en el vidrio real.
+
+### Arreglos
+- **Saltar pistas del CD:** apretar TRACK ▶ varias veces rápido avanzaba una sola (cada toque contaba desde la pista que la lectora todavía informaba), y la lectora se seguía solo mientras decía 'playing', así que un salto que quedaba en 'seeking' dejaba el display trabado. Ahora cada toque cuenta desde la pedida y se ve enseguida, el puente sigue a la lectora mientras busca, los extremos del disco dan la vuelta (▶ en la última va a la primera, ◀ en la primera a la última) y se saltean las pistas de datos.
 
 ## 7.8.2 — 2026-10-31
 
