@@ -23,7 +23,21 @@ const STEREO_DISP_NAME = { song: 'NORMAL', clock: 'HORA', temp: 'TEMPERATURA', b
 const STEREO_HUES = [0, 38, 150, 196, 248, 300];          // SDM: the original burgundy and amber, then five more lights
 const STEREO_DIM = [1, 1.32, .72, .48];                    // HDB: the display's brightness (normal, high, medium, low)
 const STEREO_DIM_NAME = ['NORMAL', 'ALTO', 'MEDIO', 'BAJO'];
-const STEREO_COLORS = 7;                                   // SDM: six lights, then 7 = HD (black glass, yellow letters)
+// SDM 7 onward: whole looks, each its own glass, letters, labels and meters (styles.css, .st-display.look-<id>)
+const STEREO_LOOKS = [
+  { id: 'hd', name: 'HD', say: 'negro, letras amarillas' },
+  { id: 'amber', name: 'ÁMBAR', say: 'negro, letras ámbar de los 80' },
+  { id: 'ice', name: 'HIELO', say: 'azul noche, letras celestes de VFD' },
+  { id: 'night', name: 'VERDE NOCHE', say: 'negro verdoso, letras verdes' },
+  { id: 'sport', name: 'ROJO SPORT', say: 'negro, letras rojas' },
+  { id: 'white', name: 'BLANCO', say: 'negro, letras blancas' },
+  { id: 'lcd', name: 'LCD CLARO', say: 'vidrio claro, letras oscuras' },
+  { id: 'miami', name: 'MIAMI', say: 'violeta, letras rosas, vúmetros celestes' },
+  { id: 'gold', name: 'ORO', say: 'marrón profundo, letras doradas' },
+  { id: 'aqua', name: 'AQUA', say: 'verde agua, letras turquesa' },
+];
+const STEREO_COLORS = STEREO_HUES.length + STEREO_LOOKS.length;   // SDM: six lights, then the looks
+const stereoLook = () => STEREO_LOOKS[stereoCfg.color - STEREO_HUES.length - 1] || null;
 const RADIO_KEY = 'deck90-radio';
 // FM1 comes with Buenos Aires stations and 80s80s (Hamburg, internet only: no dial, the display shows its name);
 // each is looked up by name in Radio Browser when first tuned (cc: the country, '' for anywhere)
@@ -242,9 +256,9 @@ function toggleStereo() {
 }
 function stereoPaint() {
   const p = document.getElementById('stereo');
-  const hd = stereoCfg.color === 7;
-  p.style.setProperty('--st-hue', (hd ? 0 : STEREO_HUES[stereoCfg.color - 1]) + 'deg');
-  document.getElementById('stDisplay').classList.toggle('hd', hd);
+  const look = stereoLook(), d = document.getElementById('stDisplay');
+  p.style.setProperty('--st-hue', (look ? 0 : STEREO_HUES[stereoCfg.color - 1]) + 'deg');
+  d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (look ? ' look look-' + look.id : '');
   p.style.setProperty('--st-dim', STEREO_DIM[stereoCfg.dim]);
   p.classList.toggle('aux-on', !!running || radioPlaying() || cdPlaying());
 }
@@ -413,8 +427,9 @@ function stereoKey(k, hold) {
   }
   if (k === 'hdb') { stereoCfg.dim = (stereoCfg.dim + 1) % STEREO_DIM.length; savePrefs(); toast('HDB · brillo <span>' + STEREO_DIM_NAME[stereoCfg.dim] + '</span>', 1200); return stereoPaint(); }
   if (k === 'sdm') {
-    stereoCfg.color = stereoCfg.color % STEREO_COLORS + 1; savePrefs();
-    toast(stereoCfg.color === 7 ? 'SDM · <span>HD</span>: negro, letras amarillas, vúmetros con punta amarilla y roja' : 'SDM · color <span>' + stereoCfg.color + '</span> de ' + STEREO_COLORS, stereoCfg.color === 7 ? 2400 : 1200);
+    stereoCfg.color = (stereoCfg.color - 1 + (hold ? STEREO_COLORS - 1 : 1)) % STEREO_COLORS + 1; savePrefs();   // held: the one before
+    const look = stereoLook();
+    toast('SDM ' + stereoCfg.color + '/' + STEREO_COLORS + ' · <span>' + (look ? look.name + '</span>: ' + look.say : 'COLOR ' + stereoCfg.color + '</span>'), look ? 2000 : 1200);
     return stereoPaint();
   }
   if (k === 'band') {
@@ -458,12 +473,12 @@ function stereoKey(k, hold) {
 
 (function () {
   const p = document.getElementById('stereo');
-  // a key: a click; the memories also know a long press (1 s keeps the station there)
+  // a key: a click; the memories also know a long press (1 s keeps the station there), and SDM (1 s: the look before)
   let holdT = 0, held = false;
   p.addEventListener('pointerdown', e => {
     const b = e.target.closest('.st-hot'); if (!b) return;
     b.classList.add('down'); held = false;
-    if (/^m[1-6]$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
+    if (/^(m[1-6]|sdm)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
   const up = e => { clearTimeout(holdT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);

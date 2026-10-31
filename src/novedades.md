@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.8.5 — 2026-10-31
+
+### Nuevo
+- **SDM tiene 16 estilos:** los seis colores y HD quedan como estaban, y se suman nueve estilos completos, cada uno con su vidrio, sus letras, sus carteles y sus vúmetros: ÁMBAR (negro, ámbar de los 80), HIELO (azul noche, celeste de VFD), VERDE NOCHE, ROJO SPORT, BLANCO, LCD CLARO (vidrio claro con letras oscuras, como un LCD positivo), MIAMI (violeta, letras rosas, vúmetros celestes), ORO y AQUA. Cada toque dice cuál es; manteniendo SDM un segundo vuelve al anterior.
+
 ## 7.8.4 — 2026-10-31
 
 ### Nuevo

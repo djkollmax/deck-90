@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.8.5
+
+### Added
+- **SDM has 16 looks:** the six colours and HD as they were, then nine more whole looks, each with its own glass, letters, labels and meters: ÁMBAR (black, 80s amber), HIELO (night blue, VFD cyan), VERDE NOCHE, ROJO SPORT, BLANCO, LCD CLARO (light glass, dark letters, like a positive LCD), MIAMI (violet, pink letters, cyan meters), ORO and AQUA. Each press says which one and what it is; holding SDM a second goes back one.
+
 ## 7.8.4
 
 ### Added
