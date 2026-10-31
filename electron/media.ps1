@@ -141,6 +141,7 @@ function CdCommand([string]$c) {
 # loop until a command arrived, so "now playing" only updated when a deck key was pressed).
 $stdin = New-Object System.IO.StreamReader([Console]::OpenStandardInput())
 $pending = $stdin.ReadLineAsync()
+$volKeys = @{ 'volup' = 0xAF; 'voldown' = 0xAE; 'mute' = 0xAD }
 $last = ''
 $coverKey = ''
 $tick = 0
@@ -152,18 +153,22 @@ while ($true) {
     if ($pending.IsCompleted) {
       $cmd = $pending.Result
       if ($null -eq $cmd) { break }               # parent closed stdin
-      $vk = @{ 'volup' = 0xAF; 'voldown' = 0xAE; 'mute' = 0xAD }[$cmd.Trim()]
-      if ($vk) {
-        # the volume keys, pressed for Deck 90's car stereo knob (compiled once, the first time)
+      $c = $cmd.Trim(); $fresh = $false
+      # the volume keys, pressed for Deck 90's car stereo knob (compiled once, the first time). They come in bursts
+      # (VOL down is three at once, a held key repeats): each is pressed right away, with any already waiting behind it
+      while ($c -and $volKeys.ContainsKey($c)) {
         if (-not ('Deck90Keys' -as [type])) {
           Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class Deck90Keys { [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra); public static void Tap(byte vk) { keybd_event(vk, 0, 1, UIntPtr.Zero); keybd_event(vk, 0, 3, UIntPtr.Zero); } }'
         }
-        [Deck90Keys]::Tap([byte]$vk)
+        [Deck90Keys]::Tap([byte]$volKeys[$c])
+        $pending = $stdin.ReadLineAsync(); $fresh = $true; $c = ''
+        if ($pending.Wait(25)) { $cmd = $pending.Result; if ($null -eq $cmd) { break }; $c = $cmd.Trim(); $fresh = $false }
       }
-      if ($cmd.Trim() -like 'cd-*') { CdCommand $cmd.Trim() }
-      $s = Pick
+      if ($null -eq $cmd) { break }
+      if ($c -like 'cd-*') { CdCommand $c }
+      $s = if ($c) { Pick } else { $null }
       if ($s) {
-        switch ($cmd.Trim()) {
+        switch ($c) {
           'toggle' { $null = Await ($s.TryTogglePlayPauseAsync()) ([bool]) }
           'play'   { $null = Await ($s.TryPlayAsync()) ([bool]) }
           'pause'  { $null = Await ($s.TryPauseAsync()) ([bool]) }
@@ -172,7 +177,7 @@ while ($true) {
           'prev'   { $null = Await ($s.TrySkipPreviousAsync()) ([bool]) }
         }
       }
-      $pending = $stdin.ReadLineAsync()
+      if (-not $fresh) { $pending = $stdin.ReadLineAsync() }
       $tick = 99                                   # report the new state right away
     }
 
@@ -228,5 +233,5 @@ while ($true) {
   $beat++
   if ($beat -ge 12) { Say @{ hb = 1 }; $beat = 0 }
   $tick++
-  Start-Sleep -Milliseconds 400
+  $null = $pending.Wait(400)                       # 0.4 s between looks, or less when Deck 90 asks for something
 }

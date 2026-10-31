@@ -397,9 +397,12 @@ function stereoSwitch(next) {
   }
   return false;
 }
+// VOL ▲ is one step of Windows' volume (2 %); VOL ▼ three at once (6 %), so turning it down is quick, as in a car
+const STEREO_VOL_DOWN = 3;
 function stereoVolume(step) {
   if (!window.nowPlaying) { toast('El volumen se maneja desde el programa en Windows.', 2400); return; }
-  window.nowPlaying.cmd(step > 0 ? 'volup' : step < 0 ? 'voldown' : 'mute');
+  if (step < 0) { for (let i = 0; i < STEREO_VOL_DOWN; i++) window.nowPlaying.cmd('voldown'); return; }
+  window.nowPlaying.cmd(step > 0 ? 'volup' : 'mute');
   if (!step) toast('ATT · <span>silencio</span> (otra vez para volver)', 1400);
 }
 function stereoKey(k, hold) {
@@ -474,13 +477,19 @@ function stereoKey(k, hold) {
 (function () {
   const p = document.getElementById('stereo');
   // a key: a click; the memories also know a long press (1 s keeps the station there), and SDM (1 s: the look before)
-  let holdT = 0, held = false;
+  // VOL ▲ ▼ act on the press and repeat while held (every 0.1 s after 0.35 s)
+  let holdT = 0, held = false, volT = 0;
   p.addEventListener('pointerdown', e => {
     const b = e.target.closest('.st-hot'); if (!b) return;
     b.classList.add('down'); held = false;
+    if (/^vol(up|down)$/.test(b.dataset.st)) {
+      held = true; stereoKey(b.dataset.st, false);
+      volT = setTimeout(function rep() { stereoKey(b.dataset.st, false); volT = setTimeout(rep, 100); }, 350);
+      return;
+    }
     if (/^(m[1-6]|sdm)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
-  const up = e => { clearTimeout(holdT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
+  const up = e => { clearTimeout(holdT); clearTimeout(volT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);
   p.addEventListener('click', e => {
     const b = e.target.closest('.st-hot'); if (!b) return;

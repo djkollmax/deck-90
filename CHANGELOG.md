@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.8.6
+
+### Changed
+- **The stereo turns the volume down quickly.** VOL ▼ (and the wheel down) is three steps of Windows' volume at once (6 %); VOL ▲ stays one step (2 %), as in a car. Holding VOL ▲ or ▼ repeats it every 0.1 s.
+
+### Fixed
+- The volume keys were slow to act: the Windows bridge took one command each 0.4 s, after reading the player. It presses them the moment they arrive now (a burst at once), and it answers any command without waiting out the 0.4 s.
+
 ## 7.8.5
 
 ### Added

@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.8.6 — 2026-10-31
+
+### Cambios
+- **El estéreo baja el volumen rápido.** VOL ▼ (y la rueda para abajo) baja tres pasos del volumen de Windows de una (6 %); VOL ▲ sigue subiendo de a uno (2 %), como en un auto. Manteniendo VOL ▲ o ▼ apretado, se repite cada 0,1 s.
+
+### Arreglos
+- Las teclas de volumen tardaban: el puente de Windows tomaba un comando cada 0,4 s, después de leer el reproductor. Ahora las aprieta apenas llegan (una ráfaga de una) y responde cualquier comando sin esperar esos 0,4 s.
+
 ## 7.8.5 — 2026-10-31
 
 ### Nuevo
