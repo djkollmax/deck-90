@@ -322,6 +322,30 @@ function stereoFeed(now) {
 setInterval(() => { if (stereoMode && !running) stereoText(); }, 500);   // the loop sleeps with nothing running
 
 // ── the keys ──
+// Changing mode pauses what the mode you leave was playing, and coming back to it picks it up again:
+// the player's song (PC), the CD where it was; the radio, a live stream, is tuned again. Returns true when the
+// CD was picked up again (then the drive needn't be read).
+const stereoResume = { pc: false, cd: false };
+function stereoSwitch(next) {
+  const from = stereoCfg.mode;
+  if (from === 'pc' && np && np.status === 'Playing' && window.nowPlaying) { window.nowPlaying.cmd('pause'); stereoResume.pc = true; }
+  if (from === 'radio') radioStop();
+  if (from === 'cd') {
+    if (cdState.state === 'playing' && window.cdrom) { window.cdrom.cmd('cd-pause'); stereoResume.cd = true; }
+    else if (!cdAudio.paused) { cdAudio.pause(); stereoResume.cd = true; }
+  }
+  stereoCfg.mode = next; savePrefs();
+  if (next === 'pc' && stereoResume.pc) { stereoResume.pc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
+  if (next === 'cd' && stereoResume.cd) {
+    stereoResume.cd = false;
+    if (cdFiles().length && cdAudio.getAttribute('src')) cdAudio.play().catch(() => {});
+    else if (cdState.state === 'paused' && window.cdrom) window.cdrom.cmd('cd-resume');
+    else return false;
+    toast('MODE · <span>CD</span> · sigue donde estaba', 1600);
+    return true;                                                // picked up again: no need to read the drive
+  }
+  return false;
+}
 function stereoVolume(step) {
   if (!window.nowPlaying) { toast('El volumen se maneja desde el programa en Windows.', 2400); return; }
   window.nowPlaying.cmd(step > 0 ? 'volup' : step < 0 ? 'voldown' : 'mute');
@@ -339,12 +363,10 @@ function stereoKey(k, hold) {
   if (k === 'mode' || k === 'slot') {
     const next = k === 'slot' ? 'cd' : { pc: 'radio', radio: 'cd', cd: 'pc' }[stereoCfg.mode];
     if (next === stereoCfg.mode) { cdAsk(); return; }
-    if (stereoCfg.mode === 'radio') radioStop();
-    if (stereoCfg.mode === 'cd') cdStop();
-    stereoCfg.mode = next; savePrefs();
+    const resumed = stereoSwitch(next);
     if (next === 'pc') toast('MODE · <span>PC</span>: lo que suena en la computadora', 1800);
-    else if (next === 'radio') { toast('MODE · <span>RADIO</span> por internet', 1600); radioMemory(radioMem.slot || 1); }
-    else { toast('MODE · <span>CD</span> · leyendo la lectora…', 1600); cdAsk(); }
+    else if (next === 'radio') { toast('MODE · <span>RADIO</span> por internet', 1600); if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
+    else if (!resumed) { toast('MODE · <span>CD</span> · leyendo la lectora…', 1600); cdAsk(); }
     return stereoText(true);
   }
   if (k === 'disp') {
@@ -360,8 +382,7 @@ function stereoKey(k, hold) {
     return stereoText(true);
   }
   if (/^m[1-6]$/.test(k)) {
-    if (stereoCfg.mode === 'cd') cdStop();
-    if (stereoCfg.mode !== 'radio') { stereoCfg.mode = 'radio'; savePrefs(); }
+    if (stereoCfg.mode !== 'radio') stereoSwitch('radio');
     return radioMemory(Number(k[1]), hold);
   }
   const radio = stereoCfg.mode === 'radio';
@@ -380,8 +401,7 @@ function stereoKey(k, hold) {
     return;
   }
   if (k === 'scan') {
-    if (stereoCfg.mode === 'cd') cdStop();
-    if (!radio) { stereoCfg.mode = 'radio'; savePrefs(); }
+    if (!radio) stereoSwitch('radio');
     if (radioScan) { radioScan = 0; toast('SCAN · <span>te quedás en esta</span>', 1500); }
     else { radioScan = 1; toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
   }

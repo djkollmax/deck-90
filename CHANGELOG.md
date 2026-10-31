@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.8.2
+
+### Changed
+- **Changing the stereo's mode pauses what was playing.** Going from PC to RADIO or CD pauses the player's song (Spotless, or whatever plays); leaving RADIO turns the radio off; leaving CD pauses the disc. Coming back picks it up again: the song plays on, the CD goes on from where it was, the radio tunes the same station again (a live one). A memory (1–6) or SCAN from another mode does the same.
+
 ## 7.8.1
 
 ### Changed

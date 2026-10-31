@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.8.2 — 2026-10-31
+
+### Cambios
+- **Cambiar de modo en el estéreo pausa lo que estaba sonando.** Al pasar de PC a RADIO o CD se pausa el tema del reproductor (Spotless, o el que esté sonando); al salir de RADIO se apaga la radio; al salir de CD se pausa el disco. Al volver, sigue: el tema continúa, el CD sigue donde estaba y la radio vuelve a sintonizar la misma emisora (en vivo). Una memoria (1–6) o SCAN desde otro modo hace lo mismo.
+
 ## 7.8.1 — 2026-10-31
 
 ### Cambios
