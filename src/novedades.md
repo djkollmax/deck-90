@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.9.2 — 2026-10-31
+
+### Nuevo
+- **Un reproductor de CD en el rack: el DC-90** (VER → CD, o `0`), debajo del sintonizador: cajón de lado a lado, display VFD panorámico (tiempo, pista de total, la línea del disco, PLAY/PAUSE/DISC, niveles L/R) y su transporte. Toca la lectora de CD/DVD de la PC, también una por USB, con el mismo motor que el modo CD del estéreo: POWER lee la lectora y arranca el disco (y pausa lo que sonaba en la PC; al apagarlo vuelve), ▶ ❚❚ ■, |◀◀ ▶▶| dando la vuelta en los extremos del disco, y OPEN / CLOSE abre la bandeja de verdad y, otra vez, la cierra y lee el disco nuevo. Un CD de audio suena desde la lectora (pista, tiempo y duración del disco en el display); un disco con MP3 reproduce sus archivos con su nombre. Avisa si no hay lectora o no hay disco. El CD y la radio se turnan: al poner uno se apaga el otro. Como el sintonizador, el frente sigue al chasis del rack y los looks no lo esconden. El CD-90 que se dibuja en el panel de la cinta grande queda como estaba (lo que suena en la PC).
+- **FM4, una banda de radios de alta calidad** (solo por internet): FIP y FIP Jazz (Radio France, París, AAC 192), KEXP (Seattle) y las tres de Linn, Linn Jazz, Linn Classical y Linn Radio (Glasgow, 320 kbps). En el sintonizador (con su tecla FM4, junto a FM1–FM3 y AM) y en el estéreo del auto (BAND). Si ya lo tenías configurado, aparece tal cual; sus memorias se cambian como cualquier otra.
+
 ## 7.9.1 — 2026-10-31
 
 ### Arreglos

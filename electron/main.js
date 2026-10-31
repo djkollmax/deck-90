@@ -503,7 +503,7 @@ const fromWin = e => !!win && !win.isDestroyed() && e.sender === win.webContents
 ipcMain.on('app-log', (e, msg) => { if (fromWin(e)) mlog('page: ' + String(msg).slice(0, 800)); });
 function mediaCommand(cmd) {
   if (media && media.stdin.writable && (['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)
-    || /^cd-(info|pause|resume|stop|eject|play \d{1,2})$/.test(cmd))) media.stdin.write(cmd + '\n');
+    || /^cd-(info|pause|resume|stop|eject|close|play \d{1,2})$/.test(cmd))) media.stdin.write(cmd + '\n');
   if (mpris && !/^cd-/.test(cmd)) mpris.command(cmd);
   if (/^cd-/.test(cmd) && !media && win && !win.isDestroyed()) win.webContents.send('cd', { drive: null, none: 'windows' });   // the CD: Windows only
 }

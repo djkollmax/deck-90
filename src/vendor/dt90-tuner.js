@@ -383,7 +383,8 @@ class Deck90Tuner {
     this._assertAlive();
     if (!update || typeof update !== 'object') return this;
     const radio = this._state.radio;
-    if (['FM1', 'FM2', 'FM3', 'AM'].includes(String(update.band).toUpperCase())) radio.band = String(update.band).toUpperCase();
+    // FM4: Deck 90 7.9.2
+    if (['FM1', 'FM2', 'FM3', 'FM4', 'AM'].includes(String(update.band).toUpperCase())) radio.band = String(update.band).toUpperCase();
     if ('frequency' in update && (update.frequency === null || update.frequency === '')) radio.frequency = null;   // internet only
     else if ('frequency' in update && finite(update.frequency)) radio.frequency = Number(update.frequency);
     const am = radio.band === 'AM';

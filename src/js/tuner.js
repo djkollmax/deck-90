@@ -30,22 +30,22 @@ function tunerTheme() {
   tunerPanel.classList.toggle('gold', c === 'GOLD');
 }
 
-// the four bands as keys of their own under BAND (where STANDBY was printed): FM1 FM2 / FM3 AM, the one in use lit
+// the bands as keys of their own under BAND (where STANDBY was printed): FM1 FM2 FM3 / FM4 AM, the one in use lit
 let tunerBandKeys = null;
 function tunerBandKeysBuild() {
   const svg = tuner.svg, NS = 'http://www.w3.org/2000/svg', p = tuner.prefix;
   const mk = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
   [...svg.querySelectorAll('text')].filter(t => t.textContent === 'STANDBY').forEach(t => t.remove());
   tunerBandKeys = {};
-  const pos = { FM1: [35, 152], FM2: [79, 152], FM3: [35, 172], AM: [79, 172] };
-  for (const [b, [x, y]] of Object.entries(pos)) {
+  const pos = { FM1: [35, 152, 27], FM2: [64, 152, 27], FM3: [93, 152, 27], FM4: [35, 172, 41], AM: [79, 172, 41] };
+  for (const [b, [x, y, w]] of Object.entries(pos)) {
     const g = mk('g', { 'data-band': b, role: 'button', 'aria-label': 'Banda ' + b, tabindex: 0 });
     g.style.cursor = 'pointer';
-    g.append(mk('rect', { x, y: y + 1.4, width: 41, height: 16, rx: 2, fill: '#080e0a', opacity: .7 }),
-      mk('rect', { x, y, width: 41, height: 16, rx: 2, fill: `url(#${p}-key)`, stroke: 'var(--edge,var(--_d90-edge))', 'stroke-width': .8 }));
-    const t = mk('text', { x: x + 20.5, y: y + 11.4, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': 8.6, 'font-weight': 700, 'letter-spacing': .6, fill: 'var(--label,var(--_d90-label))', 'pointer-events': 'none' });
+    g.append(mk('rect', { x, y: y + 1.4, width: w, height: 16, rx: 2, fill: '#080e0a', opacity: .7 }),
+      mk('rect', { x, y, width: w, height: 16, rx: 2, fill: `url(#${p}-key)`, stroke: 'var(--edge,var(--_d90-edge))', 'stroke-width': .8 }));
+    const t = mk('text', { x: x + w / 2, y: y + 11.4, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': w < 30 ? 7.6 : 8.6, 'font-weight': 700, 'letter-spacing': .6, fill: 'var(--label,var(--_d90-label))', 'pointer-events': 'none' });
     t.textContent = b;
-    const led = mk('rect', { x: x + 6, y: y + 13.2, width: 29, height: 1.2, fill: 'var(--vfd-dim,#193e34)', opacity: .4 });
+    const led = mk('rect', { x: x + 5, y: y + 13.2, width: w - 10, height: 1.2, fill: 'var(--vfd-dim,#193e34)', opacity: .4 });
     g.append(t, led);
     g.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); g.setAttribute('transform', 'translate(0 .9)'); });
     const up = () => g.removeAttribute('transform');
@@ -158,7 +158,8 @@ function tunerOn(on, keyTunes) {
   if (on === tunerPower) return;
   tunerPower = on; tunerMemo = 0;
   if (on) {
-    if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
+    if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true;   // the CD stops; the PC's player was waiting for it
+    if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
     if (!keyTunes && !radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
   } else {
     radioStop();

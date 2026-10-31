@@ -91,7 +91,7 @@
         <span class="seg-label">ESPECTRO</span>
         <button class="picker-btn" data-v="pick"><img class="picker-thumb" alt=""><span class="picker-name"></span><i class="picker-caret"></i></button>
       </div>
-      <div class="seg mods" data-group="mods" title="Mostrar o esconder cada módulo (teclas 1–9)">
+      <div class="seg mods" data-group="mods" title="Mostrar o esconder cada módulo (teclas 1–9 y 0)">
         <span class="seg-label">VER</span>
         <button data-v="vu" title="Vúmetros (1)">VU</button>
         <button data-v="bpm" title="BPM (2)">BPM</button>
@@ -102,6 +102,7 @@
         <button data-v="deck" title="Caseteras (6)">CASETERA</button>
         <button data-v="tape" title="La cinta grande (7)">CINTA</button>
         <button data-v="tuner" title="El sintonizador de radio: las mismas radios y memorias que el estéreo (9)">RADIO</button>
+        <button data-v="cdunit" title="El reproductor de CD DC-90: la lectora de CD/DVD de la PC, también por USB (0)">CD</button>
       </div>
       <span class="row-break"></span>
       <div class="seg preset" data-group="preset" title="5 looks favoritos (F1–F5) y 3 tuyos (C1–C3, F6–F8): GUARDAR y C1–C3 guarda lo que ves">
@@ -225,7 +226,7 @@
       <button class="st-hot round" data-st="sel" style="left:3.598%;top:46.011%;width:7.996%;height:16.141%" title="SEL · reproducir / pausa (radio o el tema de la PC)"></button>
       <button class="st-hot round" data-st="mode" style="left:10.195%;top:27.829%;width:6.397%;height:15.213%" title="MODE · PC (lo que suena en la computadora), RADIO por internet o CD (la lectora)"></button>
       <button class="st-hot round" data-st="disp" style="left:14.193%;top:45.269%;width:5.897%;height:15.213%" title="DISP · qué muestra el display: normal, hora, temperatura, BPM o loudness"></button>
-      <button class="st-hot round" data-st="band" style="left:10.195%;top:63.636%;width:6.397%;height:15.028%" title="BAND · FM1, FM2, FM3 y AM: cuatro juegos de seis memorias"></button>
+      <button class="st-hot round" data-st="band" style="left:10.195%;top:63.636%;width:6.397%;height:15.028%" title="BAND · FM1, FM2, FM3, FM4 y AM: cinco juegos de seis memorias"></button>
       <button class="st-hot round" data-st="hdb" style="left:20.090%;top:31.911%;width:4.698%;height:16.327%" title="HDB · brillo del display"></button>
       <button class="st-hot round" data-st="sdm" style="left:20.090%;top:57.143%;width:4.798%;height:16.698%" title="SDM · color y estilo del display (mantener: el anterior)"></button>
       <button class="st-hot" data-st="pwr" style="left:2.599%;top:80.891%;width:6.397%;height:12.987%" title="PWR · apagar el estéreo y volver al rack (E)"></button>
@@ -306,6 +307,8 @@
 
   <!-- RADIO TUNER (7.8.7): the DT-90, drawn by vendor/dt90-tuner.js -->
   <div class="tuner-panel" id="tunerPanel"><div id="tuner"></div></div>
+  <!-- CD PLAYER (7.9.2): the DC-90, drawn by vendor/dc90-cd.js, playing the PC's drive (js/cdunit.js) -->
+  <div class="tuner-panel" id="cdPanel"><div id="cdUnit"></div></div>
 
   <!-- CASSETTE DECK -->
   <div class="panel deck-panel" data-mod="deck">
@@ -437,6 +440,8 @@
 <script src="js/stereo.js"></script>
 <script src="vendor/dt90-tuner.js"></script>
 <script src="js/tuner.js"></script>
+<script src="vendor/dc90-cd.js"></script>
+<script src="js/cdunit.js"></script>
 <script src="js/update.js"></script>
 <script src="js/about.js"></script>
 <script src="js/welcome.js"></script>

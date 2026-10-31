@@ -161,6 +161,7 @@ function frame(draw) {
   if (!miniMode && mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
   if (typeof stereoMode !== 'undefined' && stereoMode && draw) guard('stereo', () => stereoFeed(now));
   if (typeof tunerShown === 'function' && tunerShown() && draw) guard('tuner', () => tunerFeed(now));
+  if (typeof cdUnitShown === 'function' && cdUnitShown() && draw) guard('cdunit', () => cdUnitFeed(now));
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));

@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.9.2
+
+### Added
+- **A CD player in the rack: the DC-90** (VER → CD, or `0`), under the tuner: a full-width drawer, a panoramic VFD (time, track of total, the line with the disc, PLAY/PAUSE/DISC, L/R levels) and its transport. It plays the PC's CD/DVD drive, a USB one too, with the same engine as the car stereo's CD mode: POWER reads the drive and starts the disc (and pauses what the PC was playing; off brings it back), ▶ ❚❚ ■, |◀◀ ▶▶| around the disc's ends, OPEN / CLOSE opens the real tray and, again, closes it and reads the new disc. An audio CD plays from the drive (track, time and the disc's length on the display); a disc of MP3s plays its files by name. It says when there's no drive or no disc. The CD and the radio take turns: playing one turns the other off. Like the tuner, its plate follows the rack's frame and the looks never hide it. The CD-90 drawn in the big tape panel stays as it was (what plays on the PC).
+- The bridge closes the drive's tray (`cd-close`).
+- **FM4, a band of hi-fi stations** (internet only): FIP and FIP Jazz (Radio France, Paris, AAC 192), KEXP (Seattle), and Linn's three, Linn Jazz, Linn Classical and Linn Radio (Glasgow, 320 kbps). In the tuner (its own key, FM4, beside FM1–FM3 and AM) and in the car stereo (BAND). An existing setup gets it as it is; its memories can be changed like any other.
+
 ## 7.9.1
 
 ### Fixed

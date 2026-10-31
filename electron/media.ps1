@@ -136,6 +136,10 @@ function CdCommand([string]$c) {
       $script:cdPlaying = $false; $null = CdSend 'close d90cd'; $script:cdOpen = $false
       Say @{ cd = @{ state = 'ejected' } }; return
     }
+    elseif ($c -eq 'cd-close') {                                # 7.9.2: the DC-90's OPEN / CLOSE, closing the tray again
+      $null = CdOpen; $null = CdSend 'set d90cd door closed wait'; $null = CdSend 'close d90cd'; $script:cdOpen = $false
+      Say @{ cd = @{ state = 'closed' } }; return
+    }
     Say (CdStatus)
   } catch { Say @{ cd = @{ error = $_.Exception.Message } } }
 }

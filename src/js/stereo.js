@@ -7,7 +7,7 @@
 //    MODE    PC (what the computer plays) or RADIO (stations over the internet)
 //    SEL     play / pause: the radio, or the player's song                    DISP  song · BPM · loudness · time
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
-//    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3
+//    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3 · FM4 · AM
 //    HDB     the display's brightness   SDM  its colour   PWR  back to the rack   ⏏  opens the drive's tray
 //  CD mode (7.8, Windows): the PC's CD/DVD drive, through the program's bridge (electron/media.ps1). An audio CD
 //  plays from the drive (Windows' own CD audio); a disc of MP3s and the like plays its files here. TRACK ◀▶ and
@@ -77,7 +77,16 @@ const RADIO_AM = [
   { name: 'Continental', freq: '590', q: 'Radio Continental', cc: 'AR' }, { name: 'Rivadavia', freq: '630', q: 'Rivadavia', cc: 'AR' },
   { name: 'Radio Nacional', freq: '870', q: 'Radio Nacional', cc: 'AR' }, { name: 'La Red', freq: '910', q: 'La Red', cc: 'AR' },
 ];
-const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'AM'];
+// FM4 (7.9.2): hi-fi stations, internet only: FIP and FIP Jazz (Paris, AAC 192), KEXP (Seattle), Linn's three (320)
+const RADIO_FM4 = [
+  { name: 'FIP', freq: '', q: 'FIP', cc: 'FR', url: 'https://icecast.radiofrance.fr/fip-hifi.aac' },
+  { name: 'FIP Jazz', freq: '', q: 'FIP Jazz', cc: 'FR', url: 'https://icecast.radiofrance.fr/fipjazz-hifi.aac' },
+  { name: 'KEXP', freq: '', q: 'KEXP', cc: 'US', url: 'https://kexp.streamguys1.com/kexp160.aac' },
+  { name: 'Linn Jazz', freq: '', q: 'Linn Jazz', cc: 'GB', url: 'http://radio.linn.co.uk:8000/autodj' },
+  { name: 'Linn Classic', freq: '', q: 'Linn Classical', cc: 'GB', url: 'http://radio.linn.co.uk:8004/autodj' },
+  { name: 'Linn Radio', freq: '', q: 'Linn Radio', cc: 'GB', url: 'http://radio.linn.co.uk:8003/autodj' },
+];
+const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'AM'];
 let stereoMode = false, stereoDisplay = null, stereoTextAt = 0, stereoShown = '';
 let stereoCfg = { disp: 'song', color: 1, dim: 0, mode: 'pc' };
 try {
@@ -87,7 +96,7 @@ try {
     dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd'].includes(c.mode) ? c.mode : 'pc' };
 } catch (_) {}
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
-let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), AM: RADIO_AM.slice() };
+let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), AM: RADIO_AM.slice() };
 try {
   const r = JSON.parse(localStorage.getItem(RADIO_KEY));
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
@@ -245,6 +254,7 @@ if (window.cdrom) window.cdrom.on(m => {
       if (cdAudioTracks().length) window.cdrom.cmd('cd-play ' + cdAudioTracks()[0].n);
       else if (cdFiles().length) cdPlayFile(0);
     }
+    if (typeof cdUnitInfo === 'function') cdUnitInfo();         // the rack's DC-90 waits for it too
     stereoText(true); return;
   }
   if (m.state) {
@@ -266,18 +276,19 @@ function stereoOpen(on) {
   stereoMode = on;
   document.body.classList.toggle('stereo', on);
   if (on && radioPlaying() && stereoCfg.mode !== 'radio') { stereoCfg.mode = 'radio'; savePrefs(); }   // the tuner's radio goes on here
+  else if (on && cdPlaying() && stereoCfg.mode !== 'cd') { stereoCfg.mode = 'cd'; savePrefs(); }        // and the DC-90's CD
   if (on && !stereoDisplay && typeof Deck90Display === 'function') {
     stereoDisplay = new Deck90Display(document.getElementById('stDisplay'), { attackMs: 35, releaseMs: 140, radio: { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 } });
     const svg = stereoDisplay.svg;                             // only its glass, over the photo's own LCD
     svg.setAttribute('viewBox', '23 24 1141 156'); svg.setAttribute('preserveAspectRatio', 'none');
     svg.removeAttribute('width'); svg.removeAttribute('height');
     stereoShown = ''; stereoText(true);
-    if (stereoCfg.mode === 'cd') cdAsk();
+    if (stereoCfg.mode === 'cd' && !cdPlaying()) cdAsk();       // (a disc already playing in the rack's DC-90 goes on)
   }
   if (!on) {
     // the stereo off: its radio and CD too (the radio goes on in the rack's tuner, when it's there)
     if ((radioPlaying() || radioNow) && !(typeof tunerKeeps === 'function' && tunerKeeps())) radioStop();
-    cdStop();
+    if (!(typeof cdUnitKeeps === 'function' && cdUnitKeeps())) cdStop();
     if (stereoDisplay) { stereoDisplay.destroy(); stereoDisplay = null; }
   }
   stereoPaint();
