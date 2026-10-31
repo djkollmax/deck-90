@@ -1,5 +1,12 @@
 # Novedades
 
+## 7.9.1 — 2026-10-31
+
+### Arreglos
+- **El dial marca siempre bien:** revisado radio por radio, la aguja se para en la frecuencia de cada una sobre la escala impresa de FM o AM; una radio sin lugar en el dial (solo por internet) no muestra aguja, en lugar de dejarla en la anterior.
+- Una tecla de banda o una memoria tocada con el sintonizador apagado prendía primero la última radio y recién después iba a la pedida (y una tecla de banda podía quedarse en la anterior): ahora va directo a la pedida.
+- "EN VIVO POR INTERNET" solo para una radio sin frecuencia; una sintonizada con la perilla que tiene la frecuencia en el nombre dice "EN VIVO".
+
 ## 7.9.0 — 2026-10-31
 
 ### Nuevo

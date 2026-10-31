@@ -70,7 +70,8 @@ function tunerBand(b) {
   radioMem.band = b; if (!same) radioMem.slot = 1; saveRadio(); radioScan = 0;
   const st = radioMem[b][(radioMem.slot || 1) - 1];
   toast('BANDA · <span>' + b + '</span>' + (st ? ' · ' + radioMem.slot + ' ' + st.name.replace(/[<>&]/g, '') : ''), 1600);
-  if (!tunerPower) tunerOn(true); else radioMemory(radioMem.slot || 1);
+  if (!tunerPower) tunerOn(true, true);
+  radioMemory(radioMem.slot || 1);
   tunerSync();
 }
 
@@ -102,7 +103,7 @@ function tunerLine() {
   }
   const st = tunerStation();
   const name = st ? st.name : radioMem.band + ' VACÍA';
-  const text = !tunerPower ? 'STANDBY' : radioPlaying() ? (st && !st.freq ? 'EN VIVO POR INTERNET' : 'EN VIVO') : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
+  const text = !tunerPower ? 'STANDBY' : radioPlaying() ? (tunerDial(st).f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO') : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
   return { name, text };
 }
 // the dial: the station's own frequency, or one in its name ("La 100 - 99.9 FM", "Radio 10 AM 710"); none (a station
@@ -152,12 +153,13 @@ function tunerFeed(now) {
 }
 
 // on and off: the PC's player waits while the radio plays, like the stereo's modes
-function tunerOn(on) {
+// keyTunes: the key that woke it tunes its own station (a memory, a band, ◀ ▶), so POWER's doesn't start first
+function tunerOn(on, keyTunes) {
   if (on === tunerPower) return;
   tunerPower = on; tunerMemo = 0;
   if (on) {
     if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
-    if (!radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
+    if (!keyTunes && !radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
   } else {
     radioStop();
     if (tunerResumePc) { tunerResumePc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
@@ -180,7 +182,7 @@ function tunerKey(k, { hold } = {}) {
     if (tunerMemo) toast('MEMO · tocá el <span>1–6</span> donde guardarla', 2400);
     return tunerSync();
   }
-  if (!tunerPower && k !== 'band') tunerOn(true);               // a station key wakes the tuner, as on the real one
+  if (!tunerPower && k !== 'band') tunerOn(true, k !== 'scan');   // a station key wakes the tuner, as on the real one
   if (k === 'band') return tunerBand(RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]);
   if (k === 'tune-up' || k === 'tune-down') { radioScan = 0; radioStep(k === 'tune-up' ? 1 : -1); return tunerSync(); }
   if (k === 'scan') {

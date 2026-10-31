@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.9.1
+
+### Fixed
+- **The dial always reads right:** checked station by station, the needle stops on each one's frequency on the printed FM or AM scale; a station with no place on the dial (internet only) shows no needle instead of leaving it on the last one.
+- A band key or a memory touched with the tuner off turned on the last station first and only then went to the one asked for (and a band key could stay on the old station): it goes straight to the one asked for now.
+- "EN VIVO POR INTERNET" only for a station with no frequency; one tuned with the knob whose frequency is in its name says "EN VIVO".
+
 ## 7.9.0
 
 ### Added

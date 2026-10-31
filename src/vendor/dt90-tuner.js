@@ -22,7 +22,7 @@
  * only over the internet (no dial position): the digits show dashes and the needle stays where it was; and
  * preset 0 is a station tuned outside the memories (M-). 7.9.0: setRadio({ label }) with frequency null writes the
  * label in big dot-matrix letters where the digits go (an internet station's name, "80S80S"), the digits and the
- * MHZ hidden.
+ * MHZ hidden, and no needle on the dial (it would point at a frequency the station doesn't have).
  */
 (function (global) {
 'use strict';
@@ -422,7 +422,7 @@ class Deck90Tuner {
     this._assertAlive();
     this._state.powered = Boolean(powered);
     this._display.setAttribute('opacity', powered ? '1' : '.035');
-    this._needle.setAttribute('opacity', powered ? '1' : '.12');
+    this._needleShade();
     this._powerLed.setAttribute('fill', powered ? VFD : DIM);
     this._powerLed.setAttribute('opacity', powered ? '1' : '.6');
     this._paintLevels();
@@ -646,6 +646,7 @@ class Deck90Tuner {
       this._cache.digits = digitText;
     }
     this._decimal.setAttribute('opacity', am || net ? '0' : '1');
+    this._needleShade();
     const big = net && radio.label ? radio.label.toUpperCase().slice(0, 14) : '';
     if (this._cache.big !== big) {
       const pitch = big ? Math.min(6.4, 236 / ([...big].length * 6)) : 1;
@@ -698,6 +699,12 @@ class Deck90Tuner {
       for (let index = 0; index < this._levelNodes[channel].length; index++) this._levelNodes[channel][index].setAttribute('fill', index < count ? VFD : DIM);
       this._meterCounts[channel] = count;
     }
+  }
+
+  /** Deck 90: no needle for a station with no place on the dial (internet only), so it never points somewhere wrong. */
+  _needleShade() {
+    const net = this._state.radio.frequency === null;
+    this._needle.setAttribute('opacity', net ? '0' : this._state.powered ? '1' : '.12');
   }
 
   _paintNeedle() {
