@@ -1,6 +1,7 @@
 /* DECK 90 display — generated from the included editable sources.
    Deck 90 7.7: two small additions for the stereo's internet radio, marked "radio live": setRadio({ live, name })
-   lets the L/R meters follow the sound on the radio screen too, and shows the station's name under the frequency. */
+   lets the L/R meters follow the sound on the radio screen too, and shows the station's name under the frequency;
+   7.8.3: setRadio({ mono }) lights MONO instead of STEREO (an AM station). */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -41,7 +42,7 @@ class Deck90Display {
     this.id = `d90-${++nextId}`;
     this.state = {
       mode: 'radio',
-      radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', ...options.radio },
+      radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, ...options.radio },
       track: { title: '', artist: '', elapsed: 0, playing: false },
       levels: { left: 0, right: 0 },
     };
@@ -99,6 +100,7 @@ class Deck90Display {
   setRadio(radio = {}) {
     this._assertAlive();
     for (const key of ['band', 'frequency', 'name']) if (key in radio) this.state.radio[key] = safeText(radio[key]);
+    if ('mono' in radio) this.state.radio.mono = Boolean(radio.mono);   // mono
     if ('live' in radio) { this.state.radio.live = Boolean(radio.live); if (!this.state.radio.live) { this.state.levels = { left: 0, right: 0 }; } }   // radio live
     if ('preset' in radio) this.state.radio.preset = Math.max(1, Math.min(99, Math.trunc(Number(radio.preset) || 1)));
     if (this.state.mode === 'radio') this._renderText();
@@ -270,8 +272,9 @@ class Deck90Display {
     this._titleGroup.append(text.group);
     this._titleGroup.setAttribute('transform', `translate(278 ${this._titleY})`);
     this._status.append(svgNode('rect', { x: 151, y: 37, width: 111, height: 53, rx: 2, fill: 'none', stroke: '#dfc73e', 'stroke-width': 2 }));
-    this._status.append(label(music ? 'PLAY' : 'STEREO', 158, 60, { fill: '#ffdd50', 'font-size': 23 }));
-    this._status.append(label(music ? 'CD' : 'MONO', 159, 84, { fill: music ? '#ffdd50' : '#809641', 'font-size': 22 }));
+    const mono = !music && this.state.radio.mono;   // mono: an AM station lights MONO, STEREO goes dark
+    this._status.append(label(music ? 'PLAY' : 'STEREO', 158, 60, { fill: mono ? '#809641' : '#ffdd50', 'font-size': 23 }));
+    this._status.append(label(music ? 'CD' : 'MONO', 159, 84, { fill: music || mono ? '#ffdd50' : '#809641', 'font-size': 22 }));
     this._status.append(label(music ? 'TRACK' : 'LOCAL', 155, 115, { 'font-size': 21 }));
     this._artist.textContent = (music ? this.state.track.artist : this.state.radio.live ? this.state.radio.name : '').toLocaleUpperCase('es').slice(0, 42);   // radio live: the station
     this.svg.setAttribute('aria-label', music ? `DECK 90. Reproduciendo: ${title}${this.state.track.artist ? ', ' + this.state.track.artist : ''}` : `DECK 90. Radio ${this.state.radio.band} ${this.state.radio.frequency}`);

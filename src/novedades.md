@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.8.3 — 2026-10-31
+
+### Cambios
+- **Con un CD, los números son sus pistas:** 1–6 ponen las pistas 1 a 6 y, manteniéndolos apretados un segundo, la 7 a la 12 (los números impresos arriba de las teclas). En un disco con MP3, sus archivos. En RADIO siguen siendo las memorias.
+- **En AM el display prende MONO** (STEREO se apaga), como suena una AM; FM, el CD y la PC quedan en STEREO.
+
 ## 7.8.2 — 2026-10-31
 
 ### Cambios

@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.8.3
+
+### Changed
+- **On a CD, the numbers are its tracks:** 1–6 play tracks 1–6, and held for a second, 7–12 (the numbers printed above the keys). On a disc of MP3s, its files. In RADIO they're still the memories.
+- **AM lights MONO** on the display (STEREO goes dark), as an AM station sounds; FM, the CD and the PC keep STEREO.
+
 ## 7.8.2
 
 ### Changed

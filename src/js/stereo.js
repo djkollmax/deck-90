@@ -248,7 +248,7 @@ function stereoText(force) {
       stereoShown = key;
       if (stereoCfg.mode === 'radio') {                        // the radio keeps its own screen, the words in place of the dial
         stereoDisplay.setPlayback(false);
-        stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext() });
+        stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext(), mono: radioMem.band === 'AM' });
       } else stereoDisplay.setTrack({ title: extra, artist: stereoContext(), playing: true });
     }
     stereoDisplay.setElapsed(stereoCfg.mode === 'cd' ? cdPosition() : stereoCfg.mode === 'pc' && np ? npPosition() : 0);
@@ -281,7 +281,7 @@ function stereoText(force) {
     if (key !== stereoShown || force) {
       stereoShown = key;
       stereoDisplay.setPlayback(false);
-      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: live ? st.name : '' });
+      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: live ? st.name : '', mono: radioMem.band === 'AM' });
     }
   } else {
     const playing = stereoPlaying();
@@ -295,7 +295,7 @@ function stereoText(force) {
     if (key !== stereoShown || force) {
       stereoShown = key;
       if (playing) stereoDisplay.setTrack({ title, artist, playing: true });
-      else { stereoDisplay.setRadio({ band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '' }); stereoDisplay.setPlayback(false); }
+      else { stereoDisplay.setRadio({ band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false }); stereoDisplay.setPlayback(false); }
     }
     if (playing) stereoDisplay.setElapsed(np ? npPosition() : 0);
   }
@@ -380,6 +380,14 @@ function stereoKey(k, hold) {
     radioMem.band = RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]; radioMem.slot = 0; saveRadio();
     toast('BAND · <span>' + radioMem.band + '</span> · seis memorias (1–6)', 1500);
     return stereoText(true);
+  }
+  if (/^m[1-6]$/.test(k) && stereoCfg.mode === 'cd') {     // on a CD the numbers are its tracks: 1–6, held 7–12 (printed above them)
+    const n = Number(k[1]) + (hold ? 6 : 0);
+    if (cdFiles().length) { if (n <= cdFiles().length) cdPlayFile(n - 1); else toast('El disco tiene ' + cdFiles().length + ' archivos', 1600); return; }
+    const tr = cdAudioTracks();
+    if (tr.some(t => t.n === n)) { window.cdrom.cmd('cd-play ' + n); toast('TRACK · <span>' + String(n).padStart(2, '0') + '</span>', 1200); }
+    else toast(tr.length ? 'El CD tiene ' + tr.length + ' pistas' : 'No hay un CD de audio', 1600);
+    return;
   }
   if (/^m[1-6]$/.test(k)) {
     if (stereoCfg.mode !== 'radio') stereoSwitch('radio');
