@@ -43,27 +43,30 @@ async function run(name) {
   const log = () => { try { return fs.readFileSync(path.join(UD, 'media.log'), 'utf8'); } catch (_) { return ''; } };
   const from = onDisk(), to = from.replace(/(\d+)$/, n => String(+n + 1));
 
+  // The next version and GitHub's answers are ready before the program starts: its first look at GitHub
+  // comes 8 s after it starts, and making the package on a slow machine took longer than that (the check
+  // then went to the real GitHub, found nothing newer and the offer never came).
+  const engine = fs.readFileSync(path.join(D, 'version'), 'utf8').trim();
+  // the next version, made from the installed files
+  const files = {};
+  (function walk(rel) {
+    for (const d of fs.readdirSync(path.join(A, rel), { withFileTypes: true })) {
+      const r = rel ? rel + '/' + d.name : d.name;
+      if (d.isDirectory()) walk(r); else files[r] = fs.readFileSync(path.join(A, r));
+    }
+  })('');
+  files['package.json'] = Buffer.from(String(files['package.json']).replace(`"version": "${from}"`, `"version": "${to}"`));
+  files['src/js/update.js'] = Buffer.from(String(files['src/js/update.js']) + `\n// test build ${to}\n`);
+  if (name === 'mainthrow') files['electron/main.js'] = Buffer.from(`throw new Error('broken ${to}');\n` + files['electron/main.js']);
+  if (name === 'syntax') files['src/js/core.js'] = Buffer.from(String(files['src/js/core.js']) + '\nfunction (');
+  const b64 = {}; for (const k in files) b64[k] = files[k].toString('base64');
+  const bundle = zlib.gzipSync(JSON.stringify({ format: 1, name: 'deck-90', version: to, electron: name === 'engine' ? '1.0.0' : engine, files: b64 }));
+  const sha = crypto.createHash('sha256').update(bundle).digest('hex');
+
   const app = await electron.launch({ executablePath: path.join(D, exeName), args: [...(win32 ? [] : ['--no-sandbox']), '--user-data-dir=' + UD], timeout: 90000 });
   let closed = false; app.on('close', () => { closed = true; });
   try {
-    const page = await app.firstWindow();
-    const engine = await app.evaluate(() => process.versions.electron);
-    // the next version, made from the installed files
-    const files = {};
-    (function walk(rel) {
-      for (const d of fs.readdirSync(path.join(A, rel), { withFileTypes: true })) {
-        const r = rel ? rel + '/' + d.name : d.name;
-        if (d.isDirectory()) walk(r); else files[r] = fs.readFileSync(path.join(A, r));
-      }
-    })('');
-    files['package.json'] = Buffer.from(String(files['package.json']).replace(`"version": "${from}"`, `"version": "${to}"`));
-    files['src/js/update.js'] = Buffer.from(String(files['src/js/update.js']) + `\n// test build ${to}\n`);
-    if (name === 'mainthrow') files['electron/main.js'] = Buffer.from(`throw new Error('broken ${to}');\n` + files['electron/main.js']);
-    if (name === 'syntax') files['src/js/core.js'] = Buffer.from(String(files['src/js/core.js']) + '\nfunction (');
-    const b64 = {}; for (const k in files) b64[k] = files[k].toString('base64');
-    const bundle = zlib.gzipSync(JSON.stringify({ format: 1, name: 'deck-90', version: to, electron: name === 'engine' ? '1.0.0' : engine, files: b64 }));
-    const sha = crypto.createHash('sha256').update(bundle).digest('hex');
-    // GitHub's answers, from here
+    // GitHub's answers, from here, before the page has even loaded
     await app.evaluate(({ net }, [b, sha, to]) => {
       const body = Buffer.from(b, 'base64'), asset = `Deck-90-${to}-app.bundle`;
       net.fetch = async url => {
@@ -73,6 +76,8 @@ async function run(name) {
         return new Response('no', { status: 404 });
       };
     }, [bundle.toString('base64'), sha, to]);
+    const page = await app.firstWindow();
+    if (engine !== await app.evaluate(() => process.versions.electron)) throw new Error('the version file is not this Electron');
 
     const bar = () => page.evaluate(() => ({ show: document.getElementById('updBar').classList.contains('show'), text: document.getElementById('updText').innerText, go: document.getElementById('updGo').textContent }));
     const offer = await until('the offer of ' + to, async () => { const b = await bar(); return b.show && b.go === 'INSTALAR' ? b : null; }, 45000);
