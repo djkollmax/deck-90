@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.8.7
+
+### Added
+- **A radio tuner in the rack: the DT-90** (VER → RADIO, or `9`). A hi-fi tuner unit under the meters, with a VFD display (band, memory, the frequency in 7 segments, STEREO/MONO/TUNED, signal, L/R levels, a dot-matrix line with the station) and an analog dial with a needle that glides to the station. It is the same radio as the car stereo: the same stations, bands (FM1–FM3, AM) and memories. POWER turns it on (and pauses what the PC was playing; off brings it back), BAND changes band, ◀ ▶ and the knob step through the country's most heard stations, 1–6 are the memories (hold 1 s, or MEMO and the number, to keep what plays there), SCAN tries each for 8 s, MODE shows AUTO/MONO, DISP shows the station, the time or the temperature. An internet-only station shows dashes on the dial. The plate follows the rack's frame (silver, black, champagne). Looks and their rotation leave it as it is. Opening the stereo with the radio on carries it there, and closing the stereo with the radio on leaves it playing in the tuner.
+- **SDM has 28 looks:** twelve more after AQUA: COBALTO (deep blue, blue-white letters), LIMA, ROSA, VIOLETA, FUEGO (orange letters, red meters), MATRIX (terminal green phosphor), ATARDECER (dark violet, orange letters, pink meters), NIXIE (the orange of nixie tubes), OLED (pure black, cold white, blue meters), LCD AZUL (blue-backlit LCD, white letters), LCD ÁMBAR (amber-backlit LCD, dark letters) and BICOLOR (yellow letters, cyan labels, green meters).
+
 ## 7.8.6
 
 ### Changed

@@ -77,13 +77,17 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 ![Los doce estilos de espectro](docs/screenshots/spectrums.jpg)
 
+### Sintonizador de radio en el rack
+
+**VER → RADIO** (o la tecla `9`) muestra el DT-90, un sintonizador hi-fi con display VFD y dial analógico que se suma al rack. Toca la misma radio por internet que el estéreo de auto de abajo: las mismas emisoras, bandas y memorias. Tiene **POWER**, **BAND**, **◀ ▶** y la perilla, **1–6**, **MEMO**, **SCAN**, **MODE** y **DISP**.
+
 ### Estéreo de auto, con radio por internet
 
 La tecla `E` (o el botón de la radio en las herramientas) cierra el rack y la ventana pasa a ser el frente de un estéreo de auto: el display DP940 en vivo y botones que andan.
 
 - **Modo PC:** el tema que suena con letras de 16 segmentos, el artista y el tiempo; los vúmetros L/R se mueven con el audio real. DISP cambia entre la pantalla normal, la hora, la temperatura, los BPM y el loudness, en cualquier modo.
 - **Modo RADIO** (MODE): radios argentinas por internet. FM1 viene con Aspen 102.3, 80s80s (de Hamburgo, solo por internet), Metro 95.1, Rock & Pop 95.9, La 100 99.9 y Vorterix 92.1 en 1–6, FM2 es Buenos Aires por género (Con Vos 89.9, Nacional Clásica 96.7, Blackie 89.1 jazz, Delta 90.3 electrónica, Blue 100.7 ochentas, Nacional Rock 93.7) y FM3 los mismos géneros del mundo (Radio Swiss Classic, Radio Swiss Jazz, Ibiza Global Radio, Heart 80s, Groove Salad, Radio Paradise). TUNE ◀ ▶ recorre las más escuchadas del país, SCAN las prueba de a 8 segundos, manteniendo apretado un número guardás la que suena y BAND pasa por FM1, FM2, FM3 y AM (Mitre 790, Radio 10 710, Continental 590, Rivadavia 630, Nacional 870 y La Red 910). Las direcciones de las radios salen de [Radio Browser](https://www.radio-browser.info) (solo se envía el nombre que se busca).
-- **VOL ▲ ▼** (o la rueda del mouse) es el volumen de Windows, **ATT** silencia, **SEL** pausa, **SDM** cambia el color del display (16 estilos: seis colores, **HD** negro con letras amarillas, ámbar, hielo, verde noche, rojo sport, blanco, LCD claro, Miami, oro y aqua; mantenerlo vuelve al anterior) y **HDB** su brillo (normal, alto, medio, bajo). **PWR** vuelve al rack.
+- **VOL ▲ ▼** (o la rueda del mouse) es el volumen de Windows, **ATT** silencia, **SEL** pausa, **SDM** cambia el color del display (28 estilos: seis colores, **HD** negro con letras amarillas, ámbar, hielo, verde noche, rojo sport, blanco, LCD claro, Miami, oro, aqua, cobalto, lima, rosa, violeta, fuego, Matrix, atardecer, nixie, OLED, LCD azul, LCD ámbar y bicolor; mantenerlo vuelve al anterior) y **HDB** su brillo (normal, alto, medio, bajo). **PWR** vuelve al rack.
 - **Modo CD** (MODE, o tocar la ranura): la lectora de CD/DVD de la PC, en Windows. Un CD de audio suena desde la lectora con TRACK ◀ ▶, SEL y los números (1–6, y 7–12 manteniéndolos), y el display muestra TRACK 03 y su tiempo; un disco con MP3 reproduce sus archivos con el nombre de cada uno. **⏏** abre la bandeja.
 
 ![El estéreo DP940: un tema de la PC arriba, la radio Aspen 102.3 abajo](docs/screenshots/stereo.jpg)

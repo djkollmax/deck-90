@@ -1306,7 +1306,7 @@ body.stereo #updBar{ display:none; }
 .st-display polygon[fill="#ffdf4f"]{ fill:#ffe414; stroke:#ffe414; stroke-width:1.1; stroke-linejoin:round; }
 .st-display text[fill="#ffdd50"], .st-display text[fill="#ffdf4f"]{ fill:#ffe41c; }
 
-/* SDM 7–16 · the looks (7.8.3–7.8.5): each sets its glass, letters (lit and ghost), labels and meters. The display
+/* SDM 7–28 · the looks (7.8.3–7.8.7): each sets its glass, letters (lit and ghost), labels and meters. The display
    draws its own colours as attributes; these rules restyle them by value (CSS beats a presentation attribute). */
 .st-display.look{ background:var(--lcd); }
 .st-display.look rect[fill*="lcd-film"]{ fill:var(--lcd); }
@@ -1330,6 +1330,18 @@ body.stereo #updBar{ display:none; }
 .st-display.look-miami{ --lcd:#14051f; --seg:#ff4fd8; --ghost:#3d1340; --ghost-op:.32; --lit:#ff6be0; --lbl:#39d7ff; --off:#3a2a55; --artist:#7fe6ff; --vu:#39d7ff; --vu-off:#1a1638; }
 .st-display.look-gold{ --lcd:#120a03; --seg:#ffc94a; --ghost:#3b2a0e; --ghost-op:.3; --lit:#ffd36b; --lbl:#c9a04a; --off:#5a4418; --artist:#f0cf86; --vu:#ffe2a0; --vu-off:#2c2010; }
 .st-display.look-aqua{ --lcd:#021412; --seg:#3dffd8; --ghost:#0c3a33; --ghost-op:.32; --lit:#5cffe0; --lbl:#2fc6ad; --off:#14473f; --artist:#a3fff0; --vu:#5cffe0; --vu-off:#0b2a26; }
+.st-display.look-cobalt{ --lcd:#04103a; --seg:#d6e4ff; --ghost:#1a2c66; --ghost-op:.4; --lit:#e6eeff; --lbl:#8fb0ff; --off:#2b3f7a; --artist:#c6d8ff; --vu:#cfe0ff; --vu-off:#13245a; }
+.st-display.look-lime{ --lcd:#060a02; --seg:#c8ff2e; --ghost:#2c3a0c; --ghost-op:.3; --lit:#d4ff4a; --lbl:#9ccc2a; --off:#3c4d14; --artist:#e2ff8a; --vu:#c8ff2e; --vu-off:#1c260a; }
+.st-display.look-rose{ --lcd:#0c0408; --seg:#ff7fb0; --ghost:#3c1424; --ghost-op:.3; --lit:#ff95c0; --lbl:#d96b96; --off:#55203a; --artist:#ffb8d4; --vu:#ff8fb8; --vu-off:#2a0d1a; }
+.st-display.look-violet{ --lcd:#08040f; --seg:#b98aff; --ghost:#2a1a48; --ghost-op:.32; --lit:#c9a2ff; --lbl:#9874d6; --off:#3a2a60; --artist:#dcc6ff; --vu:#b98aff; --vu-off:#1a1030; }
+.st-display.look-fire{ --lcd:#0a0402; --seg:#ff7a1a; --ghost:#3d1a06; --ghost-op:.32; --lit:#ff8f33; --lbl:#e0602a; --off:#5a240c; --artist:#ffb070; --vu:#ff4a26; --vu-off:#2e0c06; }
+.st-display.look-matrix{ --lcd:#010401; --seg:#39ff6a; --ghost:#0b2a12; --ghost-op:.22; --lit:#5cff86; --lbl:#22b04a; --off:#103c1a; --artist:#8dffab; --vu:#39ff6a; --vu-off:#08200e; }
+.st-display.look-sunset{ --lcd:#140820; --seg:#ff9a3c; --ghost:#3c1c34; --ghost-op:.32; --lit:#ffad55; --lbl:#ff6fa8; --off:#4a2448; --artist:#ffc28a; --vu:#ff6fa8; --vu-off:#26102a; }
+.st-display.look-nixie{ --lcd:#120704; --seg:#ff8a3a; --ghost:#3c2014; --ghost-op:.38; --lit:#ffa057; --lbl:#c97442; --off:#4f2a18; --artist:#ffbf8a; --vu:#ff9a4a; --vu-off:#2a140a; }
+.st-display.look-oled{ --lcd:#000000; --seg:#eef6ff; --ghost:#141a22; --ghost-op:.5; --lit:#ffffff; --lbl:#9fb2c8; --off:#2a323d; --artist:#d9e6f5; --vu:#4aa8ff; --vu-off:#0c1622; }
+.st-display.look-lcdblue{ --lcd:#1a4fc4; --seg:#f4f8ff; --ghost:#3a6ad6; --ghost-op:.45; --lit:#ffffff; --lbl:#c8dbff; --off:#5d86e0; --artist:#e6efff; --vu:#ffffff; --vu-off:#3563cc; }
+.st-display.look-lcdamber{ --lcd:#e3a43c; --seg:#1d1204; --ghost:#c18a2e; --ghost-op:.45; --lit:#1a1003; --lbl:#3d2808; --off:#b57f2a; --artist:#2e1e06; --vu:#221505; --vu-off:#c99238; }
+.st-display.look-duo{ --lcd:#050505; --seg:#ffd61f; --ghost:#2e2a12; --ghost-op:.3; --lit:#ffdf4a; --lbl:#4fd2ff; --off:#1e3d4a; --artist:#8fe4ff; --vu:#4cff86; --vu-off:#0f2a18; }
 
 /* the meters' last stretch, in every colour of the stereo: two yellow, one amber, two red (true in colour 1 and HD;
    the other colours tint them like the rest of the glass) */
@@ -1338,10 +1350,10 @@ body.stereo #updBar{ display:none; }
 .st-display g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#ff9a1a; }
 .st-display g[data-channel] > g[fill="#c5f4df"][data-level="12"],
 .st-display g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#ff3b26; }
-/* the light glass (SDM LCD CLARO): a softer glare, and the meters' tip in dark ochre and red to read on it */
-.st-display.look-lcd::after{ background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 40%, rgba(0,0,0,.06)); }
-.st-display.look-lcd g[data-channel] > g[fill="#c5f4df"][data-level="9"],
-.st-display.look-lcd g[data-channel] > g[fill="#c5f4df"][data-level="10"]{ fill:#6e5a00; }
-.st-display.look-lcd g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#8a3f00; }
-.st-display.look-lcd g[data-channel] > g[fill="#c5f4df"][data-level="12"],
-.st-display.look-lcd g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#a3140c; }
+/* the light glasses (SDM LCD CLARO, LCD ÁMBAR): a softer glare, and the meters' tip in dark ochre and red to read on them */
+.st-display.look-light::after{ background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 40%, rgba(0,0,0,.06)); }
+.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="9"],
+.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="10"]{ fill:#6e5a00; }
+.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#8a3f00; }
+.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="12"],
+.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#a3140c; }

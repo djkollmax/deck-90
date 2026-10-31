@@ -49,7 +49,7 @@ function aboutParse(md) {
 const ABOUT_KEYS = [
   ['S · M · D', 'Escuchar el sistema, el micrófono o la demo'], ['Espacio', 'Detener'],
   ['F1–F5', 'Looks favoritos (otra vez: su segundo look)'], ['F6–F8', 'Tus looks C1–C3 (Shift: guardar lo que ves)'], ['R', 'Looks que rotan solos (modo vidriera)'], ['E', 'Estéreo: el estéreo de auto con radio por internet'],
-  ['1–8', 'Mostrar o esconder VU, BPM, medidores, espectro, OSC, casetera, cinta, gonio'],
+  ['1–8', 'Mostrar o esconder VU, BPM, medidores, espectro, OSC, casetera, cinta, gonio'], ['9', 'El sintonizador de radio del rack'],
   ['V', 'Cara del vúmetro'], ['T', 'Estilo de espectro'], ['K', 'Sensibilidad SENS'], ['C', 'Calibración del 0 VU'],
   ['N', 'Tono de pantalla'], ['A', 'Ajustes ⚙'], ['L', 'Historial de temas'], ['Z', 'Solo la cinta grande'],
   ['P', 'Modo mini'], ['H', 'Esconder los controles'], ['F', 'Pantalla completa'], ['I', 'Esta ventana'], ['Esc', 'Cerrar'],

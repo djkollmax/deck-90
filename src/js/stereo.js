@@ -31,10 +31,23 @@ const STEREO_LOOKS = [
   { id: 'night', name: 'VERDE NOCHE', say: 'negro verdoso, letras verdes' },
   { id: 'sport', name: 'ROJO SPORT', say: 'negro, letras rojas' },
   { id: 'white', name: 'BLANCO', say: 'negro, letras blancas' },
-  { id: 'lcd', name: 'LCD CLARO', say: 'vidrio claro, letras oscuras' },
+  { id: 'lcd', name: 'LCD CLARO', say: 'vidrio claro, letras oscuras', light: true },
   { id: 'miami', name: 'MIAMI', say: 'violeta, letras rosas, vúmetros celestes' },
   { id: 'gold', name: 'ORO', say: 'marrón profundo, letras doradas' },
   { id: 'aqua', name: 'AQUA', say: 'verde agua, letras turquesa' },
+  // 7.8.7: twelve more
+  { id: 'cobalt', name: 'COBALTO', say: 'azul profundo, letras blanco azulado' },
+  { id: 'lime', name: 'LIMA', say: 'negro, letras verde lima' },
+  { id: 'rose', name: 'ROSA', say: 'negro, letras rosa' },
+  { id: 'violet', name: 'VIOLETA', say: 'negro, letras violeta' },
+  { id: 'fire', name: 'FUEGO', say: 'negro, letras naranja, vúmetros rojos' },
+  { id: 'matrix', name: 'MATRIX', say: 'fósforo verde de terminal' },
+  { id: 'sunset', name: 'ATARDECER', say: 'violeta oscuro, letras naranja, vúmetros rosa' },
+  { id: 'nixie', name: 'NIXIE', say: 'marrón, el naranja de los tubos nixie' },
+  { id: 'oled', name: 'OLED', say: 'negro puro, blanco frío, vúmetros azules' },
+  { id: 'lcdblue', name: 'LCD AZUL', say: 'LCD con luz azul, letras blancas' },
+  { id: 'lcdamber', name: 'LCD ÁMBAR', say: 'LCD con luz ámbar, letras oscuras', light: true },
+  { id: 'duo', name: 'BICOLOR', say: 'negro, letras amarillas, carteles celestes, vúmetros verdes' },
 ];
 const STEREO_COLORS = STEREO_HUES.length + STEREO_LOOKS.length;   // SDM: six lights, then the looks
 const stereoLook = () => STEREO_LOOKS[stereoCfg.color - STEREO_HUES.length - 1] || null;
@@ -126,7 +139,10 @@ async function radioTune(st, label) {
   if (st.url) { st.url = ''; saveRadio(); }                    // an old address: look it up again next time
   toast('⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora', 3200);
 }
-function radioStop() { radioTry++; radioScan = 0; radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); stereoText(true); }
+function radioStop() {
+  radioTry++; radioScan = 0; radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); stereoText(true);
+  if (typeof tunerStopped === 'function') tunerStopped();      // the rack's tuner shows it off too
+}
 radioAudio.addEventListener('pause', () => stereoText(true));
 radioAudio.addEventListener('playing', () => stereoText(true));
 async function radioStep(d) {                                  // TUNE: the most heard stations in Argentina
@@ -136,7 +152,7 @@ async function radioStep(d) {                                  // TUNE: the most
   radioMem.slot = 0;                                           // a tuned station, not a memory
   radioTune({ name: r.name, freq: '', q: r.name, cc: 'AR', url: r.url }, (radioTopAt + 1) + '/' + radioTop.length);
 }
-setInterval(() => { if (radioScan && stereoCfg.mode === 'radio' && radioScan++ % 8 === 0) radioStep(1); }, 1000);
+setInterval(() => { if (radioScan && (stereoCfg.mode === 'radio' || (typeof tunerPower !== 'undefined' && tunerPower)) && radioScan++ % 8 === 0) radioStep(1); }, 1000);
 function radioMemory(n, hold) {
   const list = radioMem[radioMem.band];
   if (hold) {
@@ -235,6 +251,7 @@ cdAudio.addEventListener('ended', () => cdPlayFile(cdFile + 1));
 function stereoOpen(on) {
   stereoMode = on;
   document.body.classList.toggle('stereo', on);
+  if (on && radioPlaying() && stereoCfg.mode !== 'radio') { stereoCfg.mode = 'radio'; savePrefs(); }   // the tuner's radio goes on here
   if (on && !stereoDisplay && typeof Deck90Display === 'function') {
     stereoDisplay = new Deck90Display(document.getElementById('stDisplay'), { attackMs: 35, releaseMs: 140, radio: { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 } });
     const svg = stereoDisplay.svg;                             // only its glass, over the photo's own LCD
@@ -244,7 +261,8 @@ function stereoOpen(on) {
     if (stereoCfg.mode === 'cd') cdAsk();
   }
   if (!on) {
-    if (radioPlaying() || radioNow) radioStop();               // the stereo off: its radio and CD too
+    // the stereo off: its radio and CD too (the radio goes on in the rack's tuner, when it's there)
+    if ((radioPlaying() || radioNow) && !(typeof tunerKeeps === 'function' && tunerKeeps())) radioStop();
     cdStop();
     if (stereoDisplay) { stereoDisplay.destroy(); stereoDisplay = null; }
   }
@@ -258,7 +276,7 @@ function stereoPaint() {
   const p = document.getElementById('stereo');
   const look = stereoLook(), d = document.getElementById('stDisplay');
   p.style.setProperty('--st-hue', (look ? 0 : STEREO_HUES[stereoCfg.color - 1]) + 'deg');
-  d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (look ? ' look look-' + look.id : '');
+  d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (look ? ' look look-' + look.id + (look.light ? ' look-light' : '') : '');
   p.style.setProperty('--st-dim', STEREO_DIM[stereoCfg.dim]);
   p.classList.toggle('aux-on', !!running || radioPlaying() || cdPlaying());
 }

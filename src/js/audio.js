@@ -435,7 +435,7 @@ function syncConsole() {
     const g = seg.dataset.group;
     seg.querySelectorAll('button').forEach(b => {
       if (g === 'src' && b.dataset.v === 'stop') { b.disabled = !activeSource; return; }
-      if (g === 'mods') { b.classList.toggle('on', !!mods[b.dataset.v]); return; }
+      if (g === 'mods') { b.classList.toggle('on', b.dataset.v === 'tuner' ? typeof tunerCfg === 'object' && tunerCfg.show : !!mods[b.dataset.v]); return; }
       if (g === 'vupick' || g === 'skinpick') return;
       if (g === 'preset') {
         if (b.dataset.v === 'save') b.classList.toggle('on', typeof presetSaveArmed !== 'undefined' && presetSaveArmed);

@@ -91,7 +91,7 @@
         <span class="seg-label">ESPECTRO</span>
         <button class="picker-btn" data-v="pick"><img class="picker-thumb" alt=""><span class="picker-name"></span><i class="picker-caret"></i></button>
       </div>
-      <div class="seg mods" data-group="mods" title="Mostrar o esconder cada módulo (teclas 1–8)">
+      <div class="seg mods" data-group="mods" title="Mostrar o esconder cada módulo (teclas 1–9)">
         <span class="seg-label">VER</span>
         <button data-v="vu" title="Vúmetros (1)">VU</button>
         <button data-v="bpm" title="BPM (2)">BPM</button>
@@ -101,6 +101,7 @@
         <button data-v="gonio" title="Goniómetro (8)">GONIO</button>
         <button data-v="deck" title="Caseteras (6)">CASETERA</button>
         <button data-v="tape" title="La cinta grande (7)">CINTA</button>
+        <button data-v="tuner" title="El sintonizador de radio: las mismas radios y memorias que el estéreo (9)">RADIO</button>
       </div>
       <span class="row-break"></span>
       <div class="seg preset" data-group="preset" title="5 looks favoritos (F1–F5) y 3 tuyos (C1–C3, F6–F8): GUARDAR y C1–C3 guarda lo que ves">
@@ -303,6 +304,9 @@
     <canvas id="oscilloscope" width="944" height="116"></canvas>
   </div>
 
+  <!-- RADIO TUNER (7.8.7): the DT-90, drawn by vendor/dt90-tuner.js -->
+  <div class="tuner-panel" id="tunerPanel"><div id="tuner"></div></div>
+
   <!-- CASSETTE DECK -->
   <div class="panel deck-panel" data-mod="deck">
     <canvas id="deck" width="944" height="160"></canvas>
@@ -431,6 +435,8 @@
 <script src="js/presets.js"></script>
 <script src="js/rotate.js"></script>
 <script src="js/stereo.js"></script>
+<script src="vendor/dt90-tuner.js"></script>
+<script src="js/tuner.js"></script>
 <script src="js/update.js"></script>
 <script src="js/about.js"></script>
 <script src="js/welcome.js"></script>

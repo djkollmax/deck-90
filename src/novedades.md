@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.8.7 — 2026-10-31
+
+### Nuevo
+- **Un sintonizador de radio en el rack: el DT-90** (VER → RADIO, o `9`). Una unidad hi-fi debajo de los medidores, con display VFD (banda, memoria, la frecuencia en 7 segmentos, STEREO/MONO/TUNED, señal, niveles L/R y una línea de matriz de puntos con la radio) y un dial analógico con aguja que se desliza hasta la emisora. Es la misma radio del estéreo del auto: las mismas emisoras, bandas (FM1–FM3, AM) y memorias. POWER la prende (y pausa lo que sonaba en la PC; al apagarla vuelve), BAND cambia de banda, ◀ ▶ y la perilla recorren las más escuchadas del país, 1–6 son las memorias (mantené 1 s, o MEMO y el número, para guardar la que suena), SCAN prueba cada una 8 s, MODE muestra AUTO/MONO y DISP la radio, la hora o la temperatura. Una radio solo por internet muestra guiones en el dial. El frente sigue al chasis del rack (plata, negro, champagne). Los looks y su rotación no lo tocan. Si abrís el estéreo con la radio prendida, sigue ahí; si cerrás el estéreo con la radio prendida, sigue sonando en el sintonizador.
+- **SDM tiene 28 estilos:** doce más después de AQUA: COBALTO (azul profundo, letras blanco azulado), LIMA, ROSA, VIOLETA, FUEGO (letras naranja, vúmetros rojos), MATRIX (fósforo verde de terminal), ATARDECER (violeta oscuro, letras naranja, vúmetros rosa), NIXIE (el naranja de los tubos nixie), OLED (negro puro, blanco frío, vúmetros azules), LCD AZUL (LCD con luz azul y letras blancas), LCD ÁMBAR (LCD con luz ámbar y letras oscuras) y BICOLOR (letras amarillas, carteles celestes, vúmetros verdes).
+
 ## 7.8.6 — 2026-10-31
 
 ### Cambios
