@@ -1369,3 +1369,4 @@ body.stereo #updBar{ display:none; }
 .tuner-panel.mod-off, .rack-unit.only-tape .tuner-panel{ display:none; }
 .tuner-panel.gold #tuner{ --face:#d9cba6; --face-top:#efe4c8; --face-bottom:#a8996f; --key-top:#efe6cf; --key-bottom:#a49470;
   --edge:#9a8a63; --label:#3a3222; --label-dim:#6d5f43; }
+#tuner [data-role="tuning-knob"]:focus, #tuner g[data-band]:focus{ outline:none; }   /* no square ring on the round knob */

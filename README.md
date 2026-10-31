@@ -79,7 +79,7 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 ### Sintonizador de radio en el rack
 
-**VER → RADIO** (o la tecla `9`) muestra el DT-90, un sintonizador hi-fi con display VFD y dial analógico que se suma al rack. Toca la misma radio por internet que el estéreo de auto de abajo: las mismas emisoras, bandas y memorias. Tiene **POWER**, **BAND**, **◀ ▶** y la perilla, **1–6**, **MEMO**, **SCAN**, **MODE** y **DISP**.
+**VER → RADIO** (o la tecla `9`) muestra el DT-90, un sintonizador hi-fi con display VFD y dial analógico que se suma al rack. Toca la misma radio por internet que el estéreo de auto de abajo: las mismas emisoras, bandas y memorias. Tiene **POWER**, **BAND** y una tecla para cada banda (**FM1 FM2 FM3 AM**), **◀ ▶** y la perilla, **1–6**, **MEMO**, **SCAN**, **MODE** y **DISP**. Una radio solo por internet escribe su nombre en grande donde van los números.
 
 ### Estéreo de auto, con radio por internet
 

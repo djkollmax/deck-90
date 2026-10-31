@@ -4,7 +4,8 @@
 //  It is the same radio as the car stereo: the same stations, bands and memories, played by stereo.js's engine
 //  (Radio Browser, one <audio>). The component (vendor/dt90-tuner.js) only draws and says which key was touched.
 //    POWER          the radio on or off (on pauses what the PC was playing; off brings it back)
-//    BAND           FM1 · FM2 · FM3 · AM            ◀ ▶ / the knob   the country's most heard stations
+//    BAND           FM1 → FM2 → FM3 → AM, or the four band keys under it (7.9.0)
+//    ◀ ▶ / the knob the country's most heard stations
 //    1–6            the band's memories (hold 1 s, or MEMO then the number: keep what plays there)
 //    SCAN           8 s of each                     MODE   AUTO / MONO on the display
 //    DISP           the line under the dial: station, time, temperature
@@ -29,10 +30,55 @@ function tunerTheme() {
   tunerPanel.classList.toggle('gold', c === 'GOLD');
 }
 
+// the four bands as keys of their own under BAND (where STANDBY was printed): FM1 FM2 / FM3 AM, the one in use lit
+let tunerBandKeys = null;
+function tunerBandKeysBuild() {
+  const svg = tuner.svg, NS = 'http://www.w3.org/2000/svg', p = tuner.prefix;
+  const mk = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  [...svg.querySelectorAll('text')].filter(t => t.textContent === 'STANDBY').forEach(t => t.remove());
+  tunerBandKeys = {};
+  const pos = { FM1: [35, 152], FM2: [79, 152], FM3: [35, 172], AM: [79, 172] };
+  for (const [b, [x, y]] of Object.entries(pos)) {
+    const g = mk('g', { 'data-band': b, role: 'button', 'aria-label': 'Banda ' + b, tabindex: 0 });
+    g.style.cursor = 'pointer';
+    g.append(mk('rect', { x, y: y + 1.4, width: 41, height: 16, rx: 2, fill: '#080e0a', opacity: .7 }),
+      mk('rect', { x, y, width: 41, height: 16, rx: 2, fill: `url(#${p}-key)`, stroke: 'var(--edge,var(--_d90-edge))', 'stroke-width': .8 }));
+    const t = mk('text', { x: x + 20.5, y: y + 11.4, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': 8.6, 'font-weight': 700, 'letter-spacing': .6, fill: 'var(--label,var(--_d90-label))', 'pointer-events': 'none' });
+    t.textContent = b;
+    const led = mk('rect', { x: x + 6, y: y + 13.2, width: 29, height: 1.2, fill: 'var(--vfd-dim,#193e34)', opacity: .4 });
+    g.append(t, led);
+    g.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); g.setAttribute('transform', 'translate(0 .9)'); });
+    const up = () => g.removeAttribute('transform');
+    g.addEventListener('pointerup', () => { up(); tunerBand(b); });
+    g.addEventListener('pointerleave', up);
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); tunerBand(b); } });
+    svg.append(g);
+    tunerBandKeys[b] = led;
+  }
+}
+function tunerBands() {
+  if (!tunerBandKeys) return;
+  for (const [b, led] of Object.entries(tunerBandKeys)) {
+    const on = b === radioMem.band && tunerPower;
+    led.setAttribute('fill', on ? 'var(--vfd,#80ffe5)' : 'var(--vfd-dim,#193e34)'); led.setAttribute('opacity', on ? '.95' : '.3');
+  }
+}
+// a band: its memory 1 (or the one it was on), on the air if the tuner is on
+function tunerBand(b) {
+  if (!RADIO_BANDS.includes(b)) return;
+  const same = b === radioMem.band;
+  radioMem.band = b; if (!same) radioMem.slot = 1; saveRadio(); radioScan = 0;
+  const st = radioMem[b][(radioMem.slot || 1) - 1];
+  toast('BANDA · <span>' + b + '</span>' + (st ? ' · ' + radioMem.slot + ' ' + st.name.replace(/[<>&]/g, '') : ''), 1600);
+  if (!tunerPower) tunerOn(true); else radioMemory(radioMem.slot || 1);
+  tunerSync();
+}
+
 function tunerBuild() {
   if (tuner || typeof Deck90Tuner !== 'function') return;
   tuner = new Deck90Tuner(document.getElementById('tuner'), { theme: 'silver' });
   tunerTheme();
+  tunerBandKeysBuild();
   tuner.onKey(tunerKey);
   tunerShownKey = ''; tunerSync();
 }
@@ -59,13 +105,28 @@ function tunerLine() {
   const text = !tunerPower ? 'STANDBY' : radioPlaying() ? (st && !st.freq ? 'EN VIVO POR INTERNET' : 'EN VIVO') : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
   return { name, text };
 }
+// the dial: the station's own frequency, or one in its name ("La 100 - 99.9 FM", "Radio 10 AM 710"); none (a station
+// heard only over the internet, 80s80s): its name in big letters where the digits go
+function tunerDial(st) {
+  if (!st) return { f: null, am: radioMem.band === 'AM' };
+  const own = Number(String(st.freq || '').replace(',', '.'));
+  if (st.freq && isFinite(own)) return { f: own, am: radioMem.band === 'AM' || own >= 530 };
+  const n = String(st.name || '');
+  let m = /(?:^|[^\d.,])((?:8[7-9]|9\d|10[0-8])[.,]\d{1,2})(?![\d])/.exec(n);
+  if (m) return { f: Number(m[1].replace(',', '.')), am: false };
+  m = /(?:\bam\s*(\d{3,4})\b|\b(\d{3,4})\s*(?:am|khz)\b)/i.exec(n);
+  const k = m && Number(m[1] || m[2]);
+  if (k >= 530 && k <= 1710) return { f: k, am: true };
+  return { f: null, am: radioMem.band === 'AM' };
+}
 function tunerSync() {
   if (!tuner) return;
-  const st = tunerStation(), live = radioPlaying(), am = radioMem.band === 'AM';
-  const f = st && st.freq ? Number(String(st.freq).replace(',', '.')) : NaN;
+  const st = tunerStation(), live = radioPlaying(), dial = tunerDial(st), am = dial.am;
   const line = tunerLine();
+  tunerBands();
   const r = {
-    band: radioMem.band, frequency: isFinite(f) ? f : null, preset: radioMem.slot || 0,
+    band: am ? 'AM' : radioMem.band === 'AM' ? 'FM1' : radioMem.band, frequency: dial.f,
+    label: dial.f === null && st ? shortName(st.name) : '', preset: radioMem.slot || 0,
     name: line.name, text: line.text, stereo: !am, mono: am || tunerCfg.mono, auto: !tunerCfg.mono,
     tuned: live, scan: !!radioScan, memo: !!tunerMemo, signal: live ? 5 : tunerPower && radioNow ? 2 : 0,
   };
@@ -120,12 +181,7 @@ function tunerKey(k, { hold } = {}) {
     return tunerSync();
   }
   if (!tunerPower && k !== 'band') tunerOn(true);               // a station key wakes the tuner, as on the real one
-  if (k === 'band') {
-    radioMem.band = RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]; radioMem.slot = 1; saveRadio();
-    toast('BAND · <span>' + radioMem.band + '</span>', 1200);
-    if (tunerPower) radioMemory(1);
-    return tunerSync();
-  }
+  if (k === 'band') return tunerBand(RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]);
   if (k === 'tune-up' || k === 'tune-down') { radioScan = 0; radioStep(k === 'tune-up' ? 1 : -1); return tunerSync(); }
   if (k === 'scan') {
     if (radioScan) { radioScan = 0; toast('SCAN · <span>se queda en esta</span>', 1400); }

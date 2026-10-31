@@ -1,5 +1,15 @@
 # Novedades
 
+## 7.9.0 — 2026-10-31
+
+### Nuevo
+- **El sintonizador tiene una tecla para cada banda:** FM1, FM2, FM3 y AM debajo de BAND (donde decía STANDBY), con la que está en uso prendida. Un toque va a la memoria de esa banda y prende el sintonizador si estaba apagado. BAND las sigue recorriendo.
+- **La perilla muestra la frecuencia.** Las radios más escuchadas del país vienen de Radio Browser sin posición en el dial: el sintonizador la saca del nombre de la radio cuando está ahí ("La 100 - 99.9 FM", "Radio 10 AM 710"), en la escala de FM o AM, con la aguja.
+- **Una radio solo por internet escribe su nombre en grande** donde van los números (80s80s, las de FM3, o una sintonizada que no tiene frecuencia en el nombre) en lugar de guiones.
+
+### Arreglos
+- La perilla de sintonía mostraba un recuadro de foco al tocarla.
+
 ## 7.8.9 — 2026-10-31
 
 ### Arreglos

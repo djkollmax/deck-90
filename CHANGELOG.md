@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.9.0
+
+### Added
+- **The tuner has a key for each band:** FM1, FM2, FM3 and AM under BAND (where STANDBY was printed), the one in use lit. A touch goes to that band's memory, and turns the tuner on if it was off. BAND still steps through them.
+- **The knob shows a frequency.** The country's most heard stations come from Radio Browser without a dial position: the tuner takes it from the station's name when it's there ("La 100 - 99.9 FM", "Radio 10 AM 710"), on the FM or AM scale with the needle.
+- **An internet-only station writes its name big** where the digits go (80s80s, the FM3 stations, a tuned station with no frequency in its name) instead of dashes.
+
+### Fixed
+- The tuning knob showed a square focus ring when clicked.
+
 ## 7.8.9
 
 ### Fixed

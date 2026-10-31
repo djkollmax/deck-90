@@ -20,7 +20,9 @@
  *
  * Deck 90 7.8.7, one small addition marked "internet only": setRadio({ frequency: null }) is a station heard
  * only over the internet (no dial position): the digits show dashes and the needle stays where it was; and
- * preset 0 is a station tuned outside the memories (M-).
+ * preset 0 is a station tuned outside the memories (M-). 7.9.0: setRadio({ label }) with frequency null writes the
+ * label in big dot-matrix letters where the digits go (an internet station's name, "80S80S"), the digits and the
+ * MHZ hidden.
  */
 (function (global) {
 'use strict';
@@ -391,7 +393,7 @@ class Deck90Tuner {
     }
     if ('preset' in update && finite(update.preset)) radio.preset = Math.max(0, Math.min(6, Math.round(Number(update.preset))));   // 0: no memory
     if ('signal' in update && finite(update.signal)) radio.signal = Math.max(0, Math.min(5, Math.round(Number(update.signal))));
-    for (const key of ['name', 'text']) if (key in update) radio[key] = clean(update[key]);
+    for (const key of ['name', 'text', 'label']) if (key in update) radio[key] = clean(update[key]);
     for (const key of ['stereo', 'mono', 'tuned', 'auto', 'scan', 'memo']) if (key in update) radio[key] = Boolean(update[key]);
     this._needleTarget = this._fraction();
     this._renderRadio();
@@ -504,6 +506,9 @@ class Deck90Tuner {
     this._decimal = node('polygon', { points: DECIMAL_POINTS, transform: 'translate(68 0)', fill: VFD, 'data-role': 'decimal' });
     digitLayer.append(this._decimal);
     this._display.append(digitLayer);
+    this._digitLayer = digitLayer;
+    this._bigLabel = node('g', { 'data-role': 'big-label' });   // internet only: the name in place of the digits
+    this._display.append(this._bigLabel);
     this._signal = [];
     const signal = node('g', { 'data-role': 'signal' });
     for (let i = 0; i < 5; i++) {
@@ -641,6 +646,14 @@ class Deck90Tuner {
       this._cache.digits = digitText;
     }
     this._decimal.setAttribute('opacity', am || net ? '0' : '1');
+    const big = net && radio.label ? radio.label.toUpperCase().slice(0, 14) : '';
+    if (this._cache.big !== big) {
+      const pitch = big ? Math.min(6.4, 236 / ([...big].length * 6)) : 1;
+      this._bigLabel.replaceChildren(...(big ? [this._dots(big, 236, 48 + (52 - 7 * pitch) / 2, pitch)] : []));
+      this._digitLayer.setAttribute('opacity', big ? '0' : '1');
+      this._units.setAttribute('opacity', big ? '0' : '1');
+      this._cache.big = big;
+    }
     if (this._cache.band !== radio.band) { this._band.replaceChildren(this._dots(radio.band, 181, 53, 1.75)); this._cache.band = radio.band; }
     if (this._cache.preset !== radio.preset) { this._preset.replaceChildren(this._dots(radio.preset ? `M${radio.preset}` : 'M-', 182, 82, 1.8)); this._cache.preset = radio.preset; }
     const unit = am ? 'KHZ' : 'MHZ';
