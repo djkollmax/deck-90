@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.8.1
+
+### Changed
+- **The stereo's meters move much more.** They followed the VU needles (slow, about 300 ms, and calibrated so a loud master sat near the top): now they read each ~40 ms of sound and show it around the music's own loudness of the last few seconds, with a quick rise and a short fall, so they jump with the beats and drop in the quiet moments, whatever the song's level. Only on the stereo: the rack's meters stay as they are.
+
 ## 7.8.0
 
 ### Added

@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.8.1 — 2026-10-31
+
+### Cambios
+- **Los vúmetros del estéreo se mueven mucho más.** Seguían a las agujas del VU (lentas, unos 300 ms, y calibradas para que un master fuerte quede cerca del tope): ahora leen cada ~40 ms de sonido y lo muestran alrededor del volumen propio de la música de los últimos segundos, con una subida rápida y una caída corta, así saltan con los golpes y bajan en los momentos tranquilos, sea cual sea el volumen del tema. Solo en el estéreo: los del rack quedan como están.
+
 ## 7.8.0 — 2026-10-31
 
 ### Nuevo

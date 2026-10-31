@@ -187,7 +187,7 @@ function stereoOpen(on) {
   stereoMode = on;
   document.body.classList.toggle('stereo', on);
   if (on && !stereoDisplay && typeof Deck90Display === 'function') {
-    stereoDisplay = new Deck90Display(document.getElementById('stDisplay'), { radio: { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 } });
+    stereoDisplay = new Deck90Display(document.getElementById('stDisplay'), { attackMs: 35, releaseMs: 140, radio: { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 } });
     const svg = stereoDisplay.svg;                             // only its glass, over the photo's own LCD
     svg.setAttribute('viewBox', '23 24 1141 156'); svg.setAttribute('preserveAspectRatio', 'none');
     svg.removeAttribute('width'); svg.removeAttribute('height');
@@ -301,10 +301,22 @@ function stereoText(force) {
   }
   stereoPaint();
 }
+// The stereo's own meters (7.8.1): lively like a car stereo's, not a VU. Each frame's level (the analyser's
+// ~40 ms RMS, before any VU ballistics) is shown around the music's own loudness of the last few seconds:
+// that loudness sits a little above the middle, the beats and the quiet moments swing above and below it,
+// whatever the master's level. The display adds a quick rise and a short fall.
+let stAvg = -20, stAt = 0;
+function stereoLevels(now) {
+  const dt = stAt ? Math.min(200, now - stAt) : 16; stAt = now;
+  const L = vu.L.dbfs, R = vu.R.dbfs, loud = Math.max(L, R);
+  if (loud > -60) stAvg += (loud - stAvg) * (1 - Math.exp(-dt / 2500));
+  const f = d => d < -60 ? 0 : Math.max(0, Math.min(1, (d - (stAvg - 8)) / 13));
+  stereoDisplay.setLevels(f(L), f(R));
+}
 // every frame from the loop: the meters (smoothed by the display itself); the words a few times a second
 function stereoFeed(now) {
   if (!stereoDisplay) return;
-  if (stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying()) stereoDisplay.setDecibels(vu.L.lvl, vu.R.lvl);
+  if (stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying()) stereoLevels(now);
   if (now - stereoTextAt > 250) { stereoTextAt = now; stereoText(); }
 }
 setInterval(() => { if (stereoMode && !running) stereoText(); }, 500);   // the loop sleeps with nothing running
