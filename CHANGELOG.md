@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.8.4
+
+### Added
+- **FM2 and FM3 come full, by genre.** FM2 is Buenos Aires: Con Vos 89.9, Nacional Clásica 96.7 (classical), Blackie 89.1 (jazz), Delta 90.3 (electronic), Blue 100.7 (the 80s and 90s) and Nacional Rock 93.7. FM3 is the same genres from the world, internet only: Radio Swiss Classic, Radio Swiss Jazz, Ibiza Global Radio, Heart 80s (London), SomaFM Groove Salad (chill) and Radio Paradise. An existing setup gets them in its empty memories; a station stored there by hand stays.
+
 ## 7.8.3
 
 ### Changed

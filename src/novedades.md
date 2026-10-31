@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.8.4 — 2026-10-31
+
+### Nuevo
+- **FM2 y FM3 vienen completas, por género.** FM2 es Buenos Aires: Con Vos 89.9, Nacional Clásica 96.7 (clásica), Blackie 89.1 (jazz), Delta 90.3 (electrónica), Blue 100.7 (los 80 y 90) y Nacional Rock 93.7. FM3 son los mismos géneros del mundo, solo por internet: Radio Swiss Classic, Radio Swiss Jazz, Ibiza Global Radio, Heart 80s (Londres), SomaFM Groove Salad (chill) y Radio Paradise. Si ya lo tenías configurado, se cargan en las memorias vacías; una radio que guardaste a mano ahí se queda.
+
 ## 7.8.3 — 2026-10-31
 
 ### Cambios

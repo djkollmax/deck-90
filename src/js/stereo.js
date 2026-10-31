@@ -32,7 +32,18 @@ const RADIO_DEFAULTS = [
   { name: 'Metro', freq: '95.1', q: 'Metro 95', cc: 'AR' }, { name: 'Rock & Pop', freq: '95.9', q: 'Rock & Pop', cc: 'AR' },
   { name: 'La 100', freq: '99.9', q: 'La 100', cc: 'AR' }, { name: 'Vorterix', freq: '92.1', q: 'Vorterix', cc: 'AR' },
 ];
-const RADIO_FM2 = [{ name: 'Con Vos', freq: '89.9', q: 'Con Vos', cc: 'AR' }, null, null, null, null, null];
+// FM2 (7.8.4): Buenos Aires by genre: Con Vos, classical, jazz, electronic, the 80s, rock
+const RADIO_FM2 = [
+  { name: 'Con Vos', freq: '89.9', q: 'Con Vos', cc: 'AR' }, { name: 'Clásica', freq: '96.7', q: 'Nacional Clasica', cc: 'AR' },
+  { name: 'Blackie', freq: '89.1', q: 'Blackie', cc: 'AR' }, { name: 'Delta', freq: '90.3', q: 'Delta 90.3', cc: 'AR' },
+  { name: 'Blue', freq: '100.7', q: 'Blue 100.7', cc: 'AR' }, { name: 'Nac Rock', freq: '93.7', q: 'Nacional Rock', cc: 'AR' },
+];
+// FM3 (7.8.4): the same genres from the world, internet only: classical, jazz, electronic, the 80s, chill, eclectic
+const RADIO_FM3 = [
+  { name: 'SwissClassic', freq: '', q: 'Radio Swiss Classic', cc: 'CH' }, { name: 'Swiss Jazz', freq: '', q: 'Radio Swiss Jazz', cc: 'CH' },
+  { name: 'Ibiza Global', freq: '', q: 'Ibiza Global Radio', cc: 'ES' }, { name: 'Heart 80s', freq: '', q: 'Heart 80s', cc: 'GB' },
+  { name: 'Groove Salad', freq: '', q: 'Groove Salad', cc: 'US' }, { name: 'Paradise', freq: '', q: 'Radio Paradise', cc: 'US' },
+];
 // AM (7.8): the Buenos Aires AM stations, over the internet too
 const RADIO_AM = [
   { name: 'Mitre', freq: '790', q: 'Radio Mitre', cc: 'AR' }, { name: 'Radio 10', freq: '710', q: 'Radio 10', cc: 'AR' },
@@ -49,7 +60,7 @@ try {
     dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd'].includes(c.mode) ? c.mode : 'pc' };
 } catch (_) {}
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
-let radioMem = { band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: Array(6).fill(null), AM: RADIO_AM.slice() };
+let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), AM: RADIO_AM.slice() };
 try {
   const r = JSON.parse(localStorage.getItem(RADIO_KEY));
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
@@ -59,6 +70,11 @@ try {
   }
   // 7.8: FM1-6 is Vorterix 92.1 instead of Los 40 (kept if it was stored there by hand)
   if (radioMem.FM1[5] && radioMem.FM1[5].name === 'Los 40' && radioMem.FM1[5].q === 'Los 40') radioMem.FM1[5] = Object.assign({}, RADIO_DEFAULTS[5]);
+  // 7.8.4: FM2 and FM3 come filled; their empty memories take the new stations once (one stored by hand stays)
+  if (r && typeof r === 'object' && !(r.v >= 2)) {
+    for (const [b, def] of [['FM2', RADIO_FM2], ['FM3', RADIO_FM3]]) radioMem[b] = radioMem[b].map((st, i) => st || Object.assign({}, def[i]));
+    radioMem.v = 2;
+  }
 } catch (_) {}
 const saveRadio = () => { try { localStorage.setItem(RADIO_KEY, JSON.stringify(radioMem)); } catch (_) {} };
 
