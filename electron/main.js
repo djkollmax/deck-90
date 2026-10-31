@@ -85,26 +85,47 @@ app.whenReady().then(() => {
     win.setFullScreen(false);
     setTimeout(finish, 700);                     // fallback if the event never comes
   });
-  let miniOn = false, miniBusy = false, normalBounds = null, wasMax = false;
+  // the strip comes in two styles: the mini meters ('strip') and the car stereo ('stereo', 7.7), each with its own place and size
+  let miniOn = false, miniBusy = false, normalBounds = null, wasMax = false, miniStyle = 'strip';
   const MINI_MAX_H = 300;
-  const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, 900, wa.width), height: Math.min(b.height, 300) });
+  const miniMaxW = () => miniStyle === 'stereo' ? 1500 : 900;
+  const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, miniMaxW(), wa.width), height: Math.min(b.height, 300) });
   const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
     return b.x < a.x + a.width - 40 && b.x + b.width > a.x + 40 && b.y >= a.y - 10 && b.y < a.y + a.height - 40; });
-  const saveMini = () => { if (!win.isMaximized()) saved.mini = win.getBounds(); saveState(); };
-  async function setMini(on) {
-    if (on === miniOn || miniBusy) return;
+  const miniDefault = wa => miniStyle === 'stereo'
+    ? { width: Math.min(980, wa.width - 40), height: 270, x: wa.x + Math.round((wa.width - Math.min(980, wa.width - 40)) / 2), y: wa.y + wa.height - 300 }
+    : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 };
+  const miniKey = () => miniStyle === 'stereo' ? 'stereo' : 'mini';
+  const saveMini = () => { if (!win.isMaximized()) saved[miniKey()] = win.getBounds(); saveState(); };
+  async function setMini(on, style) {
+    style = style === 'stereo' ? 'stereo' : 'strip';
+    if (miniBusy) return;
+    if (on && miniOn && style !== miniStyle) {            // from one style straight to the other: its own place and size
+      miniBusy = true;
+      try {
+        saveMini(); miniStyle = style;
+        const wa = screen.getDisplayMatching(win.getBounds()).workArea;
+        win.setMinimumSize(style === 'stereo' ? 520 : 300, style === 'stereo' ? 150 : 96);
+        win.setBounds(onScreen(saved[miniKey()]) ? clampMini(saved[miniKey()], wa) : miniDefault(wa));
+        win.webContents.send('mini', true, miniStyle);
+      } finally { miniBusy = false; }
+      if (typeof trayMenu === 'function') try { trayMenu(); } catch (_) {}
+      return;
+    }
+    if (on === miniOn) return;
     miniBusy = true;
     try {
       if (on) {
+        miniStyle = style;
         if (win.isFullScreen()) await leaveFullScreen();
         wasMax = win.isMaximized();
         normalBounds = wasMax ? win.getNormalBounds() : win.getBounds();
         if (wasMax) win.unmaximize();
         const wa = screen.getDisplayMatching(normalBounds).workArea;
-        win.setMinimumSize(300, 96);
+        win.setMinimumSize(style === 'stereo' ? 520 : 300, style === 'stereo' ? 150 : 96);
         win.setMaximumSize(16384, MINI_MAX_H);     // a strip: never taller (dragging an edge, Windows moving it between screens)
         win.setMaximizable(false); win.setFullScreenable(false);
-        win.setBounds(onScreen(saved.mini) ? clampMini(saved.mini, wa) : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 });
+        win.setBounds(onScreen(saved[miniKey()]) ? clampMini(saved[miniKey()], wa) : miniDefault(wa));
         win.setAlwaysOnTop(true, 'floating');
       } else {
         if (win.isMaximized()) win.unmaximize();
@@ -118,7 +139,7 @@ app.whenReady().then(() => {
         if (wasMax) win.maximize();
       }
       miniOn = on;
-      win.webContents.send('mini', on);
+      win.webContents.send('mini', on, miniStyle);
     } finally { miniBusy = false; }
   }
   // ── Phone display ──
@@ -230,7 +251,7 @@ app.whenReady().then(() => {
   win.on('resize', () => {
     if (!miniOn || miniBusy || win.isDestroyed()) return;
     const b = win.getBounds();
-    if (b.height > MINI_MAX_H) { mlog('mini: ' + b.width + '×' + b.height + ' is too tall for the strip, back to ' + MINI_MAX_H); win.setBounds({ x: b.x, y: b.y, width: Math.min(b.width, 900), height: MINI_MAX_H }); }
+    if (b.height > MINI_MAX_H) { mlog('mini: ' + b.width + '×' + b.height + ' is too tall for the strip, back to ' + MINI_MAX_H); win.setBounds({ x: b.x, y: b.y, width: Math.min(b.width, miniMaxW()), height: MINI_MAX_H }); }
   });
   // remember the normal window (not the mini strip, not full screen) a moment after it moves or resizes
   let normT = 0;
@@ -285,7 +306,8 @@ app.whenReady().then(() => {
     const st = remoteState();
     const items = [
       { label: win.isVisible() ? 'Esconder Deck 90' : 'Mostrar Deck 90', click: () => { win.isVisible() ? win.hide() : showWin(); trayMenu(); } },
-      { label: 'Modo mini', type: 'checkbox', checked: miniOn, click: () => { showWin(); setMini(!miniOn); } },
+      { label: 'Modo mini', type: 'checkbox', checked: miniOn && miniStyle === 'strip', click: () => { showWin(); setMini(!(miniOn && miniStyle === 'strip'), 'strip'); } },
+      { label: 'Estéreo', type: 'checkbox', checked: miniOn && miniStyle === 'stereo', click: () => { showWin(); setMini(!(miniOn && miniStyle === 'stereo'), 'stereo'); } },
       { type: 'separator' },
       { label: 'Pantalla en el celular', type: 'checkbox', checked: !!st.on, click: () => setRemote(!st.on) },
       ...(st.on ? [{ label: 'Nueva clave para el celular', click: newPhoneKey }] : []),
@@ -315,7 +337,8 @@ app.whenReady().then(() => {
   ipcMain.on('win', async (e, what) => {
     if (!ours(e.sender)) return;
     if (what === 'ready') return firstShow();
-    if (what === 'mini') return setMini(!miniOn);
+    if (what === 'mini') return setMini(!(miniOn && miniStyle === 'strip'), 'strip');
+    if (what === 'stereo') return setMini(!(miniOn && miniStyle === 'stereo'), 'stereo');
     if (what === 'min') { await leaveFullScreen(); win.minimize(); }
     else if (what === 'max') {
       if (win.isFullScreen()) await leaveFullScreen();
@@ -358,7 +381,7 @@ app.whenReady().then(() => {
   // The bridge can report the track before the page is listening: hand it over once the page is up.
   win.webContents.on('did-finish-load', () => {
     if (lastInfo) win.webContents.send('media', lastInfo);
-    if (miniOn) win.webContents.send('mini', true);            // a page loaded again (after a crash) is still the strip
+    if (miniOn) win.webContents.send('mini', true, miniStyle);            // a page loaded again (after a crash) is still the strip
     tellShown();
   });
   win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
@@ -477,7 +500,7 @@ setInterval(() => {
 const fromWin = e => !!win && !win.isDestroyed() && e.sender === win.webContents;
 ipcMain.on('app-log', (e, msg) => { if (fromWin(e)) mlog('page: ' + String(msg).slice(0, 800)); });
 function mediaCommand(cmd) {
-  if (media && media.stdin.writable && ['toggle', 'play', 'pause', 'stop', 'next', 'prev'].includes(cmd)) media.stdin.write(cmd + '\n');
+  if (media && media.stdin.writable && ['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)) media.stdin.write(cmd + '\n');
   if (mpris) mpris.command(cmd);
 }
 ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
@@ -499,6 +522,33 @@ function weatherFail(what, err) {
   const m = what + ': ' + (err && err.message || err);
   if (m !== weatherErr) { weatherErr = m; mlog('weather ' + m); }             // once, not every 15 minutes
 }
+// ── The stereo's internet radio (7.7): stations from Radio Browser (radio-browser.info, free, no key) ──
+// Only the name looked for (or "the most heard in Argentina") goes there; the page gets names and stream addresses back.
+const RB_HOSTS = ['de1', 'nl1', 'at1', 'de2'].map(h => `https://${h}.api.radio-browser.info`);
+async function radioBrowser(query) {
+  let lastErr = null;
+  for (const h of RB_HOSTS) {
+    try { return await getJson(h + '/json/stations/search?' + query); } catch (err) { lastErr = err; }
+  }
+  throw lastErr || new Error('sin respuesta');
+}
+const radioList = list => (Array.isArray(list) ? list : []).map(r => ({
+  name: String(r.name || '').trim().slice(0, 80),
+  url: String(r.url_resolved || r.url || ''),
+  codec: String(r.codec || '').slice(0, 12), bitrate: num(r.bitrate) || 0,
+})).filter(r => r.name && /^https?:\/\//i.test(r.url) && r.url.length < 600);
+ipcMain.handle('radio-find', async (e, q, cc) => {
+  if (!fromWin(e)) return null;
+  const name = String(q || '').trim().slice(0, 60), country = /^[A-Z]{2}$/.test(cc || '') ? cc : '';
+  if (!name) return [];
+  try { return radioList(await radioBrowser('name=' + encodeURIComponent(name) + (country ? '&countrycode=' + country : '') + '&hidebroken=true&order=clickcount&reverse=true&limit=8')); }
+  catch (err) { mlog('radio find: ' + (err && err.message || err)); return null; }
+});
+ipcMain.handle('radio-top', async e => {
+  if (!fromWin(e)) return null;
+  try { return radioList(await radioBrowser('countrycode=AR&hidebroken=true&order=clickcount&reverse=true&limit=60')); }
+  catch (err) { mlog('radio top: ' + (err && err.message || err)); return null; }
+});
 ipcMain.handle('weather-find', async (e, q) => {
   if (!fromWin(e)) return null;
   const name = String(q || '').trim().slice(0, 80);

@@ -1,7 +1,8 @@
 # Deck 90 - "now playing" bridge
 # Reads Windows' media sessions (the same data as the volume flyout), prefers Spotless,
 # prints one JSON line per change on stdout and takes commands on stdin:
-#   toggle | play | pause | next | prev | stop
+#   toggle | play | pause | next | prev | stop      (the player)
+#   volup | voldown | mute                          (Windows' own volume, as the keyboard's volume keys)
 # Exits when stdin closes (Deck 90 quit). Says {"hb":1} every 5 s so Deck 90 knows it isn't stuck,
 # and exits (Deck 90 starts it again) when Windows' media service keeps failing, e.g. after Explorer restarts.
 
@@ -73,6 +74,14 @@ while ($true) {
     if ($pending.IsCompleted) {
       $cmd = $pending.Result
       if ($null -eq $cmd) { break }               # parent closed stdin
+      $vk = @{ 'volup' = 0xAF; 'voldown' = 0xAE; 'mute' = 0xAD }[$cmd.Trim()]
+      if ($vk) {
+        # the volume keys, pressed for Deck 90's car stereo knob (compiled once, the first time)
+        if (-not ('Deck90Keys' -as [type])) {
+          Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class Deck90Keys { [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra); public static void Tap(byte vk) { keybd_event(vk, 0, 1, UIntPtr.Zero); keybd_event(vk, 0, 3, UIntPtr.Zero); } }'
+        }
+        [Deck90Keys]::Tap([byte]$vk)
+      }
       $s = Pick
       if ($s) {
         switch ($cmd.Trim()) {

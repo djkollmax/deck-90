@@ -113,6 +113,10 @@ From then on it **updates itself**: when a new release is out it says so, and on
   - The deck keys control the player: play/pause, stop, next and previous.
 - **Modules.** Every module can be switched off, and the rest grow to fill the space.
 - **Presets: five favourites and three of your own.** Each keeps a whole look: VU face, spectrum style and sensitivity, screen tone, VU calibration, the modules shown, and the deck and cassette styles. 1–5 (F1–F5) are fixed, two looks each (press again for the other): Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED. C1–C3 (F6–F8) are yours: GUARDAR then C1–C3 (or Shift+click, Shift+F6–F8) stores what's on screen there. The one matching the screen lights up.
+- **A car stereo, with internet radio** (`E`, or the radio button in the tools): the rack closes and the window becomes a car stereo's front, the DP940 display live and its keys working. PC mode shows the song in 16-segment letters with the L/R meters on the real sound (DISP: song, BPM, loudness, time); RADIO mode (MODE) plays Argentine stations over the internet: FM1 comes with Aspen 102.3, 80s80s (Hamburg, internet only), Metro 95.1, Rock & Pop 95.9, La 100 99.9 and Los 40 105.5, Con Vos 89.9 is FM2-1, TUNE steps through the country's most heard, SCAN tries each for 8 s, holding a number keeps the station there and BAND gives FM1–FM3. Stream addresses come from [Radio Browser](https://www.radio-browser.info) (only the name looked for is sent). VOL (or the mouse wheel) is Windows' volume, ATT mutes, SDM and HDB set the display's colour and brightness, PWR or ⏏ go back to the rack.
+
+![The DP940 car stereo](docs/screenshots/stereo.jpg)
+
 - **Showroom mode** (↻ ROTAR in LOOKS, or `R`): the looks change by themselves every 1, 3, 5 or 10 minutes of music, with a short fade: the ten favourites, your C1–C3 or all of them. It holds still while the music is paused.
 - **A welcome on the first start** (where it listens, which look, the weather and the phone) and **a copy of your settings** in a file to take to another PC (⚙ → EXTRAS → AJUSTES).
 - **Clock and weather in the header.** With the metal frames, the display at the top spans the header: the time in the decks' 7-segment digits with the day and date on its left, the song in the middle, and on its right the weather where you are: an FL icon, the temperature, the sky, the city and today's high and low. Turn it on in ⚙ → PANTALLA → RELOJ (+ CLIMA) and type your city beside it. The weather comes from [Open-Meteo](https://open-meteo.com) every 15 minutes: only the city's name (once, to find it) and its coordinates are sent there. RELOJ also turns it into just the clock, or off.
@@ -191,6 +195,7 @@ The first time, Windows asks whether Deck 90 may use the network: allow it on **
 | `L` | Track history |
 | `I` | About Deck 90 and what's new in each version |
 | `R` | Showroom mode: the looks turn by themselves |
+| `E` | Car stereo, with internet radio |
 | `F1`–`F5` | Favourite looks 1–5 |
 | `F6`–`F8` | Your looks C1–C3 (`Shift` + `F6`–`F8` saves the current look there) |
 | `H` | Hide the console |

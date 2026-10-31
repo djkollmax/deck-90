@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.7.0
+
+### Added
+- **ESTÉREO: Deck 90 as a car stereo, with internet radio.** `E` (or the new radio button in the tools, or the tray) closes the rack and the window becomes the front of a DP940 car stereo: a photo of the whole front with the live 16-segment display over its LCD and a key over each button. It's a strip window of its own (its own size and place, always on top, like the mini strip).
+  - **PC mode:** the song in 16-segment letters (scrolling when long), its artist and time, and the L/R meters on the real sound; paused or stopped, the radio screen. DISP: song, BPM, loudness or time.
+  - **RADIO mode** (MODE): stations over the internet, looked up by name in Radio Browser (radio-browser.info, free; only the name looked for is sent) and played by the program, so the meters follow them. FM1 comes with Aspen 102.3, 80s80s (Hamburg, internet only: no dial, the display shows its name), Metro 95.1, Rock & Pop 95.9, La 100 99.9 and Los 40 105.5 on 1–6, and Con Vos 89.9 on FM2-1; TUNE ◀ ▶ steps through Argentina's most heard stations, SCAN plays 8 s of each, holding 1–6 for a second keeps the station playing there, BAND gives FM1, FM2 and FM3 (18 memories). The radio screen shows the frequency (or the name), the memory and the station.
+  - **The other keys:** VOL ▲ ▼ (or the mouse wheel anywhere on the front) is Windows' volume, ATT mutes, SEL plays or pauses (the radio, or the player's song), TRACK ◀ ▶ skips songs in PC mode, SDM changes the display's colour (six) and HDB its brightness, PWR or ⏏ go back to the rack (and turn the radio off). The AUX lamp lights while something is heard.
+  - The display is the DP940 module made for Deck 90 (`src/vendor/dp940-display.js`), with two small additions so its meters and the station's name also work on the radio screen.
+- The radio memories travel in the copy of the settings.
+
 ## 7.6.1
 
 ### Fixed

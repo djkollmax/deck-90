@@ -12,9 +12,10 @@ contextBridge.exposeInMainWorld('winCtl', {
   close: () => ipcRenderer.send('win', 'close'),
   fs:    () => ipcRenderer.send('win', 'fs'),
   mini:  () => ipcRenderer.send('win', 'mini'),
+  stereo: () => ipcRenderer.send('win', 'stereo'),
   quit:  () => ipcRenderer.send('win', 'quit'),
   ready: () => ipcRenderer.send('win', 'ready'),
-  onMini: cb => ipcRenderer.on('mini', (e, on) => cb(!!on)),
+  onMini: cb => ipcRenderer.on('mini', (e, on, style) => cb(!!on, style === 'stereo' ? 'stereo' : 'strip')),
   onShown: cb => ipcRenderer.on('shown', (e, on) => cb(!!on)),   // false in the tray or minimized: no drawing then
 });
 contextBridge.exposeInMainWorld('phoneDisplay', {
@@ -51,5 +52,10 @@ contextBridge.exposeInMainWorld('appSettings', {
 contextBridge.exposeInMainWorld('weather', {
   find: q => ipcRenderer.invoke('weather-find', String(q).slice(0, 80)),
   now:  (lat, lon) => ipcRenderer.invoke('weather-now', Number(lat), Number(lon)),
+});
+// the stereo's internet radio: stations by name, and the most heard in Argentina
+contextBridge.exposeInMainWorld('radio', {
+  find: (q, cc) => ipcRenderer.invoke('radio-find', String(q).slice(0, 60), String(cc || '').slice(0, 2)),
+  top:  () => ipcRenderer.invoke('radio-top'),
 });
 contextBridge.exposeInMainWorld('appLog', msg => ipcRenderer.send('app-log', String(msg).slice(0, 800)));

@@ -1,5 +1,15 @@
 # Novedades
 
+## 7.7.0 — 2026-10-31
+
+### Nuevo
+- **ESTÉREO: Deck 90 como un estéreo de auto, con radio por internet.** La tecla `E` (o el botón nuevo de la radio en las herramientas, o la bandeja) cierra el rack y la ventana pasa a ser el frente de un estéreo DP940: la foto del frente completo con el display de 16 segmentos en vivo sobre su LCD y una tecla sobre cada botón. Es una ventana tipo tira, con su propio tamaño y lugar, siempre arriba como la tira mini.
+  - **Modo PC:** el tema con letras de 16 segmentos (se desplaza si es largo), el artista y el tiempo, y los vúmetros L/R con el sonido real; en pausa o detenido, la pantalla de radio. DISP: tema, BPM, loudness u hora.
+  - **Modo RADIO** (MODE): radios por internet, buscadas por nombre en Radio Browser (radio-browser.info, gratis; solo se envía el nombre que se busca) y reproducidas por el programa, así los vúmetros las siguen. FM1 viene con Aspen 102.3, 80s80s (de Hamburgo, solo por internet: no tiene dial, el display muestra su nombre), Metro 95.1, Rock & Pop 95.9, La 100 99.9 y Los 40 105.5 en 1–6, y Con Vos 89.9 en FM2-1; TUNE ◀ ▶ recorre las radios más escuchadas de Argentina, SCAN pasa 8 s de cada una, mantener apretado 1–6 un segundo guarda ahí la que suena, BAND da FM1, FM2 y FM3 (18 memorias). La pantalla de radio muestra la frecuencia (o el nombre), la memoria y la emisora.
+  - **Las demás teclas:** VOL ▲ ▼ (o la rueda del mouse en cualquier parte del frente) es el volumen de Windows, ATT silencia, SEL reproduce o pausa (la radio, o el tema del reproductor), TRACK ◀ ▶ salta temas en modo PC, SDM cambia el color del display (seis) y HDB su brillo, PWR o ⏏ vuelven al rack (y apagan la radio). La luz AUX se prende mientras suena algo.
+  - El display es el módulo DP940 hecho para Deck 90 (`src/vendor/dp940-display.js`), con dos agregados chicos para que sus vúmetros y el nombre de la radio también funcionen en la pantalla de radio.
+- Las memorias de radio viajan en la copia de los ajustes.
+
 ## 7.6.1 — 2026-10-30
 
 ### Arreglos

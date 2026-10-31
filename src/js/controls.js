@@ -5,7 +5,7 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: typeof rotateCfg === 'object' ? rotateCfg : undefined })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: typeof rotateCfg === 'object' ? rotateCfg : undefined, stereo: typeof stereoCfg === 'object' ? stereoCfg : undefined })); } catch(_){}
 }
 function loadPrefs(){
   try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(_) { return {}; }
@@ -148,6 +148,7 @@ document.getElementById('console').addEventListener('click', e => {
     if (v === 'hide') setControlsHidden(true);
     if (v === 'tapeonly') toggleTapeOnly();
     if (v === 'mini') toggleMini();
+    if (v === 'stereo') toggleStereo();
     if (v === 'history') showHistory(!histOpen());
     if (v === 'about') showAbout(!aboutOpen());
   }
@@ -158,16 +159,17 @@ document.getElementById('console').addEventListener('click', e => {
 // ── MINI MODE ───────────────────────────────────────────────
 // In the program the main process resizes the window, puts it on top and tells the page;
 // in a browser the page just switches to the strip.
-function setMini(on) {
+function setMini(on, style) {
   miniMode = on;
   document.body.classList.toggle('mini', on);
+  if (typeof stereoOpen === 'function') stereoOpen(on && style === 'stereo');
   requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
 }
 function toggleMini() {
   if (window.winCtl && window.winCtl.mini) window.winCtl.mini();
   else setMini(!miniMode);
 }
-if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini(on => { showSkinMenu(false); setMini(on); });
+if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini((on, style) => { showSkinMenu(false); setMini(on, style); });
 window.addEventListener('resize', () => { if (skinMenu.classList.contains('show')) showSkinMenu(false); });
 document.querySelector('.mini-panel').addEventListener('dblclick', toggleMini);
 
@@ -229,6 +231,7 @@ document.addEventListener('keydown', e => {
     a: () => setDrawer(!drawerOpen),
     l: () => { if (!miniMode) showHistory(true); },
     i: () => { if (!miniMode) showAbout(true); },
+    e: () => { if (!e.repeat) toggleStereo(); },
     h: () => setControlsHidden(!controlsHidden),
     1: () => toggleModule('vu'), 2: () => toggleModule('bpm'), 3: () => toggleModule('meters'),
     4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), z: () => toggleTapeOnly(), p: () => { if (!e.repeat) toggleMini(); },

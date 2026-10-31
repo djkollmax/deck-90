@@ -144,7 +144,8 @@ function frame(draw) {
   if (!resting) {
     restAnim = false;                    // a display that moves by itself says so while it draws
     displaysDrawnAt = now;
-    if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
+    if (miniMode && typeof stereoMode !== 'undefined' && stereoMode) { /* the stereo draws itself (below) */ }
+    else if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
     else {
       if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
       if (mods.gonio) guard('gonio', () => drawGonio(cGO, xGO, true));
@@ -158,6 +159,7 @@ function frame(draw) {
     else restSame = 0;
   }
   if (!miniMode && mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
+  if (typeof stereoMode !== 'undefined' && stereoMode && draw) guard('stereo', () => stereoFeed(now));
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));

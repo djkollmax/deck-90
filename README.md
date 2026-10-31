@@ -77,6 +77,16 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 ![Los doce estilos de espectro](docs/screenshots/spectrums.jpg)
 
+### Estéreo de auto, con radio por internet
+
+La tecla `E` (o el botón de la radio en las herramientas) cierra el rack y la ventana pasa a ser el frente de un estéreo de auto: el display DP940 en vivo y botones que andan.
+
+- **Modo PC:** el tema que suena con letras de 16 segmentos, el artista y el tiempo; los vúmetros L/R se mueven con el audio real. DISP cambia entre tema, BPM, loudness y hora.
+- **Modo RADIO** (MODE): radios argentinas por internet. FM1 viene con Aspen 102.3, 80s80s (de Hamburgo, solo por internet), Metro 95.1, Rock & Pop 95.9, La 100 99.9 y Los 40 105.5 en 1–6, y Con Vos 89.9 en FM2-1. TUNE ◀ ▶ recorre las más escuchadas del país, SCAN las prueba de a 8 segundos, manteniendo apretado un número guardás la que suena y BAND pasa por FM1, FM2 y FM3. Las direcciones de las radios salen de [Radio Browser](https://www.radio-browser.info) (solo se envía el nombre que se busca).
+- **VOL ▲ ▼** (o la rueda del mouse) es el volumen de Windows, **ATT** silencia, **SEL** pausa, **SDM** cambia el color del display y **HDB** su brillo. **PWR** o **⏏** vuelven al rack.
+
+![El estéreo DP940: un tema de la PC arriba, la radio Aspen 102.3 abajo](docs/screenshots/stereo.jpg)
+
 ### Diez looks listos y tres tuyos
 
 Cada look guarda todo: cara del vúmetro, estilo de espectro y sensibilidad, tono de pantalla, calibración, módulos visibles y estilo de casetera. Los cinco de fábrica están en `F1`–`F5` y cada uno tiene dos looks: tocalo otra vez y pasa al otro (Estudio / Estudio LED, Hi-Fi 90s / Hi-Fi Spectrum, Cinta 70s / Casetera, Vidriera / Vidriera cian, Mastering / Mastering LED). En C1–C3 (`F6`–`F8`) guardás los tuyos, y esos no cambian.
@@ -172,6 +182,7 @@ El botón ⓘ (o la tecla `I`) abre ACERCA DE: la versión, un botón para busca
 | `L` | Historial de temas |
 | `I` | Acerca de Deck 90 y novedades de cada versión |
 | `R` | Modo vidriera: los looks rotan solos |
+| `E` | Estéreo de auto, con radio por internet |
 | `F1`–`F5` | Looks de fábrica |
 | `F6`–`F8` | Tus looks C1–C3 (`Shift` + `F6`–`F8` guarda lo que ves) |
 | `H` | Esconder la consola |
