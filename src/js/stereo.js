@@ -125,7 +125,7 @@ async function radioResolve(st) {
   if (!found) return null;
   return found.map(f => f.url);
 }
-async function radioTune(st, label) {
+async function radioTune(st, label, retry) {
   if (!st) return;
   const t = ++radioTry;
   radioNow = st; stereoText(true);
@@ -136,7 +136,9 @@ async function radioTune(st, label) {
   if (!urls.length) { radioLog('not found: ' + st.name); toast('⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser', 3200); return; }
   for (const u of urls) {
     try {
-      radioAudio.src = u; await radioAudio.play();
+      radioLog('tuning ' + st.name + ' · ' + u.slice(0, 120));
+      radioAudio.src = u;
+      await Promise.race([radioAudio.play(), new Promise((_, no) => setTimeout(() => no(new Error('no answer in 12 s')), 12000))]);
       if (t !== radioTry) return;
       radioLog('playing ' + st.name + ' · ' + u.slice(0, 120));
       radioSession(st);
@@ -145,7 +147,10 @@ async function radioTune(st, label) {
       stereoText(true); return;
     } catch (err) { radioLog(st.name + ' failed at ' + u.slice(0, 120) + ': ' + (err && (err.name + ' ' + err.message))); if (t !== radioTry) return; }
   }
-  if (st.url) { st.url = ''; saveRadio(); }                    // an old address: look it up again next time
+  if (st.url) {                                                 // an old address: look the station up again, once
+    st.url = ''; saveRadio();
+    if (!retry) { radioLog(st.name + ': saved address failed, looking it up again'); return radioTune(st, label, true); }
+  }
   toast('⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora', 3200);
 }
 function radioStop() {

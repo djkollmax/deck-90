@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.8.9 — 2026-10-31
+
+### Arreglos
+- **Las teclas del sintonizador no hacían nada en Windows.** El marco de metal del rack sirve para mover la ventana (una zona de arrastre), y solo los módulos quedan afuera de esa zona: el sintonizador, que es una unidad aparte, no, así que Windows tomaba sus clics como arrastrar la ventana. Ahora se puede tocar.
+- Una radio cuyo stream no contesta se da por perdida a los 12 s en lugar de esperar para siempre, y una dirección guardada que falla se vuelve a buscar una vez en Radio Browser antes de decir que la radio no responde.
+
 ## 7.8.8 — 2026-10-31
 
 ### Arreglos

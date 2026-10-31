@@ -1057,7 +1057,8 @@ body.is-app .rack-unit{ -webkit-app-region:drag; }
 body.is-app .rack-unit .panel,
 body.is-app .rack-unit .console,
 body.is-app .rack-unit .console-tab,
-body.is-app .rack-unit .mini-panel{ -webkit-app-region:no-drag; }
+body.is-app .rack-unit .mini-panel,
+body.is-app .rack-unit .tuner-panel{ -webkit-app-region:no-drag; }   /* 7.8.9: the tuner's keys (on Windows a drag region eats the clicks) */
 /* the engraved name above each module is part of the metal too */
 body.is-app .rack-unit .panel > .panel-label{ -webkit-app-region:drag; }
 .chassis-ti .panel > .panel-label{ top:0; padding:6px 0; }

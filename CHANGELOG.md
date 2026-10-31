@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.8.9
+
+### Fixed
+- **The tuner's keys did nothing on Windows.** The rack's metal frame moves the window (a drag region), and only the modules are left out of it: the tuner, a unit of its own, wasn't, so Windows took its clicks as a window drag. It is clickable now.
+- A station whose stream never answers gives up after 12 s instead of waiting forever, and a saved address that fails is looked up again once on Radio Browser before saying the station doesn't respond.
+
 ## 7.8.8
 
 ### Fixed
