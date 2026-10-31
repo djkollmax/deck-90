@@ -53,6 +53,11 @@ contextBridge.exposeInMainWorld('weather', {
   find: q => ipcRenderer.invoke('weather-find', String(q).slice(0, 80)),
   now:  (lat, lon) => ipcRenderer.invoke('weather-now', Number(lat), Number(lon)),
 });
+// the stereo's CD drive (Windows): commands to the bridge, and what it says back
+contextBridge.exposeInMainWorld('cdrom', {
+  cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
+  on:  cb => ipcRenderer.on('cd', (e, s) => cb(s)),
+});
 // the stereo's internet radio: stations by name, and the most heard in Argentina
 contextBridge.exposeInMainWorld('radio', {
   find: (q, cc) => ipcRenderer.invoke('radio-find', String(q).slice(0, 60), String(cc || '').slice(0, 2)),

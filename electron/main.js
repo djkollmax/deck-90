@@ -475,6 +475,7 @@ function startMedia() {
         const info = JSON.parse(line);
         mediaSeen = Date.now();
         if (info.hb) continue;                                  // heartbeat: the bridge is alive
+        if (info.cd) { if (win && !win.isDestroyed()) win.webContents.send('cd', info.cd); continue; }   // the stereo's CD
         if (info.ready) { mlog('bridge ready'); mediaUp = Date.now(); }
         sendMedia(info);
       } catch (e) { mlog('bad line: ' + line.slice(0, 200)); }
@@ -500,8 +501,10 @@ setInterval(() => {
 const fromWin = e => !!win && !win.isDestroyed() && e.sender === win.webContents;
 ipcMain.on('app-log', (e, msg) => { if (fromWin(e)) mlog('page: ' + String(msg).slice(0, 800)); });
 function mediaCommand(cmd) {
-  if (media && media.stdin.writable && ['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)) media.stdin.write(cmd + '\n');
-  if (mpris) mpris.command(cmd);
+  if (media && media.stdin.writable && (['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)
+    || /^cd-(info|pause|resume|stop|eject|play \d{1,2})$/.test(cmd))) media.stdin.write(cmd + '\n');
+  if (mpris && !/^cd-/.test(cmd)) mpris.command(cmd);
+  if (/^cd-/.test(cmd) && !media && win && !win.isDestroyed()) win.webContents.send('cd', { drive: null, none: 'windows' });   // the CD: Windows only
 }
 ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
 

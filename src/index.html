@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Everything is local. data: is for the onset AudioWorklet and Windows cover art; file:/https: for MPRIS cover art. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https:; font-src 'self' data:; connect-src 'none'; media-src 'self' https: http: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https:; font-src 'self' data:; connect-src 'none'; media-src 'self' https: http: blob: file:; object-src 'none'; base-uri 'none'; form-action 'none'">
 
 <title>DECK 90</title>
 <link rel="stylesheet" href="styles.css">
@@ -222,12 +222,12 @@
       <button class="st-hot" data-st="volup" style="left:2.399%;top:27.458%;width:5.197%;height:12.987%" title="VOLUMEN + (o la rueda del mouse sobre el estéreo)"></button>
       <button class="st-hot" data-st="voldown" style="left:2.399%;top:64.007%;width:5.197%;height:13.544%" title="VOLUMEN −"></button>
       <button class="st-hot round" data-st="sel" style="left:3.598%;top:46.011%;width:7.996%;height:16.141%" title="SEL · reproducir / pausa (radio o el tema de la PC)"></button>
-      <button class="st-hot round" data-st="mode" style="left:10.195%;top:27.829%;width:6.397%;height:15.213%" title="MODE · PC (lo que suena en la computadora) o RADIO por internet"></button>
-      <button class="st-hot round" data-st="disp" style="left:14.193%;top:45.269%;width:5.897%;height:15.213%" title="DISP · qué muestra el display: tema, BPM, loudness u hora"></button>
-      <button class="st-hot round" data-st="band" style="left:10.195%;top:63.636%;width:6.397%;height:15.028%" title="BAND · FM1, FM2, FM3: tres juegos de seis memorias"></button>
+      <button class="st-hot round" data-st="mode" style="left:10.195%;top:27.829%;width:6.397%;height:15.213%" title="MODE · PC (lo que suena en la computadora), RADIO por internet o CD (la lectora)"></button>
+      <button class="st-hot round" data-st="disp" style="left:14.193%;top:45.269%;width:5.897%;height:15.213%" title="DISP · qué muestra el display: normal, hora, temperatura, BPM o loudness"></button>
+      <button class="st-hot round" data-st="band" style="left:10.195%;top:63.636%;width:6.397%;height:15.028%" title="BAND · FM1, FM2, FM3 y AM: cuatro juegos de seis memorias"></button>
       <button class="st-hot round" data-st="hdb" style="left:20.090%;top:31.911%;width:4.698%;height:16.327%" title="HDB · brillo del display"></button>
       <button class="st-hot round" data-st="sdm" style="left:20.090%;top:57.143%;width:4.798%;height:16.698%" title="SDM · color del display"></button>
-      <button class="st-hot" data-st="pwr" style="left:2.599%;top:80.891%;width:6.397%;height:12.987%" title="PWR · apagar el estéreo y volver al rack"></button>
+      <button class="st-hot" data-st="pwr" style="left:2.599%;top:80.891%;width:6.397%;height:12.987%" title="PWR · apagar el estéreo y volver al rack (E)"></button>
       <button class="st-hot" data-st="att" style="left:9.595%;top:80.891%;width:6.997%;height:12.987%" title="ATT · silencio"></button>
       <button class="st-hot" data-st="scan" style="left:17.191%;top:80.891%;width:13.493%;height:12.987%" title="SCAN · recorre las radios (8 s cada una); otra vez para quedarte"></button>
       <button class="st-hot" data-st="prev" style="left:31.784%;top:80.891%;width:6.697%;height:12.987%" title="TUNE / TRACK ◀ · radio anterior, o tema anterior"></button>
@@ -238,7 +238,8 @@
       <button class="st-hot" data-st="m4" style="left:66.967%;top:80.891%;width:6.897%;height:12.987%" title="4 · memoria"></button>
       <button class="st-hot" data-st="m5" style="left:74.663%;top:80.891%;width:6.597%;height:12.987%" title="5 · memoria"></button>
       <button class="st-hot" data-st="m6" style="left:81.259%;top:80.891%;width:8.996%;height:12.987%" title="6 · memoria"></button>
-      <button class="st-hot round" data-st="eject" style="left:91.854%;top:24.490%;width:4.998%;height:15.955%" title="⏏ · volver al rack (E)"></button>
+      <button class="st-hot" data-st="slot" style="left:17.091%;top:15.213%;width:73.463%;height:10.019%" title="La ranura del CD: pasa a modo CD y lee la lectora"></button>
+      <button class="st-hot round" data-st="eject" style="left:91.854%;top:24.490%;width:4.998%;height:15.955%" title="⏏ · abre la bandeja de la lectora de CD"></button>
     </div>
   </div>
 

@@ -1,5 +1,20 @@
 # Novedades
 
+## 7.8.0 — 2026-10-31
+
+### Nuevo
+- **El estéreo pasa CDs: modo CD** (MODE ahora va PC → RADIO → CD, o tocá la ranura del CD). En Windows, Deck 90 encuentra la lectora de CD/DVD de la PC (también una por USB):
+  - **Un CD de audio** suena desde la misma lectora (el CD de audio de Windows), y arranca solo como en un estéreo de auto cuando entra el disco. TRACK ◀ ▶ cambia de pista (◀ en los primeros segundos de una pista va a la anterior), SEL pausa y reproduce, y el display muestra TRACK 03, las pistas y la duración del disco, y el tiempo; los vúmetros siguen su sonido.
+  - **Un CD o DVD con MP3** (o M4A, OGG, FLAC, WAV) reproduce sus archivos acá, uno tras otro, con el nombre de cada uno en el display.
+  - **⏏ abre la bandeja.** Ahora es PWR el que vuelve al rack.
+  - Sin lectora, sin disco o con un disco sin música, el display lo dice (SIN LECTORA, NO DISC, SIN AUDIO).
+
+- **DISP muestra la hora y la temperatura**, en todos los modos (PC, RADIO y CD): pasa por normal → hora → temperatura (el clima del encabezado, con la ciudad y la máxima y mínima abajo) → BPM → loudness. La línea de abajo sigue diciendo qué suena.
+- **AM en la radio:** BAND ahora va FM1 → FM2 → FM3 → AM, con seis AM de Buenos Aires por internet: Mitre 790, Radio 10 710, Continental 590, Rivadavia 630, Radio Nacional 870 y La Red 910 (24 memorias en total).
+
+### Cambios
+- FM1-6 ahora es Vorterix 92.1 (antes, Los 40).
+
 ## 7.7.0 — 2026-10-31
 
 ### Nuevo

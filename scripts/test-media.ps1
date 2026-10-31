@@ -53,6 +53,14 @@ Expect 'a session that fails counts as not playing' (Choose @($broken, $spotify)
 $none = Choose @() $null ''
 Expect 'no sessions at all' $none '(none)'
 
+# 2b. the CD's time arithmetic, taken out of the script
+$cdf = $fns | Where-Object { $_.Name -eq 'CdSecs' } | Select-Object -First 1
+if (-not $cdf) { Bad 'media.ps1 has no function CdSecs' } else {
+  . ([scriptblock]::Create($cdf.Extent.Text))
+  $t = CdSecs '03:25:37'
+  if ([math]::Abs($t - 205.4933) -gt 0.01) { Bad "CdSecs 03:25:37 gave $t" } else { Write-Host 'ok   CD track length 03:25:37 = 205.49 s' }
+}
+
 # 3. the real thing: start it, give it time to beat once, close its input
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = 'powershell.exe'
@@ -62,7 +70,10 @@ $psi.RedirectStandardInput = $true; $psi.RedirectStandardOutput = $true; $psi.Re
 $psi.StandardOutputEncoding = [Text.Encoding]::UTF8
 $p = [System.Diagnostics.Process]::Start($psi)
 $out = $p.StandardOutput.ReadToEndAsync(); $err = $p.StandardError.ReadToEndAsync()
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 6
+# the stereo's commands: the volume keys (up, then down: no change in the end) and the CD drive (7.7–7.8)
+if (-not $p.HasExited) { $p.StandardInput.WriteLine('volup'); $p.StandardInput.WriteLine('voldown'); $p.StandardInput.WriteLine('cd-info'); $p.StandardInput.Flush() }
+Start-Sleep -Seconds 6
 $quitEarly = $p.HasExited
 if (-not $quitEarly) { $p.StandardInput.Close() }
 if (-not $p.WaitForExit(15000)) { try { $p.Kill() } catch {}; Bad 'the bridge did not quit when its input closed' }
@@ -74,6 +85,7 @@ if ($o -match '"ready":\s*true') {
   elseif ($p.ExitCode -ne 0) { Bad "the bridge ended with code $($p.ExitCode)" }
   if ($o -notmatch '"hb":\s*1') { Bad 'no heartbeat in 10 seconds' }
   if ($o -notmatch '"none":\s*true|"app":') { Bad 'no report of what is playing' }
+  if ($o -notmatch '"cd":\{') { Bad 'no answer to cd-info' } elseif ($o -match '"cd":\{"error"') { Bad 'cd-info failed' }
 } elseif ($e -match 'no media session manager') {
   Write-Host '::warning::This Windows has no media session service: the bridge loaded its Windows types but could not watch players.'
 } else { Bad 'the bridge did not start' }

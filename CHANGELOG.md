@@ -1,5 +1,20 @@
 # Changelog
 
+## 7.8.0
+
+### Added
+- **The stereo plays CDs: CD mode** (MODE now goes PC → RADIO → CD, or touch the CD slot). On Windows, Deck 90 finds the PC's CD/DVD drive (a USB one too):
+  - **An audio CD** plays from the drive itself (Windows' own CD audio), as a car stereo starts when a disc goes in. TRACK ◀ ▶ changes track (◀ in a track's first seconds goes to the one before), SEL pauses and plays, and the display shows TRACK 03, the disc's tracks and length, and the time; the meters follow its sound.
+  - **A CD or DVD of MP3s** (or M4A, OGG, FLAC, WAV) plays its files here, one after the other, with each file's name on the display.
+  - **⏏ opens the tray.** PWR is now the one that goes back to the rack.
+  - Without a drive, without a disc or with a disc without music, the display says so (SIN LECTORA, NO DISC, SIN AUDIO).
+
+- **DISP shows the time and the temperature**, in every mode (PC, RADIO and CD): it goes normal → time → temperature (the header's weather, with the city and today's high and low underneath) → BPM → loudness. The line under the big letters keeps saying what's playing.
+- **AM on the radio:** BAND now goes FM1 → FM2 → FM3 → AM, with six Buenos Aires AM stations over the internet: Mitre 790, Radio 10 710, Continental 590, Rivadavia 630, Radio Nacional 870 and La Red 910 (24 memories in all).
+
+### Changed
+- FM1-6 is now Vorterix 92.1 (it was Los 40).
+
 ## 7.7.0
 
 ### Added
