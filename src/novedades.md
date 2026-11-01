@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.12 — 2026-11-01
+
+### Cambios
+- **El reloj de arriba con los números del DC-90**: la hora y la temperatura usan los mismos dígitos que la compactera (segmentos finos biselados, el mismo celeste agua, los apagados que se ven tenues atrás y un brillo justo). El día y el estado del clima toman el mismo color.
+
 ## 7.9.11 — 2026-11-01
 
 ### Cambios

@@ -22,7 +22,7 @@ function saveClock() { try { localStorage.setItem(CLOCK_KEY, JSON.stringify(cloc
 
 const hcEl = { box: el('np'), clock: el('hcBox'), digits: el('hcDigits'), day: el('hcDay'), date: el('hcDate'),
   wx: el('hwBox'), icon: el('hwIcon'), temp: el('hwTemp'), cond: el('hwCond'), range: el('hwRange'), city: el('cityInput') };
-const HC_ON = '#8ef8ea', HC_OFF = 'rgba(127,246,230,.07)', HC_GLASS = '#030303';
+const HC_ON = '#80ffe5', HC_OFF = '#193e34', HC_GLASS = '#030303';   // the DC-90's VFD: lit and unlit
 if (typeof SEG7 === 'object') Object.assign(SEG7, { '-': 'g', '°': 'abfg' });
 const DIAS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -52,21 +52,34 @@ function hcCanvas(c, w, h) {
   const x = c.getContext('2d'); x.setTransform(pr, 0, 0, pr, 0, 0); x.clearRect(0, 0, w, h);
   return x;
 }
-// 7-segment text: digits and - ° as cells, ':' as two dots; returns its width for a height
-function segWidth(txt, h) { let w = 0; for (const ch of txt) w += ch === ':' ? h * 0.3 : h * 0.5 + h * 0.12; return w - h * 0.12; }
+// 7-segment text in the DC-90's own digits (7.9.12): its slim beveled segments in a 30 × 52 cell, the same aqua,
+// the unlit segments showing faintly behind like on the CD's display, a tight glow; ':' as two round dots
+const VFD_SEG = { a: '5,1 25,1 28,4 25,7 5,7 2,4', b: '26,6 29,9 29,22 26,25 23,22 23,9', c: '26,27 29,30 29,43 26,46 23,43 23,30',
+  d: '5,45 25,45 28,48 25,51 5,51 2,48', e: '4,27 7,30 7,43 4,46 1,43 1,30', f: '4,6 7,9 7,22 4,25 1,22 1,9', g: '5,23 25,23 28,26 25,29 5,29 2,26' };
+const VFD_PATH = Object.fromEntries(Object.entries(VFD_SEG).map(([k, pts]) => [k, pts.split(' ').map(q => q.split(',').map(Number))]));
+const VFD_CELL = 34 / 52, VFD_COLON = 14 / 52;
+function segWidth(txt, h) { let w = 0; for (const ch of txt) w += ch === ':' ? h * VFD_COLON : h * VFD_CELL; return w - h * 4 / 52; }
+function vfd7(x, px, h, ch) {
+  const k = h / 52, lit = new Path2D(), dim = new Path2D(), on = SEG7[ch] || '';
+  for (const n of 'abcdefg') {
+    const p = on.includes(n) ? lit : dim;
+    VFD_PATH[n].forEach(([sx, sy], i) => i ? p.lineTo(px + sx * k, sy * k) : p.moveTo(px + sx * k, sy * k)); p.closePath();
+  }
+  x.fillStyle = HC_OFF; x.fill(dim);
+  if (on) { x.fillStyle = HC_ON; x.shadowColor = HC_ON; x.shadowBlur = Math.max(1.5, h * 0.05); x.fill(lit); x.shadowBlur = 0; }
+}
 function segDraw(x, txt, h, ghost, colonOn) {
   let px = 0;
   for (const ch of txt) {
     if (ch === ':') {
-      const r = Math.max(1.3, h * 0.055), cx = px + h * 0.15 - h * 0.06;
+      const r = Math.max(1.2, h * 2.6 / 52), cx = px + h * 5 / 52;
       x.fillStyle = colonOn ? HC_ON : HC_OFF;
-      if (colonOn) { x.shadowColor = HC_ON; x.shadowBlur = h * 0.18; }
-      [0.32, 0.7].forEach(fy => { x.beginPath(); x.arc(cx, h * fy, r, 0, Math.PI * 2); x.fill(); });
-      x.shadowBlur = 0; px += h * 0.3; continue;
+      if (colonOn) { x.shadowColor = HC_ON; x.shadowBlur = Math.max(1.5, h * 0.05); }
+      [18, 36].forEach(fy => { x.beginPath(); x.arc(cx, h * fy / 52, r, 0, Math.PI * 2); x.fill(); });
+      x.shadowBlur = 0; px += h * VFD_COLON; continue;
     }
-    if (ghost) draw7(x, px, 0, h * 0.5, h, '8', HC_OFF, HC_OFF);
-    if (ch !== ' ') draw7(x, px, 0, h * 0.5, h, ch, HC_ON, ghost ? 'rgba(0,0,0,0)' : HC_OFF);
-    px += h * 0.5 + h * 0.12;
+    vfd7(x, px, h, ch === ' ' ? '' : ch);
+    px += h * VFD_CELL;
   }
 }
 

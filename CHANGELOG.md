@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.12
+
+### Changed
+- **The header clock in the DC-90's digits**: time and temperature drawn with the CD unit's segment geometry (30 × 52 beveled cell), its VFD colors (#80ffe5 lit, #193e34 unlit, always visible behind) and a tight glow; the colon as the CD's two round dots. Day and weather words take the same aqua.
+
 ## 7.9.11
 
 ### Changed
