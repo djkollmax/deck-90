@@ -16,7 +16,7 @@
  * --drawer-top,--drawer-bottom,--drawer-label. Inherited from the container.
  * Master viewBox1200x280. VFD1130x104; drawer front1120px=93.3% of rack width.
  *
- * Deck 90 7.9.14: REPEAT and SHUFFLE keys (OPEN / CLOSE narrower) and their lamps under the meters, setModes(). 7.9.13: meters end yellow/red; setTimeMode(remain). 7.9.10: Damián's DC-90 revision 3 (the big display); src/js/cdunit.js drives it with the PC's drive.
+ * Deck 90 7.9.14: REPEAT and SHUFFLE keys (OPEN / CLOSE narrower) and their lamps under the meters, setModes(). 7.9.13: meters end yellow/red; setTimeMode(remain). 7.9.10: Damián's DC-90 revision 3 (the big display); src/ui/cdunit/cdunit.js drives it with the PC's drive.
  * One change: a long title scrolls even when Windows says "reduced motion" (animations off).
  */
 (function(global){

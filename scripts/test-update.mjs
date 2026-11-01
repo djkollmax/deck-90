@@ -56,7 +56,7 @@ async function run(name) {
     }
   })('');
   files['package.json'] = Buffer.from(String(files['package.json']).replace(`"version": "${from}"`, `"version": "${to}"`));
-  files['src/js/update.js'] = Buffer.from(String(files['src/js/update.js']) + `\n// test build ${to}\n`);
+  files['src/ui/app/update.js'] = Buffer.from(String(files['src/ui/app/update.js']) + `\n// test build ${to}\n`);
   if (name === 'mainthrow') files['electron/main.js'] = Buffer.from(`throw new Error('broken ${to}');\n` + files['electron/main.js']);
   if (name === 'syntax') files['src/js/core.js'] = Buffer.from(String(files['src/js/core.js']) + '\nfunction (');
   const b64 = {}; for (const k in files) b64[k] = files[k].toString('base64');

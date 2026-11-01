@@ -7,9 +7,20 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https:; font-src 'self' data:; connect-src 'none'; media-src 'self' https: http: blob: file:; object-src 'none'; base-uri 'none'; form-action 'none'">
 
 <title>DECK 90</title>
-<link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="stereo-face.css">
-<script src="js/boot.js"></script>
+<link rel="stylesheet" href="ui/app/base.css">
+<link rel="stylesheet" href="ui/meters/meters.css">
+<link rel="stylesheet" href="ui/app/splash.css">
+<link rel="stylesheet" href="ui/app/look.css">
+<link rel="stylesheet" href="ui/app/dialogs.css">
+<link rel="stylesheet" href="ui/app/window.css">
+<link rel="stylesheet" href="ui/app/chassis.css">
+<link rel="stylesheet" href="ui/header/header.css">
+<link rel="stylesheet" href="ui/app/console.css">
+<link rel="stylesheet" href="ui/app/welcome.css">
+<link rel="stylesheet" href="ui/stereo/stereo.css">
+<link rel="stylesheet" href="ui/tuner/units.css">
+<link rel="stylesheet" href="ui/stereo/stereo-face.css">
+<script src="ui/app/boot.js"></script>
 </head>
 <body>
 
@@ -215,7 +226,7 @@
     <canvas id="mini" width="560" height="80"></canvas>
   </div>
 
-  <!-- ESTÉREO: Deck 90 as a car stereo (E, or the tools' radio button); js/stereo.js. The front is a photo
+  <!-- ESTÉREO: Deck 90 as a car stereo (E, or the tools' radio button); ui/stereo/stereo.js. The front is a photo
        (img/stereo/front.jpg, 2001×539) with the live DP940 display over its LCD and a key over each button. -->
   <div class="stereo-panel" id="stereo">
     <div class="st-face" title="">
@@ -308,7 +319,7 @@
 
   <!-- RADIO TUNER (7.8.7): the DT-90, drawn by vendor/dt90-tuner.js -->
   <div class="tuner-panel" id="tunerPanel"><div id="tuner"></div></div>
-  <!-- CD PLAYER (7.9.2): the DC-90, drawn by vendor/dc90-cd.js, playing the PC's drive (js/cdunit.js) -->
+  <!-- CD PLAYER (7.9.2): the DC-90, drawn by vendor/dc90-cd.js, playing the PC's drive (ui/cdunit/cdunit.js) -->
   <div class="tuner-panel" id="cdPanel"><div id="cdUnit"></div></div>
 
   <!-- CASSETTE DECK -->
@@ -363,7 +374,7 @@
   </div>
 </div>
 
-<!-- BIENVENIDA: the first start, three steps (js/welcome.js) -->
+<!-- BIENVENIDA: the first start, three steps (ui/app/welcome.js) -->
 <div id="welcomeModal" role="dialog" aria-label="Bienvenida a Deck 90">
   <div class="hist-card welcome-card">
     <div class="hist-head"><span>BIENVENIDO A <b>DECK 90</b></span><button id="welcomeClose" title="Saltar (Esc)">✕</button></div>
@@ -419,42 +430,42 @@
 
 <script src="core/events.js"></script>
 <script src="core/store.js"></script>
-<script src="js/core.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/stills.js"></script>
-<script src="js/draw-vu.js"></script>
-<script src="js/draw-spectrum.js"></script>
-<script src="js/draw-spectrum-more.js"></script>
-<script src="js/draw-osc.js"></script>
-<script src="js/draw-gonio.js"></script>
-<script src="js/deck.js"></script>
-<script src="js/deck90.js"></script>
-<script src="js/tape90.js"></script>
-<script src="js/cd90.js"></script>
-<script src="js/draw-mini.js"></script>
-<script src="js/tape.js"></script>
-<script src="js/nowplaying.js"></script>
+<script src="ui/app/core.js"></script>
+<script src="ui/app/audio.js"></script>
+<script src="ui/app/stills.js"></script>
+<script src="ui/meters/draw-vu.js"></script>
+<script src="ui/meters/draw-spectrum.js"></script>
+<script src="ui/meters/draw-spectrum-more.js"></script>
+<script src="ui/meters/draw-osc.js"></script>
+<script src="ui/meters/draw-gonio.js"></script>
+<script src="ui/tape/deck.js"></script>
+<script src="ui/tape/deck90.js"></script>
+<script src="ui/tape/tape90.js"></script>
+<script src="ui/tape/cd90.js"></script>
+<script src="ui/mini/draw-mini.js"></script>
+<script src="ui/tape/tape.js"></script>
+<script src="ui/header/nowplaying.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="vendor/dp940-display.js"></script>
-<script src="js/phone.js"></script>
-<script src="js/history.js"></script>
-<script src="js/presets.js"></script>
-<script src="js/rotate.js"></script>
+<script src="ui/app/phone.js"></script>
+<script src="ui/app/history.js"></script>
+<script src="ui/app/presets.js"></script>
+<script src="ui/app/rotate.js"></script>
 <script src="core/radio.js"></script>
 <script src="core/cd.js"></script>
-<script src="js/stereo.js"></script>
+<script src="ui/stereo/stereo.js"></script>
 <script src="vendor/dt90-tuner.js"></script>
-<script src="js/tuner.js"></script>
+<script src="ui/tuner/tuner.js"></script>
 <script src="vendor/dc90-cd.js"></script>
-<script src="js/cdunit.js"></script>
-<script src="js/update.js"></script>
-<script src="js/about.js"></script>
-<script src="js/welcome.js"></script>
-<script src="js/backup.js"></script>
-<script src="js/loop.js"></script>
-<script src="js/idle.js"></script>
-<script src="js/controls.js"></script>
-<script src="js/clock.js"></script>
+<script src="ui/cdunit/cdunit.js"></script>
+<script src="ui/app/update.js"></script>
+<script src="ui/app/about.js"></script>
+<script src="ui/app/welcome.js"></script>
+<script src="ui/app/backup.js"></script>
+<script src="ui/app/loop.js"></script>
+<script src="ui/app/idle.js"></script>
+<script src="ui/app/controls.js"></script>
+<script src="ui/header/clock.js"></script>
 
 </body>
 </html>

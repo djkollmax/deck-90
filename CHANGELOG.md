@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.9.17
+
+### Internal
+- **One folder per module**: `src/js/*.js` move to `src/ui/<module>/` (app, meters, tape, header, mini, stereo, tuner, cdunit) and `styles.css` is split, in its own order, into twelve stylesheets beside them (`stereo-face.css` moves to `ui/stereo/`). The phone's server maps the same URLs to the new files.
+- **`scripts/shots.mjs` and `scripts/shots-compare.py`** take pictures of 17 states of the program and compare two runs; the move and the split are pixel-identical.
+
 ## 7.9.16
 
 ### Internal

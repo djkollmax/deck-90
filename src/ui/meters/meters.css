@@ -1,0 +1,101 @@
+/* The meters' panels: the main row (VU and BPM), the BPM read-out, the spectrum and the oscilloscope. */
+/* ── MAIN ROW: VU + BPM ─────────────────────────────── */
+.main-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 210px;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.panel {
+  background: linear-gradient(160deg, #0d0d16 0%, #080812 100%);
+  border: 1px solid #1c1c2c;
+  border-top: 1px solid #242436;
+  border-radius: 3px;
+  padding: 7px 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+}
+
+.panel-label {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #484860;
+  text-align: center;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+canvas { display: block; }
+
+/* ── BPM PANEL ─────────────────────────────────────── */
+.bpm-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.bpm-display-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#bpmValue {
+  font-size: 62px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -3px;
+  color: #00ff88;
+  text-shadow:
+    0 0 16px rgba(0,255,136,0.6),
+    0 0 32px rgba(0,255,136,0.3),
+    0 0 64px rgba(0,255,136,0.1);
+  font-variant-numeric: tabular-nums;
+  transition: text-shadow .05s;
+  min-width: 3ch;
+  text-align: center;
+}
+
+#bpmValue.beat {
+  text-shadow:
+    0 0 24px rgba(0,255,136,1),
+    0 0 48px rgba(0,255,136,0.7),
+    0 0 96px rgba(0,255,136,0.3);
+}
+
+.beat-leds {
+  display: flex;
+  gap: 5px;
+}
+.beat-leds .led { width:6px; height:6px; }
+
+.bpm-conf {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #2a4a38;
+}
+
+/* ── SPECTRUM ──────────────────────────────────────── */
+.spectrum-panel { margin-bottom: 7px; }
+
+/* ── OSCILLOSCOPE ──────────────────────────────────── */
+.osc-panel { margin-bottom: 8px; }
+
+#statusText {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #333;
+}
+#statusText.on { color: #008844; text-shadow: 0 0 8px rgba(0,136,68,.5); }

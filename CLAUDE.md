@@ -11,8 +11,8 @@ English.
 
 ## Layout
 
-The code is being restructured in stages (tests first, then a `core/` without any screen, then one folder per
-module with its own CSS, then ES modules instead of shared globals). Until then:
+The code is being restructured in stages: the tests, `src/core/` and the `src/ui/` folders are done; next, ES
+modules instead of shared globals.
 
 - `electron/`: the main process. `main.js` (window, IPC, the network the page may not reach), `media.ps1` (the
   Windows bridge: now playing, volume keys, the CD drive through MCI), `mpris.js` (the same on Linux),
@@ -22,19 +22,26 @@ module with its own CSS, then ES modules instead of shared globals). Until then:
   line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
   (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) say what changed through it and never touch a
   screen. The screens call their functions and listen. `store.js` reads and writes what's saved (localStorage).
-- `src/index.html` loads `src/core/*.js` and `src/js/*.js` as classic scripts, in order; they share their
-  top-level names. The order in index.html matters, and a file reaching another one's names checks with
-  `typeof` first.
-  - `core.js`, `audio.js`, `loop.js`: the capture, the measurements and the frame loop.
-  - `draw-*.js`, `deck*.js`, `tape*.js`, `cd90.js`: the modules' drawing.
-  - `stereo.js`: the car stereo window. `tuner.js` and `cdunit.js`: the rack's DT-90 and DC-90. All three
-    play the radio and the CD of `src/core/`.
-  - `controls.js` (keys and prefs), `clock.js` (header clock and weather), `phone.js`, `history.js`, …
+- `src/ui/<module>/`: the screens, each folder with its scripts and its CSS.
+  - `app/`: the program around the modules. `core.js` (shared state), `audio.js` (capture, measurements,
+    toast), `loop.js` (the frame loop), `controls.js` (keys, prefs, the console), `stills.js`, `idle.js`,
+    `presets.js`, `rotate.js`, `phone.js`, `history.js`, `about.js`, `update.js`, `welcome.js`, `backup.js`,
+    `boot.js` (in `<head>`). Its CSS, in this order: `base.css` (the rack), `splash.css`, `look.css` (the 5.x–6.x
+    look, layered), `dialogs.css`, `window.css`, `chassis.css` (the metal frames), `console.css`,
+    `welcome.css`.
+  - `meters/` (VU, spectrum, oscilloscope, goniometer), `tape/` (the cassette decks, the big tape, the CD-90
+    tape style), `header/` (now playing, clock and weather), `mini/` (the strip), `stereo/` (the car stereo
+    window; `stereo-face.css` is shared with the phone), `tuner/` (the DT-90; `units.css` styles it and the
+    DC-90), `cdunit/` (the DC-90).
+- `src/index.html` loads every script as a classic script and every stylesheet, in order. The scripts share
+  their top-level names, so the order matters and a file reaching another one's names checks with `typeof`
+  first. The stylesheets are one cascade split in files: a later file overrides an earlier one, so moving a
+  rule between files can change the look (compare with `scripts/shots.mjs`, below).
 - `src/vendor/`: Damián's SVG components (`dp940-display.js` the car stereo's display, `dt90-tuner.js`,
   `dc90-cd.js`). Deck 90 patches them; every patch is marked with a `Deck 90 x.y.z` comment and listed in the
   file's header. A new revision from Damián replaces the file and gets those patches again.
-- `src/remote/`: the phone's page. `src/styles.css`, `src/stereo-face.css`: the styles.
-- `tests/`: see Checks. `scripts/`: packaging (`package.mjs`), the update test, the syntax check.
+- `src/remote/`: the phone's page; `electron/remote.js` maps the shared files it loads.
+- `tests/`: see Checks. `scripts/`: packaging (`package.mjs`), the update test, the syntax check, the shots.
 
 ## Checks
 
@@ -53,7 +60,9 @@ disc straight through as Windows does (`tests/lib/app.mjs`). Each file is one pr
 four minutes. CI runs them on every push (`.github/workflows/release.yml`, job `tests`), next to the Windows
 job (the bridge, the built program, the installer, the updates).
 
-A change a person would notice gets a test in `tests/`, asserting what they would see.
+A change a person would notice gets a test in `tests/`, asserting what they would see. A change that must not
+show (moving code, splitting CSS) is checked with pictures: `node scripts/shots.mjs <dir>` before and after,
+then `python3 scripts/shots-compare.py <before> <after>` says which states differ and where.
 
 ## Commits
 

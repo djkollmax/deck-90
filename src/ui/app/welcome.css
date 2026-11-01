@@ -1,0 +1,43 @@
+/* The welcome on the first start. */
+/* ── bienvenida (the first start) ── */
+#welcomeModal{ position:fixed; inset:0; z-index:9100; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); -webkit-app-region:no-drag; }
+#welcomeModal.show{ display:flex; }
+.welcome-card{ width:min(760px,94vw); font-family:'Deck90 Display', 'Barlow Condensed', 'Segoe UI', Arial, sans-serif; }
+.welcome-card .hist-head{ font-size:12px; }
+.welcome-card .hist-head b{ color:#79e9dc; font-weight:600; }
+.welcome-dots{ display:flex; gap:6px; justify-content:center; margin:10px 0 4px; }
+.welcome-dots i{ width:22px; height:3px; border-radius:2px; background:rgba(255,255,255,.12); }
+.welcome-dots i.on{ background:#d9b973; }
+.welcome-step{ display:none; padding:6px 4px 4px; }
+.welcome-step.on{ display:block; }
+.welcome-step h3{ font-size:20px; font-weight:600; letter-spacing:1px; color:#f2d991; margin:6px 0 6px; }
+.welcome-step p{ font-size:14px; line-height:1.45; color:#c9c3ad; letter-spacing:.3px; margin:0 0 12px; }
+.welcome-src, .welcome-looks, .welcome-extra{ display:grid; gap:8px; }
+.welcome-src{ grid-template-columns:repeat(3,1fr); }
+.welcome-looks{ grid-template-columns:repeat(5,1fr); }
+.welcome-extra{ grid-template-columns:1fr 1fr; }
+.welcome-src button, .welcome-looks button{ display:flex; flex-direction:column; gap:4px; text-align:left; padding:10px; border-radius:7px; cursor:pointer;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); color:#c9c3ad; font-family:inherit; }
+.welcome-looks button{ padding:6px 6px 8px; }
+.welcome-src button b, .welcome-looks button b{ font-size:15px; font-weight:600; letter-spacing:1px; color:#f2d991; }
+.welcome-src button span, .welcome-looks button span{ font-size:12.5px; color:rgba(170,176,186,.75); }
+.welcome-looks img{ width:100%; aspect-ratio:2.5; object-fit:cover; border-radius:3px; display:block; background:#000; }
+.welcome-src button:hover, .welcome-looks button:hover{ border-color:rgba(217,189,115,.4); }
+.welcome-src button.on, .welcome-looks button.on{ border-color:#d9b973; box-shadow:0 0 0 1px #d9b973; background:linear-gradient(180deg,rgba(243,220,149,.13),rgba(201,159,69,.05)); }
+.welcome-extra > div{ display:flex; flex-direction:column; gap:6px; padding:12px; border-radius:7px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+.welcome-extra b{ font-size:14px; font-weight:600; letter-spacing:1.5px; color:#f2d991; }
+.welcome-extra span{ font-size:13px; line-height:1.4; color:#bdb8a6; flex:1 1 auto; }
+.welcome-extra .hist-btn{ align-self:flex-start; font-family:inherit; font-size:12px; }
+.welcome-city{ display:flex; gap:6px; }
+.welcome-city input{ flex:1 1 auto; min-width:0; padding:6px 10px; border-radius:5px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.4); color:#f2d991;
+  font:600 13px 'Deck90 Display', sans-serif; letter-spacing:1.2px; text-transform:uppercase; outline:none; }
+.welcome-city input:focus{ border-color:rgba(217,189,115,.6); }
+.welcome-tip{ margin-top:12px !important; font-size:13px !important; color:rgba(170,176,186,.8) !important; }
+.welcome-tip kbd{ font-family:inherit; color:#f2d991; border:1px solid rgba(255,255,255,.15); border-radius:3px; padding:0 5px; }
+.welcome-foot{ display:flex; align-items:center; gap:8px; margin-top:14px; }
+.welcome-foot span{ flex:1 1 auto; }
+.welcome-foot .hist-btn{ font-family:inherit; font-size:12.5px; padding:7px 18px; }
+.welcome-foot .hist-btn.go{ color:#120e05; border-color:transparent; background:linear-gradient(180deg,#f3dc95,#c99f45); font-weight:600; }
+.welcome-foot .hist-btn.go:hover{ color:#120e05; filter:brightness(1.08); }
+@media (max-width:700px){ .welcome-looks{ grid-template-columns:repeat(3,1fr); } .welcome-extra, .welcome-src{ grid-template-columns:1fr; } }
+.about-btns{ display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }

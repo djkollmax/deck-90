@@ -1,0 +1,99 @@
+/* The start screen (the browser version). */
+/* ── SPLASH OVERLAY ────────────────────────────────── */
+#splash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, #0d0d1e 0%, #04040c 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  z-index: 9999;
+  cursor: pointer;
+  transition: opacity .4s ease;
+}
+#splash.fade-out { opacity: 0; pointer-events: none; }
+
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.splash-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 10px;
+  color: #d0b060;
+  text-shadow: 0 0 24px rgba(208,176,96,.45), 0 0 60px rgba(208,176,96,.15);
+}
+.splash-sub {
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: #3a3a55;
+}
+.splash-divider {
+  width: 280px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #2a2a40, transparent);
+}
+.splash-btns {
+  display: flex;
+  gap: 16px;
+}
+.splash-btn {
+  background: linear-gradient(180deg, #141e14, #0a120a);
+  border: 1px solid #3a5a3a;
+  border-radius: 3px;
+  color: #70cc70;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  padding: 14px 28px;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(0,180,80,.08), inset 0 1px 0 rgba(255,255,255,.04);
+  transition: all .15s;
+}
+.splash-btn:hover {
+  border-color: #60aa60;
+  color: #a0eea0;
+  box-shadow: 0 0 28px rgba(0,220,100,.18), inset 0 1px 0 rgba(255,255,255,.06);
+  background: linear-gradient(180deg, #1a261a, #101810);
+}
+.splash-btn.alt {
+  background: linear-gradient(180deg, #141428, #0c0c1e);
+  border-color: #363660;
+  color: #7070cc;
+}
+.splash-btn.alt:hover {
+  border-color: #5858aa;
+  color: #aaaaee;
+  box-shadow: 0 0 28px rgba(80,80,220,.18);
+}
+.splash-tip {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #28283c;
+  text-align: center;
+  line-height: 1.8;
+  max-width: 380px;
+}
+.splash-tip span { color: #44446a; }
+
+/* Pulsing ring around logo */
+@keyframes ring-pulse {
+  0%   { transform: scale(.95); opacity: .6; }
+  70%  { transform: scale(1.05); opacity: .2; }
+  100% { transform: scale(.95); opacity: .6; }
+}
+.splash-ring {
+  position: absolute;
+  width: 90px; height: 90px;
+  border: 1px solid rgba(208,176,96,.2);
+  border-radius: 50%;
+  animation: ring-pulse 2.4s ease-in-out infinite;
+}
+.splash-ring:nth-child(2) { width:130px; height:130px; animation-delay:.6s; }
+.splash-ring:nth-child(3) { width:170px; height:170px; animation-delay:1.2s; }

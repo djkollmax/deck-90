@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    THE CAR STEREO'S FACE AND DISPLAY (7.9.4: its own file, shared by the program and the phone's stereo)
    The DP940 photo with its keys laid over it, and the display's colours: the stronger yellow, the SDM looks
-   and the meters' yellow and red tip. The program's stereo window (body.stereo) stays in styles.css.
+   and the meters' yellow and red tip. The program's stereo window (body.stereo) is in stereo.css.
    ═══════════════════════════════════════════════════════════ */
 .st-face{ position:relative; width:min(100%, calc((100vh - 0px) * 2001 / 539)); aspect-ratio:2001 / 539; container-type:inline-size; -webkit-app-region:drag; user-select:none; }
 .st-photo{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; }

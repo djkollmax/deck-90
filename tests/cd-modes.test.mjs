@@ -37,7 +37,7 @@ test('REPEAT one: the same song again and again', async () => {
 });
 
 test('SHUFFLE: each song once, then it stops', async () => {
-  const h = await play({ repeat: 'off', shuffle: true }, 1, 19);
+  const h = await play({ repeat: 'off', shuffle: true }, 1, 24);
   const songs = h.filter(x => /^\d/.test(x)).map(x => parseInt(x));
   assert.deepEqual([...songs].sort(), [1, 2, 3, 4]); assert.equal(h.at(-1), 'STOP');
 });

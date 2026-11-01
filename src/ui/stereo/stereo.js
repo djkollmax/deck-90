@@ -23,7 +23,7 @@ const STEREO_DISP_NAME = { song: 'NORMAL', clock: 'HORA', temp: 'TEMPERATURA', b
 const STEREO_HUES = [0, 38, 150, 196, 248, 300];          // SDM: the original burgundy and amber, then five more lights
 const STEREO_DIM = [1, 1.32, .72, .48];                    // HDB: the display's brightness (normal, high, medium, low)
 const STEREO_DIM_NAME = ['NORMAL', 'ALTO', 'MEDIO', 'BAJO'];
-// SDM 7 onward: whole looks, each its own glass, letters, labels and meters (styles.css, .st-display.look-<id>)
+// SDM 7 onward: whole looks, each its own glass, letters, labels and meters (ui/stereo/stereo-face.css, .st-display.look-<id>)
 const STEREO_LOOKS = [
   { id: 'hd', name: 'HD', say: 'negro, letras amarillas' },
   { id: 'amber', name: 'ÁMBAR', say: 'negro, letras ámbar de los 80' },

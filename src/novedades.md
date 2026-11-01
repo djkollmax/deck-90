@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.17 — 2026-11-01
+
+### Por dentro
+- **Cada parte del programa en su carpeta.** Las pantallas pasan a `src/ui/`, una carpeta por módulo (vúmetros, caseteras, encabezado, estéreo, sintonizador, CD…) con sus scripts y su estilo; el archivo de estilos de 1300 líneas se partió en doce, uno por parte. Por fuera no cambia nada: se comprobó comparando capturas de antes y después, píxel por píxel, en 17 estados del programa.
+
 ## 7.9.16 — 2026-11-01
 
 ### Por dentro
