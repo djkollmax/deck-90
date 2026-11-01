@@ -10,6 +10,7 @@ const { createRemote } = require('./remote');
 const { createTrackLog } = require('./tracklog');
 const { createUpdater, recoverOnStart } = require('./updater');
 const { createRadioProxy } = require('./radioproxy');
+const { createCdNames } = require('./cdnames');
 const crypto = require('crypto');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -549,6 +550,14 @@ ipcMain.handle('radio-find', async (e, q, cc) => {
   if (!name) return [];
   try { return radioList(await radioBrowser('name=' + encodeURIComponent(name) + (country ? '&countrycode=' + country : '') + '&hidebroken=true&order=clickcount&reverse=true&limit=8')); }
   catch (err) { mlog('radio find: ' + (err && err.message || err)); return null; }
+});
+// an audio CD's album, artist and songs, from its table of contents (cdnames.js, MusicBrainz)
+let cdNames = null;
+ipcMain.handle('cd-names', async (e, info) => {
+  if (!fromWin(e) || !info || typeof info !== 'object') return null;
+  if (!cdNames) cdNames = createCdNames({ net, dir: app.getPath('userData'), log: mlog, agent: 'Deck90/' + app.getVersion() + ' ( https://github.com/djkollmax/deck-90 )' });
+  const tracks = (Array.isArray(info.tracks) ? info.tracks : []).slice(0, 99).map(t => ({ n: t.n | 0, audio: !!t.audio, start: t.start | 0 }));
+  try { return await cdNames.lookup({ tracks, leadout: info.leadout | 0 }); } catch (err) { mlog('cd names: ' + (err && err.message || err)); return null; }
 });
 // the radio through the local proxy (radioproxy.js): the song a station sends, and its format and bitrate
 let radioProxy = null;

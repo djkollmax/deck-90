@@ -59,8 +59,9 @@ function cdUnitLine() {
   }
   const tr = cdAudioTracks();
   if (!tr.length) return { title: 'DISCO SIN AUDIO', artist: cdInfo.name || cdInfo.drive };
-  const total = tr.reduce((s, t) => s + (t.len || 0), 0);
-  return { title: 'CD AUDIO · PISTA ' + String(cdState.track || tr[0].n).padStart(2, '0'), artist: tr.length + ' PISTAS · ' + mmss(total) + ' · ' + (cdInfo.name || cdInfo.drive) };
+  const total = tr.reduce((s, t) => s + (t.len || 0), 0), n = cdState.track || tr[0].n, song = cdSongName(n);
+  if (song) return { title: song.title, artist: song.artist + (cdNames.album ? ' · ' + cdNames.album : '') + (cdNames.year ? ' (' + cdNames.year + ')' : '') };   // 7.9.5: from MusicBrainz
+  return { title: 'CD AUDIO · PISTA ' + String(n).padStart(2, '0'), artist: tr.length + ' PISTAS · ' + mmss(total) + ' · ' + (cdInfo.name || cdInfo.drive) };
 }
 function cdUnitSync() {
   if (!cdUnit) return;

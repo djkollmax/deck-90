@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('weather', {
 contextBridge.exposeInMainWorld('cdrom', {
   cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
   on:  cb => ipcRenderer.on('cd', (e, s) => cb(s)),
+  names: info => ipcRenderer.invoke('cd-names', info),   // 7.9.5: the disc's album and songs (MusicBrainz)
 });
 // the stereo's internet radio: stations by name, and the most heard in Argentina
 contextBridge.exposeInMainWorld('radio', {

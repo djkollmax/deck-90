@@ -261,6 +261,23 @@ function cdTrack(d) {
   if (!(d < 0 && cdPosition() > 3)) i = (i + d + tr.length) % tr.length;
   cdGo(tr[i].n);
 }
+// The disc's names (7.9.5): album, artist and each song, looked up by the program from the disc's table of
+// contents (MusicBrainz). Until they come, or for a disc that isn't there, the tracks are numbers as before.
+let cdNames = null, cdNamesFor = '';
+function cdNamesAsk(info) {
+  const key = info && info.present && Array.isArray(info.tracks) ? info.tracks.map(t => t.start || 0).join(',') + '|' + (info.leadout || 0) : '';
+  if (key === cdNamesFor) return;
+  cdNamesFor = key; cdNames = null;
+  if (!key || !info.leadout || !window.cdrom || !window.cdrom.names) return;
+  window.cdrom.names({ tracks: info.tracks, leadout: info.leadout }).then(r => {
+    if (cdNamesFor !== key || !r || !r.tracks) return;
+    cdNames = r;
+    radioLog('cd: ' + r.artist + ' – ' + r.album);
+    toast('CD · <span>' + String(r.artist).replace(/[<>&]/g, '') + '</span> · ' + String(r.album).replace(/[<>&]/g, ''), 3000);
+    stereoText(true); if (typeof cdUnitSync === 'function') cdUnitSync();
+  }).catch(() => {});
+}
+const cdSongName = n => cdNames && cdNames.tracks && cdNames.tracks[n] ? cdNames.tracks[n] : null;
 let cdJump = null;                                             // the track asked for, until the drive is there
 // A jump shows at once; the drive gets it at once too, unless it's one of quick presses in a row (|◀◀ ▶▶| ▶▶|):
 // then only the last one goes, 0.25 s after the presses stop, so the drive seeks once instead of on every press.
@@ -290,6 +307,7 @@ if (window.cdrom) window.cdrom.on(m => {
   if (m.error) { toast('⚠ CD: ' + String(m.error).replace(/[<>&]/g, '').slice(0, 120), 3600); return; }
   if ('drive' in m) {                                          // what's in the drive: the CD starts, as in a car
     cdInfo = m;
+    cdNamesAsk(m);
     if (stereoCfg.mode === 'cd' && stereoMode) {
       if (cdAudioTracks().length) window.cdrom.cmd('cd-play ' + cdAudioTracks()[0].n);
       else if (cdFiles().length) cdPlayFile(0);
@@ -400,8 +418,9 @@ function stereoText(force) {
       const f = String(files[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
       title = f || 'MP3'; artist = 'DISCO · ' + (cdFile + 1) + '/' + files.length;
     } else if (tr.length) {
-      const n = cdState.track || tr[0].n, total = tr.reduce((a, t) => a + (t.len || 0), 0);
-      title = 'TRACK ' + String(n).padStart(2, '0'); artist = 'CD · ' + tr.length + ' PISTAS · ' + mmss(total) + (cdState.state === 'paused' ? ' · PAUSA' : '');
+      const n = cdState.track || tr[0].n, total = tr.reduce((a, t) => a + (t.len || 0), 0), song = cdSongName(n);
+      if (song) { title = song.title; artist = song.artist + ' · ' + String(n).padStart(2, '0') + (cdState.state === 'paused' ? ' · PAUSA' : ''); }
+      else { title = 'TRACK ' + String(n).padStart(2, '0'); artist = 'CD · ' + tr.length + ' PISTAS · ' + mmss(total) + (cdState.state === 'paused' ? ' · PAUSA' : ''); }
     } else { title = 'SIN AUDIO'; artist = 'ESTE DISCO NO TIENE MÚSICA'; }
     key = 'cd|' + title + '|' + artist;
     if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing }); }

@@ -112,6 +112,14 @@ function CdInfo() {
       $tr += [ordered]@{ n = $i; audio = ((CdSend "status d90cd type track $i wait") -eq 'audio'); len = [math]::Round((CdSecs (CdSend "status d90cd length track $i wait")), 1) }
     }
     $o.tracks = $tr
+    # 7.9.5: the disc's table of contents in frames (75 a second, the 2 s lead-in included), for its names:
+    # where each track starts, and where the disc ends (the lead-out)
+    try {
+      $null = CdSend 'set d90cd time format msf wait'
+      $fr = { param($t) $p = $t.Split(':'); if ($p.Count -lt 3) { return -1 }; return ([int]$p[0] * 60 + [int]$p[1]) * 75 + [int]$p[2] }
+      foreach ($t in $o.tracks) { $t.start = & $fr (CdSend "status d90cd position track $($t.n) wait") }
+      if ($n -gt 0) { $o.leadout = [int]$o.tracks[$n - 1].start + (& $fr (CdSend "status d90cd length track $n wait")) }
+    } catch { } finally { $null = CdSend 'set d90cd time format tmsf wait' }
   } elseif ($d.MediaLoaded) { $o.present = $true }
   if ($o.present -and @($o.tracks | Where-Object { $_.audio }).Count -eq 0) {
     $o.files = @(Get-ChildItem -LiteralPath ($d.Drive + '\') -Recurse -File -ErrorAction SilentlyContinue |
