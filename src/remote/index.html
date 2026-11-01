@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#07080b">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Deck 90</title>
+<link rel="stylesheet" href="/stereo-face.css">
 <link rel="stylesheet" href="/remote/remote.css">
 </head>
 <body class="view-all">
@@ -35,6 +36,15 @@
   <section class="fl"><canvas id="fl"></canvas></section>
   <section class="sg"><canvas id="sg"></canvas></section>
   <section class="tape"><canvas id="tape"></canvas></section>
+  <!-- 7.9.4: the car stereo (remote/stereo.js) -->
+  <section class="stereo" id="stereoView">
+    <div class="st-face" id="stFace">
+      <img class="st-photo" src="/img/stereo/front.jpg" alt="" draggable="false">
+      <div class="st-display" id="stDisplay" style="left:28.886%;top:42.857%;width:53.373%;height:27.458%"></div>
+      <i class="st-aux" style="left:93.753%;top:53.247%;width:1.299%;height:4.824%"></i>
+    </div>
+    <p class="st-tip">Acostá el celular para verlo más grande. Las teclas manejan el estéreo de la PC.</p>
+  </section>
 </main>
 
 <div class="sheet" id="sheet">
@@ -47,7 +57,7 @@
     <div class="opt" data-k="flAll"><span>FL EN “TODO”</span><button data-v="1">SÍ</button><button data-v="0">NO</button></div>
     <div class="opt" data-k="night"><span>MODO NOCHE</span><button data-v="0">NO</button><button data-v="1">SÍ</button></div>
     <div class="opt" data-k="haptic"><span>VIBRAR</span><button data-v="1">SÍ</button><button data-v="0">NO</button></div>
-    <div class="sheet-tip">Deslizá a los costados para cambiar de vista: todo · VU · FL 90s · espectrograma · cinta.</div>
+    <div class="sheet-tip">Deslizá a los costados para cambiar de vista: todo · VU · FL 90s · espectrograma · cinta · estéreo.</div>
   </div>
 </div>
 
@@ -62,5 +72,7 @@
 <script src="/js/tape.js"></script>
 <script src="/js/nowplaying.js"></script>
 <script src="/remote/remote.js"></script>
+<script src="/vendor/dp940-display.js"></script>
+<script src="/remote/stereo.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 // Routes:  /            the page (needs ?k=)
 //          /events      Server-Sent Events: 'np' (now playing) and 'f' (meter frames, ~30/s)
 //          /cmd?c=…     transport command (toggle | play | pause | stop | next | prev)
+//          /stk?c=…&h=1 a key of the car stereo (7.9.4: the stereo view), held or not
 //          /remote/*, /js/<shared drawing file>, /vendor/qrcode.js   static files
 const http = require('http');
 const os = require('os');
@@ -25,11 +26,16 @@ const STATIC = {
   '/js/tape.js': 'js/tape.js',
   '/js/nowplaying.js': 'js/nowplaying.js',
   '/js/draw-spectrum.js': 'js/draw-spectrum.js',
+  '/remote/stereo.js': 'remote/stereo.js',                       // 7.9.4: the car stereo on the phone
+  '/stereo-face.css': 'stereo-face.css',
+  '/vendor/dp940-display.js': 'vendor/dp940-display.js',
+  '/img/stereo/front.jpg': 'img/stereo/front.jpg',
   '/fonts/barlow-condensed-semibold.woff2': 'fonts/barlow-condensed-semibold.woff2',   // the deck displays' lettering
   '/fonts/barlow-condensed-medium.woff2': 'fonts/barlow-condensed-medium.woff2',
 };
-const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.woff2': 'font/woff2' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.woff2': 'font/woff2', '.jpg': 'image/jpeg' };
 const CMDS = ['toggle', 'play', 'pause', 'stop', 'next', 'prev'];
+const STEREO_KEYS = ['volup', 'voldown', 'att', 'sel', 'mode', 'disp', 'band', 'hdb', 'sdm', 'scan', 'prev', 'next', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'slot', 'eject'];
 
 function lanAddresses() {
   const out = [];
@@ -50,7 +56,7 @@ function lanAddresses() {
 
 // the PC's clock goes with each track message, so the phone can put the play position on its own clock
 const stamp = info => Object.assign({}, info, { now: Date.now() });
-function createRemote({ onCmd, log, getNowPlaying, onClients }) {
+function createRemote({ onCmd, log, getNowPlaying, onClients, onStereoKey }) {
   let server = null, port = 0, key = '';
   const clients = new Set();
   let lastFrame = null;
@@ -112,6 +118,14 @@ function createRemote({ onCmd, log, getNowPlaying, onClients }) {
       const c = u.searchParams.get('c');
       if (!CMDS.includes(c)) { res.writeHead(400).end(); return; }
       onCmd(c);
+      res.writeHead(204).end();
+      return;
+    }
+    if (u.pathname === '/stk' && req.method === 'POST') {
+      if (!keyOk(u)) { res.writeHead(403).end(); return; }
+      const c = u.searchParams.get('c');
+      if (!STEREO_KEYS.includes(c) || !onStereoKey) { res.writeHead(400).end(); return; }
+      onStereoKey(c, u.searchParams.get('h') === '1');
       res.writeHead(204).end();
       return;
     }

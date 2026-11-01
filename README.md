@@ -122,7 +122,7 @@ Todo se maneja desde una sola consola. Arriba, la cara del vúmetro y el estilo 
 
 ### En el celular
 
-Activás CELULAR, escaneás el código QR y el celular o la tablet (en el mismo WiFi) muestra los vúmetros, el espectro, el espectrograma, la casetera y los números de loudness en vivo, vertical u horizontal. Las teclas de la casetera del celular también manejan el reproductor.
+Activás CELULAR, escaneás el código QR y el celular o la tablet (en el mismo WiFi) muestra los vúmetros, el espectro, el espectrograma, la casetera y los números de loudness en vivo, vertical u horizontal. Las teclas de la casetera del celular también manejan el reproductor. La vista **ESTÉREO** (deslizando a los costados) pone en el celular el frente del estéreo de auto con su display en vivo: sus teclas manejan el estéreo de la PC (radio, memorias, bandas, MODE, CD, volumen); el sonido sigue saliendo de la PC.
 
 ![Deck 90 en el celular](docs/screenshots/phone.png)
 

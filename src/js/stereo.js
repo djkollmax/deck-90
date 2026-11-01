@@ -458,6 +458,27 @@ function stereoFeed(now) {
 }
 setInterval(() => { if (stereoMode && !running) stereoText(); }, 500);   // the loop sleeps with nothing running
 
+// The stereo on the phone (7.9.4): the phone draws its own DP940 display; this says what to put on it, by running
+// the PC's stereoText into a recorder in place of the real display, so both say exactly the same.
+function phoneStereoView() {
+  const rec = { kind: '', setRadio(o) { this.kind = 'radio'; this.radio = o; }, setTrack(o) { this.kind = 'track'; this.track = o; },
+    setPlayback(p) { this.playback = p; }, setElapsed(s) { this.elapsed = s; }, setLevels() {} };
+  const keepDisplay = stereoDisplay, keepShown = stereoShown;
+  stereoDisplay = rec; stereoShown = '';
+  try { stereoText(true); } finally { stereoDisplay = keepDisplay; stereoShown = keepShown; }
+  const look = stereoLook();
+  return {
+    kind: rec.kind, radio: rec.radio || null, track: rec.track || null, elapsed: Math.floor(rec.elapsed || 0),
+    live: stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying(),
+    hue: look ? 0 : STEREO_HUES[stereoCfg.color - 1], dim: STEREO_DIM[stereoCfg.dim],
+    look: look ? look.id : '', light: !!(look && look.light), aux: !!running || radioPlaying() || cdPlaying(),
+  };
+}
+const PHONE_STEREO_KEYS = ['volup', 'voldown', 'att', 'sel', 'mode', 'disp', 'band', 'hdb', 'sdm', 'scan', 'prev', 'next', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'slot', 'eject'];
+if (window.phoneDisplay && window.phoneDisplay.onStereoKey) window.phoneDisplay.onStereoKey((k, hold) => {
+  if (PHONE_STEREO_KEYS.includes(k)) stereoKey(k, !!hold);
+});
+
 // ── the keys ──
 // Changing mode pauses what the mode you leave was playing, and coming back to it picks it up again:
 // the player's song (PC), the CD where it was; the radio, a live stream, is tuned again. Returns true when the

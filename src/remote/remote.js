@@ -4,7 +4,7 @@ const cVL = el('vuL'), cVR = el('vuR'), xVL = cVL.getContext('2d'), xVR = cVR.ge
 const cFL = el('fl'), xFL = cFL.getContext('2d');
 const cSG = el('sg'), xSG = cSG.getContext('2d');
 let target = null, lastMsg = 0, connected = false, lastFrameAt = 0;
-const VIEWS = ['view-all', 'view-vu', 'view-fl', 'view-sg', 'view-tape'];
+const VIEWS = ['view-all', 'view-vu', 'view-fl', 'view-sg', 'view-tape', 'view-stereo'];
 let view = 0;
 const store = {
   get(k, d) { try { const v = localStorage.getItem('deck90-phone-' + k); return v === null ? d : v; } catch (_) { return d; } },

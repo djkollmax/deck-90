@@ -155,6 +155,7 @@ app.whenReady().then(() => {
   };
   remote = createRemote({
     onCmd: mediaCommand, log: mlog, onClients: () => pushRemote(),
+    onStereoKey: (k, hold) => { if (win && !win.isDestroyed()) win.webContents.send('phone-stereo-key', k, hold); },
     getNowPlaying: () => lastInfo && phoneInfo(lastInfo),
   });
   // one change at a time: quick on/off clicks must end where the last one says

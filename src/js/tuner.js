@@ -7,15 +7,16 @@
 //    BAND           FM1 → FM2 → FM3 → AM, or the four band keys under it (7.9.0)
 //    ◀ ▶ / the knob the country's most heard stations
 //    1–6            the band's memories (hold 1 s, or MEMO then the number: keep what plays there)
-//    SCAN           8 s of each                     MODE   AUTO / MONO on the display
+//    SCAN           8 s of each                     MODE   the line: song · station · quality
 //    DISP           the line under the dial: station, time, temperature
 //  It isn't one of the looks' modules: a look or the rotation never hides it.
 // ═══════════════════════════════════════════════════════════
 const TUNER_DISP = ['name', 'clock', 'temp'];
-let tunerCfg = { show: true, disp: 'name', mono: false };
+const TUNER_LINES = ['song', 'station', 'quality'];   // MODE (7.9.4): what the line under the dial says
+let tunerCfg = { show: true, disp: 'name', line: 'song' };
 try {
   const t = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).tuner;
-  if (t && typeof t === 'object') tunerCfg = { show: t.show !== false, disp: TUNER_DISP.includes(t.disp) ? t.disp : 'name', mono: !!t.mono };
+  if (t && typeof t === 'object') tunerCfg = { show: t.show !== false, disp: TUNER_DISP.includes(t.disp) ? t.disp : 'name', line: TUNER_LINES.includes(t.line) ? t.line : 'song' };
 } catch (_) {}
 let tuner = null, tunerPower = false, tunerMemo = 0, tunerResumePc = false, tunerShownKey = '';
 let tunerAvg = -24, tunerAt = 0, tunerLv = { L: 0, R: 0 };
@@ -105,7 +106,14 @@ function tunerLine() {
   const name = st ? st.name : radioMem.band + ' VACÍA';
   // live: the song the station sends (or EN VIVO) and its quality, "LOS PERICOS - PARA XIMENA · MP3 128"
   const live = radioPlaying(), q = live ? radioQuality(st) : '', song = live ? radioSong() : '';
-  const text = !tunerPower ? 'STANDBY' : live ? [song || (tunerDial(st).f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO'), q].filter(Boolean).join(' · ') : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
+  // MODE picks it: the song and quality (TEMA), the station with its band, dial and quality (RADIO), or the
+  // quality alone, spelled out (CALIDAD)
+  const dial = tunerDial(st), where = !st ? '' : radioMem.band + ' ' + (dial.f === null ? 'INTERNET' : dial.f + (dial.am ? ' KHZ' : ' MHZ'));
+  const kb = q ? q.replace(/^(\S+)\s+(\d+)$/, '$1 · $2 KBPS') : 'CALIDAD SIN DATOS';
+  const liveText = tunerCfg.line === 'station' ? [where, q].filter(Boolean).join(' · ')
+    : tunerCfg.line === 'quality' ? kb
+    : [song || (dial.f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO'), q].filter(Boolean).join(' · ');
+  const text = !tunerPower ? 'STANDBY' : live ? liveText : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
   return { name, text };
 }
 // the dial: the station's own frequency, or one in its name ("La 100 - 99.9 FM", "Radio 10 AM 710"); none (a station
@@ -130,7 +138,7 @@ function tunerSync() {
   const r = {
     band: am ? 'AM' : radioMem.band === 'AM' ? 'FM1' : radioMem.band, frequency: dial.f,
     label: dial.f === null && st ? shortName(st.name) : '', preset: radioMem.slot || 0,
-    name: line.name, text: line.text, stereo: !am, mono: am || tunerCfg.mono, auto: !tunerCfg.mono,
+    name: line.name, text: line.text, stereo: !am, mono: am, auto: true,   // 7.9.4: FM always STEREO, AM always MONO
     tuned: live, scan: !!radioScan, memo: !!tunerMemo, signal: live ? 5 : tunerPower && radioNow ? 2 : 0,
   };
   const key = JSON.stringify(r) + tunerPower;
@@ -178,7 +186,11 @@ function tunerKey(k, { hold } = {}) {
     toast('DISP · <span>' + { name: 'la radio', clock: 'la hora', temp: 'la temperatura' }[tunerCfg.disp] + '</span>', 1200);
     return tunerSync();
   }
-  if (k === 'mode') { tunerCfg.mono = !tunerCfg.mono; savePrefs(); toast('MODE · <span>' + (tunerCfg.mono ? 'MONO' : 'AUTO') + '</span> en el display', 1200); return tunerSync(); }
+  if (k === 'mode') {
+    tunerCfg.line = TUNER_LINES[(TUNER_LINES.indexOf(tunerCfg.line) + 1) % TUNER_LINES.length]; savePrefs();
+    toast('MODE · <span>' + { song: 'el tema', station: 'la radio', quality: 'la calidad' }[tunerCfg.line] + '</span> en la línea de abajo', 1400);
+    return tunerSync();
+  }
   if (k === 'memo') {
     if (!radioNow) { toast('Primero sintonizá una radio y después MEMO y el número', 2600); return; }
     tunerMemo = tunerMemo ? 0 : setTimeout(() => { tunerMemo = 0; tunerSync(); }, 6000);

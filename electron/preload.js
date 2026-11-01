@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('phoneDisplay', {
   get:   () => ipcRenderer.send('remote-get'),
   frame: f  => ipcRenderer.send('remote-frame', f),
   on:    cb => ipcRenderer.on('remote-state', (e, st) => cb(st)),
+  onStereoKey: cb => ipcRenderer.on('phone-stereo-key', (e, k, hold) => cb(String(k), !!hold)),   // 7.9.4: the stereo on the phone
 });
 contextBridge.exposeInMainWorld('trackLog', {
   add:     e => ipcRenderer.send('tl-add', e),

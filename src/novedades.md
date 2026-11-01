@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.9.4 — 2026-11-01
+
+### Nuevo
+- **El estéreo de auto en el celular:** la pantalla del celular tiene una vista ESTÉREO (deslizando a los costados, o ◫): el frente del DP940 con su display en vivo, dibujado en el celular con el mismo componente y mostrando exactamente lo que muestra el estéreo de la PC (la radio, su tema y calidad, la pista del CD, el tema de la PC, el color de SDM y el brillo de HDB), con sus vúmetros sobre el sonido de la PC. Sus teclas manejan el estéreo de la PC: VOL (manteniendo, se repite), ATT, SEL, MODE (PC · RADIO · CD), DISP, BAND, SCAN, TUNE/TRACK, las memorias 1–6 (manteniendo 1 s: guarda la radio ahí; en un CD, las pistas 7–12), HDB, SDM, la ranura del CD y ⏏. El sonido sigue saliendo de la PC. Se ve mejor con el celular acostado.
+
+### Cambios
+- **El sintonizador muestra STEREO en FM y MONO en AM, siempre.** MODE ya no los cambia en el display (no hacía nada con el sonido): ahora elige qué dice la línea debajo del dial: el tema y la calidad, la radio (banda, dial o INTERNET, calidad) o solo la calidad. Un MONO que había quedado prendido vuelve a STEREO.
+- Los estilos del frente y del display del estéreo pasaron a su propio archivo (stereo-face.css), compartido por el programa y el celular.
+
 ## 7.9.3 — 2026-10-31
 
 ### Nuevo

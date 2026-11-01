@@ -20,7 +20,7 @@
  *
  * Deck 90 7.8.7, one small addition marked "internet only": setRadio({ frequency: null }) is a station heard
  * only over the internet (no dial position): the digits show dashes and the needle stays where it was; and
- * preset 0 is a station tuned outside the memories (M-). 7.9.0: setRadio({ label }) with frequency null writes the
+ * preset 0 is a station tuned outside the memories (M-). 7.9.4: MODE's lamp is off (in Deck 90 it picks the line). 7.9.0: setRadio({ label }) with frequency null writes the
  * label in big dot-matrix letters where the digits go (an internet station's name, "80S80S"), the digits and the
  * MHZ hidden, and no needle on the dial (it would point at a frequency the station doesn't have).
  */
@@ -686,7 +686,7 @@ class Deck90Tuner {
   _updateButtonLeds() {
     const radio = this._state.radio;
     for (const [key, button] of Object.entries(this._buttons)) {
-      const active = this._state.powered && (key === `m${radio.preset}` || key === 'scan' && radio.scan || key === 'memo' && radio.memo || key === 'mode' && radio.mono || key === 'power');
+      const active = this._state.powered && (key === `m${radio.preset}` || key === 'scan' && radio.scan || key === 'memo' && radio.memo || key === 'power');   // Deck 90 7.9.4: MODE has no lamp (it chooses the text line)
       button.led.setAttribute('fill', active ? VFD : DIM);
       button.led.setAttribute('opacity', active ? '.9' : '.22');
       button.group.setAttribute('aria-pressed', String(active));

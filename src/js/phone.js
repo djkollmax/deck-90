@@ -25,7 +25,19 @@ function phoneFrame() {
     // the phone's spectrogram: 64 bands, 30 Hz – 20 kHz, 0–255, as base64
     sg: running && aMain ? spectrogramBands() : null,
     flc: spectrumSkin === 'SHOWROOM' ? 'TURQ' : spectrumSkin === 'AMBER' ? 'AMBER' : spectrumSkin === 'FLSPEC' ? 'SPEC' : spectrumSkin === 'FLSPEC2' ? 'SPEC2' : 'GREEN',
+    sv: phoneStereo(),
   };
+}
+// the car stereo on the phone (7.9.4): what the PC's stereo display shows, sent when it changes (and every 2 s)
+let phoneSv = '', phoneSvAt = 0, phoneSvCalc = 0, phoneSvObj = null;
+function phoneStereo() {
+  if (typeof phoneStereoView !== 'function') return undefined;
+  const now = performance.now();
+  if (now - phoneSvCalc > 250) { phoneSvCalc = now; try { phoneSvObj = phoneStereoView(); } catch (_) { phoneSvObj = null; } }
+  const s = JSON.stringify(phoneSvObj);
+  if (s === phoneSv && now - phoneSvAt < 2000) return undefined;
+  phoneSv = s; phoneSvAt = now;
+  return phoneSvObj;
 }
 // Called from the render loop, and on a slow timer while stopped so the phone still shows STOP.
 function phoneTick(now) {

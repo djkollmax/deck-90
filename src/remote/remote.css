@@ -103,3 +103,13 @@ canvas, button { touch-action: manipulation; }   /* quick double taps on ▶▶ 
 
 /* night: same look, much less light */
 body.night .rack, body.night .bar, body.night .prog { filter: brightness(.55) saturate(.85); }
+
+/* 7.9.4 · ESTÉREO: the car stereo's front, as large as the screen allows (lying down it fills the width) */
+.stereo { grid-area: stereo; display: none; min-height: 0; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #000; border-radius: 6px; }
+.view-stereo .stereo { display: flex; }
+.view-stereo .vus, .view-stereo .nums, .view-stereo .fl, .view-stereo .sg, .view-stereo .tape, .view-stereo .prog { display: none !important; }
+.view-stereo .rack { grid-template-columns: 1fr !important; grid-template-rows: minmax(0, 1fr) !important; grid-template-areas: "stereo" !important; }
+.stereo .st-face { width: min(100%, calc((100dvh - 70px) * 2001 / 539)); max-width: 100%; -webkit-app-region: no-drag; touch-action: manipulation; }
+.stereo.aux-on .st-aux { background: radial-gradient(circle, #f1ffb0 0 18%, #b8f04a 38%, #3d6e14 62%, rgba(20,40,8,0) 72%); box-shadow: 0 0 1.2cqw rgba(170,240,70,.45); }
+.st-tip { margin: 0; font-size: 10px; letter-spacing: 1px; color: rgba(201,195,173,.55); text-align: center; padding: 0 12px; }
+@media (min-aspect-ratio: 3/2) { .st-tip { display: none; } }

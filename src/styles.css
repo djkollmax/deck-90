@@ -1284,80 +1284,9 @@ body.stereo .rack-unit > :not(.stereo-panel){ display:none !important; }
 body.stereo .rack-unit{ padding:0 !important; background:#000 !important; box-shadow:none !important; border:0 !important; }
 body.stereo{ background:#000; }
 body.stereo .stereo-panel{ display:flex; flex:1 1 auto; min-height:0; align-items:center; justify-content:center; background:#000; overflow:hidden; }
-.st-face{ position:relative; width:min(100%, calc((100vh - 0px) * 2001 / 539)); aspect-ratio:2001 / 539; container-type:inline-size; -webkit-app-region:drag; user-select:none; }
-.st-photo{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; }
-.st-display{ position:absolute; overflow:hidden; border-radius:.5cqw; background:#3a0d1d;
-  filter:hue-rotate(var(--st-hue, 0deg)) brightness(var(--st-dim, 1)); }
-.st-display svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-.st-display::after{ content:''; position:absolute; inset:0; pointer-events:none;     /* the glass over it, as on the photo */
-  background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 38%, rgba(0,0,0,.08)); }
-.st-aux{ position:absolute; border-radius:50%; background:radial-gradient(circle, #1b2a14 0 45%, #0d120b 70%); box-shadow:inset 0 0 .3cqw #000; transition:background .3s; }
-.stereo-panel.aux-on .st-aux{ background:radial-gradient(circle, #f1ffb0 0 18%, #b8f04a 38%, #3d6e14 62%, rgba(20,40,8,0) 72%); box-shadow:0 0 1.2cqw rgba(170,240,70,.45); }
-.st-hot{ position:absolute; padding:0; border:0; background:transparent; cursor:pointer; border-radius:.6cqw; -webkit-app-region:no-drag; transition:background .12s, box-shadow .12s; }
-.st-hot.round{ border-radius:50%; }
-.st-hot:hover{ background:rgba(255,255,255,.07); box-shadow:0 0 0 1px rgba(255,255,255,.12); }
-.st-hot.down, .st-hot:active{ background:rgba(0,0,0,.32); box-shadow:inset 0 .25cqw .6cqw rgba(0,0,0,.6); }
-.st-hot:focus-visible{ outline:1px solid #b8f04a; outline-offset:1px; }
 body.stereo #toast{ top:auto; bottom:6px; padding:3px 12px; font-size:10px; line-height:1.3; letter-spacing:.6px; max-width:90%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 body.stereo #toast br{ display:none; }
 body.stereo #updBar{ display:none; }
-
-/* The stereo's yellow, as strong as the real glass (7.8.3): a saturated yellow, the 16-segment letters a touch
-   thicker, the lit labels the same yellow. Every colour of SDM starts from it. */
-.st-display polygon[fill="#ffdf4f"]{ fill:#ffe414; stroke:#ffe414; stroke-width:1.1; stroke-linejoin:round; }
-.st-display text[fill="#ffdd50"], .st-display text[fill="#ffdf4f"]{ fill:#ffe41c; }
-
-/* SDM 7–28 · the looks (7.8.3–7.8.7): each sets its glass, letters (lit and ghost), labels and meters. The display
-   draws its own colours as attributes; these rules restyle them by value (CSS beats a presentation attribute). */
-.st-display.look{ background:var(--lcd); }
-.st-display.look rect[fill*="lcd-film"]{ fill:var(--lcd); }
-.st-display.look polygon[fill="#ffdf4f"]{ fill:var(--seg); stroke:var(--seg); }
-.st-display.look polygon[fill="#62751e"]{ fill:var(--ghost); opacity:var(--ghost-op, .3); }
-.st-display.look text{ fill:var(--lbl); }
-.st-display.look text[fill="#ffdd50"], .st-display.look text[fill="#ffdf4f"], .st-display.look text[fill="#c8d997"]{ fill:var(--lit); }
-.st-display.look text[fill="#809641"]{ fill:var(--off); }
-.st-display.look text[data-layer="artist"]{ fill:var(--artist); }
-.st-display.look text[fill="#ffde46"]{ fill:#ffde46; }                 /* S-HDB keeps its yellow on red */
-.st-display.look rect[stroke="#dfc73e"]{ stroke:var(--lit); }
-.st-display.look g[data-channel] > g[fill="#35544b"]{ fill:var(--vu-off); }
-.st-display.look g[data-channel] > g[fill="#c5f4df"]{ fill:var(--vu); }
-.st-display.look-hd{ --lcd:#070605; --seg:#ffd400; --ghost:#3a3114; --ghost-op:.26; --lit:#ffcf2e; --lbl:#ffcf2e; --off:#5e4c17; --artist:#e8c35a; --vu:#d9f5ea; --vu-off:#2a2716; }
-.st-display.look-amber{ --lcd:#0b0603; --seg:#ff9a1e; --ghost:#3a2208; --lit:#ffa62e; --lbl:#d98a2b; --off:#5a3610; --artist:#ffb860; --vu:#ffb24a; --vu-off:#2e1c0a; }
-.st-display.look-ice{ --lcd:#04101a; --seg:#7ff3ff; --ghost:#0f3442; --ghost-op:.35; --lit:#9ff6ff; --lbl:#4fc3d6; --off:#1d4a55; --artist:#b8f6ff; --vu:#7ff3ff; --vu-off:#0d2a33; }
-.st-display.look-night{ --lcd:#030c05; --seg:#5dff7a; --ghost:#0f3a18; --ghost-op:.32; --lit:#7dff92; --lbl:#3fbf58; --off:#1a4d24; --artist:#a5ffb3; --vu:#5dff7a; --vu-off:#0e2914; }
-.st-display.look-sport{ --lcd:#0a0202; --seg:#ff3b2f; --ghost:#3d0c0a; --ghost-op:.32; --lit:#ff5a45; --lbl:#d8443a; --off:#5a1612; --artist:#ff8a7a; --vu:#ff5a45; --vu-off:#2d0907; }
-.st-display.look-white{ --lcd:#050505; --seg:#f4f4f0; --ghost:#2a2a2a; --ghost-op:.35; --lit:#ffffff; --lbl:#bdbdb8; --off:#444444; --artist:#e0e0dc; --vu:#f4f4f0; --vu-off:#252525; }
-.st-display.look-lcd{ --lcd:#b7c3a5; --seg:#161b11; --ghost:#8d9880; --ghost-op:.4; --lit:#12160e; --lbl:#2f3826; --off:#87927a; --artist:#262e1d; --vu:#1a1f14; --vu-off:#9aa58a; }
-.st-display.look-miami{ --lcd:#14051f; --seg:#ff4fd8; --ghost:#3d1340; --ghost-op:.32; --lit:#ff6be0; --lbl:#39d7ff; --off:#3a2a55; --artist:#7fe6ff; --vu:#39d7ff; --vu-off:#1a1638; }
-.st-display.look-gold{ --lcd:#120a03; --seg:#ffc94a; --ghost:#3b2a0e; --ghost-op:.3; --lit:#ffd36b; --lbl:#c9a04a; --off:#5a4418; --artist:#f0cf86; --vu:#ffe2a0; --vu-off:#2c2010; }
-.st-display.look-aqua{ --lcd:#021412; --seg:#3dffd8; --ghost:#0c3a33; --ghost-op:.32; --lit:#5cffe0; --lbl:#2fc6ad; --off:#14473f; --artist:#a3fff0; --vu:#5cffe0; --vu-off:#0b2a26; }
-.st-display.look-cobalt{ --lcd:#04103a; --seg:#d6e4ff; --ghost:#1a2c66; --ghost-op:.4; --lit:#e6eeff; --lbl:#8fb0ff; --off:#2b3f7a; --artist:#c6d8ff; --vu:#cfe0ff; --vu-off:#13245a; }
-.st-display.look-lime{ --lcd:#060a02; --seg:#c8ff2e; --ghost:#2c3a0c; --ghost-op:.3; --lit:#d4ff4a; --lbl:#9ccc2a; --off:#3c4d14; --artist:#e2ff8a; --vu:#c8ff2e; --vu-off:#1c260a; }
-.st-display.look-rose{ --lcd:#0c0408; --seg:#ff7fb0; --ghost:#3c1424; --ghost-op:.3; --lit:#ff95c0; --lbl:#d96b96; --off:#55203a; --artist:#ffb8d4; --vu:#ff8fb8; --vu-off:#2a0d1a; }
-.st-display.look-violet{ --lcd:#08040f; --seg:#b98aff; --ghost:#2a1a48; --ghost-op:.32; --lit:#c9a2ff; --lbl:#9874d6; --off:#3a2a60; --artist:#dcc6ff; --vu:#b98aff; --vu-off:#1a1030; }
-.st-display.look-fire{ --lcd:#0a0402; --seg:#ff7a1a; --ghost:#3d1a06; --ghost-op:.32; --lit:#ff8f33; --lbl:#e0602a; --off:#5a240c; --artist:#ffb070; --vu:#ff4a26; --vu-off:#2e0c06; }
-.st-display.look-matrix{ --lcd:#010401; --seg:#39ff6a; --ghost:#0b2a12; --ghost-op:.22; --lit:#5cff86; --lbl:#22b04a; --off:#103c1a; --artist:#8dffab; --vu:#39ff6a; --vu-off:#08200e; }
-.st-display.look-sunset{ --lcd:#140820; --seg:#ff9a3c; --ghost:#3c1c34; --ghost-op:.32; --lit:#ffad55; --lbl:#ff6fa8; --off:#4a2448; --artist:#ffc28a; --vu:#ff6fa8; --vu-off:#26102a; }
-.st-display.look-nixie{ --lcd:#120704; --seg:#ff8a3a; --ghost:#3c2014; --ghost-op:.38; --lit:#ffa057; --lbl:#c97442; --off:#4f2a18; --artist:#ffbf8a; --vu:#ff9a4a; --vu-off:#2a140a; }
-.st-display.look-oled{ --lcd:#000000; --seg:#eef6ff; --ghost:#141a22; --ghost-op:.5; --lit:#ffffff; --lbl:#9fb2c8; --off:#2a323d; --artist:#d9e6f5; --vu:#4aa8ff; --vu-off:#0c1622; }
-.st-display.look-lcdblue{ --lcd:#1a4fc4; --seg:#f4f8ff; --ghost:#3a6ad6; --ghost-op:.45; --lit:#ffffff; --lbl:#c8dbff; --off:#5d86e0; --artist:#e6efff; --vu:#ffffff; --vu-off:#3563cc; }
-.st-display.look-lcdamber{ --lcd:#e3a43c; --seg:#1d1204; --ghost:#c18a2e; --ghost-op:.45; --lit:#1a1003; --lbl:#3d2808; --off:#b57f2a; --artist:#2e1e06; --vu:#221505; --vu-off:#c99238; }
-.st-display.look-duo{ --lcd:#050505; --seg:#ffd61f; --ghost:#2e2a12; --ghost-op:.3; --lit:#ffdf4a; --lbl:#4fd2ff; --off:#1e3d4a; --artist:#8fe4ff; --vu:#4cff86; --vu-off:#0f2a18; }
-
-/* the meters' last stretch, in every colour of the stereo: two yellow, one amber, two red (true in colour 1 and HD;
-   the other colours tint them like the rest of the glass) */
-.st-display g[data-channel] > g[fill="#c5f4df"][data-level="9"],
-.st-display g[data-channel] > g[fill="#c5f4df"][data-level="10"]{ fill:#ffd21f; }
-.st-display g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#ff9a1a; }
-.st-display g[data-channel] > g[fill="#c5f4df"][data-level="12"],
-.st-display g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#ff3b26; }
-/* the light glasses (SDM LCD CLARO, LCD ÁMBAR): a softer glare, and the meters' tip in dark ochre and red to read on them */
-.st-display.look-light::after{ background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 40%, rgba(0,0,0,.06)); }
-.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="9"],
-.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="10"]{ fill:#6e5a00; }
-.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="11"]{ fill:#8a3f00; }
-.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="12"],
-.st-display.look-light g[data-channel] > g[fill="#c5f4df"][data-level="13"]{ fill:#a3140c; }
 
 /* SINTONIZADOR DT-90 (7.8.7): a rack unit of its own, its faceplate drawn by the component (vendor/dt90-tuner.js);
    up to 200 px tall, giving up height like the other modules: the faceplate keeps its shape, smaller and centred.

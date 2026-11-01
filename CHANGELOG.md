@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.9.4
+
+### Added
+- **The car stereo on the phone:** the phone display has an ESTÉREO view (swipe sideways, or ◫): the DP940's front with its display live, drawn on the phone by the same component and showing exactly what the PC's stereo shows (the station, its song and quality, the CD's track, the song from the PC, the SDM colour and HDB brightness), its meters on the PC's sound. Its keys work the PC's stereo: VOL (held, it repeats), ATT, SEL, MODE (PC · RADIO · CD), DISP, BAND, SCAN, TUNE/TRACK, the memories 1–6 (held 1 s: keep the station there; on a CD, tracks 7–12), HDB, SDM, the CD slot and ⏏. The sound stays on the PC. Best lying down.
+
+### Changed
+- **The tuner shows STEREO on FM and MONO on AM, always.** MODE no longer switches them on the display (it did nothing to the sound): it now picks what the line under the dial says: the song and quality, the station (band, dial or INTERNET, quality) or the quality alone. A MONO left on from before goes back to STEREO.
+- The stereo's face and display styles moved to their own file (stereo-face.css), shared by the program and the phone.
+
 ## 7.9.3
 
 ### Added
