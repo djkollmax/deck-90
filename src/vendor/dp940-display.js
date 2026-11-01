@@ -338,7 +338,9 @@ class Deck90Display {
       this._visual[channel] += (target - this._visual[channel]) * (1 - Math.exp(-dt / Math.max(1, time)));
     }
     this._paintMeters();
-    if (this._scrollDistance > 0 && !this._motion?.matches) {
+    // Deck 90 7.9.7: a long title always scrolls, as on the real display (Windows with animations off says
+    // "reduced motion", and the title stayed cut)
+    if (this._scrollDistance > 0) {
       const elapsed = now - this._scrollStarted;
       const travel = this._scrollDistance / this.options.scrollSpeed * 1000;
       const cycle = this.options.scrollDelay * 2 + travel * 2;

@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.7 — 2026-11-01
+
+### Arreglos
+- **Los títulos largos quedaban cortados ("SHE'S THE O") en el estéreo, el sintonizador y el DC-90.** Los tres displays dejaban de desplazar el texto cuando Windows pide menos movimiento (los efectos de animación de Windows apagados). Ahora un título que no entra siempre se desplaza: espera un momento, se corre hasta el final, espera y vuelve.
+
 ## 7.9.6 — 2026-11-01
 
 ### Arreglos

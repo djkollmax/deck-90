@@ -732,7 +732,7 @@ class Deck90Tuner {
     } else if (difference !== 0) { this._needlePosition = this._needleTarget; this._paintNeedle(); }
     const distance = Math.max(0, (this._rdsWidth || 0) - 674);
     let scroll = false;
-    if (distance > 0 && this._state.powered && !reduceMotion) {
+    if (distance > 0 && this._state.powered) {   // Deck 90 7.9.7: scrolls even with Windows' animations off
       const travel = distance / 32 * 1000, delay = 1400, cycle = 2 * travel + 2 * delay;
       const phase = Math.max(0, time - this._rdsStarted) % cycle;
       let offset = 0;

@@ -16,7 +16,8 @@
  * --drawer-top,--drawer-bottom,--drawer-label. Inherited from the container.
  * Master viewBox1200x220. Physical drawer front1120px =93.3% of rack width.
  *
- * Deck 90 7.9.2: Damián's DC-90 component as delivered, unchanged; src/js/cdunit.js drives it with the PC's drive.
+ * Deck 90 7.9.2: Damián's DC-90 component; src/js/cdunit.js drives it with the PC's drive. 7.9.7: a long title
+ * scrolls even when Windows says "reduced motion" (animations off).
  */
 (function(global){
 'use strict';
@@ -425,7 +426,7 @@ class Deck90CD {
     if(this._destroyed)return;this._frame=null;const dt=this._previousTime?Math.max(0,Math.min(64,time-this._previousTime)):16;this._previousTime=time;const diff=this._drawerTarget-this._drawerPosition;
     if(diff!==0){this._drawerPosition=this._motion?.matches?this._drawerTarget:this._drawerPosition+diff*(1-Math.exp(-dt/150));if(Math.abs(this._drawerTarget-this._drawerPosition)<=.00003)this._drawerPosition=this._drawerTarget;this._paintDrawer();}
     const distance=Math.max(0,(this._titleWidth||0)-502);let scroll=false;
-    if(distance>0&&this._state.powered&&!this._motion?.matches){const travel=distance/30*1000,delay=1500,phase=Math.max(0,time-this._titleStarted)%(2*travel+2*delay);let offset=0;if(phase>delay&&phase<delay+travel)offset=(phase-delay)*.03;else if(phase>=delay+travel&&phase<2*delay+travel)offset=distance;else if(phase>=2*delay+travel)offset=distance-(phase-2*delay-travel)*.03;this._title.setAttribute('transform',`translate(${(367-offset).toFixed(3)} 43)`);scroll=true;}else this._title.setAttribute('transform','translate(367 43)');
+    if(distance>0&&this._state.powered){/* Deck 90 7.9.7: scrolls even with Windows' animations off */const travel=distance/30*1000,delay=1500,phase=Math.max(0,time-this._titleStarted)%(2*travel+2*delay);let offset=0;if(phase>delay&&phase<delay+travel)offset=(phase-delay)*.03;else if(phase>=delay+travel&&phase<2*delay+travel)offset=distance;else if(phase>=2*delay+travel)offset=distance-(phase-2*delay-travel)*.03;this._title.setAttribute('transform',`translate(${(367-offset).toFixed(3)} 43)`);scroll=true;}else this._title.setAttribute('transform','translate(367 43)');
     if(scroll||Math.abs(this._drawerTarget-this._drawerPosition)>.00003)this._schedule();
   }
 }

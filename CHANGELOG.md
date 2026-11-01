@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.7
+
+### Fixed
+- **Long titles stayed cut ("SHE'S THE O") on the car stereo, the tuner and the DC-90.** The three displays stopped scrolling when Windows asks for less motion (Windows' animation effects off), which also stopped them on the PC that has it. A title that doesn't fit always scrolls now: it waits a moment, glides to its end, waits and comes back.
+
 ## 7.9.6
 
 ### Fixed
