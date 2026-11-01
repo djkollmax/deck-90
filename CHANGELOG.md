@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.15
+
+### Changed
+- **Tuner and CD both stay on; one sounds at a time.** The CD taking the sound silences the radio with `radioStop(true)` (the tuner stays powered, dimmed `.idle`, "EN ESPERA · SUENA EL CD"); the radio sounding (POWER, memory, band, ◀ ▶) pauses the CD (`cdUnitYield` pauses instead of powering off), PLAY resumes it. The silent unit's meters stay still. Each unit goes off only with its own POWER.
+
 ## 7.9.14
 
 ### Added

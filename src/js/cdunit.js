@@ -97,6 +97,7 @@ function cdUnitSync() {
     track = i + 1; total = tr.length; elapsed = cdState.state ? cdPosition() : 0; duration = tr[i] ? tr[i].len || 0 : 0;
   }
   const r = { title: line.title, artist: line.artist, track, totalTracks: total, elapsed: Math.floor(elapsed), duration: Math.round(duration), playing, paused: !playing && paused };
+  cdUnitPanel.classList.toggle('idle', cdUnitPower && !cdPlaying() && radioPlaying());   // 7.9.15: on, the radio playing
   const key = JSON.stringify(r) + cdUnitPower;
   if (key === cdUnitShownKey) return;
   cdUnitShownKey = key;
@@ -116,20 +117,23 @@ function cdUnitFeed(now) {
   cdUnit.setLevels(cdUnitLv.L, cdUnitLv.R);
 }
 
-// the CD takes the sound: the PC's player waits, the radio goes off (whoever paused the PC hands that over)
+// the CD takes the sound: the PC's player waits, the radio goes quiet (whoever paused the PC hands that over).
+// 7.9.15: like two units of a real rack, the tuner stays on (its station on the display, dimmer), only silent.
 function cdUnitTakeSound() {
   if (typeof tunerPower !== 'undefined' && tunerPower) {
     if (tunerResumePc) { tunerResumePc = false; cdUnitResumePc = true; }
-    radioStop();
+    radioStop(true);
   }
   if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying && !cdUnitResumePc) { window.nowPlaying.cmd('pause'); cdUnitResumePc = true; }
 }
-// the radio took it: the CD stops, quietly
+// the radio took it: the CD pauses where it was and stays on (7.9.15; PLAY goes on from there)
 function cdUnitYield() {
   if (!cdUnitPower) return false;
   const had = cdUnitResumePc;
   cdUnitResumePc = false; cdUnitWants = false;
-  cdStop(); cdUnitPower = false; cdUnit && cdUnit.setPower(false); cdUnitSync();
+  if (cdFiles().length) { if (!cdAudio.paused) cdAudio.pause(); }
+  else if (cdPlaying() && window.cdrom) { window.cdrom.cmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
+  cdUnitSync();
   return had;
 }
 // start the disc that's in: its first audio track, or its first file

@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.9.15 — 2026-11-01
+
+### Cambios
+- **El sintonizador y el CD quedan prendidos los dos**, como dos equipos de un rack: suena uno por vez, pero ninguno se apaga solo.
+  - PLAY en el CD calla la radio. El sintonizador sigue mostrando la estación con el display más tenue y dice EN ESPERA · SUENA EL CD.
+  - Una memoria, una banda o POWER en la radio pausan el CD en el segundo donde estaba, y PLAY lo sigue desde ahí.
+  - Los vúmetros del que no suena quedan quietos. Cada uno se apaga solo con su POWER.
+
 ## 7.9.14 — 2026-11-01
 
 ### Nuevo

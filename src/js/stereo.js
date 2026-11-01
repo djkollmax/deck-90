@@ -196,9 +196,10 @@ async function radioTune(st, label, retry) {
   }
   toast('⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora', 3200);
 }
-function radioStop() {
+// keepOn (7.9.15): the CD took the sound; the rack's tuner stays on, showing its station, just silent
+function radioStop(keepOn) {
   radioTry++; radioScan = 0; radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); stereoText(true); radioSession(null);
-  if (typeof tunerStopped === 'function') tunerStopped();      // the rack's tuner shows it off too
+  if (!keepOn && typeof tunerStopped === 'function') tunerStopped();      // the rack's tuner shows it off too
 }
 radioAudio.addEventListener('pause', () => stereoText(true));
 radioAudio.addEventListener('playing', () => stereoText(true));

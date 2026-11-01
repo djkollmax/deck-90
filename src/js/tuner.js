@@ -81,7 +81,9 @@ function tunerLine() {
   const liveText = tunerCfg.line === 'station' ? [where, q].filter(Boolean).join(' · ')
     : tunerCfg.line === 'quality' ? kb
     : [song || (dial.f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO'), q].filter(Boolean).join(' · ');
-  const text = !tunerPower ? 'STANDBY' : live ? liveText : radioNow ? 'SINTONIZANDO…' : 'ELEGÍ UNA MEMORIA 1–6';
+  const cdHas = cdHasSound();                                   // 7.9.15: on, the CD has the sound
+  const text = !tunerPower ? 'STANDBY' : live ? liveText : cdHas ? 'EN ESPERA · SUENA EL CD'
+    : radioNow && radioAudio.getAttribute('src') ? 'SINTONIZANDO…' : st ? 'EN ESPERA · UNA MEMORIA O ▶ LA PONE' : 'ELEGÍ UNA MEMORIA 1–6';
   return { name, text };
 }
 // the dial: the station's own frequency, or one in its name ("La 100 - 99.9 FM", "Radio 10 AM 710"); none (a station
@@ -109,6 +111,7 @@ function tunerSync() {
     name: line.name, text: line.text, stereo: !am, mono: am, auto: true,   // 7.9.4: FM always STEREO, AM always MONO
     tuned: live, scan: !!radioScan, memo: !!tunerMemo, signal: live ? 5 : tunerPower && radioNow ? 2 : 0,
   };
+  tunerPanel.classList.toggle('idle', tunerPower && !live && cdHasSound());   // 7.9.15: on, the other unit playing
   const key = JSON.stringify(r) + tunerPower;
   if (key === tunerShownKey) return;
   tunerShownKey = key;
@@ -117,10 +120,14 @@ function tunerSync() {
 }
 setInterval(() => { if (tuner && tunerShown()) tunerSync(); }, 300);
 ['playing', 'pause', 'error'].forEach(ev => radioAudio.addEventListener(ev, () => { if (tuner) tunerSync(); }));
+// 7.9.15: the radio sounding pauses a CD that was playing (it stays on, PLAY goes on from where it was)
+const cdHasSound = () => typeof cdUnitPower !== 'undefined' && cdUnitPower && cdPlaying();
+radioAudio.addEventListener('playing', () => { if (tunerPower && cdHasSound() && typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true; });
 
 // every frame from the loop: the L/R bars on the sound Deck 90 hears, around the music's own loudness
 function tunerFeed(now) {
   if (!tuner) return;
+  if (!radioPlaying()) { tunerLv.L = tunerLv.R = 0; tuner.setLevels(0, 0); return; }   // 7.9.15: on but silent, no bars (the CD's sound isn't the radio's)
   const dt = tunerAt ? Math.min(200, now - tunerAt) : 16; tunerAt = now;
   const L = vu.L.dbfs, R = vu.R.dbfs, loud = Math.max(L, R);
   if (loud > -60) tunerAvg += (loud - tunerAvg) * (1 - Math.exp(-dt / 2500));
@@ -136,7 +143,7 @@ function tunerOn(on, keyTunes) {
   if (on === tunerPower) return;
   tunerPower = on; tunerMemo = 0;
   if (on) {
-    if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true;   // the CD stops; the PC's player was waiting for it
+    if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true;   // the CD pauses; the PC's player was waiting for it
     if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
     if (!keyTunes && !radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
   } else {
