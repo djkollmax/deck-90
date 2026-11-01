@@ -32,6 +32,7 @@ function cdUnitBuild() {
   cdUnitTheme();
   cdUnit.onKey(cdUnitKey);
   cdUnitTimeKey();
+  cdUnit.setModes(cdModes);
   cdUnit.setPower(false);
   cdUnitShownKey = ''; cdUnitSync();
 }
@@ -167,6 +168,14 @@ function cdUnitKey(k, { hold } = {}) {
   if (!cdUnitPower) {
     if (k !== 'eject') { cdUnitOn(true); return; }              // any key wakes it and plays the disc that's in
     cdUnitPower = true; cdUnit.setPower(true);                  // OPEN / CLOSE wakes it with the tray open
+  }
+  if (k === 'repeat' || k === 'shuffle') {                     // 7.9.14: the play modes
+    if (k === 'repeat') cdModes.repeat = { off: 'all', all: 'one', one: 'off' }[cdModes.repeat];
+    else { cdModes.shuffle = !cdModes.shuffle; if (cdModes.shuffle) cdShuffleStart(); }
+    cdModesSave(); cdUnit.setModes(cdModes);
+    toast(k === 'repeat' ? 'REPEAT · <span>' + { off: 'apagado', all: 'todo el disco', one: 'este tema' }[cdModes.repeat] + '</span>'
+      : 'SHUFFLE · <span>' + (cdModes.shuffle ? 'al azar' : 'en orden') + '</span>', 1400);
+    return;
   }
   if (k === 'eject') {
     const open = cdUnit.getState().drawerOpen;

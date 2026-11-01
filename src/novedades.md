@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.9.14 — 2026-11-01
+
+### Nuevo
+- **REPEAT y SHUFFLE en el DC-90**, dos teclas nuevas al lado de ▶▶| (OPEN / CLOSE queda más angosta):
+  - REPEAT pasa por: todo el disco → este tema → apagado. En el display se prende REPEAT, y REPEAT 1 para un solo tema.
+  - SHUFFLE toca el disco en orden al azar, cada tema una vez; con REPEAT vuelve a sortear, sin REPEAT termina. Con SHUFFLE, ▶▶| va al siguiente sorteado y |◀◀ vuelve por donde vino.
+  - Cuando el tema que sigue es el mismo que tocaría el disco solo, no hay salto ni corte. Andan también con un disco de MP3 y quedan recordados.
+
 ## 7.9.13 — 2026-11-01
 
 ### Cambios

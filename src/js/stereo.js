@@ -254,6 +254,16 @@ function cdPlayFile(i) {
 // the one before, later to the start of the same one. The jump shows at once (quick presses add up), before the
 // drive confirms it.
 function cdTrack(d) {
+  if (cdModes.shuffle) {                                       // SHUFFLE: ▶▶ the next drawn, |◀◀ back the way it came
+    const files = cdFiles().length, cur = cdCurrent();
+    let t;
+    if (d > 0) t = cdAfter(cur, true);
+    else if (cdPosition() > 3 || !cdShuf.hist.length) t = cur;
+    else { t = cdShuf.hist.pop(); cdShuf.order.unshift(cur); }
+    if (t === null || t === undefined) return;
+    if (files) cdPlayFile(t); else if (window.cdrom) cdGo(t);
+    return;
+  }
   if (cdFiles().length) { cdPlayFile(d < 0 && cdAudio.currentTime > 3 ? cdFile : cdFile + d); return; }
   const tr = cdAudioTracks(); if (!tr.length || !window.cdrom) return;
   const cur = cdState.track || tr[0].n;
@@ -277,6 +287,49 @@ function cdNamesAsk(info) {
     stereoText(true); if (typeof cdUnitSync === 'function') cdUnitSync();
   }).catch(() => {});
 }
+// REPEAT and SHUFFLE (7.9.14), from the DC-90's keys: repeat 'off' | 'all' (the disc over again) | 'one' (the same
+// song), shuffle draws the disc in a random order, each song once (then again with REPEAT, or the end). A drive
+// plays a disc straight through by itself, so near the end of a song the program jumps where these modes say,
+// only when that isn't the song that comes next anyway (no gap then).
+const cdModes = (() => { try { const m = JSON.parse(localStorage.getItem('deck90-cdmodes')) || {};
+  return { repeat: ['all', 'one'].includes(m.repeat) ? m.repeat : 'off', shuffle: m.shuffle === true }; } catch (_) { return { repeat: 'off', shuffle: false }; } })();
+let cdShuf = { order: [], hist: [] }, cdEndDone = '';
+function cdModesSave() { try { localStorage.setItem('deck90-cdmodes', JSON.stringify(cdModes)); } catch (_) {} }
+const cdList = () => cdFiles().length ? cdFiles().map((_, i) => i) : cdAudioTracks().map(t => t.n);
+const cdCurrent = () => cdFiles().length ? cdFile : (cdState.track || (cdAudioTracks()[0] || {}).n);
+function cdShuffleDeal(cur) {
+  const L = cdList().filter(n => n !== cur);
+  for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
+  cdShuf.order = L;
+}
+function cdShuffleStart() { cdShuf = { order: [], hist: [] }; cdShuffleDeal(cdCurrent()); }
+// the song after this one: by hand (▶▶) or at its end; null = the disc ends
+function cdAfter(cur, byHand) {
+  const L = cdList(); if (!L.length) return null;
+  if (!byHand && cdModes.repeat === 'one') return cur;
+  if (cdModes.shuffle) {
+    if (!cdShuf.order.length) { if (!byHand && cdModes.repeat === 'off') return null; cdShuffleDeal(cur); if (!cdShuf.order.length) return cur; }
+    cdShuf.hist.push(cur); return cdShuf.order.shift();
+  }
+  const i = L.indexOf(cur);
+  if (i >= 0 && i < L.length - 1) return L[i + 1];
+  return byHand || cdModes.repeat !== 'off' ? L[0] : null;
+}
+// the drive: near the end of each song, go where the modes say if that isn't where the disc goes by itself
+setInterval(() => {
+  if (cdFiles().length || cdState.state !== 'playing' || cdJump || !window.cdrom) return;
+  const tr = cdAudioTracks(), i = tr.findIndex(t => t.n === cdState.track); if (i < 0 || !tr[i].len) return;
+  const key = String(cdState.track), pos = cdPosition();      // once per play of a song (it starts over: again)
+  if (pos < tr[i].len - 2) { if (cdEndDone === key) cdEndDone = ''; return; }
+  if (cdEndDone === key || pos < tr[i].len - 0.35) return;
+  cdEndDone = key;
+  const natural = i < tr.length - 1 ? tr[i + 1].n : null;
+  if (cdModes.repeat === 'off' && !cdModes.shuffle) return;
+  const want = cdAfter(cdState.track, false);
+  if (want === natural) return;
+  if (want === null) { window.cdrom.cmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; stereoText(true); return; }
+  cdGo(want);
+}, 200);
 const cdSongName = n => cdNames && cdNames.tracks && cdNames.tracks[n] ? cdNames.tracks[n] : null;
 let cdJump = null;                                             // the track asked for, until the drive is there
 // A jump shows at once; the drive gets it at once too, unless it's one of quick presses in a row (|◀◀ ▶▶| ▶▶|):
@@ -308,6 +361,8 @@ if (window.cdrom) window.cdrom.on(m => {
   if ('drive' in m) {                                          // what's in the drive: the CD starts, as in a car
     cdInfo = m;
     cdNamesAsk(m);
+    cdShuf = { order: [], hist: [] };                          // a new disc: a new draw
+    if (cdModes.shuffle) cdShuffleDeal(cdAudioTracks().length ? cdAudioTracks()[0].n : 0);
     if (stereoCfg.mode === 'cd' && stereoMode) {
       if (cdAudioTracks().length) window.cdrom.cmd('cd-play ' + cdAudioTracks()[0].n);
       else if (cdFiles().length) cdPlayFile(0);
@@ -326,7 +381,7 @@ if (window.cdrom) window.cdrom.on(m => {
     stereoText(true);
   }
 });
-cdAudio.addEventListener('ended', () => cdPlayFile(cdFile + 1));
+cdAudio.addEventListener('ended', () => { const t = cdAfter(cdFile, false); if (t === null) { cdAudio.currentTime = 0; stereoText(true); } else cdPlayFile(t); });
 ['play', 'pause'].forEach(ev => cdAudio.addEventListener(ev, () => stereoText(true)));
 
 // ── the display ──

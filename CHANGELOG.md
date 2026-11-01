@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.14
+
+### Added
+- **REPEAT (all / one / off) and SHUFFLE on the DC-90**: two keys beside NEXT, lamps under the meters (vendor `setModes`). The drive plays a disc straight through by itself, so near each song's end (len − 0.35 s) the program jumps only when the modes want a song other than the natural next one; shuffle deals each song once, redeals with REPEAT, stops without. NEXT/PREV follow the draw. MP3 discs too. Saved in `deck90-cdmodes`.
+
 ## 7.9.13
 
 ### Changed

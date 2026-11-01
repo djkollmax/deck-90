@@ -16,7 +16,7 @@
  * --drawer-top,--drawer-bottom,--drawer-label. Inherited from the container.
  * Master viewBox1200x280. VFD1130x104; drawer front1120px=93.3% of rack width.
  *
- * Deck 90 7.9.10: Damián's DC-90 revision 3 (the big display); src/js/cdunit.js drives it with the PC's drive.
+ * Deck 90 7.9.14: REPEAT and SHUFFLE keys (OPEN / CLOSE narrower) and their lamps under the meters, setModes(). 7.9.13: meters end yellow/red; setTimeMode(remain). 7.9.10: Damián's DC-90 revision 3 (the big display); src/js/cdunit.js drives it with the PC's drive.
  * One change: a long title scrolls even when Windows says "reduced motion" (animations off).
  */
 (function(global){
@@ -171,7 +171,9 @@ const LAYOUT = Object.freeze({
     pause:{x:471,y:233,width:140,height:29},
     stop:{x:624,y:233,width:140,height:29},
     next:{x:777,y:233,width:140,height:29},
-    eject:{x:965,y:233,width:190,height:29},
+    repeat:{x:930,y:233,width:62,height:29},   // Deck 90 7.9.14: REPEAT and SHUFFLE, OPEN / CLOSE narrower
+    shuffle:{x:1000,y:233,width:62,height:29},
+    eject:{x:1072,y:233,width:83,height:29},
   },
 });
 const css=(name,fallback)=>`var(--${name},var(--_d90-${name},${fallback}))`;
@@ -362,6 +364,9 @@ class Deck90CD {
   }
   /** Deck 90 7.9.13: 'remain' counts down to the end of the track (a minus lights left of the time), 'elapsed' counts up. */
   setTimeMode(mode){this._assertAlive();this._remain=mode==='remain';this._cache.time=null;this._renderTrack();return this;}
+  /** Deck 90 7.9.14: the play modes for the lamps and keys: repeat 'off' | 'all' | 'one', shuffle true/false. */
+  setModes({repeat='off',shuffle=false}={}){this._assertAlive();this._modes={repeat:['all','one'].includes(repeat)?repeat:'off',shuffle:Boolean(shuffle)};this._paintModes();this._updateLeds();return this;}
+  _paintModes(){const m=this._modes||{repeat:'off',shuffle:false};if(!this._modeLamps)return;const lit={repeat:m.repeat!=='off',one:m.repeat==='one',shuffle:m.shuffle};for(const[key,group]of Object.entries(this._modeLamps))for(const dot of group.children)dot.setAttribute('fill',lit[key]?LIT:DIM);}
   setLevels(left,right){this._assertAlive();this._state.levels={left:clamp(left),right:clamp(right)};this._paintLevels();return this;}
   setDrawer(open){
     this._assertAlive();this._state.drawerOpen=Boolean(open);this._drawerTarget=open?1:0;
@@ -404,16 +409,17 @@ class Deck90CD {
     const artistClip=node('g',{'clip-path':`url(#${this.prefix}-artist-clip)`});this._artist=node('g',{'data-role':'artist'});artistClip.append(this._artist);this._display.append(artistClip);
     this._display.append(node('rect',{x:391,y:126,width:503,height:2,fill:DIM}));this._progress=node('rect',{x:391,y:126,width:0,height:2,fill:LIT,'data-role':'progress'});this._display.append(this._progress);
     this._indicators={};for(const[word,x]of [['PLAY',925],['PAUSE',996],['DISC',1077]]){const group=this._dots(word,x,55,1.5);this._indicators[word.toLowerCase()]=group;this._display.append(group);}
+    this._modeLamps={};for(const[key,word,x]of [['repeat','REPEAT',925],['one','1',973],['shuffle','SHUFFLE',996]]){const group=this._dots(word,x,121,1.05);this._modeLamps[key]=group;this._display.append(group);}   // Deck 90 7.9.14
     this._openStatus=this._dots('OPEN',925,55,1.5);this._openStatus.setAttribute('opacity','0');this._display.append(this._openStatus);
     this._levelNodes={};for(const[channel,letter,y]of [['left','L',86],['right','R',108]]){const g=node('g',{'data-role':channel==='left'?'level-l':'level-r'});g.append(this._dots(letter,925,y-1,1.1));this._levelNodes[channel]=[];for(let i=0;i<24;i++){const segment=node('rect',{x:943+i*8,y,width:6,height:7,rx:.6,fill:METER_DIM(i),'data-index':i});g.append(segment);this._levelNodes[channel].push(segment);}this._display.append(g);}
   }
   _buildControls(){
-    this._buttons={};const labels={power:'POWER',prev:'PREVIOUS',play:'PLAY',pause:'PAUSE',stop:'STOP',next:'NEXT',eject:'OPEN / CLOSE'};
+    this._buttons={};const labels={power:'POWER',prev:'PREVIOUS',play:'PLAY',pause:'PAUSE',stop:'STOP',next:'NEXT',eject:'OPEN / CLOSE',repeat:'REPEAT: todo el disco, un tema o apagado',shuffle:'SHUFFLE: orden al azar'};
     for(const[key,box]of Object.entries(LAYOUT.buttons)){
       const group=node('g',{'data-key':key,role:'button',tabindex:0,'aria-label':labels[key],'aria-pressed':'false'});group.style.cursor='pointer';group.style.outline='none';
       const face=node('rect',{x:box.x,y:box.y,width:box.width,height:box.height,rx:2.5,fill:`url(#${this.prefix}-key)`,stroke:'var(--edge,var(--_d90-edge))','stroke-width':.9});
       group.append(node('rect',{x:box.x,y:box.y+1.8,width:box.width,height:box.height,rx:2.5,fill:'#080e0a',opacity:.75}),face,node('path',{d:`M${box.x+3} ${box.y+1.3}H${box.x+box.width-3}`,stroke:'#fff','stroke-opacity':.35,'stroke-width':.7}));
-      if(key==='power'){const text=node('text',{x:box.x+box.width/2,y:box.y+box.height/2+3,'text-anchor':'middle','font-family':'Arial,Helvetica,sans-serif','font-size':10,'font-weight':700,'letter-spacing':.7,fill:'var(--key-label,var(--_d90-key-label,#d2d7d5))'});text.textContent='POWER';group.append(text);}
+      if(key==='power'||key==='repeat'||key==='shuffle'){const text=node('text',{x:box.x+box.width/2,y:box.y+box.height/2+3,'text-anchor':'middle','font-family':'Arial,Helvetica,sans-serif','font-size':key==='power'?10:8.4,'font-weight':700,'letter-spacing':.7,fill:'var(--key-label,var(--_d90-key-label,#d2d7d5))'});text.textContent=key.toUpperCase();group.append(text);}
       else group.append(this._icon(key,box.x+box.width/2,box.y+box.height/2));
       const led=node('rect',{x:box.x+7,y:box.y+box.height-3.6,width:box.width-14,height:1.2,fill:DIM,opacity:.25});group.append(led);
       this._buttons[key]={group,face,led,icon:group.querySelector('[data-role="transport-icon"]'),pressed:false,hover:false,focused:false};this.svg.append(group);
@@ -448,7 +454,7 @@ class Deck90CD {
     this._openStatus.setAttribute('opacity',open?'1':'0');this._progress.setAttribute('width',String(t.duration>0?503*clamp(t.elapsed/t.duration):0));this._cache.open=open;
     this.svg.setAttribute('aria-label',`DECK 90 DC-90. ${open?'Bandeja abierta.':`Pista ${t.track}. ${t.title}. ${t.artist}. ${t.playing?'Reproduciendo':t.paused?'Pausa':'Detenido'}.`}`);this._updateLeds();
   }
-  _updateLeds(){const t=this._state.track;for(const[key,b]of Object.entries(this._buttons)){const active=this._state.powered&&(key==='power'||key==='play'&&t.playing||key==='pause'&&t.paused||key==='eject'&&this._state.drawerOpen);b.led.setAttribute('fill',active?LIT:DIM);b.led.setAttribute('opacity',active?'.9':'.22');b.group.setAttribute('aria-pressed',String(active));if(b.icon)b.icon.setAttribute('fill',active?LIT:'var(--key-label,var(--_d90-key-label,#d2d7d5))');}}
+  _updateLeds(){const t=this._state.track;for(const[key,b]of Object.entries(this._buttons)){const active=this._state.powered&&(key==='power'||key==='play'&&t.playing||key==='pause'&&t.paused||key==='eject'&&this._state.drawerOpen||key==='repeat'&&this._modes&&this._modes.repeat!=='off'||key==='shuffle'&&this._modes&&this._modes.shuffle);b.led.setAttribute('fill',active?LIT:DIM);b.led.setAttribute('opacity',active?'.9':'.22');b.group.setAttribute('aria-pressed',String(active));if(b.icon)b.icon.setAttribute('fill',active?LIT:'var(--key-label,var(--_d90-key-label,#d2d7d5))');}}
   _paintLevels(){for(const channel of ['left','right']){const count=this._state.powered&&!this._state.drawerOpen&&this._state.track.playing?Math.round(this._state.levels[channel]*24):0;if(count===this._meterCounts[channel])continue;for(let i=0;i<24;i++)this._levelNodes[channel][i].setAttribute('fill',i<count?METER_LIT(i):METER_DIM(i));this._meterCounts[channel]=count;}}
   _paintDrawer(){const travel=LAYOUT.drawer.openTravel*this._drawerPosition;this._drawer.setAttribute('transform',`translate(0 ${travel===0?'0':travel.toFixed(3)})`);this._opening.setAttribute('height',String(Math.max(0,travel+1)));}
   _schedule(){if(!this._destroyed&&this._frame===null)this._frame=requestAnimationFrame(time=>this._tick(time));}
