@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.10
+
+### Changed
+- **The DC-90 with the big display** (Damián's revision 3): the display spans the whole front (1130 × 104, twice as tall), the time and the song about twice as big, the artist, lamps and meters larger; POWER moves down beside the transport, the drawer as wide as before. The unit is taller (1200 × 280) and its panel grows to 250 px. A long title still scrolls with Windows' animations off; the year after the album shows only when it fits.
+
 ## 7.9.9
 
 ### Fixed

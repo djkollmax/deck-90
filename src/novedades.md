@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.10 — 2026-11-01
+
+### Cambios
+- **El DC-90 con el display grande** (la revisión 3 de Damián): el display ocupa todo el frente (1130 × 104, el doble de alto), el tiempo y el tema casi el doble de grandes, y el artista, las luces y los vúmetros más grandes; POWER baja junto al transporte y el cajón queda igual de ancho. La unidad es más alta (1200 × 280) y su panel crece hasta 250 px. Un título largo se sigue desplazando con las animaciones de Windows apagadas; el año después del álbum aparece solo si entra.
+
 ## 7.9.9 — 2026-11-01
 
 ### Arreglos
