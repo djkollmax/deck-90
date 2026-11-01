@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.11
+
+### Changed
+- **The realistic DT-90** (Damián's revision, finished like the DC-90): the display spans the whole front (1130 × 104), frequency and text much larger, the dial below end to end, the knob at the side. The bands are keys of the tuner itself beside POWER (FM1 FM2 FM3 FM4 AM, ids band-fm1..band-am, lit for the one playing) instead of the overlay keys and the BAND key; memories 1–6 narrower beside them. Re-applied patches: internet-only stations (dashes, no needle, the name big over the digits), M-, FM4, MODE without lamp, RDS scroll with animations off. Tuner and CD panels both up to 250 px.
+
 ## 7.9.10
 
 ### Changed

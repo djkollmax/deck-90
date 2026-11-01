@@ -1,5 +1,5 @@
 /**
- * DECK 90 · DT-90 SYNTHESIZER TUNER — standalone, dependency-free SVG component.
+ * DECK 90 · DT-90 SYNTHESIZER TUNER — material revision 2, matching the DC-90.
  *
  * API:
  *   const tuner = new Deck90Tuner(container, { theme: 'silver' | 'black' });
@@ -8,7 +8,7 @@
  *   tuner.setLevels(left, right); // normalized 0..1; reuses existing nodes
  *   const off = tuner.onKey((id, { hold }) => { ... });
  *   tuner.destroy();
- * Key IDs: power, band, tune-down, tune-up, scan, memo, mode, disp, m1..m6.
+ * Key IDs: power, band-fm1..band-am (Deck 90), tune-down, tune-up, scan, memo, mode, disp, m1..m6.
  * Short press emits on release; hold emits once at 1000 ms with no extra short.
  * Wheel on tuning knob: upward -> tune-up; downward -> tune-down.
  * Controls emit intents; the host applies the radio/power changes.
@@ -16,13 +16,13 @@
  * FM: 87.50..108.00 MHz in .05 steps. AM: 530..1710 kHz in 10 steps.
  * CSS colors inherited from container: --vfd, --vfd-dim, --needle, --face,
  * --face-top, --face-bottom, --label, --label-dim, --edge, --key-top,
- * --key-bottom, --key-hover. No external images, fonts, imports or network.
+ * --key-face, --key-bottom, --key-label, --key-hover. ViewBox1200x280.
+ * No external images, fonts, imports or network.
  *
- * Deck 90 7.8.7, one small addition marked "internet only": setRadio({ frequency: null }) is a station heard
- * only over the internet (no dial position): the digits show dashes and the needle stays where it was; and
- * preset 0 is a station tuned outside the memories (M-). 7.9.4: MODE's lamp is off (in Deck 90 it picks the line). 7.9.0: setRadio({ label }) with frequency null writes the
- * label in big dot-matrix letters where the digits go (an internet station's name, "80S80S"), the digits and the
- * MHZ hidden, and no needle on the dial (it would point at a frequency the station doesn't have).
+ * Deck 90 7.9.11 (realistic revision), patches marked in the code: setRadio({ frequency: null }) is an
+ * internet-only station (digits show dashes, the needle hides) and setRadio({ label }) then writes its name
+ * big where the digits go; preset 0 shows M-; band FM4; MODE has no lamp (it picks the text line in Deck 90);
+ * the RDS line scrolls even with Windows' animations off.
  */
 (function (global) {
 'use strict';
@@ -161,156 +161,292 @@ function validateGlyphs() {
   return true;
 }
 
-/** Static, original DECK 90 rack faceplate. All visible VFD content and controls
- * are added by the runtime. Every definition is scoped to the supplied prefix. */
-const LAYOUT = Object.freeze({
-  width: 1200, height: 220,
-  display: { x: 160, y: 38, width: 720, height: 105 },
-  displayContent: { x: 180, y: 48, width: 680, height: 80 },
-  dial: { x: 165, y: 150, width: 710, height: 39 },
-  needleTrack: { x1: 194, x2: 843, y1: 153, y2: 186 },
-  knob: { cx: 992, cy: 91, r: 47 },
-  buttons: {
-    power: { x: 35, y: 74, width: 85, height: 35 },
-    band: { x: 35, y: 119, width: 85, height: 26 },
-    'tune-down': { x: 902, y: 97, width: 32, height: 25 },
-    'tune-up': { x: 1070, y: 97, width: 32, height: 25 },
-    scan: { x: 904, y: 158, width: 58, height: 24 },
-    memo: { x: 966, y: 158, width: 58, height: 24 },
-    mode: { x: 1028, y: 158, width: 58, height: 24 },
-    disp: { x: 1090, y: 158, width: 58, height: 24 },
-    m1: { x: 180, y: 192, width: 102, height: 20 },
-    m2: { x: 294, y: 192, width: 102, height: 20 },
-    m3: { x: 408, y: 192, width: 102, height: 20 },
-    m4: { x: 522, y: 192, width: 102, height: 20 },
-    m5: { x: 636, y: 192, width: 102, height: 20 },
-    m6: { x: 750, y: 192, width: 102, height: 20 },
+/** DT-90 material revision matching the DC-90 rack. Native SVG, no external assets. */
+// Deck 90 7.9.11: the BAND key is five direct band keys (FM1 FM2 FM3 FM4 AM, ids band-fm1..band-am); memories narrower
+const LAYOUT=Object.freeze({
+  "width": 1200,
+  "height": 280,
+  "display": {
+    "x": 35,
+    "y": 36,
+    "width": 1130,
+    "height": 104
   },
+  "displayContent": {
+    "x": 51,
+    "y": 46,
+    "width": 1098,
+    "height": 84
+  },
+  "dial": {
+    "x": 35,
+    "y": 153,
+    "width": 850,
+    "height": 58
+  },
+  "needleTrack": {
+    "x1": 65,
+    "x2": 854,
+    "y1": 158,
+    "y2": 205
+  },
+  "knob": {
+    "cx": 1045,
+    "cy": 184,
+    "r": 40
+  },
+  "powerLed": {
+    "x": 125,
+    "y": 248,
+    "r": 2.2
+  },
+  "buttons": {
+    "power": {
+      "x": 35,
+      "y": 233,
+      "width": 80,
+      "height": 29
+    },
+    "band-fm1": {
+      "x": 134,
+      "y": 235,
+      "width": 40,
+      "height": 26
+    },
+    "band-fm2": {
+      "x": 178,
+      "y": 235,
+      "width": 40,
+      "height": 26
+    },
+    "band-fm3": {
+      "x": 222,
+      "y": 235,
+      "width": 40,
+      "height": 26
+    },
+    "band-fm4": {
+      "x": 266,
+      "y": 235,
+      "width": 40,
+      "height": 26
+    },
+    "band-am": {
+      "x": 310,
+      "y": 235,
+      "width": 40,
+      "height": 26
+    },
+    "tune-down": {
+      "x": 925,
+      "y": 174,
+      "width": 30,
+      "height": 28
+    },
+    "tune-up": {
+      "x": 1132,
+      "y": 174,
+      "width": 30,
+      "height": 28
+    },
+    "scan": {
+      "x": 900,
+      "y": 235,
+      "width": 59,
+      "height": 26
+    },
+    "memo": {
+      "x": 967,
+      "y": 235,
+      "width": 59,
+      "height": 26
+    },
+    "mode": {
+      "x": 1034,
+      "y": 235,
+      "width": 59,
+      "height": 26
+    },
+    "disp": {
+      "x": 1101,
+      "y": 235,
+      "width": 59,
+      "height": 26
+    },
+    "m1": {
+      "x": 362.0,
+      "y": 235,
+      "width": 76,
+      "height": 26
+    },
+    "m2": {
+      "x": 448.4,
+      "y": 235,
+      "width": 76,
+      "height": 26
+    },
+    "m3": {
+      "x": 534.8,
+      "y": 235,
+      "width": 76,
+      "height": 26
+    },
+    "m4": {
+      "x": 621.2,
+      "y": 235,
+      "width": 76,
+      "height": 26
+    },
+    "m5": {
+      "x": 707.6,
+      "y": 235,
+      "width": 76,
+      "height": 26
+    },
+    "m6": {
+      "x": 794.0,
+      "y": 235,
+      "width": 76,
+      "height": 26
+    }
+  }
 });
+const css=(name,fallback)=>`var(--${name},var(--_d90-${name},${fallback}))`;
+const safePrefix=prefix=>{if(!/^[A-Za-z_][\w.-]*$/.test(prefix))throw new TypeError('A safe unique SVG id prefix is required.');return prefix;};
 
-const css = (name, fallback) => `var(--${name},var(--_d90-${name},${fallback}))`;
-const n = value => Number(value.toFixed(3));
-const fmX = frequency => 194 + (frequency - 87.5) / 20.5 * 649;
-const amX = frequency => 194 + (frequency - 530) / 1180 * 649;
-
-function printedDial() {
-  const lines = [];
-  // Both printed scales use the same left/right travel limits as the pointer.
-  for (let i = 0; i <= 41; i++) {
-    const x = fmX(87.5 + i * .5);
-    const major = i % 4 === 1 || i === 0 || i === 41;
-    lines.push(`<path d="M${n(x)} 163.5v${major ? 5 : 2.7}"/>`);
+// Fixed, very low-contrast strokes reproduce the horizontal draw of fine metal.
+// The long tile and irregular pitches avoid the visible four-pixel grid of v1.
+function grainMarkup(label){
+  let seed=904031,paths='';
+  const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  for(let i=0;i<34;i++){
+    const y=(.17+i*.535+random()*.17).toFixed(3),x=(random()*255).toFixed(2),length=(120+random()*237).toFixed(2);
+    const opacity=(.035+random()*.055).toFixed(3);
+    paths+=`<path d="M${x} ${y}h${length}" stroke="${label}" stroke-width=".16" opacity="${opacity}"/>`;
+    paths+=`<path d="M${(Number(x)+14.7).toFixed(2)} ${(Number(y)+.23).toFixed(3)}h${(Number(length)*.61).toFixed(2)}" stroke="#fff" stroke-width=".14" opacity="${(.035+random()*.06).toFixed(3)}"/>`;
   }
-  for (let i = 0; i <= 118; i++) {
-    const frequency = 530 + i * 10;
-    const x = amX(frequency);
-    const major = frequency % 100 === 0 || i === 0 || i === 118;
-    lines.push(`<path d="M${n(x)} 176.5v${major ? 5 : 2.6}"/>`);
-  }
-  const fm = [87.5, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108];
-  const am = [530, 600, 800, 1000, 1200, 1400, 1600, 1710];
-  return `<g fill="none" stroke="#8B978F" stroke-width=".6" opacity=".9">${lines.join('')}</g>
-  <g fill="#C1CAC0" font-family="Arial,Helvetica,sans-serif" font-size="7.4" text-anchor="middle" font-weight="400">
-  ${fm.map(value => `<text x="${n(fmX(value))}" y="160.9">${value}</text>`).join('')}
-  ${am.map(value => `<text x="${n(amX(value))}" y="185.2">${value}</text>`).join('')}
-  </g>
-  <g fill="#A7B4AA" font-family="Arial,Helvetica,sans-serif" font-size="7.1" font-weight="700">
-  <text x="174" y="160.7">FM</text><text x="174" y="184.7">AM</text>
-  </g>
-  <path d="M193 172H844" stroke="#51635A" stroke-width=".45"/>
-  <path d="M175 151.3H865" stroke="#000" stroke-opacity=".8" stroke-width="1.4"/>`;
+  return paths;
 }
 
-function buildFaceplate(prefix) {
-  if (!/^[A-Za-z_][\w.-]*$/.test(prefix)) throw new TypeError('A safe, unique SVG id prefix is required.');
-  const p = prefix;
-  const edge = css('edge', '#7B7E7C');
-  const label = css('label', '#303532');
-  const dim = css('label-dim', '#5B625D');
-  const faceTop = 'var(--face-top,var(--face,var(--_d90-face-top,#E7E7E2)))';
-  const faceBottom = 'var(--face-bottom,var(--face,var(--_d90-face-bottom,#A9ACA7)))';
-  let knobTicks = '';
-  for (let i = 0; i < 40; i++) {
-    const angle = i * Math.PI / 20;
-    const x1 = 992 + Math.sin(angle) * 50.8, y1 = 91 - Math.cos(angle) * 50.8;
-    const x2 = 992 + Math.sin(angle) * 53.1, y2 = 91 - Math.cos(angle) * 53.1;
-    knobTicks += `<path d="M${n(x1)} ${n(y1)}L${n(x2)} ${n(y2)}"/>`;
-  }
+function n(value){return Number(value.toFixed(3));}
+
+function fmX(frequency){return 65+(frequency-87.5)/20.5*789;}
+
+function amX(frequency){return 65+(frequency-530)/1180*789;}
+
+function printedDial(){
+  let ticks='';
+  for(let i=0;i<=41;i++){const value=87.5+i*.5,x=fmX(value),major=value%2===0||i===0||i===41;ticks+=`<path d="M${n(x)} 173v${major?6:3.2}"/>`;}
+  for(let i=0;i<=118;i++){const value=530+i*10,x=amX(value),major=value%100===0||i===0||i===118;ticks+=`<path d="M${n(x)} 188v${major?6:3.2}"/>`;}
+  const fm=[87.5,90,92,94,96,98,100,102,104,106,108],am=[530,600,800,1000,1200,1400,1600,1710];
+  return `<g fill="none" stroke="var(--dial-mark,#879c8e)" stroke-width=".6" opacity=".88">${ticks}</g>
+  <g fill="var(--dial-label,#b9c8bc)" font-family="Arial,Helvetica,sans-serif" font-size="8" text-anchor="middle">${fm.map(v=>`<text x="${n(fmX(v))}" y="168.4">${v}</text>`).join('')}${am.map(v=>`<text x="${n(amX(v))}" y="203.3">${v}</text>`).join('')}</g>
+  <g fill="var(--dial-label,#a4b6a9)" font-family="Arial,Helvetica,sans-serif" font-size="7.3" font-weight="700"><text x="43.5" y="168.4">FM</text><text x="43.5" y="203.3">AM</text></g>
+  <path d="M64 183.7H855" stroke="#52685a" stroke-width=".5" opacity=".72"/><path d="M65 184.6H854" stroke="#020805" stroke-width=".6" opacity=".8"/>`;
+}
+
+function tunerDefinitions(p){return `<linearGradient id="${p}-dial-glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#030806"/><stop offset=".1" stop-color="#0e1913"/><stop offset=".65" stop-color="#08140d"/><stop offset="1" stop-color="#030a06"/></linearGradient>
+  <linearGradient id="${p}-knob-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d5d9d2"/><stop offset=".14" stop-color="#a8b0a7"/><stop offset=".31" stop-color="#e6e8df"/><stop offset=".52" stop-color="#858e85"/><stop offset=".73" stop-color="#c8cfc4"/><stop offset="1" stop-color="#707c70"/></linearGradient>
+  <radialGradient id="${p}-knob-center" cx="46%" cy="41%" r="62%"><stop offset="0" stop-color="#e3e6db" stop-opacity=".14"/><stop offset=".70" stop-color="#dfe5d9" stop-opacity=".02"/><stop offset="1" stop-color="#0d1a10" stop-opacity=".19"/></radialGradient>
+  <linearGradient id="${p}-knob-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6ebdf"/><stop offset=".10" stop-color="#7e8c7d"/><stop offset=".48" stop-color="#202d22"/><stop offset=".92" stop-color="#08120b"/><stop offset="1" stop-color="#b1bfae"/></linearGradient>
+  <clipPath id="${p}-static-dial-clip"><rect x="39.5" y="157" width="841" height="50" rx="2.2"/></clipPath>`;}
+
+function tunerHardware(p,dim,edge){
+  let ticks='';for(let i=0;i<48;i++){const a=i*Math.PI/24;ticks+=`<path d="M${n(1045+Math.sin(a)*42)} ${n(184-Math.cos(a)*42)}L${n(1045+Math.sin(a)*43)} ${n(184-Math.cos(a)*43)}"/>`;}
+  return `<rect x="34" y="153.2" width="852" height="59.5" rx="3.7" fill="#000" opacity=".6"/>
+  <rect x="35" y="153" width="850" height="58" rx="3.2" fill="url(#${p}-window-bevel)" stroke="${edge}" stroke-width=".75" data-role="dial-window"/>
+  <rect x="38.5" y="156" width="843" height="52" rx="2.3" fill="#000302"/><rect x="39.5" y="157" width="841" height="50" rx="2.2" fill="url(#${p}-dial-glass)"/>
+  <g clip-path="url(#${p}-static-dial-clip)">${printedDial()}</g>
+  <path d="M41.5 157.2H879" stroke="#d9eee2" stroke-opacity=".13" stroke-width=".5"/><path d="M41.5 207.3H879" stroke="#9fb7a6" stroke-opacity=".2" stroke-width=".5"/>
+  <circle cx="1045" cy="185.3" r="41.8" fill="#000" opacity=".38"/><g fill="none" stroke="${dim}" stroke-width=".65" opacity=".72">${ticks}</g>
+  <circle cx="1045" cy="184" r="41.3" fill="#111b14" stroke="#040b07" stroke-width=".7"/><circle cx="1045" cy="184" r="40.2" fill="url(#${p}-knob-rim)"/>
+  <circle cx="1045" cy="184" r="38.6" fill="url(#${p}-knob-metal)" stroke="#4b574b" stroke-width=".5"/><circle cx="1045" cy="184" r="37.5" fill="url(#${p}-knob-center)"/>
+  <circle cx="1045" cy="184" r="37.1" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width=".55"/><circle cx="1045" cy="184" r="35.6" fill="none" stroke="#233724" stroke-opacity=".16" stroke-width=".45"/>`;
+}
+
+function buildFaceplate(prefix){
+  const p=safePrefix(prefix),label=css('label','#313332'),dim=css('label-dim','#666c68'),edge=css('edge','#838d86');
+  const top='var(--face-top,var(--face,var(--_d90-face-top,#deded8)))';
+  const face=css('face','#bfc3bc');
+  const bottom='var(--face-bottom,var(--face,var(--_d90-face-bottom,#8e968e)))';
   return `<defs>
-  <linearGradient id="${p}-plate-metal" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="${faceTop}"/><stop offset=".08" stop-color="${css('face', '#CDCFCA')}"/>
-    <stop offset=".83" stop-color="${css('face', '#CDCFCA')}"/><stop offset="1" stop-color="${faceBottom}"/>
-  </linearGradient>
-  <linearGradient id="${p}-recess-bevel" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#343C38"/><stop offset=".12" stop-color="#080C0B"/>
-    <stop offset=".9" stop-color="#070A09"/><stop offset="1" stop-color="#8C9890"/>
-  </linearGradient>
-  <linearGradient id="${p}-glass-shade" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#10201B"/><stop offset=".3" stop-color="#050B08"/>
-    <stop offset="1" stop-color="#020705"/>
-  </linearGradient>
-  <linearGradient id="${p}-knob-metal" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="${css('key-top', '#E4E5DF')}"/>
-    <stop offset=".24" stop-color="${css('face-top', '#E9EAE5')}"/>
-    <stop offset=".55" stop-color="${css('key-bottom', '#9A9E97')}"/>
-    <stop offset=".75" stop-color="${css('key-top', '#D6D8D1')}"/>
-    <stop offset="1" stop-color="${css('key-bottom', '#858C84')}"/>
-  </linearGradient>
-  <linearGradient id="${p}-knob-rim" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#EBEEE7"/><stop offset=".4" stop-color="#6D766D"/>
-    <stop offset="1" stop-color="#191F1B"/>
-  </linearGradient>
-  <radialGradient id="${p}-screw-metal" cx="35%" cy="22%" r="75%">
-    <stop offset="0" stop-color="#777E78"/><stop offset=".35" stop-color="#353C36"/>
-    <stop offset="1" stop-color="#111612"/>
-  </radialGradient>
-  <pattern id="${p}-brushed-lines" width="13" height="3.8" patternUnits="userSpaceOnUse">
-    <path d="M0 .5H13M2 2.1H10" stroke="${label}" stroke-width=".26" opacity=".16"/>
-    <path d="M0 1.25H8M6 3.1H13" stroke="#FFF" stroke-width=".28" opacity=".17"/>
-  </pattern>
-  <clipPath id="${p}-static-plate-clip"><rect x="1" y="1" width="1198" height="218" rx="4"/></clipPath>
-  <clipPath id="${p}-static-display-clip"><rect x="169" y="44" width="702" height="93" rx="4"/></clipPath>
-  <clipPath id="${p}-static-dial-clip"><rect x="174" y="152" width="691" height="35" rx="2"/></clipPath>
-  <g id="${p}-rack-screw">
-    <circle cx=".5" cy=".8" r="7.4" fill="#000" opacity=".3"/>
-    <circle r="7.1" fill="#111713" stroke="${edge}" stroke-width=".65"/>
-    <circle r="5.7" fill="url(#${p}-screw-metal)" stroke="#A4ADA4" stroke-opacity=".25" stroke-width=".5"/>
-    <path d="M-2.9-1.65L0-3.3l2.9 1.65v3.3L0 3.3l-2.9-1.65Z" fill="#080D0A" stroke="#657062" stroke-width=".4"/>
-  </g>
+    <linearGradient id="${p}-chassis-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#626a64"/><stop offset=".018" stop-color="#232a25"/>
+      <stop offset=".08" stop-color="#151b17"/><stop offset=".87" stop-color="#1b221d"/>
+      <stop offset=".982" stop-color="#090d0b"/><stop offset="1" stop-color="#545d55"/>
+    </linearGradient>
+    <linearGradient id="${p}-plate-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${bottom}"/><stop offset=".018" stop-color="${top}"/>
+      <stop offset=".055" stop-color="${face}"/><stop offset=".20" stop-color="${top}"/>
+      <stop offset=".43" stop-color="${face}"/><stop offset=".80" stop-color="${face}"/>
+      <stop offset=".966" stop-color="${bottom}"/><stop offset=".987" stop-color="${bottom}"/>
+      <stop offset="1" stop-color="${top}"/>
+    </linearGradient>
+    <linearGradient id="${p}-window-bevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#070b08"/><stop offset=".035" stop-color="#9ba79e"/>
+      <stop offset=".075" stop-color="#363e38"/><stop offset=".15" stop-color="#070c09"/>
+      <stop offset=".86" stop-color="#010503"/><stop offset=".945" stop-color="#222c24"/>
+      <stop offset=".981" stop-color="#a0aba0"/><stop offset="1" stop-color="#101811"/>
+    </linearGradient>
+    <linearGradient id="${p}-glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#09110e"/><stop offset=".09" stop-color="#020806"/>
+      <stop offset=".7" stop-color="#010604"/><stop offset="1" stop-color="#030a06"/>
+    </linearGradient>
+    <linearGradient id="${p}-key-real" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${css('key-bottom','#151d17')}"/>
+      <stop offset=".035" stop-color="${css('key-top','#727e73')}"/>
+      <stop offset=".10" stop-color="${css('key-top','#58645a')}"/>
+      <stop offset=".27" stop-color="${css('key-bottom','#222c24')}"/>
+      <stop offset=".90" stop-color="${css('key-bottom','#111a13')}"/>
+      <stop offset=".978" stop-color="#070d09"/><stop offset="1" stop-color="#526555"/>
+    </linearGradient>
+    ${tunerDefinitions(p)}
+    <pattern id="${p}-metal-grain" width="612" height="18.4" patternUnits="userSpaceOnUse">${grainMarkup(label)}</pattern>
+    <clipPath id="${p}-plate-clip"><rect x="4.8" y="4.8" width="1190.4" height="270.4" rx="2.4"/></clipPath>
+    <radialGradient id="${p}-screw-metal" cx="30%" cy="20%" r="79%">
+      <stop offset="0" stop-color="#a4ada4"/><stop offset=".23" stop-color="#5c685e"/>
+      <stop offset=".60" stop-color="#263329"/><stop offset="1" stop-color="#0c140e"/>
+    </radialGradient>
+    <g id="${p}-rack-screw">
+      <circle cx=".45" cy=".9" r="7.55" fill="#010403" opacity=".63"/>
+      <circle r="7.1" fill="#121b14" stroke="${edge}" stroke-width=".65"/>
+      <circle r="6.05" fill="url(#${p}-screw-metal)" stroke="#c4cfc1" stroke-opacity=".37" stroke-width=".42"/>
+      <circle r="4.75" fill="none" stroke="#18281b" stroke-width=".42" opacity=".62"/>
+      <path d="M-2.9-1.65L0-3.3l2.9 1.65v3.3L0 3.3l-2.9-1.65Z" fill="#071009" stroke="#70806e" stroke-width=".38"/>
+      <path d="M-3.7-3.85A5.35 5.35 0 0 1 2.2-5" fill="none" stroke="#d9e4d4" stroke-width=".44" opacity=".47"/>
+    </g>
   </defs>
   <g id="${p}-faceplate" data-layer="faceplate">
-    <rect x=".7" y=".7" width="1198.6" height="218.6" rx="4" fill="url(#${p}-plate-metal)" stroke="${edge}" stroke-width="1.4"/>
-    <rect x="1" y="1" width="1198" height="218" rx="4" fill="url(#${p}-brushed-lines)" clip-path="url(#${p}-static-plate-clip)"/>
-    <path d="M5 3H1195M3 5V215" fill="none" stroke="#FFF" stroke-opacity=".32" stroke-width=".8"/>
-    <path d="M5 217H1195M1197 5V215" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1"/>
-    <path d="M32 33H1168" stroke="${dim}" stroke-opacity=".29" stroke-width=".7"/>
-    <g fill="${label}" font-family="Arial,Helvetica,sans-serif">
+    <rect x=".65" y=".65" width="1198.7" height="278.7" rx="5.1" fill="url(#${p}-chassis-metal)" stroke="#080d0a" stroke-width="1.3"/>
+    <rect x="2.1" y="2.1" width="1195.8" height="275.8" rx="4" fill="#a5ada5" stroke="#030705" stroke-opacity=".8" stroke-width=".55"/>
+    <rect x="4.35" y="4.35" width="1191.3" height="271.3" rx="2.8" fill="url(#${p}-plate-metal)" stroke="#050b07" stroke-width=".65"/>
+    <rect x="4.8" y="4.8" width="1190.4" height="270.4" rx="2.4" fill="url(#${p}-metal-grain)" clip-path="url(#${p}-plate-clip)"/>
+    <path d="M6 5.4H1194M5.4 6V274" fill="none" stroke="#fff" stroke-opacity=".33" stroke-width=".65"/>
+    <path d="M6 274.9H1194M1194.9 6V274" fill="none" stroke="#030805" stroke-opacity=".7" stroke-width=".9"/>
+    <g font-family="Arial,Helvetica,sans-serif" fill="${label}">
       <text x="39" y="26" font-size="18" font-weight="700" letter-spacing="3.1">DECK 90</text>
-      <text x="561" y="24.5" text-anchor="middle" font-size="10" font-weight="500" letter-spacing="1.75">DT-90 SYNTHESIZER TUNER</text>
-      <text x="992" y="148.2" text-anchor="middle" font-size="8.4" letter-spacing="1.5">TUNING</text>
+      <text x="652" y="23" text-anchor="middle" font-size="10" font-weight="500" letter-spacing="1.8">DT-90 SYNTHESIZER TUNER</text>
+      <text x="1045" y="231.8" text-anchor="middle" font-size="6.6" letter-spacing="1.4">TUNING</text>
     </g>
-    <g fill="${dim}" font-family="Arial,Helvetica,sans-serif" font-size="7.4" letter-spacing="1.4">
-      <text x="78" y="165" text-anchor="middle">STANDBY</text>
-      <text x="1125" y="25" text-anchor="end">FM / AM</text>
+    <g font-family="Arial,Helvetica,sans-serif" fill="${dim}" font-size="7.1" letter-spacing="1.35">
+      <text x="1153" y="23" text-anchor="end">PRECISION FM / AM</text>
+      <text x="75" y="274" text-anchor="middle" font-size="6.1">STANDBY</text>
     </g>
-    <rect x="159" y="37" width="722" height="107" rx="5.5" fill="#000" opacity=".22"/>
-    <rect x="160" y="38" width="720" height="105" rx="5" fill="url(#${p}-recess-bevel)" stroke="${edge}" stroke-width=".8"/>
-    <rect x="168" y="43" width="704" height="95" rx="4.1" fill="#010503"/>
-    <rect x="169" y="44" width="702" height="93" rx="3.5" fill="url(#${p}-glass-shade)"/>
-    <path d="M174 44.4H866" stroke="#ADDDD0" stroke-opacity=".11" stroke-width=".6"/>
-    <path d="M174 137.2H866" stroke="#D7EAE2" stroke-opacity=".18" stroke-width=".6"/>
-    <rect x="165" y="150" width="710" height="39" rx="3" fill="url(#${p}-recess-bevel)" stroke="${edge}" stroke-width=".55"/>
-    <rect x="171" y="151.5" width="698" height="35.9" rx="2" fill="#111A15"/>
-    ${printedDial()}
-    <circle cx="992" cy="92.2" r="49.4" fill="#000" opacity=".28"/>
-    <g fill="none" stroke="${dim}" stroke-width=".65" opacity=".7">${knobTicks}</g>
-    <circle cx="992" cy="91" r="48.3" fill="#181F1A" stroke="#000" stroke-opacity=".35" stroke-width="1"/>
-    <circle cx="992" cy="91" r="46.5" fill="url(#${p}-knob-rim)"/>
-    <circle cx="992" cy="91" r="44.7" fill="url(#${p}-knob-metal)" stroke="#3B443D" stroke-width=".6"/>
-    <circle cx="992" cy="91" r="42.2" fill="none" stroke="#FFF" stroke-opacity=".14" stroke-width=".65"/>
-    <path d="M992 49.3v10" stroke="${label}" stroke-width="1.4" opacity=".85"/>
+    <path d="M35 31H1165" stroke="#050b07" stroke-opacity=".25" stroke-width=".7"/>
+    <path d="M35 31.65H1165" stroke="#fff" stroke-opacity=".19" stroke-width=".5"/>
+    <rect x="33.4" y="35.8" width="1133.2" height="106.2" rx="4.4" fill="#000" opacity=".5"/>
+    <rect x="35" y="36" width="1130" height="104" rx="4.4" fill="url(#${p}-window-bevel)" stroke="${edge}" stroke-width=".7" data-role="display-window"/>
+    <rect x="38.6" y="39.3" width="1122.8" height="97.4" rx="3.3" fill="#000302" stroke="#020705" stroke-width="1.4"/>
+    <rect x="41.2" y="41" width="1117.6" height="94" rx="2.5" fill="url(#${p}-glass)"/>
+    <path d="M45 41.3H1155" stroke="#d9eee2" stroke-opacity=".14" stroke-width=".55"/>
+    <path d="M45 135.25H1155" stroke="#9fb7a6" stroke-opacity=".23" stroke-width=".6"/>
+    <path d="M35 147.2H1165" stroke="#050c07" stroke-width=".6" stroke-opacity=".27"/>
+    <path d="M35 147.85H1165" stroke="#fff" stroke-width=".42" stroke-opacity=".19"/>
+    ${tunerHardware(p,dim,edge)}
+    <path d="M34 224H886" stroke="#050c07" stroke-opacity=".3" stroke-width=".6"/>
+    <path d="M34 224.7H886" stroke="#fff" stroke-opacity=".16" stroke-width=".4"/>
     <use href="#${p}-rack-screw" x="17" y="16"/><use href="#${p}-rack-screw" x="1183" y="16"/>
-    <use href="#${p}-rack-screw" x="17" y="204"/><use href="#${p}-rack-screw" x="1183" y="204"/>
+    <use href="#${p}-rack-screw" x="17" y="264"/><use href="#${p}-rack-screw" x="1183" y="264"/>
   </g>`;
 }
 
@@ -350,7 +486,7 @@ class Deck90Tuner {
     this._needlePosition = this._fraction();
     this._needleTarget = this._needlePosition;
     this._meterCounts = { left: -1, right: -1 };
-    this.svg = node('svg', { xmlns: SVG_NS, viewBox: '0 0 1200 220', width: '100%', role: 'group', 'aria-label': 'DECK 90 DT-90 synthesizer tuner', 'data-deck90-tuner': this.prefix, preserveAspectRatio: 'xMidYMid meet' });
+    this.svg = node('svg', { xmlns: SVG_NS, viewBox: '0 0 1200 280', width: '100%', role: 'group', 'aria-label': 'DECK 90 DT-90 synthesizer tuner', 'data-deck90-tuner': this.prefix, preserveAspectRatio: 'xMidYMid meet' });
     this.svg.style.width = '100%';
     this.svg.style.height = 'auto';
     this.svg.style.display = 'block';
@@ -359,9 +495,9 @@ class Deck90Tuner {
     this._applyTheme();
     this.svg.innerHTML = buildFaceplate(this.prefix);
     const defs = node('defs');
-    defs.innerHTML = `<clipPath id="${this.prefix}-rds-clip"><rect x="181" y="116" width="678" height="18"/></clipPath>
+    defs.innerHTML = `<clipPath id="${this.prefix}-rds-clip"><rect x="515" y="52" width="385" height="25"/></clipPath>
       <filter id="${this.prefix}-vfd-glow" x="-15%" y="-20%" width="130%" height="140%"><feGaussianBlur stdDeviation=".7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <linearGradient id="${this.prefix}-key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".15" stop-color="var(--face,var(--_d90-face))"/><stop offset="1" stop-color="var(--key-bottom,var(--_d90-key-bottom))"/></linearGradient>`;
+      <linearGradient id="${this.prefix}-key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".08" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".18" stop-color="var(--key-face,var(--_d90-key-face))"/><stop offset=".78" stop-color="var(--key-face,var(--_d90-key-face))"/><stop offset=".94" stop-color="var(--key-bottom,var(--_d90-key-bottom))"/><stop offset="1" stop-color="var(--key-top,var(--_d90-key-top))"/></linearGradient>`;
     this.svg.append(defs);
     this._display = node('g', { 'data-role': 'display', filter: `url(#${this.prefix}-vfd-glow)`, 'aria-hidden': 'true' });
     this.svg.append(this._display);
@@ -462,9 +598,9 @@ class Deck90Tuner {
   _applyTheme() {
     const black = this._state.theme === 'black';
     const values = black ? {
-      face: '#272c2b', 'face-top': '#454c48', 'face-bottom': '#151a18', label: '#d3d9d1', 'label-dim': '#929f95', edge: '#59635c', 'key-top': '#525b54', 'key-bottom': '#171e19',
+      face: '#292c2d', 'face-top': '#484c4d', 'face-bottom': '#101415', label: '#d0d1cb', 'label-dim': '#969e97', edge: '#646a67', 'key-top': '#505659', 'key-face': '#272d30', 'key-bottom': '#0c1114', 'key-label': '#cdd2d1',
     } : {
-      face: '#ced1cb', 'face-top': '#f0f0e9', 'face-bottom': '#999f98', label: '#303932', 'label-dim': '#5c685e', edge: '#89918a', 'key-top': '#eceee7', 'key-bottom': '#949e92',
+      face: '#c7c5be', 'face-top': '#ece9df', 'face-bottom': '#92938d', label: '#2d302e', 'label-dim': '#686d67', edge: '#90958f', 'key-top': '#5c6366', 'key-face': '#30363a', 'key-bottom': '#101719', 'key-label': '#d2d7d5',
     };
     for (const [key, value] of Object.entries(values)) this.svg.style.setProperty(`--_d90-${key}`, value);
     this.svg.setAttribute('data-theme', this._state.theme);
@@ -492,7 +628,7 @@ class Deck90Tuner {
     this._display.append(this._band, this._preset, this._units);
     this._digitNodes = [];
     this._digitGroups = [];
-    const digitLayer = node('g', { transform: 'translate(238 48)', 'data-role': 'frequency' });
+    const digitLayer = node('g', { transform: 'translate(148 51) scale(1.22)', 'data-role': 'frequency' });
     for (let index = 0; index < 5; index++) {
       const group = node('g', { transform: `translate(${index * 34 + (index > 2 ? 8 : 0)} 0)` });
       const segments = {};
@@ -506,32 +642,33 @@ class Deck90Tuner {
     }
     this._decimal = node('polygon', { points: DECIMAL_POINTS, transform: 'translate(68 0)', fill: VFD, 'data-role': 'decimal' });
     digitLayer.append(this._decimal);
-    this._display.append(digitLayer);
     this._digitLayer = digitLayer;
+
+    this._display.append(digitLayer);
     this._bigLabel = node('g', { 'data-role': 'big-label' });   // internet only: the name in place of the digits
     this._display.append(this._bigLabel);
     this._signal = [];
     const signal = node('g', { 'data-role': 'signal' });
     for (let i = 0; i < 5; i++) {
-      const bar = node('rect', { x: 493 + i * 10, y: 83 - (i + 1) * 5, width: 6, height: (i + 1) * 5, rx: .6, fill: DIM });
+      const bar = node('rect', { x: 431 + i * 11, y: 112 - (i + 1) * 6, width: 7, height: (i + 1) * 6, rx: .6, fill: DIM });
       signal.append(bar); this._signal.push(bar);
     }
-    signal.append(this._dots('SIGNAL', 489, 91, .95, { fill: DIM }));
+    signal.append(this._dots('SIGNAL', 426, 119, .95, { fill: DIM }));
     this._display.append(signal);
     this._indicators = {};
-    for (const [word, x, y] of [['STEREO', 566, 49], ['MONO', 667, 49], ['TUNED', 768, 49], ['AUTO', 566, 69], ['MEMO', 667, 69], ['SCAN', 768, 69]]) {
-      const indicator = this._dots(word, x, y, 1.45);
+    for (const [word, x, y] of [['STEREO', 516, 90], ['MONO', 640, 90], ['TUNED', 764, 90], ['AUTO', 516, 114], ['MEMO', 640, 114], ['SCAN', 764, 114]]) {
+      const indicator = this._dots(word, x, y, 1.3);
       indicator.setAttribute('data-indicator', word.toLowerCase());
       this._indicators[word.toLowerCase()] = indicator;
       this._display.append(indicator);
     }
     this._levelNodes = {};
-    for (const [channel, letter, y] of [['left', 'L', 92], ['right', 'R', 103]]) {
+    for (const [channel, letter, y] of [['left', 'L', 91], ['right', 'R', 113]]) {
       const group = node('g', { 'data-role': channel === 'left' ? 'level-l' : 'level-r' });
-      group.append(this._dots(letter, 565, y - 1, .9));
+      group.append(this._dots(letter, 925, y - 1, 1.1));
       this._levelNodes[channel] = [];
       for (let i = 0; i < 24; i++) {
-        const segment = node('rect', { x: 580 + i * 11.1, y, width: 8.6, height: 5.5, rx: .55, fill: DIM, 'data-index': i });
+        const segment = node('rect', { x: 943 + i * 8, y, width: 6, height: 6, rx: .6, fill: DIM, 'data-index': i });
         group.append(segment); this._levelNodes[channel].push(segment);
       }
       this._display.append(group);
@@ -543,16 +680,16 @@ class Deck90Tuner {
 
   _buildNeedle() {
     this._needle = node('g', { 'data-role': 'needle', filter: `url(#${this.prefix}-vfd-glow)`, 'aria-hidden': 'true' });
-    this._needle.append(node('line', { x1: 0, x2: 0, y1: 153, y2: 186, stroke: NEEDLE, 'stroke-width': 2.2 }));
-    this._needle.append(node('path', { d: 'M-3 152H3L0 156Z', fill: NEEDLE }));
+    this._needle.append(node('line', { x1: 0, x2: 0, y1: 158, y2: 205, stroke: NEEDLE, 'stroke-width': 2.2 }));
+    this._needle.append(node('path', { d: 'M-3 157H3L0 161Z', fill: NEEDLE }));
     this.svg.append(this._needle);
-    this._knobMarker = node('line', { x1: 992, y1: 51, x2: 992, y2: 62, stroke: 'var(--label,var(--_d90-label))', 'stroke-width': 2, 'stroke-linecap': 'round', 'data-role': 'knob-marker' });
+    this._knobMarker = node('line', { x1: 1045, y1: 150, x2: 1045, y2: 160, stroke: 'var(--label,var(--_d90-label))', 'stroke-width': 2, 'stroke-linecap': 'round', 'data-role': 'knob-marker' });
     this.svg.append(this._knobMarker);
   }
 
   _buildControls() {
     this._buttons = {};
-    const words = { power: 'POWER', band: 'BAND', 'tune-down': '◀', 'tune-up': '▶', scan: 'SCAN', memo: 'MEMO', mode: 'MODE', disp: 'DISP' };
+    const words = { power: 'POWER', band: 'BAND', 'band-fm1': 'FM1', 'band-fm2': 'FM2', 'band-fm3': 'FM3', 'band-fm4': 'FM4', 'band-am': 'AM', 'tune-down': '◀', 'tune-up': '▶', scan: 'SCAN', memo: 'MEMO', mode: 'MODE', disp: 'DISP' };
     for (const [key, box] of Object.entries(LAYOUT.buttons)) {
       const group = node('g', { 'data-key': key, role: 'button', tabindex: 0, 'aria-label': key.startsWith('m') && /^m\d$/.test(key) ? `Memoria ${key.slice(1)}. Mantener un segundo para memorizar.` : words[key], 'aria-pressed': 'false' });
       group.style.cursor = 'pointer'; group.style.outline = 'none';
@@ -561,7 +698,7 @@ class Deck90Tuner {
       group.append(shadow, face);
       const highlight = node('path', { d: `M${box.x + 3} ${box.y + 1.3}H${box.x + box.width - 3}`, stroke: '#fff', 'stroke-opacity': .36, 'stroke-width': .7 });
       group.append(highlight);
-      const text = node('text', { x: box.x + box.width / 2, y: box.y + box.height / 2 + 3, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': key.startsWith('tune-') ? 9 : key === 'power' ? 10 : 8.8, 'font-weight': 700, 'letter-spacing': .7, fill: 'var(--label,var(--_d90-label))', 'pointer-events': 'none' });
+      const text = node('text', { x: box.x + box.width / 2, y: box.y + box.height / 2 + 3, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': key.startsWith('tune-') ? 9 : key === 'power' ? 10 : 8.8, 'font-weight': 700, 'letter-spacing': .7, fill: 'var(--key-label,var(--_d90-key-label,#d2d7d5))', 'pointer-events': 'none' });
       text.textContent = /^m\d$/.test(key) ? key.slice(1) : words[key];
       group.append(text);
       const led = node('rect', { x: box.x + 6, y: box.y + box.height - 3.7, width: box.width - 12, height: 1.2, fill: DIM, opacity: .4 });
@@ -599,9 +736,9 @@ class Deck90Tuner {
       this._listen(group, 'keyup', event => { if (event.key === 'Enter' || event.key === ' ' || event.code === 'Space') { event.preventDefault?.(); finish(event); } });
       this._listen(group, 'click', event => { if (event.detail === 0 && !this._presses.has(key)) this._emit(key, false); });
     }
-    this._powerLed = node('circle', { cx: 77.5, cy: 60, r: 2.4, fill: VFD, 'data-role': 'power-led' });
+    this._powerLed = node('circle', { cx: 125, cy: 248, r: 2.4, fill: VFD, 'data-role': 'power-led' });
     this.svg.append(this._powerLed);
-    const knob = node('circle', { cx: 992, cy: 91, r: 48, fill: 'transparent', 'data-role': 'tuning-knob', role: 'slider', tabindex: 0, 'aria-label': 'Sintonía. Rueda o flechas para cambiar la frecuencia.', 'aria-valuemin': 87.5, 'aria-valuemax': 108, 'aria-valuenow': 98.5 });
+    const knob = node('circle', { cx: 1045, cy: 184, r: 41.5, fill: 'transparent', 'data-role': 'tuning-knob', role: 'slider', tabindex: 0, 'aria-label': 'Sintonía. Rueda o flechas para cambiar la frecuencia.', 'aria-valuemin': 87.5, 'aria-valuemax': 108, 'aria-valuenow': 98.5 });
     knob.style.cursor = 'ns-resize';
     this._listen(knob, 'wheel', event => { if (!event.deltaY) return; event.preventDefault?.(); this._emit(event.deltaY < 0 ? 'tune-up' : 'tune-down', false); }, { passive: false });
     this._listen(knob, 'keydown', event => {
@@ -649,17 +786,17 @@ class Deck90Tuner {
     this._decimal.setAttribute('opacity', am || net ? '0' : '1');
     this._needleShade();
     const big = net && radio.label ? radio.label.toUpperCase().slice(0, 14) : '';
-    if (this._cache.big !== big) {
-      const pitch = big ? Math.min(6.4, 236 / ([...big].length * 6)) : 1;
-      this._bigLabel.replaceChildren(...(big ? [this._dots(big, 236, 48 + (52 - 7 * pitch) / 2, pitch)] : []));
+    if (this._cache.big !== big) {   // internet only: big name over the digits area (x 150-418, y 51-115, left of SIGNAL)
+      const pitch = big ? Math.min(8.4, 268 / ([...big].length * 6)) : 1;
+      this._bigLabel.replaceChildren(...(big ? [this._dots(big, 150, 51 + (64 - 7 * pitch) / 2, pitch)] : []));
       this._digitLayer.setAttribute('opacity', big ? '0' : '1');
       this._units.setAttribute('opacity', big ? '0' : '1');
       this._cache.big = big;
     }
-    if (this._cache.band !== radio.band) { this._band.replaceChildren(this._dots(radio.band, 181, 53, 1.75)); this._cache.band = radio.band; }
-    if (this._cache.preset !== radio.preset) { this._preset.replaceChildren(this._dots(radio.preset ? `M${radio.preset}` : 'M-', 182, 82, 1.8)); this._cache.preset = radio.preset; }
+    if (this._cache.band !== radio.band) { this._band.replaceChildren(this._dots(radio.band, 56, 55, 2.3)); this._cache.band = radio.band; }
+    if (this._cache.preset !== radio.preset) { this._preset.replaceChildren(this._dots(radio.preset ? `M${radio.preset}` : 'M-', 58, 94, 2.1)); this._cache.preset = radio.preset; }
     const unit = am ? 'KHZ' : 'MHZ';
-    if (this._cache.unit !== unit) { this._units.replaceChildren(this._dots(unit, 434, 76, 1.65)); this._cache.unit = unit; }
+    if (this._cache.unit !== unit) { this._units.replaceChildren(this._dots(unit, 370, 94, 2.1)); this._cache.unit = unit; }
     for (const [key, indicator] of Object.entries(this._indicators)) {
       const lit = key === 'stereo' ? radio.stereo && !radio.mono : radio[key];
       indicator.setAttribute('fill', lit ? VFD : DIM);
@@ -668,9 +805,9 @@ class Deck90Tuner {
     for (let i = 0; i < 5; i++) this._signal[i].setAttribute('fill', i < radio.signal ? VFD : DIM);
     const text = clean([radio.name, radio.text].filter(Boolean).join(' - ')) || 'DECK 90';
     if (this._cache.rds !== text) {
-      this._rds.replaceChildren(this._dots(text, 0, 0, 1.8));
-      this._rds.setAttribute('transform', 'translate(182 119)');
-      this._rdsWidth = [...text.toUpperCase()].length * 10.8;
+      this._rds.replaceChildren(this._dots(text, 0, 0, 2.7));
+      this._rds.setAttribute('transform', 'translate(516 55)');
+      this._rdsWidth = [...text.toUpperCase()].length * 16.2;
       this._rdsStarted = performance.now();
       this._cache.rds = text;
     }
@@ -686,7 +823,7 @@ class Deck90Tuner {
   _updateButtonLeds() {
     const radio = this._state.radio;
     for (const [key, button] of Object.entries(this._buttons)) {
-      const active = this._state.powered && (key === `m${radio.preset}` || key === 'scan' && radio.scan || key === 'memo' && radio.memo || key === 'power');   // Deck 90 7.9.4: MODE has no lamp (it chooses the text line)
+      const active = this._state.powered && (key === `m${radio.preset}` || key === 'scan' && radio.scan || key === 'memo' && radio.memo || key === `band-${radio.band.toLowerCase()}` || key === 'power');   // Deck 90 7.9.4: MODE has no lamp (it chooses the text line)
       button.led.setAttribute('fill', active ? VFD : DIM);
       button.led.setAttribute('opacity', active ? '.9' : '.22');
       button.group.setAttribute('aria-pressed', String(active));
@@ -709,9 +846,9 @@ class Deck90Tuner {
   }
 
   _paintNeedle() {
-    const x = 194 + this._needlePosition * 649;
+    const x = 65 + this._needlePosition * 789;
     this._needle.setAttribute('transform', `translate(${x.toFixed(3)} 0)`);
-    this._knobMarker.setAttribute('transform', `rotate(${(-135 + this._needlePosition * 270).toFixed(3)} 992 91)`);
+    this._knobMarker.setAttribute('transform', `rotate(${(-135 + this._needlePosition * 270).toFixed(3)} 1045 184)`);
   }
 
   _schedule() {
@@ -726,11 +863,12 @@ class Deck90Tuner {
     this._previousTime = time;
     const reduceMotion = this._motion?.matches;
     const difference = this._needleTarget - this._needlePosition;
-    if (Math.abs(difference) > .00003) {
+    if (difference !== 0) {
       this._needlePosition = reduceMotion ? this._needleTarget : this._needlePosition + difference * (1 - Math.exp(-dt / 100));
+      if (Math.abs(this._needleTarget - this._needlePosition) <= .00003) this._needlePosition = this._needleTarget;
       this._paintNeedle();
-    } else if (difference !== 0) { this._needlePosition = this._needleTarget; this._paintNeedle(); }
-    const distance = Math.max(0, (this._rdsWidth || 0) - 674);
+    }
+    const distance = Math.max(0, (this._rdsWidth || 0) - 382);
     let scroll = false;
     if (distance > 0 && this._state.powered) {   // Deck 90 7.9.7: scrolls even with Windows' animations off
       const travel = distance / 32 * 1000, delay = 1400, cycle = 2 * travel + 2 * delay;
@@ -739,9 +877,9 @@ class Deck90Tuner {
       if (phase > delay && phase < delay + travel) offset = (phase - delay) * .032;
       else if (phase >= delay + travel && phase < delay * 2 + travel) offset = distance;
       else if (phase >= delay * 2 + travel) offset = distance - (phase - delay * 2 - travel) * .032;
-      this._rds.setAttribute('transform', `translate(${(182 - offset).toFixed(3)} 119)`);
+      this._rds.setAttribute('transform', `translate(${(516 - offset).toFixed(3)} 55)`);
       scroll = true;
-    } else this._rds.setAttribute('transform', 'translate(182 119)');
+    } else this._rds.setAttribute('transform', 'translate(516 55)');
     if (scroll || Math.abs(this._needleTarget - this._needlePosition) > .00003) this._schedule();
   }
 }

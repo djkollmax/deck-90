@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.11 — 2026-11-01
+
+### Cambios
+- **El DT-90 realista** (la revisión de Damián, igual de terminación que el DC-90): el display ocupa todo el frente (1130 × 104), la frecuencia y el texto mucho más grandes, el dial abajo de punta a punta y la perilla al costado. Las bandas son teclas propias al lado de POWER: **FM1 FM2 FM3 FM4 AM**, con la luz en la que está sonando; las memorias 1–6 siguen al lado. Una radio solo por internet muestra su nombre grande donde van los números y esconde la aguja. El sintonizador y el CD ahora tienen la misma altura (hasta 250 px).
+
 ## 7.9.10 — 2026-11-01
 
 ### Cambios
