@@ -25,10 +25,12 @@
   "scripts": {
     "start": "electron .",
     "package:win": "node scripts/package.mjs win32",
-    "package:linux": "node scripts/package.mjs linux"
+    "package:linux": "node scripts/package.mjs linux",
+    "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\""
   },
   "devDependencies": {
-    "electron": "45.0.0"
+    "electron": "45.0.0",
+    "playwright-core": "1.56.0"
   },
   "contributors": [
     {

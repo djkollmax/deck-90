@@ -26,6 +26,32 @@ jobs:
   # Every push, on a real Windows: the now-playing bridge, the built program starting once, and its
   # updates (install, rescue of a broken version, a damaged package, a new engine). A release is only
   # published when this passes.
+  # Every push, on Linux: the program itself, as a person uses it (tests/*.test.mjs): the tuner's and the CD's
+  # keys, REPEAT and SHUFFLE, the rack's two units, the radio's song and quality, the car stereo and the phone,
+  # on a pretend radio station and a pretend CD drive. A release is only published when these pass too.
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Electron and Playwright
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright-core install --with-deps chromium
+
+      - name: Check the scripts
+        run: node scripts/check.mjs
+
+      - name: Tests
+        run: xvfb-run -a npm test
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 30
@@ -110,7 +136,7 @@ jobs:
           node scripts/test-update.mjs "dist\Deck 90-win32-x64"
 
   release:
-    needs: windows
+    needs: [windows, tests]
     runs-on: ubuntu-latest
     steps:
       # actions pinned to the commit of their v4.4.0 tag, so a moved tag can't change what runs here
