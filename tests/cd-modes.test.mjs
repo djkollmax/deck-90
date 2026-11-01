@@ -5,17 +5,19 @@ import assert from 'node:assert/strict';
 import { launch, disc } from './lib/app.mjs';
 
 let d;
-// plays from `from` with these modes for `secs`, and says what the drive did: "3j" a jump to 3, "4n" the disc
-// going on to 4 by itself, END the disc's end, STOP a stop from the program
-async function play(modes, from, secs) {
+// plays from `from` with these modes until `done(heard)` says enough (or 45 s), and says what the drive did:
+// "3j" a jump to 3, "4n" the disc going on to 4 by itself, END the disc's end, STOP a stop from the program
+async function play(modes, from, done) {
   await d.win.evaluate(([m, n]) => { Object.assign(cdModes, m); cdState.track = n; if (m.shuffle) cdShuffleStart(); }, [modes, from]);
   await d.heard();
   await d.win.evaluate(() => cdUnitKey('play'));
-  await d.wait(secs * 1000);
-  const h = await d.heard();
-  await d.win.evaluate(() => cdUnitKey('stop')); await d.wait(300);
-  return h.split(' ').filter(Boolean);
+  const h = [];
+  for (const t0 = Date.now(); Date.now() - t0 < 45000 && !done(h);) { await d.wait(500); h.push(...(await d.heard()).split(' ').filter(Boolean)); }
+  await d.win.evaluate(() => cdUnitKey('stop')); await d.wait(300); await d.heard();
+  return h;
 }
+const ends = h => h.includes('END') || h.includes('STOP');
+const songs = n => h => h.filter(x => /^\d/.test(x)).length >= n;
 
 before(async () => {
   d = await launch({ drive: disc(4, 4) });                    // four songs of 4 s
@@ -25,26 +27,26 @@ before(async () => {
 after(async () => { await d?.close(); });
 
 test('no modes: the disc plays through and ends', async () => {
-  assert.deepEqual(await play({ repeat: 'off', shuffle: false }, 1, 18), ['1j', '2n', '3n', '4n', 'END']);
+  assert.deepEqual(await play({ repeat: 'off', shuffle: false }, 1, ends), ['1j', '2n', '3n', '4n', 'END']);
 });
 
 test('REPEAT all: from the last song back to the first', async () => {
-  assert.deepEqual((await play({ repeat: 'all', shuffle: false }, 3, 13)).slice(0, 4), ['3j', '4n', '1j', '2n']);
+  assert.deepEqual((await play({ repeat: 'all', shuffle: false }, 3, songs(4))).slice(0, 4), ['3j', '4n', '1j', '2n']);
 });
 
 test('REPEAT one: the same song again and again', async () => {
-  assert.deepEqual((await play({ repeat: 'one', shuffle: false }, 2, 13)).slice(0, 4), ['2j', '2j', '2j', '2j']);
+  assert.deepEqual((await play({ repeat: 'one', shuffle: false }, 2, songs(4))).slice(0, 4), ['2j', '2j', '2j', '2j']);
 });
 
 test('SHUFFLE: each song once, then it stops', async () => {
-  const h = await play({ repeat: 'off', shuffle: true }, 1, 24);
+  const h = await play({ repeat: 'off', shuffle: true }, 1, ends);
   const songs = h.filter(x => /^\d/.test(x)).map(x => parseInt(x));
   assert.deepEqual([...songs].sort(), [1, 2, 3, 4]); assert.equal(h.at(-1), 'STOP');
 });
 
 test('SHUFFLE and REPEAT: a new draw after the four', async () => {
-  const songs = (await play({ repeat: 'all', shuffle: true }, 2, 22)).filter(x => /^\d/.test(x)).map(x => parseInt(x));
-  assert.ok(songs.length >= 5, songs.join());
-  assert.deepEqual(songs.slice(0, 4).sort(), [1, 2, 3, 4]);
+  const got = (await play({ repeat: 'all', shuffle: true }, 2, songs(5))).filter(x => /^\d/.test(x)).map(x => parseInt(x));
+  assert.ok(got.length >= 5, got.join());
+  assert.deepEqual(got.slice(0, 4).sort(), [1, 2, 3, 4]);
   assert.deepEqual(d.errors(), []);
 });

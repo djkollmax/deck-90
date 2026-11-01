@@ -58,7 +58,7 @@ async function run(name) {
   files['package.json'] = Buffer.from(String(files['package.json']).replace(`"version": "${from}"`, `"version": "${to}"`));
   files['src/ui/app/update.js'] = Buffer.from(String(files['src/ui/app/update.js']) + `\n// test build ${to}\n`);
   if (name === 'mainthrow') files['electron/main.js'] = Buffer.from(`throw new Error('broken ${to}');\n` + files['electron/main.js']);
-  if (name === 'syntax') files['src/js/core.js'] = Buffer.from(String(files['src/js/core.js']) + '\nfunction (');
+  if (name === 'syntax') files['src/ui/app/core.js'] = Buffer.from(String(files['src/ui/app/core.js']) + '\nfunction (');
   const b64 = {}; for (const k in files) b64[k] = files[k].toString('base64');
   const bundle = zlib.gzipSync(JSON.stringify({ format: 1, name: 'deck-90', version: to, electron: name === 'engine' ? '1.0.0' : engine, files: b64 }));
   const sha = crypto.createHash('sha256').update(bundle).digest('hex');
@@ -99,7 +99,7 @@ async function run(name) {
     if (name === 'ok') {
       await until('the new version to confirm its start', async () => log().includes(`update: ${to} started fine`), 90000);
       if (onDisk() !== to) throw new Error('version on disk is ' + onDisk());
-      if (!fs.readFileSync(path.join(A, 'src', 'js', 'update.js'), 'utf8').includes(`test build ${to}`)) throw new Error('the new files are not there');
+      if (!fs.readFileSync(path.join(A, 'src', 'ui', 'app', 'update.js'), 'utf8').includes(`test build ${to}`)) throw new Error('the new files are not there');
     } else {
       await until('the old version to be put back', async () => log().includes(`${to} did not load`), 90000);
       await until('the old version on disk', async () => onDisk() === from, 30000);
