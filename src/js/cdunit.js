@@ -12,7 +12,7 @@
 let cdUnitCfg = { show: true };
 try {
   const c = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).cdunit;
-  if (c && typeof c === 'object') cdUnitCfg = { show: c.show !== false };
+  if (c && typeof c === 'object') cdUnitCfg = { show: c.show !== false, remain: c.remain === true };
 } catch (_) {}
 let cdUnit = null, cdUnitPower = false, cdUnitWants = false, cdUnitResumePc = false, cdUnitShownKey = '', cdUnitClosing = 0;
 let cdUnitAvg = -24, cdUnitAt = 0, cdUnitLv = { L: 0, R: 0 };
@@ -31,8 +31,26 @@ function cdUnitBuild() {
   [...cdUnit.svg.querySelectorAll('text')].filter(t => t.textContent === 'STANDBY').forEach(t => t.remove());
   cdUnitTheme();
   cdUnit.onKey(cdUnitKey);
+  cdUnitTimeKey();
   cdUnit.setPower(false);
   cdUnitShownKey = ''; cdUnitSync();
+}
+// 7.9.13: a touch on the time switches it between the time played and the time left (a minus lights), like the
+// TIME key of a real player; remembered
+function cdUnitTimeKey() {
+  cdUnit.setTimeMode(cdUnitCfg.remain ? 'remain' : 'elapsed');
+  const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  for (const [k, v] of Object.entries({ x: 38, y: 46, width: 200, height: 84, fill: 'transparent', role: 'button', tabindex: 0, 'data-role': 'time-key',
+    'aria-label': 'Tiempo: transcurrido o restante' })) hit.setAttribute(k, v);
+  hit.style.cursor = 'pointer'; hit.style.outline = 'none';
+  const flip = () => {
+    cdUnitCfg.remain = !cdUnitCfg.remain; savePrefs();
+    cdUnit.setTimeMode(cdUnitCfg.remain ? 'remain' : 'elapsed');
+    toast('CD · <span>' + (cdUnitCfg.remain ? 'tiempo restante' : 'tiempo transcurrido') + '</span>', 1200);
+  };
+  hit.addEventListener('click', flip);
+  hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); flip(); } });
+  cdUnit.svg.append(hit);
 }
 function cdUnitShow(on, quiet) {
   cdUnitCfg.show = !!on;

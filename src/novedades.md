@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.9.13 — 2026-11-01
+
+### Cambios
+- **Los vúmetros del CD y del sintonizador terminan en amarillo y rojo**, como los VU: los últimos seis puntos (tres amarillos, tres rojos), que se ven tenues aunque estén apagados.
+- **Tocá el tiempo del CD y cuenta para atrás**: muestra lo que falta del tema, con un signo menos a la izquierda; otro toque vuelve al tiempo transcurrido. Queda recordado.
+
 ## 7.9.12 — 2026-11-01
 
 ### Cambios

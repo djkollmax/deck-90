@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.9.13
+
+### Changed
+- **CD and tuner level meters end in yellow and red** (segments 19–21 and 22–24), the zones faintly visible when unlit (vendor patches, also in the tuner's patch script).
+- **Touching the CD's time shows the time left** (DC-90 `setTimeMode('remain')`, a minus bar left of the digits); touching again goes back to the time played. Remembered in the prefs (`cdunit.remain`).
+
 ## 7.9.12
 
 ### Changed

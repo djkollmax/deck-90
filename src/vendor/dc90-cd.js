@@ -319,6 +319,8 @@ function buildDrawer(prefix){
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const LIT = 'var(--vfd,#80ffe5)', DIM = 'var(--vfd-dim,#193e34)';
+// Deck 90 7.9.13: the meters end in yellow (19-21) and red (22-24) like the VUs, the zones faintly visible unlit
+const METER_LIT = i => i >= 21 ? '#ff4a3d' : i >= 18 ? '#ffd23a' : LIT, METER_DIM = i => i >= 21 ? '#40171299' : i >= 18 ? '#3d331299' : DIM;
 const clean = value => String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC').slice(0,256);
 const clamp = value => Number.isNaN(Number(value)) ? 0 : Math.min(1,Math.max(0,Number(value)||0));
 const safeNumber = (value, fallback=0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -358,6 +360,8 @@ class Deck90CD {
     if(this._state.drawerOpen){track.playing=false;track.paused=false;}
     this._renderTrack();this._paintLevels();this._schedule();return this;
   }
+  /** Deck 90 7.9.13: 'remain' counts down to the end of the track (a minus lights left of the time), 'elapsed' counts up. */
+  setTimeMode(mode){this._assertAlive();this._remain=mode==='remain';this._cache.time=null;this._renderTrack();return this;}
   setLevels(left,right){this._assertAlive();this._state.levels={left:clamp(left),right:clamp(right)};this._paintLevels();return this;}
   setDrawer(open){
     this._assertAlive();this._state.drawerOpen=Boolean(open);this._drawerTarget=open?1:0;
@@ -394,14 +398,14 @@ class Deck90CD {
   }
   _paintDigits(cells,text){for(let i=0;i<cells.length;i++){const names=DIGIT_MAP[text[i]]||[];for(const[name,segment]of Object.entries(cells[i]))segment.setAttribute('fill',names.includes(name)?LIT:DIM);}}
   _buildDisplay(){
-    this._timeDigits=this._digitGroup(58,54,4,1.23,true);this._trackDigits=this._digitGroup(282,78,2,.72);
+    this._timeDigits=this._digitGroup(58,54,4,1.23,true);this._minus=node('rect',{x:42,y:83,width:11,height:5,rx:1,fill:DIM,'data-role':'remain'});this._display.append(this._minus);/* Deck 90 7.9.13: remaining-time minus */this._trackDigits=this._digitGroup(282,78,2,.72);
     this._display.append(this._dots('TRACK',278,53,1.4));this._total=node('g',{'data-role':'total-tracks'});this._display.append(this._total);
     const clip=node('g',{'data-role':'title-viewport','clip-path':`url(#${this.prefix}-title-clip)`});this._title=node('g',{'data-role':'title'});clip.append(this._title);this._display.append(clip);
     const artistClip=node('g',{'clip-path':`url(#${this.prefix}-artist-clip)`});this._artist=node('g',{'data-role':'artist'});artistClip.append(this._artist);this._display.append(artistClip);
     this._display.append(node('rect',{x:391,y:126,width:503,height:2,fill:DIM}));this._progress=node('rect',{x:391,y:126,width:0,height:2,fill:LIT,'data-role':'progress'});this._display.append(this._progress);
     this._indicators={};for(const[word,x]of [['PLAY',925],['PAUSE',996],['DISC',1077]]){const group=this._dots(word,x,55,1.5);this._indicators[word.toLowerCase()]=group;this._display.append(group);}
     this._openStatus=this._dots('OPEN',925,55,1.5);this._openStatus.setAttribute('opacity','0');this._display.append(this._openStatus);
-    this._levelNodes={};for(const[channel,letter,y]of [['left','L',86],['right','R',108]]){const g=node('g',{'data-role':channel==='left'?'level-l':'level-r'});g.append(this._dots(letter,925,y-1,1.1));this._levelNodes[channel]=[];for(let i=0;i<24;i++){const segment=node('rect',{x:943+i*8,y,width:6,height:7,rx:.6,fill:DIM,'data-index':i});g.append(segment);this._levelNodes[channel].push(segment);}this._display.append(g);}
+    this._levelNodes={};for(const[channel,letter,y]of [['left','L',86],['right','R',108]]){const g=node('g',{'data-role':channel==='left'?'level-l':'level-r'});g.append(this._dots(letter,925,y-1,1.1));this._levelNodes[channel]=[];for(let i=0;i<24;i++){const segment=node('rect',{x:943+i*8,y,width:6,height:7,rx:.6,fill:METER_DIM(i),'data-index':i});g.append(segment);this._levelNodes[channel].push(segment);}this._display.append(g);}
   }
   _buildControls(){
     this._buttons={};const labels={power:'POWER',prev:'PREVIOUS',play:'PLAY',pause:'PAUSE',stop:'STOP',next:'NEXT',eject:'OPEN / CLOSE'};
@@ -431,7 +435,8 @@ class Deck90CD {
   _emit(key,hold){if(!this._destroyed)for(const callback of [...this._callbacks])callback(key,{hold:Boolean(hold)});}
   _renderTrack(){
     const t=this._state.track,open=this._state.drawerOpen;
-    const seconds=Math.floor(t.elapsed),time=String(Math.floor(seconds/60)).padStart(2,'0')+String(seconds%60).padStart(2,'0');
+    const remain=this._remain&&t.duration>0,seconds=remain?Math.ceil(t.duration-t.elapsed):Math.floor(t.elapsed),time=String(Math.floor(seconds/60)).padStart(2,'0')+String(seconds%60).padStart(2,'0');
+    if(this._minus)this._minus.setAttribute('fill',remain&&!open?LIT:DIM);   // Deck 90 7.9.13: remaining time
     if(this._cache.time!==time||this._cache.open!==open){this._paintDigits(this._timeDigits,open?'----':time);this._cache.time=time;}
     const track=String(t.track).padStart(2,'0');if(this._cache.track!==track){this._paintDigits(this._trackDigits,track);this._cache.track=track;}
     if(this._cache.total!==t.totalTracks){this._total.replaceChildren(this._dots('/'+String(t.totalTracks).padStart(2,'0'),333,107,1.3));this._cache.total=t.totalTracks;}
@@ -444,7 +449,7 @@ class Deck90CD {
     this.svg.setAttribute('aria-label',`DECK 90 DC-90. ${open?'Bandeja abierta.':`Pista ${t.track}. ${t.title}. ${t.artist}. ${t.playing?'Reproduciendo':t.paused?'Pausa':'Detenido'}.`}`);this._updateLeds();
   }
   _updateLeds(){const t=this._state.track;for(const[key,b]of Object.entries(this._buttons)){const active=this._state.powered&&(key==='power'||key==='play'&&t.playing||key==='pause'&&t.paused||key==='eject'&&this._state.drawerOpen);b.led.setAttribute('fill',active?LIT:DIM);b.led.setAttribute('opacity',active?'.9':'.22');b.group.setAttribute('aria-pressed',String(active));if(b.icon)b.icon.setAttribute('fill',active?LIT:'var(--key-label,var(--_d90-key-label,#d2d7d5))');}}
-  _paintLevels(){for(const channel of ['left','right']){const count=this._state.powered&&!this._state.drawerOpen&&this._state.track.playing?Math.round(this._state.levels[channel]*24):0;if(count===this._meterCounts[channel])continue;for(let i=0;i<24;i++)this._levelNodes[channel][i].setAttribute('fill',i<count?LIT:DIM);this._meterCounts[channel]=count;}}
+  _paintLevels(){for(const channel of ['left','right']){const count=this._state.powered&&!this._state.drawerOpen&&this._state.track.playing?Math.round(this._state.levels[channel]*24):0;if(count===this._meterCounts[channel])continue;for(let i=0;i<24;i++)this._levelNodes[channel][i].setAttribute('fill',i<count?METER_LIT(i):METER_DIM(i));this._meterCounts[channel]=count;}}
   _paintDrawer(){const travel=LAYOUT.drawer.openTravel*this._drawerPosition;this._drawer.setAttribute('transform',`translate(0 ${travel===0?'0':travel.toFixed(3)})`);this._opening.setAttribute('height',String(Math.max(0,travel+1)));}
   _schedule(){if(!this._destroyed&&this._frame===null)this._frame=requestAnimationFrame(time=>this._tick(time));}
   _tick(time){

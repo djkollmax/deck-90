@@ -454,6 +454,8 @@ function buildFaceplate(prefix){
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const VFD = 'var(--vfd,#80ffe5)';
 const DIM = 'var(--vfd-dim,#193e34)';
+// Deck 90 7.9.13: the meters end in yellow (19-21) and red (22-24) like the VUs, the zones faintly visible unlit
+const METER_LIT = i => i >= 21 ? '#ff4a3d' : i >= 18 ? '#ffd23a' : VFD, METER_DIM = i => i >= 21 ? '#40171299' : i >= 18 ? '#3d331299' : DIM;
 const NEEDLE = 'var(--needle,#ff5445)';
 const normalized = value => Number.isNaN(Number(value)) ? 0 : Math.min(1, Math.max(0, Number(value) || 0));
 const finite = value => Number.isFinite(Number(value));
@@ -668,7 +670,7 @@ class Deck90Tuner {
       group.append(this._dots(letter, 925, y - 1, 1.1));
       this._levelNodes[channel] = [];
       for (let i = 0; i < 24; i++) {
-        const segment = node('rect', { x: 943 + i * 8, y, width: 6, height: 6, rx: .6, fill: DIM, 'data-index': i });
+        const segment = node('rect', { x: 943 + i * 8, y, width: 6, height: 6, rx: .6, fill: METER_DIM(i), 'data-index': i });
         group.append(segment); this._levelNodes[channel].push(segment);
       }
       this._display.append(group);
@@ -834,7 +836,7 @@ class Deck90Tuner {
     for (const channel of ['left', 'right']) {
       const count = this._state.powered ? Math.round(this._state.levels[channel] * this._levelNodes[channel].length) : 0;
       if (this._meterCounts[channel] === count) continue;
-      for (let index = 0; index < this._levelNodes[channel].length; index++) this._levelNodes[channel][index].setAttribute('fill', index < count ? VFD : DIM);
+      for (let index = 0; index < this._levelNodes[channel].length; index++) this._levelNodes[channel][index].setAttribute('fill', index < count ? METER_LIT(index) : METER_DIM(index));
       this._meterCounts[channel] = count;
     }
   }
