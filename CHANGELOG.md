@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.9
+
+### Fixed
+- **A CD's long song title didn't scroll on the car stereo** (a song from the PC did). The CD redraws the display on every report from the drive, about once a second, and each redraw started the scroll over, so it never got past its first pause. The scroll starts over only for a new title now.
+
 ## 7.9.8
 
 ### Changed

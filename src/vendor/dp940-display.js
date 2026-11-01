@@ -270,7 +270,9 @@ class Deck90Display {
     const text = this._drawSegmentText(title, music ? 84 : 96);
     this._titleWidth = text.width;
     this._titleY = music ? 33 : 31;
-    this._scrollStarted = performance.now();
+    // Deck 90 7.9.9: the scroll starts over only for a new title (the CD redraws the same one on every report from
+    // the drive, about once a second, and the title never got past its first pause)
+    if (this._scrollTitle !== title) { this._scrollTitle = title; this._scrollStarted = performance.now(); }
     this._scrollDistance = Math.max(0, text.width - 676);
     this._titleGroup.append(text.group);
     this._titleGroup.setAttribute('transform', `translate(278 ${this._titleY})`);

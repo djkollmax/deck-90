@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.9 — 2026-11-01
+
+### Arreglos
+- **El título largo de un tema del CD no se desplazaba en el estéreo** (el de un tema de la PC sí). El CD vuelve a dibujar el display con cada aviso de la lectora, más o menos una vez por segundo, y cada vez el desplazamiento empezaba de nuevo, así que nunca pasaba de su primera pausa. Ahora vuelve a empezar solo con un título nuevo.
+
 ## 7.9.8 — 2026-11-01
 
 ### Cambios
