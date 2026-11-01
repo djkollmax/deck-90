@@ -27,7 +27,7 @@ function vuRef(){ return vuCal === 'AUTO' ? autoRef : Number(vuCal); }
 const PEAK_HOLD_MS = 1800;    // peak marker hold
 const PEAK_FALL = 12;         // dB/s after the hold
 function mkVU() {
-  return { lvl: -60, vel: 0, peak: -60, peakTmr: 0, clip: false, clipTmr: 0, samplePeak: -90, dbfs: -90 };
+  return { lvl: -60, vel: 0, peak: -60, peakTmr: 0, clip: false, clipTmr: 0, samplePeak: -90, dbfs: -90, peakLamp: false, peakLampTmr: 0 };
 }
 const vu = { L: mkVU(), R: mkVU() };
 

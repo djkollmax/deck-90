@@ -312,10 +312,10 @@ function drawVUClassic(canvas, ctx, st, th) {
     x.restore();
   }));
 
-  // ── what moves: the peak lamp (lights on a near-clip peak) and the needle (thin, with a counterweight below the window)
+  // ── what moves: the peak lamp (the needle in the red, or a peak within 3 dB of clipping) and the needle (thin, with a counterweight below the window)
   ctx.save();
   clipWin(ctx);
-  if (st.clip || st.samplePeak > -0.5) {
+  if (st.clip || st.peakLamp) {
     ctx.beginPath(); ctx.arc(lx, ly, 4.5 * k, 0, Math.PI * 2);
     ctx.fillStyle = '#ff3a26'; ctx.shadowColor = '#ff3a26'; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0;
   }

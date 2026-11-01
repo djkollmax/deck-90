@@ -503,6 +503,11 @@ function tickVU(st, db) {
   else st.peak = Math.max(-70, st.peak - PEAK_FALL * dtMs / 1000);
 
   // Clip = a real sample at (or over) full scale, not an RMS level that can never get there.
+  // the PEAK lamp (7.9.5): the needle in the red (+1 VU and over), or a peak within 3 dB of clipping (the needle is
+  // too slow to show those); lit at least a quarter second so a short peak is seen
+  if (st.clip || st.lvl >= 1 || st.samplePeak > -3) st.peakLampTmr = 250;
+  else if (st.peakLampTmr > 0) st.peakLampTmr -= dtMs;
+  st.peakLamp = st.peakLampTmr > 0;
   if (st.samplePeak >= -0.1) { st.clip = true; st.clipTmr = 1200; }
   else if (st.clipTmr > 0) st.clipTmr -= dtMs;
   else st.clip = false;

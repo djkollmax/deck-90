@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.6
+
+### Fixed
+- **The VU's PEAK lamp hardly ever lit:** it waited for a clip (a sample at 0 dBFS). It lights now when the needle is in the red (+1 VU and over) or a peak comes within 3 dB of clipping (the needle is too slow to show those), at least a quarter second; on the phone too.
+
 ## 7.9.5
 
 ### Added

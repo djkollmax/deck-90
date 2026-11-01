@@ -113,6 +113,7 @@ function applyFrame(f) {
   for (const [k, a] of [['L', f.L], ['R', f.R]]) {
     const s = vu[k];
     s.peak = a[1]; s.clip = !!a[2]; s.dbfs = a[3]; s.samplePeak = a[4];
+    s.peakLamp = s.clip || a[4] > -3 || a[0] >= 1;          // the PEAK lamp, as the PC lights it (7.9.5)
   }
 }
 const fmt = (x, d = 1) => (x === null || x === undefined || !isFinite(x)) ? '--.-' : x.toFixed(d);

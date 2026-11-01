@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.6 — 2026-11-01
+
+### Arreglos
+- **La luz PEAK del VU casi nunca prendía:** esperaba un clip (una muestra en 0 dBFS). Ahora prende cuando la aguja entra en lo rojo (+1 VU o más) o un pico llega a 3 dB del clip (la aguja es muy lenta para mostrarlos), al menos un cuarto de segundo; en el celular también.
+
 ## 7.9.5 — 2026-11-01
 
 ### Nuevo
