@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.8
+
+### Changed
+- **The DC-90's display is a little larger:** its window is 58 tall instead of 49, and the time, track, song, artist, lamps and meters are about a fifth bigger, the drawer as it was.
+
 ## 7.9.7
 
 ### Fixed

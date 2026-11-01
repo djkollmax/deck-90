@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.8 — 2026-11-01
+
+### Cambios
+- **El display del DC-90 es un poco más grande:** la ventana mide 58 de alto en lugar de 49, y el tiempo, la pista, el tema, el artista, las luces y los vúmetros son alrededor de un quinto más grandes; el cajón queda igual.
+
 ## 7.9.7 — 2026-11-01
 
 ### Arreglos

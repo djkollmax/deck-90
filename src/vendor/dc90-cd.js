@@ -17,7 +17,8 @@
  * Master viewBox1200x220. Physical drawer front1120px =93.3% of rack width.
  *
  * Deck 90 7.9.2: Damián's DC-90 component; src/js/cdunit.js drives it with the PC's drive. 7.9.7: a long title
- * scrolls even when Windows says "reduced motion" (animations off).
+ * scrolls even when Windows says "reduced motion" (animations off), and the display is a little larger: the window
+ * 58 tall instead of 49, the time, track, title, artist, lamps and meters about a fifth bigger.
  */
 (function(global){
 'use strict';
@@ -254,13 +255,13 @@ function buildFaceplate(prefix) {
       <text x="75" y="167" text-anchor="middle">STANDBY</text>
     </g>
     <path d="M35 31H1165" stroke="${dim}" stroke-opacity=".28" stroke-width=".6"/>
-    <rect x="144" y="34" width="1012" height="51" rx="4.8" fill="#000" opacity=".23"/>
-    <rect x="145" y="35" width="1010" height="49" rx="4.4" fill="url(#${p}-window-bevel)" stroke="${edge}" stroke-width=".7"/>
-    <rect x="151" y="39" width="998" height="41" rx="3" fill="#010503"/>
-    <rect x="152" y="40" width="996" height="39" rx="2.4" fill="url(#${p}-glass)"/>
+    <rect x="144" y="34" width="1012" height="60" rx="4.8" fill="#000" opacity=".23"/>
+    <rect x="145" y="35" width="1010" height="58" rx="4.4" fill="url(#${p}-window-bevel)" stroke="${edge}" stroke-width=".7"/>
+    <rect x="151" y="39" width="998" height="50" rx="3" fill="#010503"/>
+    <rect x="152" y="40" width="996" height="48" rx="2.4" fill="url(#${p}-glass)"/>
     <path d="M157 40.3H1143" stroke="#AEDBD0" stroke-opacity=".12" stroke-width=".55"/>
-    <path d="M157 79.4H1143" stroke="#D5E9DD" stroke-opacity=".17" stroke-width=".55"/>
-    <path d="M35 93.7H1165" stroke="${dim}" stroke-width=".55" stroke-opacity=".21"/>
+    <path d="M157 87.4H1143" stroke="#D5E9DD" stroke-opacity=".17" stroke-width=".55"/>
+    <path d="M35 96H1165" stroke="${dim}" stroke-width=".55" stroke-opacity=".21"/>
     <rect x="34.2" y="97.2" width="1131.6" height="59.6" rx="3.8" fill="#000" opacity=".23"/>
     <rect x="35" y="98" width="1130" height="58" rx="3.2" fill="url(#${p}-window-bevel)" stroke="${edge}" stroke-width=".8"/>
     <rect x="39" y="101" width="1122" height="51.8" rx="2" fill="url(#${p}-drawer-well)"/>
@@ -311,7 +312,7 @@ class Deck90CD {
     this.svg=node('svg',{xmlns:SVG_NS,viewBox:'0 0 1200 220',width:'100%',preserveAspectRatio:'xMidYMid meet',role:'group','aria-label':'DECK 90 DC-90 Compact Disc Player','data-deck90-cd':this.prefix});
     this.svg.style.width='100%';this.svg.style.height='auto';this.svg.style.display='block';this.svg.style.userSelect='none';this.svg.style.touchAction='pan-y';
     this._applyTheme();this.svg.innerHTML=buildFaceplate(this.prefix);
-    const defs=node('defs');defs.innerHTML=`<clipPath id="${this.prefix}-title-clip"><rect x="366" y="42" width="505" height="15"/></clipPath><clipPath id="${this.prefix}-artist-clip"><rect x="366" y="61" width="505" height="13"/></clipPath><filter id="${this.prefix}-vfd-glow" x="-12%" y="-25%" width="124%" height="150%"><feGaussianBlur stdDeviation=".55" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="${this.prefix}-key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".18" stop-color="var(--face,var(--_d90-face))"/><stop offset="1" stop-color="var(--key-bottom,var(--_d90-key-bottom))"/></linearGradient>`;this.svg.append(defs);
+    const defs=node('defs');defs.innerHTML=`<clipPath id="${this.prefix}-title-clip"><rect x="372" y="40" width="500" height="18"/></clipPath><clipPath id="${this.prefix}-artist-clip"><rect x="372" y="62" width="500" height="13"/></clipPath><filter id="${this.prefix}-vfd-glow" x="-12%" y="-25%" width="124%" height="150%"><feGaussianBlur stdDeviation=".55" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="${this.prefix}-key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".18" stop-color="var(--face,var(--_d90-face))"/><stop offset="1" stop-color="var(--key-bottom,var(--_d90-key-bottom))"/></linearGradient>`;this.svg.append(defs);
     this._opening=node('rect',{x:43,y:102,width:1114,height:0,rx:1.4,fill:'#010403','data-role':'drawer-opening'});this.svg.append(this._opening);
     this._drawer=node('g',{'data-role':'drawer',transform:'translate(0 0)'});this._drawer.innerHTML=buildDrawer(this.prefix);this.svg.append(this._drawer);
     this._display=node('g',{'data-role':'display','aria-hidden':'true',filter:`url(#${this.prefix}-vfd-glow)`});this.svg.append(this._display);
@@ -369,14 +370,14 @@ class Deck90CD {
   }
   _paintDigits(cells,text){for(let i=0;i<cells.length;i++){const names=DIGIT_MAP[text[i]]||[];for(const[name,segment]of Object.entries(cells[i]))segment.setAttribute('fill',names.includes(name)?LIT:DIM);}}
   _buildDisplay(){
-    this._timeDigits=this._digitGroup(166,43,4,.63,true);this._trackDigits=this._digitGroup(285,54,2,.43);
-    this._display.append(this._dots('TRACK',282,43,.94));this._total=node('g',{'data-role':'total-tracks'});this._display.append(this._total);
+    this._timeDigits=this._digitGroup(166,42,4,.74,true);this._trackDigits=this._digitGroup(291,53,2,.5);
+    this._display.append(this._dots('TRACK',289,42,1.05));this._total=node('g',{'data-role':'total-tracks'});this._display.append(this._total);
     const clip=node('g',{'data-role':'title-viewport','clip-path':`url(#${this.prefix}-title-clip)`});this._title=node('g',{'data-role':'title'});clip.append(this._title);this._display.append(clip);
     const artistClip=node('g',{'clip-path':`url(#${this.prefix}-artist-clip)`});this._artist=node('g',{'data-role':'artist'});artistClip.append(this._artist);this._display.append(artistClip);
-    this._display.append(node('rect',{x:367,y:78,width:503,height:1.5,fill:DIM}));this._progress=node('rect',{x:367,y:78,width:0,height:1.5,fill:LIT,'data-role':'progress'});this._display.append(this._progress);
-    this._indicators={};for(const[word,x]of [['PLAY',891],['PAUSE',962],['DISC',1045]]){const group=this._dots(word,x,44,1.15);this._indicators[word.toLowerCase()]=group;this._display.append(group);}
-    this._openStatus=this._dots('OPEN',891,44,1.15);this._openStatus.setAttribute('opacity','0');this._display.append(this._openStatus);
-    this._levelNodes={};for(const[channel,letter,y]of [['left','L',62],['right','R',73]]){const g=node('g',{'data-role':channel==='left'?'level-l':'level-r'});g.append(this._dots(letter,891,y-1,.8));this._levelNodes[channel]=[];for(let i=0;i<24;i++){const segment=node('rect',{x:904+i*9.55,y,width:7.3,height:4.2,rx:.45,fill:DIM,'data-index':i});g.append(segment);this._levelNodes[channel].push(segment);}this._display.append(g);}
+    this._display.append(node('rect',{x:373,y:82,width:497,height:1.6,fill:DIM}));this._progress=node('rect',{x:373,y:82,width:0,height:1.6,fill:LIT,'data-role':'progress'});this._display.append(this._progress);
+    this._indicators={};for(const[word,x]of [['PLAY',891],['PAUSE',962],['DISC',1045]]){const group=this._dots(word,x,43,1.35);this._indicators[word.toLowerCase()]=group;this._display.append(group);}
+    this._openStatus=this._dots('OPEN',891,43,1.35);this._openStatus.setAttribute('opacity','0');this._display.append(this._openStatus);
+    this._levelNodes={};for(const[channel,letter,y]of [['left','L',66],['right','R',78]]){const g=node('g',{'data-role':channel==='left'?'level-l':'level-r'});g.append(this._dots(letter,891,y-1,.9));this._levelNodes[channel]=[];for(let i=0;i<24;i++){const segment=node('rect',{x:904+i*9.55,y,width:7.3,height:5,rx:.45,fill:DIM,'data-index':i});g.append(segment);this._levelNodes[channel].push(segment);}this._display.append(g);}
   }
   _buildControls(){
     this._buttons={};const labels={power:'POWER',prev:'PREVIOUS',play:'PLAY',pause:'PAUSE',stop:'STOP',next:'NEXT',eject:'OPEN / CLOSE'};
@@ -409,13 +410,13 @@ class Deck90CD {
     const seconds=Math.floor(t.elapsed),time=String(Math.floor(seconds/60)).padStart(2,'0')+String(seconds%60).padStart(2,'0');
     if(this._cache.time!==time||this._cache.open!==open){this._paintDigits(this._timeDigits,open?'----':time);this._cache.time=time;}
     const track=String(t.track).padStart(2,'0');if(this._cache.track!==track){this._paintDigits(this._trackDigits,track);this._cache.track=track;}
-    if(this._cache.total!==t.totalTracks){this._total.replaceChildren(this._dots('/'+String(t.totalTracks).padStart(2,'0'),318,68,.95));this._cache.total=t.totalTracks;}
+    if(this._cache.total!==t.totalTracks){this._total.replaceChildren(this._dots('/'+String(t.totalTracks).padStart(2,'0'),328,71,1.05));this._cache.total=t.totalTracks;}
     const title=open?'BANDEJA ABIERTA':t.title||'COMPACT DISC';
-    if(this._cache.title!==title){this._title.replaceChildren(this._dots(title,0,0,1.65));this._title.setAttribute('transform','translate(367 43)');this._titleWidth=[...title.toUpperCase()].length*9.9;this._titleStarted=performance.now();this._cache.title=title;}
+    if(this._cache.title!==title){this._title.replaceChildren(this._dots(title,0,0,2));this._title.setAttribute('transform','translate(373 42)');this._titleWidth=[...title.toUpperCase()].length*12;this._titleStarted=performance.now();this._cache.title=title;}
     const artist=open?'OPEN / CLOSE':t.artist;
-    if(this._cache.artist!==artist){this._artist.replaceChildren(this._dots(artist,367,63,1.15));this._cache.artist=artist;}
+    if(this._cache.artist!==artist){this._artist.replaceChildren(this._dots(artist,373,64,1.4));this._cache.artist=artist;}
     for(const[key,indicator]of Object.entries(this._indicators)){const on=!open&&(key==='disc'||key==='play'&&t.playing||key==='pause'&&t.paused);for(const dot of indicator.children)dot.setAttribute('fill',on?LIT:DIM);indicator.setAttribute('opacity',open&&key==='play'?'0':'1');}
-    this._openStatus.setAttribute('opacity',open?'1':'0');this._progress.setAttribute('width',String(t.duration>0?503*clamp(t.elapsed/t.duration):0));this._cache.open=open;
+    this._openStatus.setAttribute('opacity',open?'1':'0');this._progress.setAttribute('width',String(t.duration>0?497*clamp(t.elapsed/t.duration):0));this._cache.open=open;
     this.svg.setAttribute('aria-label',`DECK 90 DC-90. ${open?'Bandeja abierta.':`Pista ${t.track}. ${t.title}. ${t.artist}. ${t.playing?'Reproduciendo':t.paused?'Pausa':'Detenido'}.`}`);this._updateLeds();
   }
   _updateLeds(){const t=this._state.track;for(const[key,b]of Object.entries(this._buttons)){const active=this._state.powered&&(key==='power'||key==='play'&&t.playing||key==='pause'&&t.paused||key==='eject'&&this._state.drawerOpen);b.led.setAttribute('fill',active?LIT:DIM);b.led.setAttribute('opacity',active?'.9':'.22');b.group.setAttribute('aria-pressed',String(active));}}
@@ -425,8 +426,8 @@ class Deck90CD {
   _tick(time){
     if(this._destroyed)return;this._frame=null;const dt=this._previousTime?Math.max(0,Math.min(64,time-this._previousTime)):16;this._previousTime=time;const diff=this._drawerTarget-this._drawerPosition;
     if(diff!==0){this._drawerPosition=this._motion?.matches?this._drawerTarget:this._drawerPosition+diff*(1-Math.exp(-dt/150));if(Math.abs(this._drawerTarget-this._drawerPosition)<=.00003)this._drawerPosition=this._drawerTarget;this._paintDrawer();}
-    const distance=Math.max(0,(this._titleWidth||0)-502);let scroll=false;
-    if(distance>0&&this._state.powered){/* Deck 90 7.9.7: scrolls even with Windows' animations off */const travel=distance/30*1000,delay=1500,phase=Math.max(0,time-this._titleStarted)%(2*travel+2*delay);let offset=0;if(phase>delay&&phase<delay+travel)offset=(phase-delay)*.03;else if(phase>=delay+travel&&phase<2*delay+travel)offset=distance;else if(phase>=2*delay+travel)offset=distance-(phase-2*delay-travel)*.03;this._title.setAttribute('transform',`translate(${(367-offset).toFixed(3)} 43)`);scroll=true;}else this._title.setAttribute('transform','translate(367 43)');
+    const distance=Math.max(0,(this._titleWidth||0)-496);let scroll=false;
+    if(distance>0&&this._state.powered){/* Deck 90 7.9.7: scrolls even with Windows' animations off */const travel=distance/30*1000,delay=1500,phase=Math.max(0,time-this._titleStarted)%(2*travel+2*delay);let offset=0;if(phase>delay&&phase<delay+travel)offset=(phase-delay)*.03;else if(phase>=delay+travel&&phase<2*delay+travel)offset=distance;else if(phase>=2*delay+travel)offset=distance-(phase-2*delay-travel)*.03;this._title.setAttribute('transform',`translate(${(373-offset).toFixed(3)} 42)`);scroll=true;}else this._title.setAttribute('transform','translate(373 42)');
     if(scroll||Math.abs(this._drawerTarget-this._drawerPosition)>.00003)this._schedule();
   }
 }
