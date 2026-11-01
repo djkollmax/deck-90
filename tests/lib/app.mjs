@@ -19,7 +19,7 @@ const require = createRequire(path.join(ROOT, 'package.json'));
 
 async function playwright() {
   if (process.env.PW_DIR) return import(pathToFileURL(path.join(process.env.PW_DIR, 'node_modules', 'playwright-core', 'index.mjs')).href);
-  return import(pathToFileURL(require.resolve('playwright-core')).href);
+  return import(pathToFileURL(path.join(path.dirname(require.resolve('playwright-core/package.json')), 'index.mjs')).href);
 }
 /** Playwright itself, for a phone's browser in the tests. */
 export const playwrightModule = playwright;

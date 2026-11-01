@@ -13,7 +13,7 @@ const radio = () => d.win.evaluate(() => {
 });
 
 before(async () => { station = await startStation(); d = await launch({ station, size: [1300, 1100] }); });
-after(async () => { await d.close(); await station.close(); });
+after(async () => { await d?.close(); await station?.close(); });
 
 test('POWER turns the radio on with its memory and pauses the PC', async () => {
   await d.win.evaluate(() => { np = Object.assign(np || {}, { status: 'Playing', title: 'Tema', artist: 'Banda' }); });

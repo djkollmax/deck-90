@@ -13,7 +13,7 @@ before(async () => {
   d = await launch({ drive: disc(5, 200, { tracks: [1, 2, 3, 4, 5].map(n => ({ n, audio: true, len: 200 })).concat([{ n: 6, audio: false, len: 300 }]) }) });
   await d.drive({ slow: true });
 });
-after(async () => { await d.close(); });
+after(async () => { await d?.close(); });
 
 test('starts with no errors and every module drawn', async () => {
   for (const sel of ['#tuner svg', '#cdUnit svg', '#np', '#hcDigits']) assert.ok(await d.win.locator(sel).count(), sel);
@@ -21,7 +21,8 @@ test('starts with no errors and every module drawn', async () => {
 });
 
 test('the demo moves the VU and lights PEAK on its loudest moments only', async () => {
-  await d.win.keyboard.press('d'); await d.wait(3000);
+  await d.win.keyboard.press('d');
+  await d.win.waitForFunction(() => vu.L.lvl > 0.3, null, { timeout: 15000 });   // the demo is up
   const r = await d.win.evaluate(() => new Promise(ok => { let lit = 0, n = 0, top = -99;
     const t = setInterval(() => { n++; if (vu.L.peakLamp) lit++; top = Math.max(top, vu.L.lvl); if (n >= 80) { clearInterval(t); ok({ lit, n, top }); } }, 50); }));
   assert.ok(r.top > 0.3, 'the needle moves: ' + r.top);

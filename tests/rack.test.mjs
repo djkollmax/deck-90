@@ -11,7 +11,7 @@ const both = () => d.win.evaluate(() => ({
 }));
 
 before(async () => { station = await startStation(); d = await launch({ station, drive: disc(10, 180) }); });
-after(async () => { await d.close(); await station.close(); });
+after(async () => { await d?.close(); await station?.close(); });
 
 test('the radio taking the sound pauses the CD, which stays on', async () => {
   await d.win.evaluate(() => cdUnitKey('power')); await d.wait(1500);

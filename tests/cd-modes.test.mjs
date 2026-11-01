@@ -22,7 +22,7 @@ before(async () => {
   await d.win.evaluate(() => cdUnitKey('power')); await d.wait(1500);
   await d.win.evaluate(() => cdUnitKey('stop')); await d.wait(300);
 });
-after(async () => { await d.close(); });
+after(async () => { await d?.close(); });
 
 test('no modes: the disc plays through and ends', async () => {
   assert.deepEqual(await play({ repeat: 'off', shuffle: false }, 1, 18), ['1j', '2n', '3n', '4n', 'END']);

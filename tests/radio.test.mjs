@@ -16,7 +16,7 @@ before(async () => {
     radioMem.band = 'FM1'; radioMem.slot = 1;
   }, station.base);
 });
-after(async () => { await d.close(); await station.close(); });
+after(async () => { await d?.close(); await station?.close(); });
 
 test('the song and the quality the station sends show on the tuner', async () => {
   await d.win.evaluate(() => tunerKey('power')); await d.wait(4000);

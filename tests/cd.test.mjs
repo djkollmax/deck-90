@@ -18,7 +18,7 @@ const cd = () => d.win.evaluate(() => {
 });
 
 before(async () => { d = await launch({ size: [1300, 1100], drive: disc(10, 180), names: NAMES }); });
-after(async () => { await d.close(); });
+after(async () => { await d?.close(); });
 
 test('POWER plays the disc with its names', async () => {
   await d.cmds();
