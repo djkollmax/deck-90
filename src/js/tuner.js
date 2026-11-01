@@ -195,3 +195,7 @@ function tunerStopped() { if (tunerPower) { tunerPower = false; tunerMemo = 0; t
 
 tunerPanel.classList.toggle('mod-off', !tunerCfg.show);
 if (tunerCfg.show) tunerBuild();
+
+// the radio (src/core/radio.js): its changes on the display; stopped for good, the unit goes off
+deck.on('radio', () => { if (tuner) tunerSync(); });
+deck.on('radio-off', () => tunerStopped());

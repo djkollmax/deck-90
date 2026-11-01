@@ -215,3 +215,7 @@ function cdUnitKeeps() {
 
 cdUnitPanel.classList.toggle('mod-off', !cdUnitCfg.show);
 if (cdUnitCfg.show) cdUnitBuild();
+
+// the CD (src/core/cd.js): its changes on the display; a disc read, the one asked to play starts
+deck.on('cd', () => { if (cdUnit) cdUnitSync(); });
+deck.on('cd-disc', () => cdUnitInfo());

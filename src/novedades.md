@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.16 — 2026-11-01
+
+### Por dentro
+- **Empieza el orden del código.** La radio y el CD pasan a su propia carpeta (`src/core`), separados de las pantallas que los muestran: el estéreo, el sintonizador y la compactera los usan igual que antes. Y el programa ahora tiene 37 pruebas propias que GitHub corre en cada cambio antes de publicar una versión. Por fuera no cambia nada.
+
 ## 7.9.15 — 2026-11-01
 
 ### Cambios

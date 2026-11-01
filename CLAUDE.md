@@ -18,12 +18,17 @@ module with its own CSS, then ES modules instead of shared globals). Until then:
   Windows bridge: now playing, volume keys, the CD drive through MCI), `mpris.js` (the same on Linux),
   `radioproxy.js` (the radio through a local proxy that reads the song and bitrate), `cdnames.js`
   (MusicBrainz), `remote.js` (the phone), `updater.js`, `tracklog.js`.
-- `src/index.html` loads `src/js/*.js` as classic scripts, in order; they share their top-level names. The order
-  in index.html matters, and a file reaching another one's names checks with `typeof` first.
+- `src/core/`: what works with no screen. `events.js` is the hub (`deck.on`, `deck.emit`, `deck.notice` for a
+  line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
+  (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) say what changed through it and never touch a
+  screen. The screens call their functions and listen.
+- `src/index.html` loads `src/core/*.js` and `src/js/*.js` as classic scripts, in order; they share their
+  top-level names. The order in index.html matters, and a file reaching another one's names checks with
+  `typeof` first.
   - `core.js`, `audio.js`, `loop.js`: the capture, the measurements and the frame loop.
   - `draw-*.js`, `deck*.js`, `tape*.js`, `cd90.js`: the modules' drawing.
-  - `stereo.js`: the radio and CD engines and the car stereo window. `tuner.js` and `cdunit.js`: the rack's
-    DT-90 and DC-90 on those engines.
+  - `stereo.js`: the car stereo window. `tuner.js` and `cdunit.js`: the rack's DT-90 and DC-90. All three
+    play the radio and the CD of `src/core/`.
   - `controls.js` (keys and prefs), `clock.js` (header clock and weather), `phone.js`, `history.js`, …
 - `src/vendor/`: Damián's SVG components (`dp940-display.js` the car stereo's display, `dt90-tuner.js`,
   `dc90-cd.js`). Deck 90 patches them; every patch is marked with a `Deck 90 x.y.z` comment and listed in the

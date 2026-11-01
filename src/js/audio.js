@@ -595,3 +595,7 @@ function estimateTempo(now) {
   else bpmVal = bpmVal * 0.7 + est * 0.3;                          // otherwise settle
   bpmConfidence = bpmConfidence * 0.6 + conf * 0.4;
 }
+
+// the core's lines for the person (src/core), and a station starting: the meters follow it through the PC's sound
+deck.on('notice', (html, ms) => toast(html, ms));
+deck.on('radio-on-air', () => { if (activeSource !== 'sys' && window.winCtl) startAudio('sys'); });
