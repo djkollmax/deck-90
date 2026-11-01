@@ -41,7 +41,9 @@ test('REPEAT one: the same song again and again', async () => {
 test('SHUFFLE: each song once, then it stops', async () => {
   const h = await play({ repeat: 'off', shuffle: true }, 1, ends);
   const songs = h.filter(x => /^\d/.test(x)).map(x => parseInt(x));
-  assert.deepEqual([...songs].sort(), [1, 2, 3, 4]); assert.equal(h.at(-1), 'STOP');
+  assert.deepEqual([...songs].sort(), [1, 2, 3, 4]);
+  // the program stops the drive after the last one drawn, unless that is the disc's last song: then the disc ends by itself
+  assert.equal(h.at(-1), songs.at(-1) === 4 ? 'END' : 'STOP');
 });
 
 test('SHUFFLE and REPEAT: a new draw after the four', async () => {
