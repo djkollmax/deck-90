@@ -47,7 +47,7 @@ const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'AM'];
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
 let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), AM: RADIO_AM.slice() };
 try {
-  const r = JSON.parse(localStorage.getItem(RADIO_KEY));
+  const r = store.read(RADIO_KEY);
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
     if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: 6 }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0 } : null);
     if (RADIO_BANDS.includes(r.band)) radioMem.band = r.band;
@@ -61,7 +61,7 @@ try {
     radioMem.v = 2;
   }
 } catch (_) {}
-const saveRadio = () => { try { localStorage.setItem(RADIO_KEY, JSON.stringify(radioMem)); } catch (_) {} };
+const saveRadio = () => store.write(RADIO_KEY, radioMem);
 
 // ── the radio itself: one <audio> playing the station's stream (Deck 90 hears it like any other sound) ──
 const radioAudio = new Audio();

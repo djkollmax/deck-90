@@ -14,10 +14,10 @@
 const TUNER_DISP = ['name', 'clock', 'temp'];
 const TUNER_LINES = ['song', 'station', 'quality'];   // MODE (7.9.4): what the line under the dial says
 let tunerCfg = { show: true, disp: 'name', line: 'song' };
-try {
-  const t = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).tuner;
-  if (t && typeof t === 'object') tunerCfg = { show: t.show !== false, disp: TUNER_DISP.includes(t.disp) ? t.disp : 'name', line: TUNER_LINES.includes(t.line) ? t.line : 'song' };
-} catch (_) {}
+{
+  const t = store.section('tuner');
+  if (t) tunerCfg = { show: t.show !== false, disp: TUNER_DISP.includes(t.disp) ? t.disp : 'name', line: TUNER_LINES.includes(t.line) ? t.line : 'song' };
+}
 let tuner = null, tunerPower = false, tunerMemo = 0, tunerResumePc = false, tunerShownKey = '';
 let tunerAvg = -24, tunerAt = 0, tunerLv = { L: 0, R: 0 };
 const tunerPanel = document.getElementById('tunerPanel');

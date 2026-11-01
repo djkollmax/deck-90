@@ -21,7 +21,7 @@ module with its own CSS, then ES modules instead of shared globals). Until then:
 - `src/core/`: what works with no screen. `events.js` is the hub (`deck.on`, `deck.emit`, `deck.notice` for a
   line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
   (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) say what changed through it and never touch a
-  screen. The screens call their functions and listen.
+  screen. The screens call their functions and listen. `store.js` reads and writes what's saved (localStorage).
 - `src/index.html` loads `src/core/*.js` and `src/js/*.js` as classic scripts, in order; they share their
   top-level names. The order in index.html matters, and a file reaching another one's names checks with
   `typeof` first.

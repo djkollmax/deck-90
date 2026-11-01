@@ -7,9 +7,7 @@ const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
   try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: typeof rotateCfg === 'object' ? rotateCfg : undefined, stereo: typeof stereoCfg === 'object' ? stereoCfg : undefined, tuner: typeof tunerCfg === 'object' ? tunerCfg : undefined, cdunit: typeof cdUnitCfg === 'object' ? cdUnitCfg : undefined })); } catch(_){}
 }
-function loadPrefs(){
-  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(_) { return {}; }
-}
+function loadPrefs(){ return store.read(PREFS_KEY, {}); }
 
 // The rack's frame: brushed-metal plates, each display behind glass in a polished bevel, as the premium
 // decks of the 90s, in TITANIO, NEGRO or CHAMPAGNE; or CLÁSICO, the dark rack of the first versions.

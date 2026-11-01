@@ -73,10 +73,10 @@ function cdNamesAsk(info) {
 // song), shuffle draws the disc in a random order, each song once (then again with REPEAT, or the end). A drive
 // plays a disc straight through by itself, so near the end of a song the program jumps where these modes say,
 // only when that isn't the song that comes next anyway (no gap then).
-const cdModes = (() => { try { const m = JSON.parse(localStorage.getItem('deck90-cdmodes')) || {};
-  return { repeat: ['all', 'one'].includes(m.repeat) ? m.repeat : 'off', shuffle: m.shuffle === true }; } catch (_) { return { repeat: 'off', shuffle: false }; } })();
+const cdModes = (() => { const m = store.read('deck90-cdmodes', {});
+  return { repeat: ['all', 'one'].includes(m.repeat) ? m.repeat : 'off', shuffle: m.shuffle === true }; })();
 let cdShuf = { order: [], hist: [] }, cdEndDone = '';
-function cdModesSave() { try { localStorage.setItem('deck90-cdmodes', JSON.stringify(cdModes)); } catch (_) {} }
+function cdModesSave() { store.write('deck90-cdmodes', cdModes); }
 const cdList = () => cdFiles().length ? cdFiles().map((_, i) => i) : cdAudioTracks().map(t => t.n);
 const cdCurrent = () => cdFiles().length ? cdFile : (cdState.track || (cdAudioTracks()[0] || {}).n);
 function cdShuffleDeal(cur) {

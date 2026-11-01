@@ -53,12 +53,12 @@ const STEREO_COLORS = STEREO_HUES.length + STEREO_LOOKS.length;   // SDM: six li
 const stereoLook = () => STEREO_LOOKS[stereoCfg.color - STEREO_HUES.length - 1] || null;
 let stereoMode = false, stereoDisplay = null, stereoTextAt = 0, stereoShown = '';
 let stereoCfg = { disp: 'song', color: 1, dim: 0, mode: 'pc' };
-try {
-  const c = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).stereo;
-  if (c && typeof c === 'object') stereoCfg = {
+{
+  const c = store.section('stereo');
+  if (c) stereoCfg = {
     disp: STEREO_DISP.includes(c.disp) ? c.disp : 'song', color: c.color >= 1 && c.color <= STEREO_COLORS ? c.color | 0 : 1,
     dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd'].includes(c.mode) ? c.mode : 'pc' };
-} catch (_) {}
+}
 
 // ── the display ──
 function stereoOpen(on) {

@@ -10,10 +10,10 @@
 //  The CD and the radio are one at a time: playing one turns the other off.
 // ═══════════════════════════════════════════════════════════
 let cdUnitCfg = { show: true };
-try {
-  const c = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).cdunit;
-  if (c && typeof c === 'object') cdUnitCfg = { show: c.show !== false, remain: c.remain === true };
-} catch (_) {}
+{
+  const c = store.section('cdunit');
+  if (c) cdUnitCfg = { show: c.show !== false, remain: c.remain === true };
+}
 let cdUnit = null, cdUnitPower = false, cdUnitWants = false, cdUnitResumePc = false, cdUnitShownKey = '', cdUnitClosing = 0;
 let cdUnitAvg = -24, cdUnitAt = 0, cdUnitLv = { L: 0, R: 0 };
 const cdUnitPanel = document.getElementById('cdPanel');

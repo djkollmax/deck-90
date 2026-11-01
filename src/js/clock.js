@@ -10,15 +10,14 @@
 const CLOCK_KEY = 'deck90-clock';
 const CLOCK_MODES = ['off', 'clock', 'weather'];
 const clockCfg = (() => {
-  let c = {};
-  try { c = JSON.parse(localStorage.getItem(CLOCK_KEY)) || {}; } catch (_) {}
+  const c = store.read(CLOCK_KEY, {});
   const p = c.place;
   return {
     mode: CLOCK_MODES.includes(c.mode) ? c.mode : 'weather',
     place: p && typeof p.name === 'string' && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180 ? p : null,
   };
 })();
-function saveClock() { try { localStorage.setItem(CLOCK_KEY, JSON.stringify(clockCfg)); } catch (_) {} }
+function saveClock() { store.write(CLOCK_KEY, clockCfg); }
 
 const hcEl = { box: el('np'), clock: el('hcBox'), digits: el('hcDigits'), day: el('hcDay'), date: el('hcDate'),
   wx: el('hwBox'), icon: el('hwIcon'), temp: el('hwTemp'), cond: el('hwCond'), range: el('hwRange'), city: el('cityInput') };

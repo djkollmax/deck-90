@@ -8,10 +8,10 @@
 const ROTATE_MINS = [1, 3, 5, 10];
 const ROTATE_SETS = { factory: 'LOS 10 DE FÁBRICA', mine: 'LOS MÍOS (C1–C3)', all: 'TODOS' };
 let rotateCfg = { on: false, min: 3, set: 'factory' };
-try {
-  const r = (JSON.parse(localStorage.getItem('deck90-prefs')) || {}).rotate;
-  if (r && typeof r === 'object') rotateCfg = { on: !!r.on, min: ROTATE_MINS.includes(r.min) ? r.min : 3, set: r.set in ROTATE_SETS ? r.set : 'factory' };
-} catch (_) {}
+{
+  const r = store.section('rotate');
+  if (r) rotateCfg = { on: !!r.on, min: ROTATE_MINS.includes(r.min) ? r.min : 3, set: r.set in ROTATE_SETS ? r.set : 'factory' };
+}
 let rotateLeft = rotateCfg.min * 60e3;
 const rotateMenu = document.getElementById('rotateMenu');
 const rotateMenuOpen = () => rotateMenu.classList.contains('show');

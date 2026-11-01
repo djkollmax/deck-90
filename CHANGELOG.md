@@ -4,6 +4,7 @@
 
 ### Internal
 - **The radio and CD engines move to `src/core/`** (`radio.js`, `cd.js`), out of `stereo.js`, with a hub (`src/core/events.js`) through which they say what changed: `radio`, `radio-on-air`, `radio-off`, `cd`, `cd-disc`, `notice`. They no longer call the car stereo, the tuner, the CD unit or the toast; those listen. No change for the user.
+- **What's saved goes through `src/core/store.js`** (`store.read`, `store.write`, `store.section` of deck90-prefs): a missing or damaged setting gives the default, never an error.
 - **The program's tests are in the repo** (`tests/*.test.mjs`, `npm test`) and a release waits for them.
 
 ## 7.9.15
