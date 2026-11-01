@@ -408,7 +408,7 @@ function drawVUDuo(canvas, ctx, st) {
   // On the PC the L panel shows both meters: side by side on one wide face, or one face over the other when
   // the panel isn't wide enough. The phone shows one per canvas.
   const pc = canvas.id === 'vuL' && typeof applyModules === 'function', both = pc && W / H > 2.2, stack = pc && !both;
-  const vL = pc && running ? vu.L : st, vR = pc && running ? vu.R : st;   // stopped: both at rest, as the idle state passed in
+  const vL = pc && capture.running ? vu.L : st, vR = pc && capture.running ? vu.R : st;   // stopped: both at rest, as the idle state passed in
   const faces = both ? [{ oy: 0, fh: H, sides: [['L', vL], ['R', vR]] }]
     : stack ? [{ oy: 0, fh: H / 2, sides: [['L', vL]] }, { oy: H / 2, fh: H / 2, sides: [['R', vR]] }]
     : [{ oy: 0, fh: H, sides: [[canvas.id === 'vuR' ? 'R' : 'L', st]] }];
@@ -512,7 +512,7 @@ function drawVUBar(canvas, ctx, st, skin) {
   if (W < 60 || H < 30) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }   // put away (the R panel while one strip shows both)
   const S = BAR_STYLE[skin] || BAR_STYLE.BARCYAN;
   const both = canvas.id === 'vuL' && typeof applyModules === 'function';   // the PC: both rows on the L panel (the phone: one per canvas)
-  const rows = both ? [['L', running ? vu.L : st], ['R', running ? vu.R : st]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];   // stopped: at rest
+  const rows = both ? [['L', capture.running ? vu.L : st], ['R', capture.running ? vu.R : st]] : [[canvas.id === 'vuR' ? 'R' : 'L', st]];   // stopped: at rest
   if (W / H < 1.3) return drawVUBarTall(canvas, ctx, S, skin, rows, W, H);
   // the strip: the rows, the scale under them, all centred in the window and as large as it allows
   const m = Math.max(5, Math.min(12, H * .05)), wx = m, wy = m, ww = W - 2 * m, wh = H - 2 * m;

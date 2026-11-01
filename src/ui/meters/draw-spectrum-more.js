@@ -9,7 +9,7 @@
 function logEdges(n, f0, f1) { const e = []; for (let i = 0; i <= n; i++) e.push(f0 * Math.pow(f1 / f0, i / n)); return e; }
 // loudest bin per band (what hardware analyzers show), in dBFS
 function bandsMax(fd, edges, out) {
-  const nyq = actx.sampleRate / 2, bins = fd.length;
+  const nyq = capture.actx.sampleRate / 2, bins = fd.length;
   for (let b = 0; b < edges.length - 1; b++) {
     const i1 = Math.max(1, Math.floor(edges[b] / nyq * bins)), i2 = Math.min(bins, Math.max(i1 + 1, Math.ceil(edges[b + 1] / nyq * bins)));
     let m = -140; for (let i = i1; i < i2; i++) if (fd[i] > m) m = fd[i];
@@ -21,7 +21,7 @@ function bandsMax(fd, edges, out) {
 // part of it that falls inside the band, so neighbouring bands neither overlap nor leave gaps, and a band
 // narrower than one bin gets its share of that bin (the lowest bands are only approximate at this FFT size).
 function bandsPower(fd, lo, hi, out) {
-  const binHz = actx.sampleRate / 2 / fd.length, last = fd.length - 1;
+  const binHz = capture.actx.sampleRate / 2 / fd.length, last = fd.length - 1;
   for (let b = 0; b < lo.length; b++) {
     const a = lo[b] / binHz, z = hi[b] / binHz;            // band edges in bins (bin i covers i-½ … i+½)
     if (a > last) { out[b] = -140; continue; }            // above the sample rate's reach
@@ -35,17 +35,17 @@ function bandsPower(fd, lo, hi, out) {
   return out;
 }
 // rise at once, fall at `rate` dB per second
-function fall(state, b, db, rate) { state[b] = db >= state[b] ? db : Math.max(db, state[b] - rate * dtMs / 1000); return state[b]; }
+function fall(state, b, db, rate) { state[b] = db >= state[b] ? db : Math.max(db, state[b] - rate * pace.dtMs / 1000); return state[b]; }
 // peak hold: `hold` frames at 60 Hz, then fall `drop` per frame
 function holdPeak(peak, tm, b, v, hold, drop, floor) {
   if (v > peak[b]) { peak[b] = v; tm[b] = hold; }
-  else if (tm[b] > 0) tm[b] -= frameScale;
-  else peak[b] = Math.max(floor, peak[b] - drop * frameScale);
+  else if (tm[b] > 0) tm[b] -= pace.frameScale;
+  else peak[b] = Math.max(floor, peak[b] - drop * pace.frameScale);
 }
 // rise over ~30 ms, fall at `rate` dB/s: for analysers without their own smoothing
 function riseFall(state, b, db, rate) {
-  if (db >= state[b]) state[b] += (db - state[b]) * (1 - Math.exp(-dtMs / 30));
-  else state[b] = Math.max(db, state[b] - rate * dtMs / 1000);
+  if (db >= state[b]) state[b] += (db - state[b]) * (1 - Math.exp(-pace.dtMs / 30));
+  else state[b] = Math.max(db, state[b] - rate * pace.dtMs / 1000);
   return state[b];
 }
 const tilt = f => 3 * Math.log2(f / 1000);                  // +3 dB/octave so cymbals show like on hardware
@@ -114,7 +114,7 @@ function drawLED80(canvas, ctx, levels) {
   }));
 }
 function drawSpectrumLED80(canvas, ctx) {
-  aMain.getFloatFrequencyData(bufFD);
+  capture.aMain.getFloatFrequencyData(bufFD);
   bandsMax(bufFD, ledEdges, ledDb);
   const g = hwGain(), out = ledLv, lv = ledOut;
   for (let b = 0; b < LED_N; b++) {
@@ -148,7 +148,7 @@ function drawSpectrumShowroom(canvas, ctx) {
   const g = flGain(flSensitivity, audible());
   const src = demo ? showroomDemo(now) : null;
   for (let b = 0; b < FL_BARS.length; b++) flShown[b] = demo ? src[b] : Math.min(0, smoothBar(b, flRaw[b]) + g);
-  flPeaks(flShown, spPeak, spPeakTm, frameScale);
+  flPeaks(flShown, spPeak, spPeakTm, pace.frameScale);
   drawFLDisplay(canvas, ctx, flShown, spPeak, FL_PAL.TURQ, demo);
 }
 
@@ -210,8 +210,8 @@ function drawAmber(canvas, ctx, lvL, lvR) {
   }));
 }
 function drawSpectrumAmber(canvas, ctx) {
-  if (!bufFDL || bufFDL.length !== aL.frequencyBinCount) { bufFDL = new Float32Array(aL.frequencyBinCount); bufFDR = new Float32Array(aR.frequencyBinCount); }
-  aL.getFloatFrequencyData(bufFDL); aR.getFloatFrequencyData(bufFDR);
+  if (!bufFDL || bufFDL.length !== capture.aL.frequencyBinCount) { bufFDL = new Float32Array(capture.aL.frequencyBinCount); bufFDR = new Float32Array(capture.aR.frequencyBinCount); }
+  capture.aL.getFloatFrequencyData(bufFDL); capture.aR.getFloatFrequencyData(bufFDR);
   bandsMax(bufFDL, ambEdges, ambRawL); bandsMax(bufFDR, ambEdges, ambRawR);
   const g = hwGain(), lvL = ambOutL, lvR = ambOutR;
   for (let b = 0; b < AMB_N; b++) {
@@ -285,7 +285,7 @@ function drawRTA(canvas, ctx, levels) {
   ctx.fillText(levels && rtaGain ? 'dBFS +' + rtaGain + ' dB' : 'dBFS', W - R, 11);
 }
 function drawSpectrumRTA(canvas, ctx) {
-  aMain.getFloatFrequencyData(bufFD);
+  capture.aMain.getFloatFrequencyData(bufFD);
   bandsPower(bufFD, RTA_LO, RTA_HI, rtaRaw);
   const g = flSensitivity * 6;                               // N 0 · H +6 · MAX +12 dB (the scale says so)
   rtaGain = g;
@@ -346,7 +346,7 @@ function drawLCD(canvas, ctx, levels) {
   }));
 }
 function drawSpectrumLCD(canvas, ctx) {
-  aMain.getFloatFrequencyData(bufFD);
+  capture.aMain.getFloatFrequencyData(bufFD);
   bandsMax(bufFD, lcdEdges, lcdRaw);
   const g = hwGain(), lv = lcdOut;
   for (let b = 0; b < LCD_N; b++) {
@@ -397,12 +397,12 @@ function drawSpectrogram(canvas, ctx) {
     sgCtx = sgCanvas.getContext('2d'); sgCtx.fillStyle = '#000'; sgCtx.fillRect(0, 0, plotW, plotH);
     sgCol = sgCtx.createImageData(1, plotH);
   }
-  aMain.getFloatFrequencyData(bufFD);
+  capture.aMain.getFloatFrequencyData(bufFD);
   restAnim = true;                                            // it runs right to left by itself: keep drawing
-  sgAcc += 60 * dtMs / 1000;                                  // 60 px a second, whatever the frame rate
+  sgAcc += 60 * pace.dtMs / 1000;                                  // 60 px a second, whatever the frame rate
   const dx = Math.min(plotW, Math.floor(sgAcc)); sgAcc -= dx;
   if (dx > 0) {
-    const nyq = actx.sampleRate / 2, bins = bufFD.length, d = sgCol.data;
+    const nyq = capture.actx.sampleRate / 2, bins = bufFD.length, d = sgCol.data;
     for (let yy = 0; yy < plotH; yy++) {
       const fa = SG_F0 * Math.pow(SG_F1 / SG_F0, 1 - (yy + 1) / plotH), fb = SG_F0 * Math.pow(SG_F1 / SG_F0, 1 - yy / plotH);
       const i1 = Math.max(1, Math.floor(fa / nyq * bins)), i2 = Math.min(bins, Math.max(i1 + 1, Math.ceil(fb / nyq * bins)));
@@ -421,8 +421,8 @@ function drawIdleSpectrogram(canvas, ctx) {
 // 64 log bands for the phone's spectrogram, as one base64 string of 0–255 levels
 const SG_PHONE_N = 64, sgPhoneEdges = logEdges(SG_PHONE_N, SG_F0, SG_F1), sgPhoneDb = new Float32Array(SG_PHONE_N);
 function spectrogramBands() {
-  if (!aMain) return null;
-  aMain.getFloatFrequencyData(bufFD);
+  if (!capture.aMain) return null;
+  capture.aMain.getFloatFrequencyData(bufFD);
   bandsMax(bufFD, sgPhoneEdges, sgPhoneDb);
   let s = '';
   for (let b = 0; b < SG_PHONE_N; b++) s += String.fromCharCode(Math.max(0, Math.min(255, Math.round((sgPhoneDb[b] - SG_LO) / (SG_HI - SG_LO) * 255))));

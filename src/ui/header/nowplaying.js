@@ -84,7 +84,7 @@ cDK.addEventListener('click', ev => {
   const cmd = DECK_CMD[h.k];
   deckPressed[h.k] = performance.now();
   if (cmd) window.nowPlaying.cmd(cmd);
-  if (!running) drawDeck(cDK, xDK, false);
+  if (!capture.running) drawDeck(cDK, xDK, false);
 });
 
 cTP.addEventListener('mousemove', ev => { cTP.style.cursor = tapeKeyAt(ev) ? 'pointer' : 'default'; });

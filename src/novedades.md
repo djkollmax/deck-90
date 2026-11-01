@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.18 — 2026-11-01
+
+### Por dentro
+- **Lo que se comparte entre partes, a la vista.** Los valores que varios archivos tocaban sueltos (el audio que se escucha, el ritmo de cuadros, lo que mandan los procesos de audio) quedan cada uno en un solo lugar, la radio y el CD se manejan solo con sus funciones, y se sacaron 34 comprobaciones de más. Un informe (`scripts/globals.mjs`) muestra qué parte usa qué. Por fuera no cambia nada.
+
 ## 7.9.17 — 2026-11-01
 
 ### Por dentro

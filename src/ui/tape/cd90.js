@@ -11,10 +11,10 @@ const CD90 = {}, CD90_FILES = { panel: 'cd-panel.jpg', mask: 'cd-panel-mask.png'
 let cd90Loaded = 0;
 for (const [k, f] of Object.entries(CD90_FILES)) {
   const im = new Image();
-  im.onload = () => { if (++cd90Loaded === 3 && typeof running !== 'undefined' && !running && typeof drawIdle === 'function') drawIdle(); };
+  im.onload = () => { if (++cd90Loaded === 3 && typeof capture !== 'undefined' && !capture.running && typeof drawIdle === 'function') drawIdle(); };
   im.src = 'img/cd/' + f; CD90[k] = im;
 }
-const cd90Ready = () => cd90Loaded === 3 && typeof tape90Ready === 'function' && tape90Ready();
+const cd90Ready = () => cd90Loaded === 3 && tape90Ready();
 let cdPanelCanvas = null;
 function cdPanel() {                                     // the photo with its own rounded outline, put together once
   if (cdPanelCanvas) return cdPanelCanvas;
@@ -89,7 +89,7 @@ function drawCD90(ctx, W, H, play) {
     [698, 134, 87, 129, '⏏', () => toast('El CD-90 solo reproduce 🙂', 2000)]];
   const now = performance.now(), pressed = ['TIME', 'REPEAT', '⏏'].concat(keys).filter(k => now - (deckPressed[k] || 0) < 180).join(',');
   const dur = np && np.dur > 0 ? np.dur : 0;
-  const stillKey = [extra, play, running, cd.track, cd.remain && !!dur, cd.repeat, pressed].join('|');
+  const stillKey = [extra, play, capture.running, cd.track, cd.remain && !!dur, cd.repeat, pressed].join('|');
   ctx.save();
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
@@ -110,7 +110,7 @@ function drawCD90(ctx, W, H, play) {
     // power LED: green while it plays, dim otherwise
     { const [lx, ly] = Q(176, 509), r = P(11);
       x.beginPath(); x.arc(lx, ly, r, 0, Math.PI * 2);
-      if (running) { x.fillStyle = '#3dff6a'; x.shadowColor = '#3dff6a'; x.shadowBlur = P(18); }
+      if (capture.running) { x.fillStyle = '#3dff6a'; x.shadowColor = '#3dff6a'; x.shadowBlur = P(18); }
       else x.fillStyle = '#1d3a22';
       x.fill(); x.shadowBlur = 0; }
     // the current track's key glows (1–8)
@@ -138,7 +138,7 @@ function drawCD90(ctx, W, H, play) {
     rr(x, kX0 - P(8), kY - P(8), kRow + P(16), kH + P(16), P(8)); x.fillStyle = 'rgba(0,0,0,.75)'; x.fill();
     keys.forEach((k, i) => {
       const kx = kX0 + i * (kW + kGap);
-      const lit = (k === '▶' && play) || (k === '■' && !running);
+      const lit = (k === '▶' && play) || (k === '■' && !capture.running);
       const down = pressed.split(',').includes(k), ky = kY + (down ? P(3) : 0);
       x.drawImage(T90.key, kx, ky, kW, kH);
       if (down) { x.fillStyle = 'rgba(0,0,0,.3)'; x.fillRect(kx, ky, kW, kH); }
@@ -189,7 +189,7 @@ function cdDisplay(ctx, gX, gY, gW, gH, play, part) {
   // PLAY / PAUSE / STOP, CD, REMAIN, REPEAT
   ctx.font = face(gH * 0.1);
   if (!still) {
-    const state = play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■');
+    const state = play ? 'PLAY ▶' : (capture.running ? 'PAUSE ❚❚' : 'STOP ■');
     ctx.fillStyle = play ? FL : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = glow;
     ctx.fillText(state, x, dY0 + dH * 0.25); ctx.shadowBlur = 0;
   } else { ctx.fillStyle = FL; ctx.fillText('CD', x, dY0 + dH * 0.72); }
@@ -246,9 +246,9 @@ function cdDisplay(ctx, gX, gY, gW, gH, play, part) {
   const bandsN = Math.max(16, Math.min(40, Math.round(tWd / (gH * 0.14)))), bw = tWd / bandsN;
   if (cd.edgesN !== bandsN) { cd.edgesN = bandsN; cd.edges = logEdges(bandsN, 40, 16000); cd.db = new Float32Array(bandsN); cd.bands = new Float32Array(bandsN); cd.peaks = new Float32Array(bandsN); cd.peakT = new Float32Array(bandsN); }
   if (!still) {
-    const T = typeof dtMs !== 'undefined' ? dtMs / 1000 : 0.016;
-    if (running && aMain) {
-      aMain.getFloatFrequencyData(bufFD); bandsMax(bufFD, cd.edges, cd.db);
+    const T = pace.dtMs / 1000;
+    if (capture.running && capture.aMain) {
+      capture.aMain.getFloatFrequencyData(bufFD); bandsMax(bufFD, cd.edges, cd.db);
       for (let k = 0; k < bandsN; k++) {
         const v = Math.max(0, Math.min(1, (cd.db[k] + 85) / 60));
         cd.bands[k] = v > cd.bands[k] ? v : Math.max(v, cd.bands[k] - 1.6 * T);

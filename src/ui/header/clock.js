@@ -22,7 +22,7 @@ function saveClock() { store.write(CLOCK_KEY, clockCfg); }
 const hcEl = { box: el('np'), clock: el('hcBox'), digits: el('hcDigits'), day: el('hcDay'), date: el('hcDate'),
   wx: el('hwBox'), icon: el('hwIcon'), temp: el('hwTemp'), cond: el('hwCond'), range: el('hwRange'), city: el('cityInput') };
 const HC_ON = '#80ffe5', HC_OFF = '#193e34', HC_GLASS = '#030303';   // the DC-90's VFD: lit and unlit
-if (typeof SEG7 === 'object') Object.assign(SEG7, { '-': 'g', '°': 'abfg' });
+Object.assign(SEG7, { '-': 'g', '°': 'abfg' });
 const DIAS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 const WX_TEXT = { 0: 'DESPEJADO', 1: 'CASI DESPEJADO', 2: 'ALGO NUBLADO', 3: 'NUBLADO', 45: 'NIEBLA', 48: 'NIEBLA',
@@ -229,13 +229,13 @@ hcEl.wx.addEventListener('click', () => { if (!drawerOpen) setDrawer(true); if (
 
 // the second hand: the colon blinks, the minutes turn
 (function tick() {
-  if (hcShown() && hcH && (typeof winShown === 'undefined' || winShown)) drawClock(new Date());
+  if (hcShown() && hcH && winShown) drawClock(new Date());
   setTimeout(tick, 500 - (Date.now() % 500) + 5);
 })();
 new ResizeObserver(() => requestAnimationFrame(layoutClock)).observe(hcEl.box);
 // the header's height follows its display (taller with the clock): the modules under it are sized again
 let hdrT = 0;
-new ResizeObserver(() => { clearTimeout(hdrT); hdrT = setTimeout(() => { sizeCanvases(); if (!running && typeof drawIdle === 'function') drawIdle(); }, 60); })
+new ResizeObserver(() => { clearTimeout(hdrT); hdrT = setTimeout(() => { sizeCanvases(); if (!capture.running) drawIdle(); }, 60); })
   .observe(document.querySelector('.title-bar'));
 new MutationObserver(() => requestAnimationFrame(layoutClock)).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
 new MutationObserver(() => requestAnimationFrame(layoutClock)).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });

@@ -5,8 +5,11 @@
 const FFT   = 4096;
 const SMTH  = 0.6;    // crisper attack; the fall is shaped per bar (smoothBar)
 
-let actx, stream, srcNode, upmix, splitter, aMain, aL, aR, aKL, aKR, aBeat;
-let running = false, rafId = null;
+// What the program listens with: the Web Audio graph on the PC's sound (audio.js builds and tears it down:
+// the context, the stream and its source, the upmix and channel splitter, the analysers for the mix, left,
+// right, the K-weighted pair and the beat), whether it runs, and the frame loop's request.
+const capture = { actx: null, stream: null, srcNode: null, upmix: null, splitter: null, aMain: null, aL: null, aR: null,
+  aKL: null, aKR: null, aBeat: null, running: false, rafId: null };
 
 // Reusable buffers: nothing is allocated per frame (no GC stutter).
 const bufL  = new Float32Array(FFT), bufR  = new Float32Array(FFT);
@@ -14,8 +17,9 @@ const bufKL = new Float32Array(FFT), bufKR = new Float32Array(FFT);
 const bufTD = new Float32Array(FFT);
 let bufFD = new Float32Array(FFT / 2), bufBeat = new Float32Array(FFT / 2), prevBeat = null;
 
-// Frame timing: everything that moves is time-based, so a 60 Hz and a 144 Hz monitor behave alike.
-let lastFrame = 0, dtMs = 16.7, frameScale = 1;
+// Frame timing: everything that moves is time-based, so a 60 Hz and a 144 Hz monitor behave alike. loop.js
+// sets it each frame: the last frame's time, the ms since it, and that as a share of a 60 Hz frame.
+const pace = { lastFrame: 0, dtMs: 16.7, frameScale: 1 };
 
 // VU ballistics. Classic VU: 300 ms to reach 99% (tau ≈ 65 ms), same up and down.
 // Calibration: 0 VU = -18 dBFS (EBU R68 / common studio reference). The needle shows VU, the clip LED uses the real sample peak.
@@ -41,7 +45,7 @@ const spLvl = new Float32Array(NBARS).fill(-120);
 const BAR_FALL = 38;   // dB/s
 function smoothBar(b, db) {
   if (db >= spLvl[b]) spLvl[b] = db;
-  else spLvl[b] = Math.max(db, spLvl[b] - BAR_FALL * dtMs / 1000);
+  else spLvl[b] = Math.max(db, spLvl[b] - BAR_FALL * pace.dtMs / 1000);
   return spLvl[b];
 }
 
@@ -158,13 +162,13 @@ function setSpectrumSkin(skin){
   spectrumSkin = skin;
   document.body.classList.toggle('spectrum-fl', spectrumSkin === 'FL90');
   resetSpectrumPeaks();
-  if (!running && typeof drawIdle === 'function') drawIdle();
+  if (!capture.running && typeof drawIdle === 'function') drawIdle();
 }
 
 function setFlSensitivity(next){
   flSensitivity = (typeof next === 'number') ? next : (flSensitivity + 1) % 3;
   resetSpectrumPeaks();
-  if (!running && typeof drawIdle === 'function') drawIdle();
+  if (!capture.running && typeof drawIdle === 'function') drawIdle();
 }
 
 // every VU face, in the order V steps through them; the wide ones show both meters in one panel
@@ -174,7 +178,7 @@ function setVUSkin(skin){
   const duo = vuWide(skin) !== vuWide(vuSkin);
   vuSkin = skin;
   if (duo && typeof applyModules === 'function') applyModules();   // DÚO puts both meters in the L panel
-  if (!running && typeof drawIdle === 'function') drawIdle();
+  if (!capture.running && typeof drawIdle === 'function') drawIdle();
 }
 
 function setSpectrumMode(idx){
@@ -211,13 +215,13 @@ function windowLoudness(now, ms){
 }
 
 function updateMasterMeters(now){
-  if(!running || !aKL || !aKR) return;
-  aKL.getFloatTimeDomainData(bufKL);
-  aKR.getFloatTimeDomainData(bufKR);
+  if(!capture.running || !capture.aKL || !capture.aKR) return;
+  capture.aKL.getFloatTimeDomainData(bufKL);
+  capture.aKR.getFloatTimeDomainData(bufKR);
 
-  const n = Math.max(64, Math.min(FFT, Math.round(dtMs / 1000 * actx.sampleRate)));
+  const n = Math.max(64, Math.min(FFT, Math.round(pace.dtMs / 1000 * capture.actx.sampleRate)));
   const ms = freshMeanSquare(bufKL, n) + freshMeanSquare(bufKR, n);   // G = 1.0 for L and R
-  loudBlocks.push({ t: now, ms, dt: dtMs });
+  loudBlocks.push({ t: now, ms, dt: pace.dtMs });
   while(loudBlocks.length && now - loudBlocks[0].t > 3000) loudBlocks.shift();
 
   const lufsM = windowLoudness(now, 400);
@@ -270,7 +274,7 @@ function updateMasterMeters(now){
   if (pkNow > pkMaxDb) pkMaxDb = pkNow;
   let tpNow = -Infinity;
   if(peakDb >= peakHoldDb || now - peakHoldT > 1500){ peakHoldDb = peakDb; peakHoldT = now; }
-  const k300 = 1 - Math.exp(-dtMs / 300);
+  const k300 = 1 - Math.exp(-pace.dtMs / 300);
   {
     let wpL = 0, wpR = 0, wsL = 0, wsR = 0, wn = 0;
     for (const c of crestRing) { if (c.pL > wpL) wpL = c.pL; if (c.pR > wpR) wpR = c.pR; wsL += c.sL; wsR += c.sR; wn += c.n; }
@@ -282,7 +286,7 @@ function updateMasterMeters(now){
   }
   const crest = crestSm;
   // Phase: sample-aligned sums from the audio thread when available, else this frame's buffers.
-  if (corrFresh) { sumL = corrLL; sumR = corrRR; cross = corrLR; corrLL = corrRR = corrLR = 0; corrFresh = false; }
+  if (worklet.corrFresh) { sumL = worklet.corrLL; sumR = worklet.corrRR; cross = worklet.corrLR; worklet.corrLL = worklet.corrRR = worklet.corrLR = 0; worklet.corrFresh = false; }
   const den = Math.sqrt(sumL * sumR);
   if(den > 1e-9) phaseSm += (cross / den - phaseSm) * k300;
 
@@ -293,8 +297,8 @@ function updateMasterMeters(now){
   // Peak card: true peak (dBTP) when the audio thread measures it, sample peak (dBFS) otherwise.
   let shownDb = peakHoldDb;
   if (tpAvailable) {
-    if (tpFresh) {                                         // ~47 messages/s against 60–144 frames/s
-      const tpDb = 20 * Math.log10(Math.max(tpBlock, 1e-9)); tpBlock = 0; tpFresh = false;
+    if (worklet.tpFresh) {                                         // ~47 messages/s against 60–144 frames/s
+      const tpDb = 20 * Math.log10(Math.max(worklet.tpBlock, 1e-9)); worklet.tpBlock = 0; worklet.tpFresh = false;
       if (tpDb >= tpHoldDb || now - tpHoldT > 1500) { tpHoldDb = tpDb; tpHoldT = now; }
       if (counting && tpDb > -89) { tpNow = tpDb; if (tpDb > tpMaxDb) tpMaxDb = tpDb; }
     }
@@ -363,4 +367,4 @@ function sizeCanvases() {
   if (typeof wakeDisplays === 'function') wakeDisplays();   // the canvases were just cleared: draw them again
 }
 let resizeT = 0;
-window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { sizeCanvases(); if (!running && typeof drawIdle === 'function') drawIdle(); }, 60); });
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { sizeCanvases(); if (!capture.running && typeof drawIdle === 'function') drawIdle(); }, 60); });

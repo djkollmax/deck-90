@@ -5,7 +5,7 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: typeof rotateCfg === 'object' ? rotateCfg : undefined, stereo: typeof stereoCfg === 'object' ? stereoCfg : undefined, tuner: typeof tunerCfg === 'object' ? tunerCfg : undefined, cdunit: typeof cdUnitCfg === 'object' ? cdUnitCfg : undefined })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: rotateCfg, stereo: stereoCfg, tuner: tunerCfg, cdunit: cdUnitCfg })); } catch(_){}
 }
 function loadPrefs(){ return store.read(PREFS_KEY, {}); }
 
@@ -18,9 +18,9 @@ function setChassis(v){
   chassis = CHASSIS.includes(v) ? v : 'TI';
   const h = document.documentElement.classList;
   h.toggle('chassis-ti', chassis !== 'CLASSIC'); h.toggle('fin-black', chassis === 'BLACK'); h.toggle('fin-gold', chassis === 'GOLD');
-  if (typeof tunerTheme === 'function') tunerTheme();
-  if (typeof cdUnitTheme === 'function') cdUnitTheme();
-  requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+  tunerTheme();
+  cdUnitTheme();
+  requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
 }
 function setDrawer(open){
   drawerOpen = open;
@@ -106,7 +106,7 @@ skinMenu.addEventListener('click', e => {
   if (pickerOpen === 'vu') { setVUSkin(b.dataset.v); if (!mods.vu) toggleModule('vu'); }
   else { setSpectrumSkin(b.dataset.v); if (!mods.spectrum) toggleModule('spectrum'); }
   showSkinMenu(false); savePrefs(); syncConsole();
-  if (!running) drawIdle();
+  if (!capture.running) drawIdle();
 });
 document.addEventListener('click', e => { if (skinMenu.classList.contains('show') && !e.target.closest('#styleMenu') && !e.target.closest('.seg.picker')) showSkinMenu(false); });
 function toggleFullscreen(){
@@ -153,7 +153,7 @@ document.getElementById('console').addEventListener('click', e => {
     if (v === 'about') showAbout(!aboutOpen());
   }
   savePrefs(); syncConsole();
-  if (!running) drawIdle();
+  if (!capture.running) drawIdle();
 });
 
 // ── MINI MODE ───────────────────────────────────────────────
@@ -162,8 +162,8 @@ document.getElementById('console').addEventListener('click', e => {
 function setMini(on, style) {
   miniMode = on;
   document.body.classList.toggle('mini', on);
-  if (typeof stereoOpen === 'function') stereoOpen(on && style === 'stereo');
-  requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+  stereoOpen(on && style === 'stereo');
+  requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
 }
 function toggleMini() {
   if (window.winCtl && window.winCtl.mini) window.winCtl.mini();
@@ -190,7 +190,7 @@ document.addEventListener('keydown', e => {
   if (e.target && e.target.closest && e.target.closest('input, textarea')) return;   // typing (the city) isn't a shortcut
   const k = e.key.toLowerCase();
   // An open window takes Esc (and L closes the history again); nothing else reaches the rack meanwhile.
-  if (typeof welcomeOpen === 'function' && welcomeOpen()) {
+  if (welcomeOpen()) {
     if (k === 'escape') { e.preventDefault(); showWelcome(false); }
     if (/^f[1-8]$/.test(k)) e.preventDefault();
     return;
@@ -220,9 +220,9 @@ document.addEventListener('keydown', e => {
     s: () => { closeSplash(); startAudio('sys'); },
     m: () => { closeSplash(); startAudio('mic'); },
     d: () => { closeSplash(); startDemo(); },
-    ' ': () => { if (running) stopAudio(); },
+    ' ': () => { if (capture.running) stopAudio(); },
     r: () => { if (!e.repeat) setRotate(!rotateCfg.on); },
-    escape: () => { if (rotateMenuOpen()) { showRotateMenu(false); return; } if (skinMenu.classList.contains('show')) { showSkinMenu(false); return; } if (running && !document.fullscreenElement) stopAudio(); },
+    escape: () => { if (rotateMenuOpen()) { showRotateMenu(false); return; } if (skinMenu.classList.contains('show')) { showSkinMenu(false); return; } if (capture.running && !document.fullscreenElement) stopAudio(); },
     f: toggleFullscreen,
     t: cycleSkin,
     v: () => { const o = VU_SKINS; setVUSkin(o[(o.indexOf(vuSkin) + 1) % o.length]); savePrefs(); syncConsole(); },
@@ -243,7 +243,7 @@ document.addEventListener('keydown', e => {
 // A window dragged to a screen with another scale (100 % → 150 %) may not resize: size everything again
 // for the new density, or the still layers (painted at the new one) wouldn't match the canvases.
 (function watchDensity() {
-  try { matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)').addEventListener('change', () => { sizeCanvases(); if (!running) drawIdle(); watchDensity(); }, { once: true }); } catch (_) {}
+  try { matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)').addEventListener('change', () => { sizeCanvases(); if (!capture.running) drawIdle(); watchDensity(); }, { once: true }); } catch (_) {}
 })();
 
 // ── INIT ────────────────────────────────────────────────────
@@ -288,7 +288,7 @@ if (IS_APP) {
     sizeCanvases();
     try { await startAudio('sys'); } catch (_) {}
     // one drawn frame of live meters (a hidden window gets no animation frames), then show the window
-    if (running) { try { frame(true); } catch (_) {} }
+    if (capture.running) { try { frame(true); } catch (_) {} }
     setTimeout(() => window.winCtl && window.winCtl.ready && window.winCtl.ready(), 60);
   }, 30);
   const tip = document.querySelector('.splash-tip');

@@ -21,8 +21,8 @@ function welcomeSync() {
 }
 function showWelcome(on) {
   if (on) {
-    if (typeof showAbout === 'function' && aboutOpen()) showAbout(false);
-    if (typeof histOpen === 'function' && histOpen()) showHistory(false);
+    if (aboutOpen()) showAbout(false);
+    if (histOpen()) showHistory(false);
     welcomeStep = 0;
     welcomeModal.querySelector('.welcome-looks').innerHTML = FACTORY_PRESETS.map((p, i) =>
       '<button data-look="' + (i + 1) + '"><img src="img/thumbs/vu-' + p.snap.vuSkin + '.jpg" alt=""><img src="img/thumbs/sp-' + p.snap.spectrumSkin + '.jpg" alt=""><b>' + (i + 1) + ' · ' + p.name + '</b></button>').join('');

@@ -14,16 +14,16 @@ function phoneFrame() {
   const v = s => [r1(s.lvl), r1(s.peak), s.clip ? 1 : 0, r1(s.dbfs), r1(s.samplePeak)];
   const fin = x => (typeof x === 'number' && isFinite(x)) ? r1(x) : null;
   return {
-    run: running, src: activeSource, aud: running && audible(),
+    run: capture.running, src: activeSource, aud: capture.running && audible(),
     L: v(vu.L), R: v(vu.R),
     m: fin(miniVals.m), s: fin(miniVals.s), i: fin(miniVals.i), lra: fin(lraValue), sp: fin(spotGain),
     tp: tpAvailable ? fin(tpHoldDb) : null, tpMax: fin(tpMaxDb), pk: fin(peakHoldDb),
     ph: Math.round(phaseSm * 100) / 100, bpm: bpmVal > 0 ? Math.round(bpmVal) : 0, lock: bpmConfidence >= 0.45,
     skin: vuSkin, tape: tapeStyle, sens: flSensitivity,
     // FL 90s bands as measured (dBFS, whole numbers): the phone smooths and lifts them itself
-    fl: running && aMain ? Array.from(flRawLevels(phoneFl), x => Math.round(x)) : null,
+    fl: capture.running && capture.aMain ? Array.from(flRawLevels(phoneFl), x => Math.round(x)) : null,
     // the phone's spectrogram: 64 bands, 30 Hz – 20 kHz, 0–255, as base64
-    sg: running && aMain ? spectrogramBands() : null,
+    sg: capture.running && capture.aMain ? spectrogramBands() : null,
     flc: spectrumSkin === 'SHOWROOM' ? 'TURQ' : spectrumSkin === 'AMBER' ? 'AMBER' : spectrumSkin === 'FLSPEC' ? 'SPEC' : spectrumSkin === 'FLSPEC2' ? 'SPEC2' : 'GREEN',
     sv: phoneStereo(),
   };
@@ -46,7 +46,7 @@ function phoneTick(now) {
   phoneLastSend = now;
   try { window.phoneDisplay.frame(phoneFrame()); } catch (_) {}
 }
-setInterval(() => { if (!running) phoneTick(performance.now()); }, 500);
+setInterval(() => { if (!capture.running) phoneTick(performance.now()); }, 500);
 
 function phoneButton(v) {
   if (!window.phoneDisplay) { toast('La pantalla en el celular funciona desde el programa (Deck 90.exe).', 3500); return; }

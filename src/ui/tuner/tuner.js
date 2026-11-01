@@ -37,7 +37,7 @@ function tunerBands() {}
 function tunerBand(b) {
   if (!RADIO_BANDS.includes(b)) return;
   const same = b === radioMem.band;
-  radioMem.band = b; if (!same) radioMem.slot = 1; saveRadio(); radioScan = 0;
+  radioMem.band = b; if (!same) radioMem.slot = 1; saveRadio(); radioScanSet(false);
   const st = radioMem[b][(radioMem.slot || 1) - 1];
   toast('BANDA · <span>' + b + '</span>' + (st ? ' · ' + radioMem.slot + ' ' + st.name.replace(/[<>&]/g, '') : ''), 1600);
   if (!tunerPower) tunerOn(true, true);
@@ -57,8 +57,8 @@ function tunerShow(on, quiet) {
   tunerCfg.show = !!on;
   tunerPanel.classList.toggle('mod-off', !on);
   if (on) tunerBuild();
-  savePrefs(); if (typeof syncConsole === 'function') syncConsole();
-  if (typeof sizeCanvases === 'function') requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+  savePrefs(); syncConsole();
+  requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
   if (!quiet) toast(on ? 'RADIO · <span>el sintonizador</span> en el rack (9 lo esconde)' : 'El sintonizador queda guardado (9 lo vuelve a mostrar)' + (radioPlaying() ? ': la radio sigue sonando' : ''), 2200);
 }
 
@@ -144,7 +144,7 @@ function tunerOn(on, keyTunes) {
   tunerPower = on; tunerMemo = 0;
   if (on) {
     if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true;   // the CD pauses; the PC's player was waiting for it
-    if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
+    if (np && np.status === 'Playing' && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
     if (!keyTunes && !radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
   } else {
     radioStop();
@@ -175,10 +175,10 @@ function tunerKey(k, { hold } = {}) {
   }
   if (!tunerPower && k !== 'band') tunerOn(true, k !== 'scan');   // a station key wakes the tuner, as on the real one
   if (k === 'band') return tunerBand(RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]);
-  if (k === 'tune-up' || k === 'tune-down') { radioScan = 0; radioStep(k === 'tune-up' ? 1 : -1); return tunerSync(); }
+  if (k === 'tune-up' || k === 'tune-down') { radioScanSet(false); radioStep(k === 'tune-up' ? 1 : -1); return tunerSync(); }
   if (k === 'scan') {
-    if (radioScan) { radioScan = 0; toast('SCAN · <span>se queda en esta</span>', 1400); }
-    else { radioScan = 1; toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
+    if (radioScan) { radioScanSet(false); toast('SCAN · <span>se queda en esta</span>', 1400); }
+    else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
     return tunerSync();
   }
   if (/^m[1-6]$/.test(k)) {

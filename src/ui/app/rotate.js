@@ -78,10 +78,10 @@ window.addEventListener('resize', () => { if (rotateMenuOpen()) showRotateMenu(f
 // the clock: only music time counts
 setInterval(() => {
   if (!rotateCfg.on) return;
-  const playing = running && performance.now() - lastSound < 2500 && !miniMode && !modsBeforeTape && !document.hidden
+  const playing = capture.running && performance.now() - lastSound < 2500 && !miniMode && !modsBeforeTape && !document.hidden
     && !(typeof skinMenu !== 'undefined' && skinMenu.classList.contains('show')) && !rotateMenuOpen()
     && !(typeof aboutOpen === 'function' && aboutOpen()) && !(typeof welcomeOpen === 'function' && welcomeOpen())
-    && !(typeof histOpen === 'function' && histOpen()) && !presetSaveArmed;
+    && !histOpen() && !presetSaveArmed;
   if (!playing) return;
   rotateLeft -= 1000;
   if (rotateLeft <= 0) { rotateLeft = rotateCfg.min * 60e3; rotateNext(); }

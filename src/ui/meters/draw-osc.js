@@ -7,7 +7,7 @@ function drawOsc(canvas, ctx) {
   const H = canvas.offsetHeight || canvas.height;
 
   const td = bufTD;
-  aMain.getFloatTimeDomainData(td);
+  capture.aMain.getFloatTimeDomainData(td);
 
   // Phosphor persistence — partial clear so old frames linger (CRT glow)
   ctx.fillStyle = 'rgba(5,5,14,0.80)'; ctx.fillRect(0, 0, W, H);

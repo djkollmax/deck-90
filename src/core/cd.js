@@ -126,6 +126,18 @@ function cdGo(n) {
   cdState = { state: 'seeking', track: n, pos: 0, at: now };
   deck.emit('cd');
 }
+// STOP: the disc stops at the start of the song it was on (cdStop, for POWER and the tray, forgets the song)
+function cdStopHere() {
+  if (cdFiles().length) { cdAudio.pause(); cdAudio.currentTime = 0; }
+  else if (window.cdrom) { window.cdrom.cmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; }
+  deck.emit('cd');
+}
+// a pause from outside (the radio took the sound): the disc waits where it was
+function cdPauseHere() {
+  if (cdFiles().length) { if (!cdAudio.paused) cdAudio.pause(); }
+  else if (cdPlaying() && window.cdrom) { window.cdrom.cmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
+  deck.emit('cd');
+}
 function cdToggle() {
   if (cdFiles().length) { if (cdAudio.paused) { if (cdAudio.getAttribute('src')) cdAudio.play().catch(() => {}); else cdPlayFile(0); } else cdAudio.pause(); return; }
   const tr = cdAudioTracks(); if (!tr.length || !window.cdrom) return;

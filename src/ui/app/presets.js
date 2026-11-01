@@ -82,7 +82,7 @@ function applySnap(s) {
   }
   applyModules(); savePrefs(); syncConsole();
   if (typeof showSkinMenu === 'function' && skinMenu.classList.contains('show')) showSkinMenu(false);
-  if (!running) drawIdle();
+  if (!capture.running) drawIdle();
 }
 function savePreset(id) {
   presetSaveArmed = false;

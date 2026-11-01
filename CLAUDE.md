@@ -11,8 +11,9 @@ English.
 
 ## Layout
 
-The code is being restructured in stages: the tests, `src/core/` and the `src/ui/` folders are done; next, ES
-modules instead of shared globals.
+The code was restructured in stages (7.9.16–7.9.18): the tests, `src/core/`, the `src/ui/` folders, and the
+shared state made explicit. Moving to ES modules (`import`/`export`) is left for when the project grows; Damián
+wants it done then (see Shared names).
 
 - `electron/`: the main process. `main.js` (window, IPC, the network the page may not reach), `media.ps1` (the
   Windows bridge: now playing, volume keys, the CD drive through MCI), `mpris.js` (the same on Linux),
@@ -33,15 +34,34 @@ modules instead of shared globals.
     tape style), `header/` (now playing, clock and weather), `mini/` (the strip), `stereo/` (the car stereo
     window; `stereo-face.css` is shared with the phone), `tuner/` (the DT-90; `units.css` styles it and the
     DC-90), `cdunit/` (the DC-90).
-- `src/index.html` loads every script as a classic script and every stylesheet, in order. The scripts share
-  their top-level names, so the order matters and a file reaching another one's names checks with `typeof`
-  first. The stylesheets are one cascade split in files: a later file overrides an earlier one, so moving a
-  rule between files can change the look (compare with `scripts/shots.mjs`, below).
+- `src/index.html` loads every script as a classic script and every stylesheet, in order. The stylesheets are
+  one cascade split in files: a later file overrides an earlier one, so moving a rule between files can change
+  the look (compare with `scripts/shots.mjs`, below).
 - `src/vendor/`: Damián's SVG components (`dp940-display.js` the car stereo's display, `dt90-tuner.js`,
   `dc90-cd.js`). Deck 90 patches them; every patch is marked with a `Deck 90 x.y.z` comment and listed in the
   file's header. A new revision from Damián replaces the file and gets those patches again.
 - `src/remote/`: the phone's page; `electron/remote.js` maps the shared files it loads.
-- `tests/`: see Checks. `scripts/`: packaging (`package.mjs`), the update test, the syntax check, the shots.
+- `tests/`: see Checks. `scripts/`: packaging (`package.mjs`), the update test, the syntax check, the shots,
+  the shared-names report (`globals.mjs`).
+
+## Shared names
+
+The page's scripts share their top-level names (no modules yet), so:
+
+- A script may use any name of a script loaded before it. A name of a script loaded after it exists only once
+  the page has loaded: code that can run while the page loads (top-level code, an image's onload, a font
+  promise) checks it with `typeof` first; code that only runs later (keys, the frame loop, timers) doesn't.
+- The radio and the CD are changed only through `src/core/`'s functions (`radioTune`, `radioScanSet`,
+  `cdGo`, `cdStopHere`, `cdPauseHere`, …), never by setting their variables; they answer through `deck` events.
+- State that several files change lives in one object owned by one file: `capture` (core.js: the Web Audio
+  graph and `running`), `pace` (core.js: frame timing), `worklet` (audio.js: what the audio worklets send).
+  The phone's `src/remote/shim.js` defines the parts of them its shared files read.
+- Still set from another file: the measurement values of core.js that audio.js's per-frame measuring updates
+  (VU reference, loudness, LRA, crest, phase, beat, BPM), the view prefs that controls.js and presets.js apply
+  (`drawerOpen`, `controlsHidden`, `deckDouble`, `modsBeforeTape`, `tapeStyle`, `vuCal`, `miniMode`), and a few
+  hand-overs (`restAnim`, `tunerResumePc`, `deckHits`, `lastAudible`, `presetSaveArmed`, `rotateLeft`).
+  `node scripts/globals.mjs` lists them and the `typeof` checks; `--json` maps every name, for the move to ES
+  modules (the measuring would move with the values into one module then).
 
 ## Checks
 

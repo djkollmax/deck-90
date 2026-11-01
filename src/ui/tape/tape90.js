@@ -12,11 +12,11 @@ let t90Loaded = 0;
 const T90_N = Object.keys(T90_FILES).length;
 for (const [k, f] of Object.entries(T90_FILES)) {
   const im = new Image();
-  im.onload = () => { if (++t90Loaded === T90_N && typeof running !== 'undefined' && !running && typeof drawIdle === 'function') drawIdle(); };
+  im.onload = () => { if (++t90Loaded === T90_N && typeof capture !== 'undefined' && !capture.running && typeof drawIdle === 'function') drawIdle(); };
   im.src = 'img/tape/' + f;
   T90[k] = im;
 }
-const tape90Ready = () => t90Loaded === T90_N && typeof deck90Ready === 'function' && deck90Ready();
+const tape90Ready = () => t90Loaded === T90_N && deck90Ready();
 // the cassette with its own outline: the photo (JPEG) and its shape (a grey mask) put together once
 let t90Shell = null;
 function tapeShell() {
@@ -74,7 +74,7 @@ function drawBigTape90(ctx, W, H, play) {
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
   // ── still: the plate, the cassette, its label, the display's bezel and still marks, the keys
-  blit(ctx, still('so90:' + (ctx.canvas.id || ''), W, H, [song, play, running, pressedKey].join('|'), x => {
+  blit(ctx, still('so90:' + (ctx.canvas.id || ''), W, H, [song, play, capture.running, pressedKey].join('|'), x => {
     x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
     // the black brushed plate
     const pat = x.createPattern(D90.plate, 'repeat');
@@ -113,7 +113,7 @@ function drawBigTape90(ctx, W, H, play) {
     rr(x, kX0 - P(8), kY - P(8), kRow + P(16), kH + P(16), P(8)); x.fillStyle = 'rgba(0,0,0,.75)'; x.fill();
     keys.forEach((k, i) => {
       const kx = kX0 + i * (kW + kGap);
-      const lit = (k === '▶' && play) || (k === '■' && !running);
+      const lit = (k === '▶' && play) || (k === '■' && !capture.running);
       const pressed = k === pressedKey;
       const ky = kY + (pressed ? P(3) : 0);
       x.drawImage(T90.key, kx, ky, kW, kH);
@@ -196,7 +196,7 @@ function tapeDisplay(ctx, gX, gY, gW, gH, play, song, part) {
   if (need > room) ctx.font = face(gH * 0.085 * Math.max(0.45, room / need));
   if (still) { ctx.fillStyle = DIM; ctx.fillText('REEL - TYPE II', iX, gY + gH * 0.41); }
   else {
-    const state = play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■');
+    const state = play ? 'PLAY ▶' : (capture.running ? 'PAUSE ❚❚' : 'STOP ■');
     ctx.fillStyle = play ? FL : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = glow;
     ctx.fillText(state, iX, gY + gH * 0.23); ctx.shadowBlur = 0;
     // the song in dot-matrix letters; scrolls with a pause when it doesn't fit

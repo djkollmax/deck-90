@@ -83,13 +83,13 @@ function restSignatureOf() {
   const arr = a => { if (a) for (let i = 0; i < a.length; i++) num(a[i]); };
   for (const st of [vu.L, vu.R]) { num(st.lvl); num(st.peak); num(st.samplePeak); num(st.clip ? 1 : 0); }
   arr(spPeak); arr(spLvl); arr(colLevels); arr(rtLevels); arr(flShown);
-  if (typeof ledLv !== 'undefined') [ledLv, ledPk, ambL, ambR, ambPkL, ambPkR, rtaLv, rtaPk, lcdDb, lcdPk].forEach(arr);
-  if (typeof cd !== 'undefined') { arr(cd.bands); arr(cd.peaks); num(cd.track); num(cd.remain ? 1 : 0); num(cd.repeat ? 1 : 0); }
+  [ledLv, ledPk, ambL, ambR, ambPkL, ambPkR, rtaLv, rtaPk, lcdDb, lcdPk].forEach(arr);
+  arr(cd.bands); arr(cd.peaks); num(cd.track); num(cd.remain ? 1 : 0); num(cd.repeat ? 1 : 0);
   num(bigTape.pos); arr(bigTape.ang); num(bigTape.counter);
   decks.forEach(d => { num(d.pos); arr(d.ang); num(d.counter); });
   num(miniAngle); num(miniVals.m); num(miniVals.i); num(miniVals.tp);
   num(gonioGain); num(phaseSm);
-  num(running ? 1 : 0); num(npPlaying() ? 1 : 0);
+  num(capture.running ? 1 : 0); num(npPlaying() ? 1 : 0);
   if (np) { num(npPosition() * 10); num(np.dur); }
   // the words and the choices on screen (a new song, a style picked from the tray or the phone)
   const words = [np && np.title, np && np.artist, np && np.status, decks.map(d => d.title).join('|'), miniMode, vuSkin, spectrumSkin,
@@ -98,8 +98,8 @@ function restSignatureOf() {
   return h;
 }
 function loop(ts) {
-  if (!running) return;
-  rafId = requestAnimationFrame(loop);          // schedule first: a failing frame can't freeze the next one
+  if (!capture.running) return;
+  capture.rafId = requestAnimationFrame(loop);          // schedule first: a failing frame can't freeze the next one
   lastRafAt = performance.now();
   // at most about 60 drawn frames a second (a 120 or 144 Hz screen gets one every other refresh), and 30
   // while nothing has been heard for a few seconds (a paused song: the needles rest, the tape stands still)
@@ -112,22 +112,22 @@ function loop(ts) {
 // throttling off. Without this the measuring stopped too: integrated LUFS, LRA and BPM froze and the
 // phone display fell to zero. A timer takes over at ~30/s, measuring and feeding the phone, not drawing.
 setInterval(() => {
-  if (!running || performance.now() - lastRafAt < 120) return;
+  if (!capture.running || performance.now() - lastRafAt < 120) return;
   try { frame(false); } catch (e) { report('frame', e); }
 }, 33);
 function frame(draw) {
   const now = performance.now();
-  dtMs = lastFrame ? Math.min(100, now - lastFrame) : 16.7;
-  lastFrame = now;
-  frameScale = dtMs / 16.667;
+  pace.dtMs = pace.lastFrame ? Math.min(100, now - pace.lastFrame) : 16.7;
+  pace.lastFrame = now;
+  pace.frameScale = pace.dtMs / 16.667;
 
   // VU
-  const inL = readChannel(aL, bufL, vu.L), inR = readChannel(aR, bufR, vu.R);
+  const inL = readChannel(capture.aL, bufL, vu.L), inR = readChannel(capture.aR, bufR, vu.R);
   const loud = Math.max(vu.L.dbfs, vu.R.dbfs);
   if (loud > -50) lastAudible = now;
   if (loud > -80) lastSound = now;
   if (loud > -55) {                       // ignore silence and fades
-    autoRms += (loud - autoRms) * (1 - Math.exp(-dtMs / 6000));
+    autoRms += (loud - autoRms) * (1 - Math.exp(-pace.dtMs / 6000));
     autoRef = Math.max(4, Math.min(24, -autoRms - 4));
   }
   tickVU(vu.L, inL);
@@ -144,7 +144,7 @@ function frame(draw) {
   if (!resting) {
     restAnim = false;                    // a display that moves by itself says so while it draws
     displaysDrawnAt = now;
-    if (miniMode && typeof stereoMode !== 'undefined' && stereoMode) { /* the stereo draws itself (below) */ }
+    if (miniMode && stereoMode) { /* the stereo draws itself (below) */ }
     else if (miniMode) guard('mini', () => drawMini(cMI, xMI, true));
     else {
       if (mods.vu) guard('vu', () => { drawVU(cVL, xVL, vu.L); drawVU(cVR, xVR, vu.R); });
@@ -159,9 +159,9 @@ function frame(draw) {
     else restSame = 0;
   }
   if (!miniMode && mods.meters) guard('lufsHistory', () => drawLufsHistory(now));
-  if (typeof stereoMode !== 'undefined' && stereoMode && draw) guard('stereo', () => stereoFeed(now));
-  if (typeof tunerShown === 'function' && tunerShown() && draw) guard('tuner', () => tunerFeed(now));
-  if (typeof cdUnitShown === 'function' && cdUnitShown() && draw) guard('cdunit', () => cdUnitFeed(now));
+  if (stereoMode && draw) guard('stereo', () => stereoFeed(now));
+  if (tunerShown() && draw) guard('tuner', () => tunerFeed(now));
+  if (cdUnitShown() && draw) guard('cdunit', () => cdUnitFeed(now));
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));

@@ -16,7 +16,7 @@ let d90Loaded = 0;
 const D90_N = Object.keys(D90_FILES).length;
 for (const [k, f] of Object.entries(D90_FILES)) {
   const im = new Image();
-  im.onload = () => { if (++d90Loaded === D90_N && typeof running !== 'undefined' && !running && typeof drawIdle === 'function') drawIdle(); };
+  im.onload = () => { if (++d90Loaded === D90_N && typeof capture !== 'undefined' && !capture.running && typeof drawIdle === 'function') drawIdle(); };
   im.src = 'img/deck/' + f;
   D90[k] = im;
 }

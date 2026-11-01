@@ -14,5 +14,5 @@ try {
 // the displays' lettering is a bundled font: once it's loaded, draw the idle screen again with it
 if (document.fonts && document.fonts.load) {
   Promise.all([document.fonts.load("600 16px 'Deck90 Display'"), document.fonts.load("500 16px 'Deck90 Display'"), document.fonts.load("16px 'Deck90 Dots'")])
-    .then(() => { if (typeof running !== 'undefined' && !running && typeof drawIdle === 'function') drawIdle(); }).catch(() => {});
+    .then(() => { if (typeof capture !== 'undefined' && !capture.running && typeof drawIdle === 'function') drawIdle(); }).catch(() => {});
 }

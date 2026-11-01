@@ -12,7 +12,7 @@ let histLast = null;                    // the entry saved last (checkpoints of 
 
 function historyReset() { histBpm = []; }
 setInterval(() => {
-  if (running && npPlaying() && bpmVal > 0 && bpmConfidence >= 0.45) {
+  if (capture.running && npPlaying() && bpmVal > 0 && bpmConfidence >= 0.45) {
     histBpm.push(Math.round(bpmVal));
     if (histBpm.length > 1200) histBpm.shift();
   }
@@ -66,7 +66,7 @@ function historyFinalize(reason, info) {
 }
 window.addEventListener('beforeunload', () => historyFinalize('close'));
 // every 45 s the track so far is saved too, so a crash or a Windows shutdown loses at most that
-setInterval(() => { if (running) historyFinalize('checkpoint'); }, 45000);
+setInterval(() => { if (capture.running) historyFinalize('checkpoint'); }, 45000);
 
 // ── storage: the program keeps it in its data folder; a browser in localStorage ──
 const HIST_LS = 'deck90-history';

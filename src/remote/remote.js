@@ -103,7 +103,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 // ── data from the PC ──
 function applyFrame(f) {
   target = f; lastFrameAt = performance.now();
-  running = !!f.run;
+  capture.running = !!f.run;
   if (f.aud) lastAudible = performance.now();
   vuSkin = opts.vu === 'pc' ? (f.skin || vuSkin) : opts.vu;
   tapeStyle = opts.tape === 'pc' ? (f.tape || tapeStyle) : opts.tape;
@@ -138,9 +138,9 @@ function numbers() {
 function setState() {
   const st = el('state');
   if (!connected || performance.now() - lastMsg > 4000) { st.textContent = 'SIN CONEXIÓN'; st.className = 'state off'; return; }
-  const play = running && npPlaying();
-  st.textContent = !running ? 'STOP' : play ? 'PLAY' : 'PAUSA';
-  st.className = 'state ' + (!running ? 'stop' : play ? 'play' : 'pause');
+  const play = capture.running && npPlaying();
+  st.textContent = !capture.running ? 'STOP' : play ? 'PLAY' : 'PAUSA';
+  st.className = 'state ' + (!capture.running ? 'stop' : play ? 'play' : 'pause');
 }
 
 function connect() {
@@ -168,13 +168,13 @@ const flRawP = new Float32Array(FL_BARS.length).fill(FL_FLOOR);
 const flShownP = new Float32Array(FL_BARS.length).fill(FL_FLOOR), flPeakP = new Float32Array(FL_BARS.length).fill(FL_FLOOR), flPeakTmP = new Float32Array(FL_BARS.length);
 function tickFL() {
   const sens = opts.sens === 'pc' ? (target ? target.sens : 1) : Number(opts.sens);
-  const g = flGain(sens, running && audible());
+  const g = flGain(sens, capture.running && audible());
   const stale = performance.now() - lastFrameAt > 1500;
   for (let b = 0; b < FL_BARS.length; b++) {
-    const want = stale || !running ? FL_FLOOR : Math.min(0, flRawP[b] + g);
-    flShownP[b] = want >= flShownP[b] ? want : Math.max(want, flShownP[b] - 38 * dtMs / 1000);
+    const want = stale || !capture.running ? FL_FLOOR : Math.min(0, flRawP[b] + g);
+    flShownP[b] = want >= flShownP[b] ? want : Math.max(want, flShownP[b] - 38 * pace.dtMs / 1000);
   }
-  flPeaks(flShownP, flPeakP, flPeakTmP, frameScale);
+  flPeaks(flShownP, flPeakP, flPeakTmP, pace.frameScale);
 }
 
 // ── spectrogram: the PC sends 64 bands (30 Hz – 20 kHz) ~30 times a second; the phone scrolls them ──
@@ -195,10 +195,10 @@ function drawPhoneSpectrogram() {
     sgBufCtx = sgBuf.getContext('2d'); sgBufCtx.fillStyle = '#000'; sgBufCtx.fillRect(0, 0, pw, ph);
     sgColImg = sgBufCtx.createImageData(1, ph);
   }
-  const live = target && target.sg && running && performance.now() - lastFrameAt < 1500;
+  const live = target && target.sg && capture.running && performance.now() - lastFrameAt < 1500;
   if (live) { try { const s = atob(target.sg); for (let i = 0; i < 64 && i < s.length; i++) sgBands[i] = s.charCodeAt(i); } catch (_) {} }
   else sgBands.fill(0);
-  sgAcc += 40 * dtMs / 1000;
+  sgAcc += 40 * pace.dtMs / 1000;
   const dx = Math.min(pw, Math.floor(sgAcc)); sgAcc -= dx;
   if (dx > 0) {
     const d = sgColImg.data;
@@ -235,10 +235,10 @@ function progress() {
 let lastT = 0, numT = 0;
 function frame(t) {
   requestAnimationFrame(frame);
-  dtMs = lastT ? Math.min(100, t - lastT) : 16.7; lastT = t; frameScale = dtMs / 16.667;
+  pace.dtMs = lastT ? Math.min(100, t - lastT) : 16.7; lastT = t; pace.frameScale = pace.dtMs / 16.667;
   // frames come ~30 a second: ease toward them so the needles glide at the phone's own frame rate
   if (target) {
-    const k = 1 - Math.exp(-dtMs / 35);
+    const k = 1 - Math.exp(-pace.dtMs / 35);
     const stale = performance.now() - lastFrameAt > 1500;
     vu.L.lvl += ((stale ? -60 : target.L[0]) - vu.L.lvl) * k;
     vu.R.lvl += ((stale ? -60 : target.R[0]) - vu.R.lvl) * k;

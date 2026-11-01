@@ -92,7 +92,7 @@ function stereoPaint() {
   p.style.setProperty('--st-hue', (look ? 0 : STEREO_HUES[stereoCfg.color - 1]) + 'deg');
   d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (look ? ' look look-' + look.id + (look.light ? ' look-light' : '') : '');
   p.style.setProperty('--st-dim', STEREO_DIM[stereoCfg.dim]);
-  p.classList.toggle('aux-on', !!running || radioPlaying() || cdPlaying());
+  p.classList.toggle('aux-on', !!capture.running || radioPlaying() || cdPlaying());
 }
 // DISP's words, and the line under them: what's playing in this mode
 function stereoTemp() {
@@ -103,8 +103,8 @@ function stereoDispText() {
   const d = stereoCfg.disp;
   if (d === 'clock') { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); }
   if (d === 'temp') return stereoTemp() || 'SIN CLIMA';
-  if (d === 'bpm') return bpmVal > 0 && running ? Math.round(bpmVal) + ' BPM' : '--- BPM';
-  if (d === 'lufs') { const i = typeof miniVals === 'object' && isFinite(miniVals.i) ? miniVals.i : NaN; return isFinite(i) ? i.toFixed(1) + ' LUFS' : '--.- LUFS'; }
+  if (d === 'bpm') return bpmVal > 0 && capture.running ? Math.round(bpmVal) + ' BPM' : '--- BPM';
+  if (d === 'lufs') { const i = isFinite(miniVals.i) ? miniVals.i : NaN; return isFinite(i) ? i.toFixed(1) + ' LUFS' : '--.- LUFS'; }
   return '';
 }
 function stereoContext() {
@@ -120,7 +120,7 @@ function stereoContext() {
   }
   return np && np.title ? np.title + (np.artist ? ' · ' + np.artist : '') : '';
 }
-const stereoPlaying = () => running && (np ? npPlaying() : audible());
+const stereoPlaying = () => capture.running && (np ? npPlaying() : audible());
 function stereoText(force) {
   if (!stereoDisplay) return;
   let key;
@@ -206,7 +206,7 @@ function stereoFeed(now) {
   if (stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying()) stereoLevels(now);
   if (now - stereoTextAt > 250) { stereoTextAt = now; stereoText(); }
 }
-setInterval(() => { if (stereoMode && !running) stereoText(); }, 500);   // the loop sleeps with nothing running
+setInterval(() => { if (stereoMode && !capture.running) stereoText(); }, 500);   // the loop sleeps with nothing running
 
 // The stereo on the phone (7.9.4): the phone draws its own DP940 display; this says what to put on it, by running
 // the PC's stereoText into a recorder in place of the real display, so both say exactly the same.
@@ -221,7 +221,7 @@ function phoneStereoView() {
     kind: rec.kind, radio: rec.radio || null, track: rec.track || null, elapsed: Math.floor(rec.elapsed || 0),
     live: stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying(),
     hue: look ? 0 : STEREO_HUES[stereoCfg.color - 1], dim: STEREO_DIM[stereoCfg.dim],
-    look: look ? look.id : '', light: !!(look && look.light), aux: !!running || radioPlaying() || cdPlaying(),
+    look: look ? look.id : '', light: !!(look && look.light), aux: !!capture.running || radioPlaying() || cdPlaying(),
   };
 }
 const PHONE_STEREO_KEYS = ['volup', 'voldown', 'att', 'sel', 'mode', 'disp', 'band', 'hdb', 'sdm', 'scan', 'prev', 'next', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'slot', 'eject'];
@@ -320,14 +320,14 @@ function stereoKey(k, hold) {
     return;
   }
   if (k === 'prev' || k === 'next') {
-    if (radio) { radioScan = 0; return radioStep(k === 'next' ? 1 : -1); }
+    if (radio) { radioScanSet(false); return radioStep(k === 'next' ? 1 : -1); }
     if (window.nowPlaying) window.nowPlaying.cmd(k);
     return;
   }
   if (k === 'scan') {
     if (!radio) stereoSwitch('radio');
-    if (radioScan) { radioScan = 0; toast('SCAN · <span>te quedás en esta</span>', 1500); }
-    else { radioScan = 1; toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
+    if (radioScan) { radioScanSet(false); toast('SCAN · <span>te quedás en esta</span>', 1500); }
+    else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
   }
 }
 

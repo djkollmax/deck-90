@@ -160,6 +160,8 @@ async function radioStep(d) {                                  // TUNE: the most
   radioTune({ name: r.name, freq: '', q: r.name, cc: 'AR', url: r.url }, (radioTopAt + 1) + '/' + radioTop.length);
 }
 setInterval(() => { if (radioScan && radioScan++ % 8 === 0) radioStep(1); }, 1000);   // SCAN: 8 s of each (a stop ends it)
+// SCAN on or off (a station chosen by hand also turns it off)
+function radioScanSet(on) { radioScan = on ? 1 : 0; deck.emit('radio'); }
 function radioMemory(n, hold) {
   const list = radioMem[radioMem.band];
   if (hold) {

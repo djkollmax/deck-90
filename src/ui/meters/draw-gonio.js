@@ -49,7 +49,7 @@ function drawGonio(canvas, ctx, live) {
       if (a > mx) mx = a;
     }
     const target = Math.min(40, 0.85 / Math.sqrt(mx));
-    gonioGain += (target - gonioGain) * (target < gonioGain ? 0.5 : 1 - Math.exp(-dtMs / 1500));
+    gonioGain += (target - gonioGain) * (target < gonioGain ? 0.5 : 1 - Math.exp(-pace.dtMs / 1500));
     const k = R * gonioGain * Math.SQRT1_2;
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R + 2, 0, Math.PI * 2); ctx.clip();   // a kick that outruns the gain stays on the screen

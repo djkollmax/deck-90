@@ -276,9 +276,9 @@ function drawBigTape(canvas, ctx, live) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
   if (W < 60 || H < 40) return;                 // panel collapsed mid-resize
   tapeHits = [];
-  const play = live && running && npPlaying();
+  const play = live && capture.running && npPlaying();
   if (play) {
-    const T = dtMs / 1000;
+    const T = pace.dtMs / 1000;
     bigTape.pos += T; if (bigTape.pos > SIDE_SECONDS) bigTape.pos = 60;
     turnReels(bigTape, T);
     bigTape.counter = np && np.status === 'Playing' ? npPosition() : bigTape.counter + T;
@@ -311,7 +311,7 @@ function drawBigTape(canvas, ctx, live) {
   const now = performance.now(), pressedKey = keys.find(k => now - (deckPressed[k] || 0) < 180) || '';
 
   // ── still: the stage, the cassette's shell under its moving parts, the display's window and the keys
-  blit(ctx, still('tape-back:' + canvas.id, W, H, [tapeStyle, play, running, pressedKey].join('|'), x => {
+  blit(ctx, still('tape-back:' + canvas.id, W, H, [tapeStyle, play, capture.running, pressedKey].join('|'), x => {
     // stage: dark felt with a warm spotlight
     x.fillStyle = '#07080b'; x.fillRect(0, 0, W, H);
     const spot = x.createRadialGradient(W * 0.4, -H * 0.1, H * 0.05, W * 0.4, H * 0.45, Math.max(W, H) * 0.8);
@@ -321,7 +321,7 @@ function drawBigTape(canvas, ctx, live) {
     rr(x, iX, iY, iW, dispH, 6); x.fillStyle = '#040707'; x.fill(); x.strokeStyle = 'rgba(255,255,255,.08)'; x.stroke();
     // keys (lit like the deck's)
     keys.forEach((k, i) => {
-      const lit = (k === '▶' && play) || (k === '■' && !running), pressed = k === pressedKey;
+      const lit = (k === '▶' && play) || (k === '■' && !capture.running), pressed = k === pressedKey;
       metalKey(x, iX + i * (kW + kG), kY + (pressed ? 1 : 0), kW, kH, k, lit || pressed, k === '▶' ? '#7dffb4' : '#ffb35a');
     });
   }));
@@ -341,7 +341,7 @@ function drawBigTape(canvas, ctx, live) {
     [0.33, 0.7].forEach(fy => { ctx.beginPath(); ctx.arc(cx, dY0 + dH * fy, r, 0, Math.PI * 2); ctx.fill(); }); ctx.shadowBlur = 0; }
   ctx.font = `600 ${Math.max(8, Math.round(dH * 0.26))}px "Deck90 Display", "Arial Narrow", Arial, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillStyle = play ? '#9dffc8' : '#ffd27a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 6;
-  ctx.fillText(play ? 'PLAY ▶' : (running ? 'PAUSE ❚❚' : 'STOP ■'), dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.3);
+  ctx.fillText(play ? 'PLAY ▶' : (capture.running ? 'PAUSE ❚❚' : 'STOP ■'), dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.3);
   ctx.shadowBlur = 0;
   ctx.fillStyle = 'rgba(127,246,230,.55)';
   ctx.fillText(tapeStyle === 'CLEAR' ? 'CLEAR · TYPE II' : 'REEL · TYPE II', dX0 + 4 * (dW + dGap) + iW * 0.03, dY0 + dH * 0.75);
@@ -377,7 +377,7 @@ function drawDeck(canvas, ctx, live) {
   if (W < 60 || H < 40) return;                 // panel collapsed mid-resize
   deckHits = [];
   const n = deckDouble ? 2 : 1;
-  const play = live && running && npPlaying();
+  const play = live && capture.running && npPlaying();
   const levels = [vu.L.lvl, vu.R.lvl];
   // the DECK 90 faceplate with the metal frames (once its pieces are loaded), the drawn one with CLÁSICO
   const premium = typeof chassis !== 'undefined' && chassis !== 'CLASSIC' && deck90Ready();
@@ -404,7 +404,7 @@ function drawDeck(canvas, ctx, live) {
   for (let i = 0; i < n; i++) {
     const d = decks[i];
     if (play) {
-      const T = dtMs / 1000;
+      const T = pace.dtMs / 1000;
       d.pos += T; if (d.pos > SIDE_SECONDS) d.pos = 60;          // auto reverse
       d.counter += T * 0.9;
       if (i === 0 && np) {                                    // deck A shows the track's elapsed time

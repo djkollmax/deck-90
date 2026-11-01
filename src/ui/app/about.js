@@ -73,7 +73,7 @@ function aboutRender() {
 }
 
 function showAbout(on, tab) {
-  if (on && typeof showHistory === 'function' && histOpen()) showHistory(false);
+  if (on && histOpen()) showHistory(false);
   aboutModal.classList.toggle('show', on);
   if (!on) return;
   if (tab) aboutTab = tab;

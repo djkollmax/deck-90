@@ -58,7 +58,7 @@ function drawMini(canvas, ctx, live) {
     ctx.fillStyle = '#0d1016'; ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.fillRect(x0, wy - r - 5, ww, 2 * r + 10); ctx.strokeRect(x0 + 0.5, wy - r - 4.5, ww - 1, 2 * r + 9);
     const playing = live && npPlaying();
-    if (playing) miniAngle += dtMs / 1000 * 2.2;
+    if (playing) miniAngle += pace.dtMs / 1000 * 2.2;
     miniReel(ctx, x0 + r + 6, wy, r, miniAngle);
     miniReel(ctx, x0 + ww - r - 6, wy, r, miniAngle * 1.15);
     x0 += ww + 14;

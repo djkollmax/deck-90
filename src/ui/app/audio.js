@@ -32,54 +32,54 @@ async function linuxMonitorStream() {
 
 // Builds the audio graph on whatever stream we got (system capture, mic or the demo signal).
 function buildGraph(source) {
-  srcNode = source;
+  capture.srcNode = source;
 
   // Always work in stereo: a mono source (most mics) is copied to both sides instead of leaving R dead.
-  upmix = actx.createGain();
-  upmix.channelCount = 2;
-  upmix.channelCountMode = 'explicit';
-  upmix.channelInterpretation = 'speakers';
-  srcNode.connect(upmix);
+  capture.upmix = capture.actx.createGain();
+  capture.upmix.channelCount = 2;
+  capture.upmix.channelCountMode = 'explicit';
+  capture.upmix.channelInterpretation = 'speakers';
+  capture.srcNode.connect(capture.upmix);
 
-  splitter = actx.createChannelSplitter(2);
-  upmix.connect(splitter);
-  aL = actx.createAnalyser(); aL.fftSize = FFT; aL.smoothingTimeConstant = 0;
-  aR = actx.createAnalyser(); aR.fftSize = FFT; aR.smoothingTimeConstant = 0;
-  splitter.connect(aL, 0);
-  splitter.connect(aR, 1);
+  capture.splitter = capture.actx.createChannelSplitter(2);
+  capture.upmix.connect(capture.splitter);
+  capture.aL = capture.actx.createAnalyser(); capture.aL.fftSize = FFT; capture.aL.smoothingTimeConstant = 0;
+  capture.aR = capture.actx.createAnalyser(); capture.aR.fftSize = FFT; capture.aR.smoothingTimeConstant = 0;
+  capture.splitter.connect(capture.aL, 0);
+  capture.splitter.connect(capture.aR, 1);
 
   // K-weighting (BS.1770): high shelf +4 dB around 1.5 kHz, then a 38 Hz high-pass.
-  const [shelf, rlb] = kWeighting(actx);
-  upmix.connect(shelf); shelf.connect(rlb);
-  const kSplit = actx.createChannelSplitter(2);
+  const [shelf, rlb] = kWeighting(capture.actx);
+  capture.upmix.connect(shelf); shelf.connect(rlb);
+  const kSplit = capture.actx.createChannelSplitter(2);
   rlb.connect(kSplit);
-  aKL = actx.createAnalyser(); aKL.fftSize = FFT; aKL.smoothingTimeConstant = 0;
-  aKR = actx.createAnalyser(); aKR.fftSize = FFT; aKR.smoothingTimeConstant = 0;
-  kSplit.connect(aKL, 0); kSplit.connect(aKR, 1);
+  capture.aKL = capture.actx.createAnalyser(); capture.aKL.fftSize = FFT; capture.aKL.smoothingTimeConstant = 0;
+  capture.aKR = capture.actx.createAnalyser(); capture.aKR.fftSize = FFT; capture.aKR.smoothingTimeConstant = 0;
+  kSplit.connect(capture.aKL, 0); kSplit.connect(capture.aKR, 1);
 
-  aMain = actx.createAnalyser();
-  aMain.fftSize = FFT;
-  aMain.smoothingTimeConstant = SMTH;
-  upmix.connect(aMain);
+  capture.aMain = capture.actx.createAnalyser();
+  capture.aMain.fftSize = FFT;
+  capture.aMain.smoothingTimeConstant = SMTH;
+  capture.upmix.connect(capture.aMain);
 
   // Unsmoothed, shorter FFT for beat onsets: smoothing 0.88 smeared the kicks in v4.
-  aBeat = actx.createAnalyser();
-  aBeat.fftSize = 1024;
-  aBeat.smoothingTimeConstant = 0;
-  upmix.connect(aBeat);
+  capture.aBeat = capture.actx.createAnalyser();
+  capture.aBeat.fftSize = 1024;
+  capture.aBeat.smoothingTimeConstant = 0;
+  capture.upmix.connect(capture.aBeat);
 
-  bufFD = new Float32Array(aMain.frequencyBinCount);
-  bufBeat = new Float32Array(aBeat.frequencyBinCount);
+  bufFD = new Float32Array(capture.aMain.frequencyBinCount);
+  bufBeat = new Float32Array(capture.aBeat.frequencyBinCount);
   prevBeat = null;
 
   // Onset envelope computed on the audio clock in 512-sample blocks (~11 ms), so tempo accuracy
   // does not depend on the monitor refresh rate or on the tab being in front.
-  const lowF = actx.createBiquadFilter(); lowF.type = 'lowpass'; lowF.frequency.value = 160;
-  const hiF  = actx.createBiquadFilter(); hiF.type = 'highpass'; hiF.frequency.value = 2500;
-  const bands = actx.createChannelMerger(2);
-  upmix.connect(lowF); upmix.connect(hiF);
+  const lowF = capture.actx.createBiquadFilter(); lowF.type = 'lowpass'; lowF.frequency.value = 160;
+  const hiF  = capture.actx.createBiquadFilter(); hiF.type = 'highpass'; hiF.frequency.value = 2500;
+  const bands = capture.actx.createChannelMerger(2);
+  capture.upmix.connect(lowF); capture.upmix.connect(hiF);
   lowF.connect(bands, 0, 0); hiF.connect(bands, 0, 1);
-  attachOnsetDetector(actx, bands);
+  attachOnsetDetector(capture.actx, bands);
 }
 
 // Energy of the low band (ch 0) and high band (ch 1) every 512 samples, measured on the audio
@@ -174,8 +174,10 @@ function kWeighting(ctx) {
   const hp = ctx.createIIRFilter([1, -2, 1], [1, 2 * (K * K - 1) / a0, (1 - K / Q2 + K * K) / a0]);
   return [shelf, hp];
 }
-let corrNode = null, corrLL = 0, corrRR = 0, corrLR = 0, corrFresh = false;
-let tpBlock = 0, tpAvailable = false, tpFresh = false;   // largest true peak (linear) since the last frame
+let corrNode = null, tpAvailable = false;
+// What the audio worklets send between frames, for the next frame's measurement (core.js reads and clears it):
+// the correlation sums since the last frame, and the largest true peak (linear).
+const worklet = { corrLL: 0, corrRR: 0, corrLR: 0, corrFresh: false, tpBlock: 0, tpFresh: false };
 let onsetPrevLow = -100, onsetPrevHigh = -100;
 function onsetBlock(msLow, msHigh, block, sampleRate) {
   const dl = 10 * Math.log10(msLow + 1e-10), dh = 10 * Math.log10(msHigh + 1e-10);
@@ -206,15 +208,15 @@ function attachOnsetDetector(ctx, bands) {
   // data: URL, not a Blob URL: pages opened from file:// can't load worklets from blob: URLs
   const url = 'data:application/javascript;base64,' + btoa(ONSET_WORKLET);
   ctx.audioWorklet.addModule(url).then(() => {
-    if (ctx.state === 'closed' || ctx !== actx) return;
+    if (ctx.state === 'closed' || ctx !== capture.actx) return;
     const node = new AudioWorkletNode(ctx, 'onset-energy', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
     node.port.onmessage = e => onsetBlock(e.data[0], e.data[1], e.data[2], sr);
     bands.connect(node); node.connect(mute);
     scriptNode = node;
-    if (upmix) {
+    if (capture.upmix) {
       const c = new AudioWorkletNode(ctx, 'stereo-corr', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
-      c.port.onmessage = e => { corrLL += e.data[0]; corrRR += e.data[1]; corrLR += e.data[2]; if (e.data[3] > tpBlock) tpBlock = e.data[3]; corrFresh = true; tpFresh = true; tpAvailable = true; };
-      upmix.connect(c); c.connect(mute);
+      c.port.onmessage = e => { worklet.corrLL += e.data[0]; worklet.corrRR += e.data[1]; worklet.corrLR += e.data[2]; if (e.data[3] > worklet.tpBlock) worklet.tpBlock = e.data[3]; worklet.corrFresh = true; worklet.tpFresh = true; tpAvailable = true; };
+      capture.upmix.connect(c); c.connect(mute);
       corrNode = c;
     }
   }).catch(fallback);
@@ -233,13 +235,13 @@ function resetMeters(keepTrack) {
   if (!keepTrack) { measureN++; gateBlocks = []; lraReset(); resetTrackPeaks(); spotGain = NaN; if (typeof historyReset === 'function') historyReset(); }
   tpHoldDb = -90; peakHoldDb = -90; phaseSm = 1; crestSm = 0; autoRms = -18; autoRef = 18; onsetEnv = []; ledFlux = []; nextTempo = 0;
   bpmVal = 0; bpmConfidence = 0; lastBeat = 0;
-  lastFrame = 0;
+  pace.lastFrame = 0;
 }
 
 let srcGen = 0;   // bumps on every start: a slower, older start gives up instead of running alongside
 async function startAudio(mode) {
   const gen = ++srcGen;
-  if (running || actx) await stopAudio();
+  if (capture.running || capture.actx) await stopAudio();
   if (gen !== srcGen) return;
   let s = null;                // this start's own stream: the global only takes it once it's still the newest start
   try {
@@ -269,29 +271,29 @@ async function startAudio(mode) {
     }
 
     if (gen !== srcGen) { s.getTracks().forEach(t => t.stop()); return; }
-    stream = s;
+    capture.stream = s;
     // No forced sample rate: v4 forced 48 kHz, which breaks (Firefox) or resamples when the device runs at 44.1 kHz.
-    const ctx = actx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = capture.actx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') await ctx.resume();
-    if (gen !== srcGen || actx !== ctx) return;      // a newer start took over meanwhile (and stopped this one)
-    buildGraph(actx.createMediaStreamSource(stream));
+    if (gen !== srcGen || capture.actx !== ctx) return;      // a newer start took over meanwhile (and stopped this one)
+    buildGraph(capture.actx.createMediaStreamSource(capture.stream));
 
     // If the user presses Chrome's "Stop sharing" bar, stop cleanly instead of freezing the meters.
-    stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => { if (running) stopAudio(); }));
+    capture.stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => { if (capture.running) stopAudio(); }));
 
     resetMeters(mode === 'sys' && measuredSrc === 'sys' && !!np);
     measuredSrc = mode;
-    running = true;
+    capture.running = true;
     setUI('on', mode);
     document.body.classList.add('audio-active');
-    rafId = requestAnimationFrame(loop);
+    capture.rafId = requestAnimationFrame(loop);
 
   } catch (e) {
     // a capture that can't start is reported on screen (below) and in media.log, not as a page error
     const why = 'capture (' + mode + '): ' + (e && e.name) + ': ' + (e && e.message);
     console.warn(why);
     if (window.appLog) window.appLog(why);
-    if (s) { s.getTracks().forEach(t => t.stop()); if (stream === s) stream = null; }
+    if (s) { s.getTracks().forEach(t => t.stop()); if (capture.stream === s) capture.stream = null; }
     if (gen !== srcGen) return;                       // an older start failing late: the newer one is fine
     if (e.name === 'NotAllowedError') toast('Permiso cancelado.', 3500);
     else toast('⚠ ERROR: ' + (e.message || e.name), 8000);
@@ -301,41 +303,41 @@ async function startAudio(mode) {
 // Demo signal: a built-in groove (124 BPM kick + bass + hats + pad) so the interface can be checked without capturing anything.
 async function startDemo() {
   const gen = ++srcGen;
-  if (running || actx) await stopAudio();
+  if (capture.running || capture.actx) await stopAudio();
   if (gen !== srcGen) return;
-  actx = new (window.AudioContext || window.webkitAudioContext)();
-  if (actx.state === 'suspended') actx.resume();
-  const out = actx.createGain(); out.gain.value = 0.5;
-  const merger = actx.createChannelMerger(2);
-  const bpm = 124, beat = 60 / bpm, t0 = actx.currentTime + 0.05, bars = 64;
+  capture.actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (capture.actx.state === 'suspended') capture.actx.resume();
+  const out = capture.actx.createGain(); out.gain.value = 0.5;
+  const merger = capture.actx.createChannelMerger(2);
+  const bpm = 124, beat = 60 / bpm, t0 = capture.actx.currentTime + 0.05, bars = 64;
 
-  const panL = actx.createGain(), panR = actx.createGain();
+  const panL = capture.actx.createGain(), panR = capture.actx.createGain();
   panL.connect(merger, 0, 0); panR.connect(merger, 0, 1);
   out.connect(panL); out.connect(panR);
-  const hatL = actx.createGain(), hatR = actx.createGain();
+  const hatL = capture.actx.createGain(), hatR = capture.actx.createGain();
   hatL.gain.value = .9; hatR.gain.value = .4;
   hatL.connect(merger, 0, 0); hatR.connect(merger, 0, 1);
 
-  const noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.08, actx.sampleRate);
+  const noiseBuf = capture.actx.createBuffer(1, capture.actx.sampleRate * 0.08, capture.actx.sampleRate);
   const nd = noiseBuf.getChannelData(0);
   for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * (1 - i / nd.length);
 
   for (let b = 0; b < bars * 4; b++) {
     const t = t0 + b * beat;
     // kick
-    const k = actx.createOscillator(), kg = actx.createGain();
+    const k = capture.actx.createOscillator(), kg = capture.actx.createGain();
     k.frequency.setValueAtTime(130, t); k.frequency.exponentialRampToValueAtTime(42, t + 0.12);
     kg.gain.setValueAtTime(1.0, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
     k.connect(kg); kg.connect(out); k.start(t); k.stop(t + 0.36);
     // bass on the off-beat
-    const bs = actx.createOscillator(), bg = actx.createGain();
+    const bs = capture.actx.createOscillator(), bg = capture.actx.createGain();
     bs.type = 'sawtooth'; bs.frequency.value = [55, 55, 65.4, 49][(b >> 2) % 4];
     bg.gain.setValueAtTime(0.0001, t + beat / 2); bg.gain.exponentialRampToValueAtTime(0.18, t + beat / 2 + 0.01);
     bg.gain.exponentialRampToValueAtTime(0.0001, t + beat * 0.95);
     bs.connect(bg); bg.connect(out); bs.start(t + beat / 2); bs.stop(t + beat);
     // hats, panned left-ish
     for (let h = 0; h < 2; h++) {
-      const n = actx.createBufferSource(), hp = actx.createBiquadFilter(), hg = actx.createGain();
+      const n = capture.actx.createBufferSource(), hp = capture.actx.createBiquadFilter(), hg = capture.actx.createGain();
       n.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 7000;
       hg.gain.value = h ? 0.10 : 0.06;
       n.connect(hp); hp.connect(hg); hg.connect(hatL); hg.connect(hatR);
@@ -344,7 +346,7 @@ async function startDemo() {
   }
   // pad chord, slowly breathing
   [220, 277.2, 329.6, 440].forEach((f, i) => {
-    const o = actx.createOscillator(), g = actx.createGain();
+    const o = capture.actx.createOscillator(), g = capture.actx.createGain();
     o.type = 'triangle'; o.frequency.value = f; o.detune.value = i * 4 - 6;
     g.gain.value = 0.035;
     o.connect(g); g.connect(i % 2 ? panR : panL);
@@ -352,30 +354,30 @@ async function startDemo() {
   });
 
   buildGraph(merger);
-  merger.connect(actx.destination);      // the demo is audible on purpose
+  merger.connect(capture.actx.destination);      // the demo is audible on purpose
   resetMeters(false);
   measuredSrc = 'demo';
-  running = true;
+  capture.running = true;
   setUI('on', 'demo');
   document.body.classList.add('audio-active');
-  rafId = requestAnimationFrame(loop);
+  capture.rafId = requestAnimationFrame(loop);
 }
 
 async function stopAudio() {
-  if (running && typeof historyFinalize === 'function') historyFinalize('stop');
-  running = false;
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (capture.running && typeof historyFinalize === 'function') historyFinalize('stop');
+  capture.running = false;
+  if (capture.rafId) { cancelAnimationFrame(capture.rafId); capture.rafId = null; }
   // v4 never stopped the tracks: Chrome kept "sharing your screen / mic" until the tab was closed.
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (capture.stream) { capture.stream.getTracks().forEach(t => t.stop()); capture.stream = null; }
   if (corrNode) { corrNode.port.onmessage = null; try { corrNode.disconnect(); } catch (_) {} corrNode = null; }
-  corrLL = corrRR = corrLR = 0; corrFresh = false; tpBlock = 0; tpAvailable = false; tpFresh = false;
+  worklet.corrLL = worklet.corrRR = worklet.corrLR = 0; worklet.corrFresh = false; worklet.tpBlock = 0; tpAvailable = false; worklet.tpFresh = false;
   if (scriptNode) { scriptNode.onaudioprocess = null; if (scriptNode.port) scriptNode.port.onmessage = null; try { scriptNode.disconnect(); } catch (_) {} scriptNode = null; }
-  if (srcNode) { try { srcNode.disconnect(); } catch(_){} srcNode = null; }
+  if (capture.srcNode) { try { capture.srcNode.disconnect(); } catch(_){} capture.srcNode = null; }
   // Detach before awaiting: a new source may already be starting, and it must not lose its context.
-  const old = actx; actx = null;
-  aL = aR = aKL = aKR = aMain = aBeat = null;
+  const old = capture.actx; capture.actx = null;
+  capture.aL = capture.aR = capture.aKL = capture.aKR = capture.aMain = capture.aBeat = null;
   if (old) { try { await old.close(); } catch(_){} }
-  if (running) return;                       // something new started meanwhile: leave its UI alone
+  if (capture.running) return;                       // something new started meanwhile: leave its UI alone
   setUI('off');
   document.body.classList.remove('audio-active');
   drawIdle();
@@ -399,7 +401,7 @@ function applyModules() {
   // one deck: its panel asks for more height, so the deck can grow across the width too
   document.querySelector('.rack-unit').classList.toggle('deck-single', !deckDouble);
   document.querySelector('.rack-unit').classList.toggle('only-tape', mods.tape && Object.keys(mods).every(k => k === 'tape' || !mods[k]));
-  requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+  requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
 }
 function setUI(state, mode) {
   const on = state === 'on';
@@ -490,7 +492,7 @@ function calText(){
 function tickVU(st, db) {
   // Needle = damped spring (ωn 17 rad/s, ζ 0.8): ~300 ms rise like a real VU, with the slight
   // overshoot and settle of a moving coil instead of a plain exponential slide.
-  const T = dtMs / 1000, steps = Math.max(1, Math.ceil(T / 0.004)), h = T / steps, wn = 17, z = 0.8;
+  const T = pace.dtMs / 1000, steps = Math.max(1, Math.ceil(T / 0.004)), h = T / steps, wn = 17, z = 0.8;
   for (let i = 0; i < steps; i++) {
     const a = wn * wn * (db - st.lvl) - 2 * z * wn * st.vel;
     st.vel += a * h; st.lvl += st.vel * h;
@@ -499,17 +501,17 @@ function tickVU(st, db) {
   if (st.lvl > 6)   { st.lvl = 6;   st.vel = 0; }   // pin stop
 
   if (st.lvl > st.peak) { st.peak = st.lvl; st.peakTmr = PEAK_HOLD_MS; }
-  else if (st.peakTmr > 0) st.peakTmr -= dtMs;
-  else st.peak = Math.max(-70, st.peak - PEAK_FALL * dtMs / 1000);
+  else if (st.peakTmr > 0) st.peakTmr -= pace.dtMs;
+  else st.peak = Math.max(-70, st.peak - PEAK_FALL * pace.dtMs / 1000);
 
   // Clip = a real sample at (or over) full scale, not an RMS level that can never get there.
   // the PEAK lamp (7.9.5): the needle in the red (+1 VU and over), or a peak within 3 dB of clipping (the needle is
   // too slow to show those); lit at least a quarter second so a short peak is seen
   if (st.clip || st.lvl >= 1 || st.samplePeak > -3) st.peakLampTmr = 250;
-  else if (st.peakLampTmr > 0) st.peakLampTmr -= dtMs;
+  else if (st.peakLampTmr > 0) st.peakLampTmr -= pace.dtMs;
   st.peakLamp = st.peakLampTmr > 0;
   if (st.samplePeak >= -0.1) { st.clip = true; st.clipTmr = 1200; }
-  else if (st.clipTmr > 0) st.clipTmr -= dtMs;
+  else if (st.clipTmr > 0) st.clipTmr -= pace.dtMs;
   else st.clip = false;
 }
 
@@ -525,8 +527,8 @@ let onsetEnv = [], ledFlux = [];
 let nextTempo = 0, scriptNode = null;
 const GRID = 10;   // ms
 function tickBPM(now) {
-  aBeat.getFloatFrequencyData(bufBeat);
-  const bpb = (actx.sampleRate / 2) / aBeat.frequencyBinCount;
+  capture.aBeat.getFloatFrequencyData(bufBeat);
+  const bpb = (capture.actx.sampleRate / 2) / capture.aBeat.frequencyBinCount;
   const b0 = Math.max(1, Math.floor(30 / bpb)), b1 = Math.ceil(250 / bpb), b2 = Math.min(bufBeat.length - 1, Math.ceil(4000 / bpb));
   let flux = 0;
   if (prevBeat) {

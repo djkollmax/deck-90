@@ -84,8 +84,8 @@ function drawRetroFrame(canvas, ctx, levels) {
 }
 function drawSpectrumRetro(canvas, ctx) {
   const fd = bufFD;
-  aMain.getFloatFrequencyData(fd);
-  const nyq = actx.sampleRate / 2, bins = aMain.frequencyBinCount;
+  capture.aMain.getFloatFrequencyData(fd);
+  const nyq = capture.actx.sampleRate / 2, bins = capture.aMain.frequencyBinCount;
   const F0 = 40, F1 = 16000;
   for (let b = 0; b < RT_BARS; b++) {
     const f1 = F0 * Math.pow(F1 / F0, b / RT_BARS), f2 = F0 * Math.pow(F1 / F0, (b + 1) / RT_BARS);
@@ -97,16 +97,16 @@ function drawSpectrumRetro(canvas, ctx) {
     const lv = Math.max(0, Math.min(1, (smoothBar(b, maxDb) + 66) / 60));
     rtLevels[b] = lv;
     if (lv > spPeak[b] || !isFinite(spPeak[b])) { spPeak[b] = lv; spPeakTm[b] = 22; }
-    else if (spPeakTm[b] > 0) spPeakTm[b] -= frameScale;
-    else spPeak[b] = Math.max(0, spPeak[b] - 0.012 * frameScale);
+    else if (spPeakTm[b] > 0) spPeakTm[b] -= pace.frameScale;
+    else spPeak[b] = Math.max(0, spPeak[b] - 0.012 * pace.frameScale);
   }
   drawRetroFrame(canvas, ctx, rtLevels);
 }
 function drawSpectrumColumns(canvas, ctx) {
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
   const fd = bufFD;
-  aMain.getFloatFrequencyData(fd);
-  const nyq = actx.sampleRate / 2, bins = aMain.frequencyBinCount;
+  capture.aMain.getFloatFrequencyData(fd);
+  const nyq = capture.actx.sampleRate / 2, bins = capture.aMain.frequencyBinCount;
   for (let b = 0; b < COL_N; b++) {
     const bi1 = Math.max(1, Math.floor(colBand(b) / nyq * bins));
     const bi2 = Math.min(bins, Math.max(bi1 + 1, Math.ceil(colBand(b + 1) / nyq * bins)));
@@ -116,8 +116,8 @@ function drawSpectrumColumns(canvas, ctx) {
     maxDb = smoothBar(b, maxDb + 6);              // +6: shift so typical music sits mid-scale
     colLevels[b] = maxDb;
     if (maxDb > spPeak[b]) { spPeak[b] = maxDb; spPeakTm[b] = 60; }
-    else if (spPeakTm[b] > 0) spPeakTm[b] -= frameScale;
-    else spPeak[b] = Math.max(-61, spPeak[b] - 0.35 * frameScale);
+    else if (spPeakTm[b] > 0) spPeakTm[b] -= pace.frameScale;
+    else spPeak[b] = Math.max(-61, spPeak[b] - 0.35 * pace.frameScale);
   }
   drawColumnsFrame(ctx, W, H, colLevels);
 }
@@ -144,8 +144,8 @@ const FL_FLOOR = -72;
 // raw level of each band: the loudest FFT bin within ±½ octave (dBFS, no smoothing, no gain)
 function flRawLevels(out) {
   const fd = bufFD;
-  aMain.getFloatFrequencyData(fd);
-  const nyq = actx.sampleRate / 2, bins = aMain.frequencyBinCount;
+  capture.aMain.getFloatFrequencyData(fd);
+  const nyq = capture.actx.sampleRate / 2, bins = capture.aMain.frequencyBinCount;
   for (let b = 0; b < FL_BARS.length; b++) {
     const f = FL_BARS[b];
     const bi1 = Math.max(0, Math.floor(f / Math.SQRT2 / nyq * bins));
@@ -173,7 +173,7 @@ function drawSpectrumFL(canvas, ctx, pal) {
   flRawLevels(flRaw);
   const g = flGain(flSensitivity, audible());
   for (let b = 0; b < FL_BARS.length; b++) flShown[b] = Math.min(0, smoothBar(b, flRaw[b]) + g);
-  flPeaks(flShown, spPeak, spPeakTm, frameScale);
+  flPeaks(flShown, spPeak, spPeakTm, pace.frameScale);
   drawFLDisplay(canvas, ctx, flShown, spPeak, pal);
 }
 
@@ -403,10 +403,10 @@ function drawSpectrum(canvas, ctx) {
   const PA = 18; // bottom padding for freq labels
 
   const fd = bufFD;
-  aMain.getFloatFrequencyData(fd);
+  capture.aMain.getFloatFrequencyData(fd);
 
-  const nyq  = actx.sampleRate / 2;
-  const bins = aMain.frequencyBinCount;
+  const nyq  = capture.actx.sampleRate / 2;
+  const bins = capture.aMain.frequencyBinCount;
   const FMIN = 20, FMAX = 20000;
 
   function fToX(f) {
@@ -462,9 +462,9 @@ function drawSpectrum(canvas, ctx) {
     if (maxDb > spPeak[b]) {
       spPeak[b] = maxDb; spPeakTm[b] = SP_HOLD;
     } else if (spPeakTm[b] > 0) {
-      spPeakTm[b] -= frameScale;
+      spPeakTm[b] -= pace.frameScale;
     } else {
-      spPeak[b] = Math.max(DFLOOR, spPeak[b] - SP_DECAY * frameScale);
+      spPeak[b] = Math.max(DFLOOR, spPeak[b] - SP_DECAY * pace.frameScale);
     }
 
     const x1 = fToX(f1);

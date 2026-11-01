@@ -57,8 +57,8 @@ function cdUnitShow(on, quiet) {
   cdUnitCfg.show = !!on;
   cdUnitPanel.classList.toggle('mod-off', !on);
   if (on) cdUnitBuild();
-  savePrefs(); if (typeof syncConsole === 'function') syncConsole();
-  if (typeof sizeCanvases === 'function') requestAnimationFrame(() => { sizeCanvases(); if (!running) drawIdle(); });
+  savePrefs(); syncConsole();
+  requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
   if (!quiet) toast(on ? 'CD · <span>el reproductor DC-90</span> en el rack (0 lo esconde)' : 'El reproductor de CD queda guardado (0 lo vuelve a mostrar)', 2200);
 }
 
@@ -120,19 +120,18 @@ function cdUnitFeed(now) {
 // the CD takes the sound: the PC's player waits, the radio goes quiet (whoever paused the PC hands that over).
 // 7.9.15: like two units of a real rack, the tuner stays on (its station on the display, dimmer), only silent.
 function cdUnitTakeSound() {
-  if (typeof tunerPower !== 'undefined' && tunerPower) {
+  if (tunerPower) {
     if (tunerResumePc) { tunerResumePc = false; cdUnitResumePc = true; }
     radioStop(true);
   }
-  if (typeof np === 'object' && np && np.status === 'Playing' && window.nowPlaying && !cdUnitResumePc) { window.nowPlaying.cmd('pause'); cdUnitResumePc = true; }
+  if (np && np.status === 'Playing' && window.nowPlaying && !cdUnitResumePc) { window.nowPlaying.cmd('pause'); cdUnitResumePc = true; }
 }
 // the radio took it: the CD pauses where it was and stays on (7.9.15; PLAY goes on from there)
 function cdUnitYield() {
   if (!cdUnitPower) return false;
   const had = cdUnitResumePc;
   cdUnitResumePc = false; cdUnitWants = false;
-  if (cdFiles().length) { if (!cdAudio.paused) cdAudio.pause(); }
-  else if (cdPlaying() && window.cdrom) { window.cdrom.cmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
+  cdPauseHere();
   cdUnitSync();
   return had;
 }
@@ -146,7 +145,7 @@ function cdUnitStart() {
 }
 // the drive answered (stereo.js calls this): a disc asked to play starts now
 function cdUnitInfo() {
-  if (cdUnitPower && cdUnitWants && !(typeof stereoMode !== 'undefined' && stereoMode)) {
+  if (cdUnitPower && cdUnitWants && !stereoMode) {
     cdUnitWants = false;
     if (!cdUnitStart() && cdInfo && cdInfo.drive && !cdInfo.present) toast('CD · <span>no hay disco</span> en la lectora', 2200);
   }
@@ -202,7 +201,7 @@ function cdUnitKey(k, { hold } = {}) {
     else cdUnitStart();
   }
   if (k === 'pause') { if (cdUnitPlaying() || cdState.state === 'paused' || (files.length && cdAudio.getAttribute('src'))) { if (!cdUnitPlaying()) cdUnitTakeSound(); cdToggle(); } }
-  if (k === 'stop') { if (files.length) { cdAudio.pause(); cdAudio.currentTime = 0; } else if (window.cdrom) { window.cdrom.cmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; } }
+  if (k === 'stop') cdStopHere();
   if (k === 'prev' || k === 'next') { cdUnitTakeSound(); cdTrack(k === 'next' ? 1 : -1); }
   cdUnitSync();
 }

@@ -11,7 +11,7 @@ let backupArmed = 0;
 function backupText() {
   const data = {};
   for (const k of BACKUP_KEYS) { try { const v = localStorage.getItem(k); if (v != null) data[k] = JSON.parse(v); } catch (_) {} }
-  return JSON.stringify({ app: 'Deck 90', kind: 'ajustes', version: (typeof aboutVersion === 'string' && aboutVersion) || '', saved: new Date().toISOString(), data }, null, 2);
+  return JSON.stringify({ app: 'Deck 90', kind: 'ajustes', version: aboutVersion || '', saved: new Date().toISOString(), data }, null, 2);
 }
 // a file from GUARDAR COPIA: only the known parts, each an object
 function backupRead(text) {

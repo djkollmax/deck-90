@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.18
+
+### Internal
+- **Shared state in owned objects**: the Web Audio graph and `running` become `capture`, frame timing `pace` (both in core.js), what the worklets send `worklet` (audio.js); the phone's shim defines what its shared files read. The screens change the radio and the CD only through core functions (`radioScanSet`, `cdStopHere`, `cdPauseHere`). 34 `typeof` checks on names of scripts loaded earlier are gone. `scripts/globals.mjs` reports what is still set across files. CLAUDE.md gets the rules (Shared names). No change for the user.
+
 ## 7.9.17
 
 ### Internal
