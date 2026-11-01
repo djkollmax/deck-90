@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.5 — 2026-11-01
+
+### Nuevo
+- **Los nombres de los temas del CD:** el DC-90 y el estéreo muestran el título y el artista de cada tema, y el álbum y el año, en lugar de PISTA 03. Un CD de audio no trae nombres, solo dónde empieza cada pista: el puente ahora lee esa tabla de la lectora, el programa la convierte en el ID del disco de MusicBrainz y le pregunta a su base gratuita por el disco (por el ID exacto, o el más parecido por su tabla). Solo se mandan los números del disco; la respuesta queda guardada en la carpeta del programa (cd-names.json), así cada disco se busca una sola vez. Un disco que MusicBrainz no conoce sigue con los números de pista (y se vuelve a preguntar al día siguiente).
+
 ## 7.9.4 — 2026-11-01
 
 ### Nuevo

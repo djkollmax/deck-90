@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.5
+
+### Added
+- **An audio CD's names:** the DC-90 and the car stereo show each song's title and artist, and the album and year, instead of PISTA 03. An audio CD carries no names, only where each track starts: the bridge now reads that table of contents from the drive, the program turns it into the disc's MusicBrainz ID and asks MusicBrainz's free database for the release (by the exact ID, or the closest by its table of contents). Only the disc's numbers are sent; the answer is kept in the program's folder (cd-names.json), so each disc is looked up once. A disc MusicBrainz doesn't know keeps its track numbers (and is asked again a day later).
+
 ## 7.9.4
 
 ### Added
