@@ -26,6 +26,7 @@ html:not(.chassis-ti) #npArtist{ font-size:10px; color:rgba(230,205,140,.8); }
 .chassis-ti #statusText.on{ color:#5dff9a; text-shadow:0 0 6px rgba(93,255,154,.45), 0 1px 0 rgba(0,0,0,.6); }
 .chassis-ti .led-label{ font-size:9px; opacity:1; color:var(--lbl); text-shadow:var(--lbl-sh); }
 .chassis-ti.fin-gold #statusText.on{ color:#0d6b33; text-shadow:0 1px 0 rgba(255,250,232,.6); }
+.chassis-ti.fin-silver #statusText.on{ color:#0d6b33; text-shadow:0 1px 0 rgba(255,255,255,.6); }
 
 /* 6.16.1 · the song in the header in the bundled display face: crisp letters with a tight glow around them */
 .chassis-ti #npTitle, .chassis-ti #npArtist{

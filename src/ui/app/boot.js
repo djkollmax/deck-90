@@ -10,6 +10,8 @@ try {
   if (p.chassis !== 'CLASSIC') h.add('chassis-ti');
   if (p.chassis === 'BLACK') h.add('fin-black');
   if (p.chassis === 'GOLD') h.add('fin-gold');
+  if (p.chassis === 'ANTHRACITE') h.add('fin-anthracite');
+  if (p.chassis === 'SILVER') h.add('fin-silver');
 } catch (_) { document.documentElement.classList.add('chassis-ti'); }
 // the displays' lettering is a bundled font: once it's loaded, draw the idle screen again with it
 if (document.fonts && document.fonts.load) {

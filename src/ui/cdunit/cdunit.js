@@ -22,7 +22,7 @@ const cdUnitShown = () => cdUnitCfg.show && !miniMode;
 function cdUnitTheme() {
   if (!cdUnit) return;
   const c = typeof chassis === 'string' ? chassis : 'TI';
-  cdUnit.setTheme(c === 'BLACK' || c === 'CLASSIC' ? 'black' : 'silver');
+  cdUnit.setTheme(c === 'BLACK' || c === 'ANTHRACITE' || c === 'CLASSIC' ? 'black' : 'silver');
   cdUnitPanel.classList.toggle('gold', c === 'GOLD');
 }
 function cdUnitBuild() {

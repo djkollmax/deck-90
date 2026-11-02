@@ -26,7 +26,7 @@ const FACTORY_ALT = [
   { name: 'Mastering LED',  snap: { vuSkin: 'BARGREEN', spectrumSkin: 'SPECTRO',  flSensitivity: 1, mode: 3, cal: 18,     deckDouble: true,  tapeStyle: 'REEL',  mods: presetMods(['vu', 'gonio', 'meters', 'spectrum', 'osc']) } },
 ];
 const factoryLooks = n => [FACTORY_PRESETS[n - 1], FACTORY_ALT[n - 1]].filter(Boolean);
-const vuName = v => ({ MODERN: 'Studio', HIFI90: 'Hi-Fi 90s', REEL70: 'Cinta 70s', BLUE: 'Azul', COBALT: 'Azul intenso', CREAM: 'Crema', DUO: 'Dúo', BARCYAN: 'LED cian', BARGREEN: 'LED verde' }[v] || v);
+const vuName = v => ({ MODERN: 'Studio', HIFI90: 'Hi-Fi 90s', REEL70: 'Cinta 70s', BLUE: 'Azul', COBALT: 'Azul intenso', PETROL: 'Hielo', SAPPHIRE: 'Zafiro', CREAM: 'Crema', DUO: 'Dúo', BARCYAN: 'LED cian', BARGREEN: 'LED verde' }[v] || v);
 const skinName = s => (SPECTRUM_SKINS.find(x => x[0] === s) || [s, s])[1];
 
 function presetSnapshot() {

@@ -27,7 +27,7 @@ const tunerShown = () => tunerCfg.show && !miniMode;
 function tunerTheme() {
   if (!tuner) return;
   const c = typeof chassis === 'string' ? chassis : 'TI';
-  tuner.setTheme(c === 'BLACK' || c === 'CLASSIC' ? 'black' : 'silver');
+  tuner.setTheme(c === 'BLACK' || c === 'ANTHRACITE' || c === 'CLASSIC' ? 'black' : 'silver');
   tunerPanel.classList.toggle('gold', c === 'GOLD');
 }
 

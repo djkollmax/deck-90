@@ -1,4 +1,4 @@
-/* The metal frames (TITANIO, NEGRO, CHAMPAGNE): plates, screws, engraved labels, glass. */
+/* The metal frames (TITANIO, NEGRO, CHAMPAGNE, ANTRACITA, PLATA): plates, screws, engraved labels, glass. */
 /* ═══════════════════════════════════════════════════════════
    6.10 · MARCO: the frame of a premium '90s deck, in titanium, black or champagne
    Brushed-metal plates; each display sits behind black glass in a polished, chamfered bevel; labels are
@@ -28,6 +28,22 @@
   --lbl:#5e4826; --lbl-sh:0 1px 0 rgba(255,250,232,.65), 0 -1px 0 rgba(90,62,25,.35);   /* engraved: dark in the light metal */
   --key:linear-gradient(180deg,#f3e6c4 0%,#dcc79c 55%,#c8b083 100%); --key-hover:linear-gradient(180deg,#fff4d8,#e0cc9f);
   --key-fg:#3c2d17; --key-edge:#6e5732; --key-hi:rgba(255,255,255,.6);
+}
+.chassis-ti.fin-anthracite{   /* 7.9.20: ANTRACITA, from Damián's mock-up: a blue-grey dark metal, cooler than NEGRO */
+  --m-tex:url(../../img/metal-anthracite.jpg); --m-base:#363c40; --m-screw:url(../../img/screw-black.png);
+  --m-hi:rgba(220,235,245,.14); --m-cut:rgba(0,0,0,.72); --m-shade:rgba(0,0,0,.09);
+  --b-out:#15191b; --b-c1:#3b4246; --b-c2:#b9c2c7; --b-c3:#8e979c; --b-c4:#545c61; --b-r1:#06080a; --b-r2:#1d2226;
+  --lbl:#e4eaee; --lbl-sh:0 -1px 0 rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.07);
+  --key:linear-gradient(180deg,#3a4146 0%,#22282c 55%,#191d20 100%); --key-hover:linear-gradient(180deg,#485056,#272d31);
+  --key-fg:#dfe6ea; --key-edge:#05070a; --key-hi:rgba(255,255,255,.17);
+}
+.chassis-ti.fin-silver{   /* 7.9.20: PLATA, from Damián's mock-up: a cool, clean brushed silver (no green), dark engraving */
+  --m-tex:url(../../img/metal-silver.jpg); --m-base:#b6bbbf; --m-screw:url(../../img/screw-silver.png);
+  --m-hi:rgba(255,255,255,.5); --m-cut:rgba(30,38,45,.5); --m-shade:rgba(20,30,40,.09);
+  --b-out:#5f666b; --b-c1:#a9b0b5; --b-c2:#f7fafc; --b-c3:#dde2e6; --b-c4:#8c949a; --b-r1:#1d2328; --b-r2:#4a5258;
+  --lbl:#2f363c; --lbl-sh:0 1px 0 rgba(255,255,255,.6), 0 -1px 0 rgba(30,40,50,.3);   /* engraved: dark in the light metal */
+  --key:linear-gradient(180deg,#3d4448 0%,#262b2f 55%,#1c2023 100%); --key-hover:linear-gradient(180deg,#4b5358,#2c3236);
+  --key-fg:#e2e8ec; --key-edge:#4e565c; --key-hi:rgba(255,255,255,.2);
 }
 .chassis-ti{
   /* the window's bevel, from the glass outwards: black edge, dark recess, polished chamfer, the plate's cut */
@@ -144,6 +160,8 @@
 /* champagne is light: the header's small print turns dark to stay readable */
 .chassis-ti.fin-gold .led-label{ color:#5a4524; text-shadow:0 1px 0 rgba(255,255,255,.35); }
 .chassis-ti.fin-gold #statusText{ color:#2f6b3c; text-shadow:0 1px 0 rgba(255,255,255,.4); }
+.chassis-ti.fin-silver .led-label{ color:#353c42; text-shadow:0 1px 0 rgba(255,255,255,.4); }
+.chassis-ti.fin-silver #statusText{ color:#2a5f6a; text-shadow:0 1px 0 rgba(255,255,255,.45); }
 /* mini strip: the header plate and the strip's window */
 .chassis-ti body.mini .rack-unit{ padding:6px 8px; }
 .chassis-ti .mini-panel{ border-radius:2px; background:#030303; box-shadow:var(--ti-bevel); padding:8px; }

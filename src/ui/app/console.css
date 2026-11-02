@@ -55,6 +55,7 @@ body.is-app .seg input{ -webkit-app-region:no-drag; }
 .drawer-block .seg input{ flex:1 1 auto; width:auto; min-width:0; }
 .chassis-ti .drawer-block{ background:rgba(0,0,0,.16); }
 .chassis-ti.fin-gold .block-title{ color:#5a4524; }
+.chassis-ti.fin-silver .block-title{ color:#353c42; }
 /* the style menu: every look with its picture */
 .style-menu{ position:fixed; z-index:8800; display:none; flex-direction:column; gap:8px; padding:10px; border-radius:8px; width:min(660px, calc(100vw - 16px));
   max-height:calc(100vh - 24px); overflow:auto;

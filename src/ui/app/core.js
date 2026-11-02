@@ -172,7 +172,7 @@ function setFlSensitivity(next){
 }
 
 // every VU face, in the order V steps through them; the wide ones show both meters in one panel
-const VU_SKINS = ['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'COBALT', 'CREAM', 'DUO', 'BARCYAN', 'BARGREEN'];
+const VU_SKINS = ['MODERN', 'HIFI90', 'REEL70', 'BLUE', 'COBALT', 'PETROL', 'SAPPHIRE', 'CREAM', 'DUO', 'BARCYAN', 'BARGREEN'];
 const vuWide = s => s === 'DUO' || s === 'BARCYAN' || s === 'BARGREEN';
 function setVUSkin(skin){
   const duo = vuWide(skin) !== vuWide(vuSkin);

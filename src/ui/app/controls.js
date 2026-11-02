@@ -10,14 +10,15 @@ function savePrefs(){
 function loadPrefs(){ return store.read(PREFS_KEY, {}); }
 
 // The rack's frame: brushed-metal plates, each display behind glass in a polished bevel, as the premium
-// decks of the 90s, in TITANIO, NEGRO or CHAMPAGNE; or CLÁSICO, the dark rack of the first versions.
+// decks of the 90s, in TITANIO, NEGRO, CHAMPAGNE, ANTRACITA or PLATA; or CLÁSICO, the dark rack of the first versions.
 // The displays themselves don't change.
-const CHASSIS = ['TI', 'BLACK', 'GOLD', 'CLASSIC'];
+const CHASSIS = ['TI', 'BLACK', 'GOLD', 'ANTHRACITE', 'SILVER', 'CLASSIC'];
 let chassis = 'TI';
 function setChassis(v){
   chassis = CHASSIS.includes(v) ? v : 'TI';
   const h = document.documentElement.classList;
   h.toggle('chassis-ti', chassis !== 'CLASSIC'); h.toggle('fin-black', chassis === 'BLACK'); h.toggle('fin-gold', chassis === 'GOLD');
+  h.toggle('fin-anthracite', chassis === 'ANTHRACITE'); h.toggle('fin-silver', chassis === 'SILVER');
   tunerTheme();
   cdUnitTheme();
   requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
@@ -57,6 +58,7 @@ function cycleSkin(){
 const VU_INFO = {
   MODERN: ['STUDIO', 'arco verde y barra de LEDs'], HIFI90: ['HI-FI 90s', 'arco azul de minicomponente, con barra'],
   REEL70: ['CINTA 70s', 'crema de grabador a cinta'], BLUE: ['AZUL', 'retroiluminado azul'], COBALT: ['AZUL INTENSO', 'azul profundo, aguja naranja'],
+  PETROL: ['HIELO', 'azul petróleo, aguja crema'], SAPPHIRE: ['ZAFIRO', 'azul zafiro, aguja crema'],
   CREAM: ['CREMA', 'marfil clásico con arco rojo'], DUO: ['DÚO', 'los dos en una cara ancha'],
   BARCYAN: ['LED CIAN', 'dos filas de LEDs turquesa'], BARGREEN: ['LED VERDE', 'dos filas de LEDs verdes'],
 };

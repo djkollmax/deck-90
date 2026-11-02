@@ -194,6 +194,15 @@ const VU_THEMES = {
   COBALT: { face: ['#167cf6', '#0551cf', '#011f6c'], glow: 'rgba(25,135,255,.42)', ink: '#ffffff', red: '#ff5a46', soft: 'rgba(225,238,255,.85)',
             needle: '#ffad2a', needleGlow: 'rgba(255,160,35,1)', needleW: 3.4, bezel: ['#1b1f27', '#0a0c10'], read: '#b9c6ff', title: 'VU', sub: 'PEAK',
             noRead: true, lineK: 1.9, glass: 0.35, vignette: 'rgba(0,12,60,.62)' },
+  // HIELO and ZAFIRO (7.9.20, from Damián's two rack mock-ups): a clean scale with no red band (the red ticks and
+  // figures are enough) and no percent scale, white ink, a fine cream needle. HIELO: deep petrol blue, lit softly
+  // from the middle; ZAFIRO: sapphire blue, brighter in the middle
+  PETROL:   { face: ['#2f566b', '#1a3b50', '#0a1c28'], glow: 'rgba(120,200,225,.20)', ink: '#f1f6f8', red: '#e8584b', soft: 'rgba(220,236,245,.7)',
+              needle: '#f2dea6', needleGlow: null, needleW: 2.2, bezel: ['#1b1f22', '#0b0d0f'], read: '#9fd8e8', title: 'VU', sub: 'PEAK',
+              noBand: true, noPct: true, vignette: 'rgba(0,8,14,.55)' },
+  SAPPHIRE: { face: ['#4384dc', '#1f55a8', '#0b2862'], glow: 'rgba(130,190,255,.34)', ink: '#ffffff', red: '#ff6a55', soft: 'rgba(225,238,255,.8)',
+              needle: '#f6dda2', needleGlow: null, needleW: 2.2, bezel: ['#1b1f27', '#0a0c10'], read: '#b9d4ff', title: 'VU', sub: 'PEAK',
+              noBand: true, noPct: true, vignette: 'rgba(0,10,42,.45)' },
   BLUE:   { face: ['#2a6fd6', '#1546a0', '#071a44'], glow: 'rgba(80,170,255,.45)', ink: '#e6f3ff', red: '#ff6a5a', soft: 'rgba(200,230,255,.7)',
             needle: '#ffb347', needleGlow: 'rgba(255,170,60,.8)', bezel: ['#1b1f27', '#0a0c10'], read: '#9fd7ff', title: 'VU', sub: 'PEAK' },
 };
@@ -268,7 +277,7 @@ function drawVUClassic(canvas, ctx, st, th) {
     // scale arcs: thin ink line, thick red band from 0 to +3
     x.lineCap = 'butt';
     x.beginPath(); x.arc(cx, cy, R, ang(0), ang(vuT(0))); x.strokeStyle = th.ink; x.lineWidth = 1.4 * lk; x.stroke();
-    x.beginPath(); x.arc(cx, cy, R + 3 * lk, ang(vuT(0)), ang(1)); x.strokeStyle = th.red; x.lineWidth = 6 * lk; x.stroke();
+    if (!th.noBand) { x.beginPath(); x.arc(cx, cy, R + 3 * lk, ang(vuT(0)), ang(1)); x.strokeStyle = th.red; x.lineWidth = 6 * lk; x.stroke(); }
     x.beginPath(); x.arc(cx, cy, R, ang(vuT(0)), ang(1)); x.strokeStyle = th.red; x.lineWidth = 1.4 * lk; x.stroke();
     // ticks and numbers
     x.textAlign = 'center'; x.textBaseline = 'middle';
@@ -285,9 +294,11 @@ function drawVUClassic(canvas, ctx, st, th) {
       }
     });
     // the percent scale under the arc
-    x.font = Math.max(6, fs * .62) + 'px Georgia, serif'; x.fillStyle = th.soft;
-    [[0, '0'], [vuT(-6), '50'], [vuT(0), '100']].forEach(([t, l]) => { const [px, py] = P(t, R - 10); x.fillText(l, px, py); });
-    x.beginPath(); x.arc(cx, cy, R - 4, ang(0), ang(vuT(0))); x.strokeStyle = th.soft; x.lineWidth = .8; x.stroke();
+    if (!th.noPct) {
+      x.font = Math.max(6, fs * .62) + 'px Georgia, serif'; x.fillStyle = th.soft;
+      [[0, '0'], [vuT(-6), '50'], [vuT(0), '100']].forEach(([t, l]) => { const [px, py] = P(t, R - 10); x.fillText(l, px, py); });
+      x.beginPath(); x.arc(cx, cy, R - 4, ang(0), ang(vuT(0))); x.strokeStyle = th.soft; x.lineWidth = .8; x.stroke();
+    }
     // VU and the − / + signs
     // the pivot below the window (a low meter): VU sits in the room left under the arc's top, sized to it,
     // and the − / + by the arc's ends, never on the scale
@@ -598,6 +609,7 @@ function drawVU(canvas, ctx, st) {
   if (vuSkin === 'BLUE') return drawVUClassic(canvas, ctx, st, VU_THEMES.BLUE);
   if (vuSkin === 'CREAM') return drawVUClassic(canvas, ctx, st, VU_THEMES.CREAM);
   if (vuSkin === 'COBALT') return drawVUClassic(canvas, ctx, st, VU_THEMES.COBALT);
+  if (vuSkin === 'PETROL' || vuSkin === 'SAPPHIRE') return drawVUClassic(canvas, ctx, st, VU_THEMES[vuSkin]);
   if (!vuFramed() || vuBox) return vuSkin === 'HIFI90' ? drawVUHiFi90(canvas, ctx, st) : drawVUStudio(canvas, ctx, st);
   // STUDIO and HI-FI 90s with the metal frames: the same black frame and polished ring round the whole face
   const W = canvas.offsetWidth || canvas.width, H = canvas.offsetHeight || canvas.height;
