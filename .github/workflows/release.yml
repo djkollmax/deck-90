@@ -30,7 +30,7 @@ jobs:
   # keys, REPEAT and SHUFFLE, the rack's two units, the radio's song and quality, the car stereo and the phone,
   # on a pretend radio station and a pretend CD drive. A release is only published when these pass too.
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: ubuntu-latest moved to 26.04, which Playwright 1.56 can't install Chromium on
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
