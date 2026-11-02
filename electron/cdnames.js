@@ -40,7 +40,7 @@ function createCdNames({ net, dir, agent, log }) {
   const save = () => { try { fs.writeFileSync(file, JSON.stringify(cache)); } catch (_) {} };
 
   async function fetchJson(url) {
-    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 15000);
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 30000);   // MusicBrainz can be slow at busy hours
     try {
       const r = await net.fetch(url, { signal: ac.signal, headers: { 'User-Agent': agent, Accept: 'application/json' } });
       if (r.status === 404) return null;
@@ -57,9 +57,19 @@ function createCdNames({ net, dir, agent, log }) {
     if (hit && (hit.album || Date.now() - (hit.at || 0) < 24 * 3600e3)) return hit.album ? hit : null;   // not found: try again a day later
     const tocParam = [toc.first, toc.last, toc.leadout].concat(Array.from({ length: toc.last }, (_, i) => toc.offsets[i + 1])).join('+');
     let j = null;
-    try {
-      j = await fetchJson('https://musicbrainz.org/ws/2/discid/' + encodeURIComponent(id) + '?toc=' + tocParam + '&inc=recordings+artist-credits&fmt=json');
-    } catch (err) { log('cd names: ' + (err && err.message || err)); return null; }   // offline: ask again next time
+    // 7.9.19: a slow or failed answer is asked again twice (MusicBrainz takes one request a second); still
+    // nothing, the page is told it couldn't ask ({ error }), so it tries again later instead of giving up
+    for (let attempt = 1; ; attempt++) {
+      try {
+        j = await fetchJson('https://musicbrainz.org/ws/2/discid/' + encodeURIComponent(id) + '?toc=' + tocParam + '&inc=recordings+artist-credits&fmt=json');
+        break;
+      } catch (err) {
+        const why = err && err.name === 'AbortError' ? 'no answer in 30 s' : (err && err.message || String(err));
+        log('cd names: ' + id + ' attempt ' + attempt + ': ' + why);
+        if (attempt >= 3) return { error: why };
+        await new Promise(ok => setTimeout(ok, 2000 * attempt));
+      }
+    }
     const releases = j && Array.isArray(j.releases) ? j.releases : [];
     let out = { id, at: Date.now() };
     for (const rel of releases) {

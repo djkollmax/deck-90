@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.9.19 — 2026-11-01
+
+### Arreglos
+- **Un CD cuyos nombres no llegaban se quedaba sin nombres.** Si MusicBrainz tardaba más de 15 segundos en contestar, el programa no volvía a preguntar por ese disco hasta poner otro. Ahora espera hasta 30 segundos, prueba tres veces, vuelve a intentar al minuto y cada vez que se lee el disco (OPEN / CLOSE o POWER).
+
 ## 7.9.18 — 2026-11-01
 
 ### Por dentro

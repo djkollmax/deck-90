@@ -81,6 +81,20 @@ test('OPEN/CLOSE: the tray opens, closes and the disc plays again', async () => 
   assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-')), ['cd-stop', 'cd-eject', 'cd-close', 'cd-info', 'cd-play 1']);
 });
 
+test('a disc whose names don\'t come at first gets them on the next read', async () => {
+  const names8 = { album: 'Otro Disco', artist: 'Banda Inventada', year: '1993',
+    tracks: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [i + 1, { title: 'Canción ' + (i + 1), artist: 'Banda Inventada' }])) };
+  // MusicBrainz doesn't answer the first time (the program has already asked it three times by then)
+  await d.app.evaluate(({ ipcMain }, names) => { let n = 0; ipcMain.removeHandler('cd-names'); ipcMain.handle('cd-names', () => ++n === 1 ? { error: 'no answer in 30 s' } : names); }, names8);
+  await d.drive({ disc: disc(8, 200) });
+  await d.click(K('eject'), 900); await d.click(K('eject'), 4500);
+  let c = await cd(); assert.equal(c.total, 8); assert.equal(c.title, 'CD AUDIO · PISTA 01');
+  await d.click(K('eject'), 900); await d.click(K('eject'), 4500);
+  c = await cd(); assert.equal(c.title, 'Canción 1'); assert.equal(c.artist, 'Banda Inventada · Otro Disco (1993)');
+  await d.app.evaluate(({ ipcMain }, names) => { ipcMain.removeHandler('cd-names'); ipcMain.handle('cd-names', () => names); }, NAMES);
+  await d.drive({ disc: disc(10, 180) });
+});
+
 test('POWER off stops the disc', async () => {
   await d.click(K('power'), 600);
   const c = await cd(); assert.equal(c.power, false); assert.equal(c.title, 'COMPACT DISC');

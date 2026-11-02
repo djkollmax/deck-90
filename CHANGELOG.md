@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.9.19
+
+### Fixed
+- **A CD whose names didn't come stayed without them.** A MusicBrainz answer slower than 15 s aborted the lookup, and the page never asked again for that disc. The lookup now waits 30 s and tries three times; still nothing, it tells the page (`{ error }`), which asks again a minute later and on the next read of the disc. Test: a disc whose names don't come at first gets them on the next read.
+
 ## 7.9.18
 
 ### Internal

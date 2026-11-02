@@ -55,14 +55,21 @@ function cdTrack(d) {
 }
 // The disc's names (7.9.5): album, artist and each song, looked up by the program from the disc's table of
 // contents (MusicBrainz). Until they come, or for a disc that isn't there, the tracks are numbers as before.
-let cdNames = null, cdNamesFor = '';
+let cdNames = null, cdNamesFor = '', cdNamesRetry = 0;
 function cdNamesAsk(info) {
   const key = info && info.present && Array.isArray(info.tracks) ? info.tracks.map(t => t.start || 0).join(',') + '|' + (info.leadout || 0) : '';
   if (key === cdNamesFor) return;
-  cdNamesFor = key; cdNames = null;
+  cdNamesFor = key; cdNames = null; clearTimeout(cdNamesRetry);
   if (!key || !info.leadout || !window.cdrom || !window.cdrom.names) return;
   window.cdrom.names({ tracks: info.tracks, leadout: info.leadout }).then(r => {
-    if (cdNamesFor !== key || !r || !r.tracks) return;
+    if (cdNamesFor !== key) return;
+    if (r && r.error) {                                        // 7.9.19: MusicBrainz didn't answer: again in a minute,
+      cdNamesFor = '';                                         // and on the next read of the disc (OPEN/CLOSE, POWER)
+      radioLog('cd names: no answer (' + r.error + '), trying again in 60 s');
+      cdNamesRetry = setTimeout(() => { if (cdInfo === info) cdNamesAsk(info); }, 60000);
+      return;
+    }
+    if (!r || !r.tracks) return;
     cdNames = r;
     radioLog('cd: ' + r.artist + ' – ' + r.album);
     deck.notice('CD · <span>' + String(r.artist).replace(/[<>&]/g, '') + '</span> · ' + String(r.album).replace(/[<>&]/g, ''), 3000);
