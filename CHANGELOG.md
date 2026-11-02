@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.9.20
+
+### Added
+- **ANTRACITA and PLATA frames** (`fin-anthracite`, `fin-silver`): brushed metal made from the titanium texture's grain at its contrast; ANTRACITA turns the DT-90 and DC-90 black, PLATA keeps them silver, with dark engraved labels.
+- **HIELO and ZAFIRO VU faces** (`PETROL`, `SAPPHIRE`): classic needle meters with a clean scale (`noBand`, `noPct`), white ink and a fine cream needle; picker thumbnails and the phone's buttons.
+
 ## 7.9.19
 
 ### Fixed

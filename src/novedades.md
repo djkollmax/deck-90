@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.9.20 — 2026-11-02
+
+### Nuevo
+- **Dos marcos nuevos, ANTRACITA y PLATA** (⚙ → PANTALLA → MARCO), de los bocetos de Damián:
+  - ANTRACITA es un metal oscuro gris azulado, más frío que el NEGRO; con él, el sintonizador y la compactera pasan a negro.
+  - PLATA es un gris frío y limpio, con las letras grabadas en oscuro.
+  - Los dos tienen la misma textura de metal cepillado del TITANIO.
+- **Dos VU nuevos, HIELO (azul petróleo) y ZAFIRO (azul zafiro).** Tienen la escala limpia (números blancos, de +1 a +3 en rojo sin la banda gruesa), aguja crema fina y "VU" con serifa. También están en el celular. Juntos quedan como "Antracita y hielo" y "Plata y zafiro".
+
 ## 7.9.19 — 2026-11-01
 
 ### Arreglos
