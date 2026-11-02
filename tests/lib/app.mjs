@@ -84,12 +84,15 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     });
   }, { base, drive, names, size });
   const win = await app.firstWindow();
+  // the window has the keyboard (on a CI display it sometimes starts without it, and key presses go nowhere)
+  const focus = () => app.evaluate(({ BrowserWindow }) => { const w = BrowserWindow.getAllWindows()[0]; w && w.focus(); w && w.webContents.focus(); });
   const errs = [];
   win.on('pageerror', e => errs.push(e.message));
   win.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   await win.waitForFunction(() => typeof tunerKey === 'function' && typeof cdUnitKey === 'function', null, { timeout: 20000 });
   await win.waitForTimeout(1500);
   if (!welcome) await win.evaluate(() => typeof showWelcome === 'function' && showWelcome(false));
+  await focus();
   const noted = [];
   await win.exposeFunction('noteToast', t => noted.push(t));
   await win.evaluate(hide => {
