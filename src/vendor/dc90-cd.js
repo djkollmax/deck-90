@@ -18,6 +18,8 @@
  *
  * Deck 90 7.9.14: REPEAT and SHUFFLE keys (OPEN / CLOSE narrower) and their lamps under the meters, setModes(). 7.9.13: meters end yellow/red; setTimeMode(remain). 7.9.10: Damián's DC-90 revision 3 (the big display); src/ui/cdunit/cdunit.js drives it with the PC's drive.
  * One change: a long title scrolls even when Windows says "reduced motion" (animations off).
+ * Deck 90 7.10.9: bigger key letters fitted to each key (keyFont); accented capitals full height, the accent above
+ * (the title and artist viewports a little taller for it).
  * Deck 90 7.9.22: setTrack({ quality }) writes the disc's quality under the track count ("CD 16/44", "FLAC 24/96",
  * "MP3 320"), and the artist line scrolls too when it doesn't fit. 7.9.23: track 0 (no disc) and the tray open show
  * dashes and no count.
@@ -179,6 +181,10 @@ const LAYOUT = Object.freeze({
     eject:{x:1072,y:233,width:83,height:29},
   },
 });
+// Deck 90 7.10.9: bigger key letters, as big as the key lets them be (Arial bold capitals ≈ 0.7 em wide each)
+// Deck 90 7.10.9: an accented capital is the full capital with its accent in a dot above the cell
+const ACCENTS={'Á':['A',[3]],'É':['E',[3]],'Í':['I',[3]],'Ó':['O',[3]],'Ú':['U',[3]],'Ü':['U',[1,3]]};
+const keyFont=(text,width,want,ls=.7)=>{const n=String(text).length;return Math.max(7,Math.min(want,(width-10-(n-1)*ls)/(n*.7)));};
 const css=(name,fallback)=>`var(--${name},var(--_d90-${name},${fallback}))`;
 const safePrefix=prefix=>{if(!/^[A-Za-z_][\w.-]*$/.test(prefix))throw new TypeError('A safe unique SVG id prefix is required.');return prefix;};
 
@@ -341,7 +347,7 @@ class Deck90CD {
     this.svg=node('svg',{xmlns:SVG_NS,viewBox:'0 0 1200 280',width:'100%',preserveAspectRatio:'xMidYMid meet',role:'group','aria-label':'DECK 90 DC-90 Compact Disc Player','data-deck90-cd':this.prefix});
     this.svg.style.width='100%';this.svg.style.height='auto';this.svg.style.display='block';this.svg.style.userSelect='none';this.svg.style.touchAction='pan-y';
     this._applyTheme();this.svg.innerHTML=buildFaceplate(this.prefix);
-    const defs=node('defs');defs.innerHTML=`<clipPath id="${this.prefix}-title-clip"><rect x="390" y="52" width="505" height="27"/></clipPath><clipPath id="${this.prefix}-artist-clip"><rect x="390" y="91" width="505" height="20"/></clipPath><filter id="${this.prefix}-vfd-glow" x="-12%" y="-25%" width="124%" height="150%"><feGaussianBlur stdDeviation=".55" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="${this.prefix}-key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".08" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".18" stop-color="var(--key-face,var(--_d90-key-face))"/><stop offset=".78" stop-color="var(--key-face,var(--_d90-key-face))"/><stop offset=".94" stop-color="var(--key-bottom,var(--_d90-key-bottom))"/><stop offset="1" stop-color="var(--key-top,var(--_d90-key-top))"/></linearGradient>`;this.svg.append(defs);
+    const defs=node('defs');defs.innerHTML=`<clipPath id="${this.prefix}-title-clip"><rect x="390" y="48" width="505" height="31"/></clipPath><clipPath id="${this.prefix}-artist-clip"><rect x="390" y="89" width="505" height="22"/></clipPath><filter id="${this.prefix}-vfd-glow" x="-12%" y="-25%" width="124%" height="150%"><feGaussianBlur stdDeviation=".55" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="${this.prefix}-key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".08" stop-color="var(--key-top,var(--_d90-key-top))"/><stop offset=".18" stop-color="var(--key-face,var(--_d90-key-face))"/><stop offset=".78" stop-color="var(--key-face,var(--_d90-key-face))"/><stop offset=".94" stop-color="var(--key-bottom,var(--_d90-key-bottom))"/><stop offset="1" stop-color="var(--key-top,var(--_d90-key-top))"/></linearGradient>`;this.svg.append(defs);
     this._opening=node('rect',{x:43,y:157,width:1114,height:0,rx:1.4,fill:'#010403','data-role':'drawer-opening'});this.svg.append(this._opening);
     this._drawer=node('g',{'data-role':'drawer',transform:'translate(0 0)'});this._drawer.innerHTML=buildDrawer(this.prefix);this.svg.append(this._drawer);
     this._display=node('g',{'data-role':'display','aria-hidden':'true',filter:`url(#${this.prefix}-vfd-glow)`});this.svg.append(this._display);
@@ -397,7 +403,7 @@ class Deck90CD {
   }
   _dots(text,x,y,pitch=1.2,fill=LIT){
     const group=node('g',{transform:`translate(${x} ${y})`,fill});let index=0;
-    for(const char of clean(text).toUpperCase()){const rows=DOT_GLYPHS[char]||DOT_GLYPHS['?'];for(let row=0;row<7;row++)for(let col=0;col<5;col++)if(rows[row]&(1<<(4-col)))group.append(node('circle',{cx:(index*6+col+.5)*pitch,cy:(row+.5)*pitch,r:pitch*.35,fill}));index++;}return group;
+    for(const char of clean(text).toUpperCase()){const acc=ACCENTS[char],rows=acc?DOT_GLYPHS[acc[0]]:DOT_GLYPHS[char]||DOT_GLYPHS['?'];for(let row=acc?-1:0;row<7;row++)for(let col=0;col<5;col++)if(row<0?acc[1].includes(col):rows[row]&(1<<(4-col)))group.append(node('circle',{cx:(index*6+col+.5)*pitch,cy:(row+.5)*pitch,r:pitch*.35,fill}));index++;}return group;   /* Deck 90 7.10.9: accents above full capitals */
   }
   _digitGroup(x,y,count,scale,colon=false){
     const group=node('g',{transform:`translate(${x} ${y}) scale(${scale})`});const cells=[];
@@ -423,7 +429,7 @@ class Deck90CD {
       const group=node('g',{'data-key':key,role:'button',tabindex:0,'aria-label':labels[key],'aria-pressed':'false'});group.style.cursor='pointer';group.style.outline='none';
       const face=node('rect',{x:box.x,y:box.y,width:box.width,height:box.height,rx:2.5,fill:`url(#${this.prefix}-key)`,stroke:'var(--edge,var(--_d90-edge))','stroke-width':.9});
       group.append(node('rect',{x:box.x,y:box.y+1.8,width:box.width,height:box.height,rx:2.5,fill:'#080e0a',opacity:.75}),face,node('path',{d:`M${box.x+3} ${box.y+1.3}H${box.x+box.width-3}`,stroke:'#fff','stroke-opacity':.35,'stroke-width':.7}));
-      if(key==='power'||key==='repeat'||key==='shuffle'){const text=node('text',{x:box.x+box.width/2,y:box.y+box.height/2+3,'text-anchor':'middle','font-family':'Arial,Helvetica,sans-serif','font-size':key==='power'?10:8.4,'font-weight':700,'letter-spacing':.7,fill:'var(--key-label,var(--_d90-key-label,#d2d7d5))'});text.textContent=key.toUpperCase();group.append(text);}
+      if(key==='power'||key==='repeat'||key==='shuffle'){const size=keyFont(key,box.width,key==='power'?12:10.5);/* Deck 90 7.10.9 */const text=node('text',{x:box.x+box.width/2,y:box.y+box.height/2+size*.36,'text-anchor':'middle','font-family':'Arial,Helvetica,sans-serif','font-size':size,'font-weight':700,'letter-spacing':.7,fill:'var(--key-label,var(--_d90-key-label,#d2d7d5))'});text.textContent=key.toUpperCase();group.append(text);}
       else group.append(this._icon(key,box.x+box.width/2,box.y+box.height/2));
       const led=node('rect',{x:box.x+7,y:box.y+box.height-3.6,width:box.width-14,height:1.2,fill:DIM,opacity:.25});group.append(led);
       this._buttons[key]={group,face,led,icon:group.querySelector('[data-role="transport-icon"]'),pressed:false,hover:false,focused:false};this.svg.append(group);

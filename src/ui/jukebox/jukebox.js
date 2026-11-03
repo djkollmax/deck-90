@@ -38,6 +38,7 @@ function unitColorApply() {
     // 7.10.6: DIMMER too, on the tuner and the CD as on the DM-90 (brightest / low; the DM-90 draws its own)
     el.classList.toggle('dim-max', jbCfg.dim === 1); el.classList.toggle('dim-low', jbCfg.dim === 2);
   }
+  if (typeof hdrApply === 'function') hdrApply();                 // 7.10.9: the header display too (clock.js)
 }
 unitColorApply();
 let jb = null, jbPower = false, jbActive = false, jbShownKey = '', jbAvg = -24, jbAt = 0, jbLv = { L: 0, R: 0 };
@@ -249,10 +250,10 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   if (k === 'color') {                                            // the rack's displays, all three (held: the one before)
     const i = UNIT_COLORS.findIndex(u => u.id === jbCfg.color), n = UNIT_COLORS.length;
     jbCfg.color = UNIT_COLORS[(i + (hold ? n - 1 : 1)) % n].id; unitColorApply(); savePrefs();
-    toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack', 1400);
+    toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack y el reloj', 1400);
     return;
   }
-  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack', 1200); return; }
+  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack y el reloj', 1200); return; }
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
   if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked

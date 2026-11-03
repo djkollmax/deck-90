@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.10.9
+
+### Changed
+- **Bigger letters on the units' keys**: the DT-90's, the DC-90's and the DM-90's keys write their names at 10.5 (POWER and the memory numbers 12), each as big as its key lets it be (`keyFont`, vendor patches), instead of 8.4–8.8.
+- **The header display follows COLOR and DIMMER**: the clock's digits, the song, the date and the weather take the rack's display colour (aqua by default, as before), and DIMMER dims or lifts them with the units (`hdrApply` in clock.js, `--hdr-*` in header.css).
+
+### Fixed
+- **Accented capitals looked lower case** on the units' dot-matrix displays (BABASóNICOS, EL íDOLO): squeezed into the 5 × 7 cell with their accent. They're now the full capital with the accent in a dot above the cell (Á É Í Ó Ú Ü); the DC-90's and DM-90's title and artist lines have room for it.
+
 ## 7.10.8
 
 ### Fixed

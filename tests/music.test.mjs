@@ -131,11 +131,16 @@ test('SONGS lists every song, and its scroll bar drags through them', async () =
   assert.equal((await view()).list.top, 0, 'a click at the top jumps there');
 });
 
-test('COLOR changes the displays of the whole rack, DIMMER the DM-90 brightness, both remembered', async () => {
+test('COLOR changes the displays of the whole rack and the header, DIMMER their brightness, both remembered', async () => {
+  const hdr = () => d.win.evaluate(() => [getComputedStyle(document.getElementById('npTitle')).color, HC_ON, document.documentElement.classList.contains('hdr-dim-low')]);
+  assert.deepEqual((await hdr()).slice(1), ['#80ffe5', false]);
   const vfd = () => d.win.evaluate(() => ['tunerPanel', 'cdPanel', 'jbPanel'].map(id => getComputedStyle(document.getElementById(id)).getPropertyValue('--vfd').trim()));
   assert.deepEqual(await vfd(), ['#80ffe5', '#80ffe5', '#80ffe5']);
   await d.click(K('color'), 200);
   assert.deepEqual(await vfd(), ['#ffb84a', '#ffb84a', '#ffb84a'], 'amber on the tuner, the CD and the DM-90');
+  const h = await hdr();
+  assert.equal(h[1], '#ffb84a', 'the clock in amber too');
+  assert.match(h[0], /^rgb\(255, 19\d, 9\d\)$/, 'and the song in the header: ' + h[0]);
   await d.hold(K('color'));
   assert.deepEqual(await vfd(), ['#80ffe5', '#80ffe5', '#80ffe5'], 'held: the one before');
   await d.click(K('color'), 200);
@@ -144,6 +149,7 @@ test('COLOR changes the displays of the whole rack, DIMMER the DM-90 brightness,
   await d.click(K('dimmer'), 200); assert.equal((await dim())[0], 1);
   await d.click(K('dimmer'), 200); assert.deepEqual((await dim()).slice(0, 2), [2, '.6']);
   assert.deepEqual(await d.win.evaluate(() => ['tunerPanel', 'cdPanel'].map(id => getComputedStyle(document.querySelector('#' + id + ' [data-role="display"]')).opacity)), ['0.55', '0.55'], 'the tuner and the CD dim too');
+  assert.equal((await hdr())[2], true, 'and the header');
   await d.click(K('dimmer'), 200);
   assert.deepEqual(await d.win.evaluate(() => { const p = JSON.parse(localStorage.getItem('deck90-prefs')).jukebox; return [p.color, p.dim]; }), ['amber', 0]);
 });
@@ -195,4 +201,17 @@ test('the radio taking the sound pauses the music', async () => {
   await d.click(K('power'), 600);
   assert.equal(await d.win.evaluate(() => musicPlaying()), false);
   assert.deepEqual(d.errors(), []);
+});
+
+test('the keys letters are bigger and fit their keys; accented capitals keep their full height', async () => {
+  const keys = await d.win.evaluate(() => [...document.querySelectorAll('#jukebox g[data-key] text, #tuner g[data-key] text, #cdUnit g[data-key] text')].map(t => {
+    const k = t.closest('g[data-key]').querySelector('rect:nth-of-type(2)') || t.closest('g[data-key]').querySelector('rect');
+    return { k: t.closest('g[data-key]').dataset.key, size: +t.getAttribute('font-size'), w: t.getBBox().width, kw: +k.getAttribute('width') };
+  }));
+  assert.ok(keys.length > 20, keys.length);
+  for (const k of keys) assert.ok(k.w <= k.kw - 4, `${k.k}: ${k.w.toFixed(1)} in ${k.kw}`);
+  assert.ok(keys.filter(k => k.size >= 10).length > keys.length / 2, 'most at 10 or more');
+  // Í on the tuner's display: the I's full height (7 rows of dots), its accent in a dot above (one more row)
+  const rows = t => d.win.evaluate(t => new Set([...tuner._dots(t, 0, 0, 1).children].map(c => c.getAttribute('cy'))).size, t);
+  assert.equal(await rows('I'), 7); assert.equal(await rows('Í'), 8);
 });

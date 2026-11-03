@@ -82,3 +82,15 @@ html.chassis-ti.hdr-wx body.mini .hw{ padding-left:12px; gap:7px; }
 body.mini .hc-date, body.mini .hw-text{ font-size:10.5px; } body.mini #hcDay, body.mini #hwCond{ font-size:12px; }
 /* a narrow strip gives the engraved name's room to the display (the LED stays) */
 @media (max-width:700px){ html.chassis-ti.hdr-clock body.mini .brand-name{ display:none; } }
+
+/* 7.10.9 · the header display in the rack's COLOR (the DM-90's COLOR key; clock.js sets these, aqua when unset)
+   and its DIMMER: low dims the clock, the song and the weather, brightest lifts them */
+.chassis-ti #npTitle{ color:rgb(var(--hdr-title, 142,248,234));
+  text-shadow:0 0 1px rgba(var(--hdr-title, 142,248,234),.85), 0 0 5px rgba(var(--hdr-glow, 127,246,230),.45), 0 0 14px rgba(var(--hdr-glow, 127,246,230),.16); }
+.chassis-ti #npArtist, .hc-date, .hw-text{ color:rgba(var(--hdr-sub, 96,222,212),.92); text-shadow:0 0 4px rgba(var(--hdr-sub-glow, 80,214,204),.22); }
+.chassis-ti .np.paused #npTitle{ color:rgba(var(--hdr-glow, 127,246,230),.45); text-shadow:none; }
+#hcDay, #hwCond{ color:rgb(var(--hdr-lit, 128,255,229)); text-shadow:0 0 1px rgba(var(--hdr-lit, 128,255,229),.8), 0 0 4px rgba(var(--hdr-lit, 128,255,229),.35); }
+html.chassis-ti.hdr-clock .hc{ border-right-color:rgba(var(--hdr-line, 127,246,230),.13); }
+html.chassis-ti.hdr-wx .hw{ border-left-color:rgba(var(--hdr-line, 127,246,230),.13); }
+html.hdr-dim-low.chassis-ti .np-text, html.hdr-dim-low .hc, html.hdr-dim-low .hw{ filter:brightness(.55); }
+html.hdr-dim-max.chassis-ti .np-text, html.hdr-dim-max .hc, html.hdr-dim-max .hw{ filter:brightness(1.25) saturate(1.1); }

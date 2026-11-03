@@ -21,7 +21,24 @@ function saveClock() { store.write(CLOCK_KEY, clockCfg); }
 
 const hcEl = { box: el('np'), clock: el('hcBox'), digits: el('hcDigits'), day: el('hcDay'), date: el('hcDate'),
   wx: el('hwBox'), icon: el('hwIcon'), temp: el('hwTemp'), cond: el('hwCond'), range: el('hwRange'), city: el('cityInput') };
-const HC_ON = '#80ffe5', HC_OFF = '#193e34', HC_GLASS = '#030303';   // the DC-90's VFD: lit and unlit
+let HC_ON = '#80ffe5', HC_OFF = '#193e34';                     // the DC-90's VFD: lit and unlit (7.10.9: the rack's COLOR)
+const HC_GLASS = '#030303';
+// 7.10.9: the header display follows the rack's COLOR and DIMMER (the DM-90's keys): the clock, the song and the
+// weather in the displays' colour (the aqua it always had by default), dimmer or brighter as they are
+function hdrApply() {
+  if (typeof UNIT_COLORS === 'undefined' || typeof jbCfg === 'undefined') return;
+  const u = UNIT_COLORS.find(x => x.id === jbCfg.color) || UNIT_COLORS[0], root = document.documentElement;
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const [r, g, b] = rgb(u.vfd), mix = (k, t) => [r, g, b].map(c => Math.round(c * k + 255 * t)).join(',');
+  if (u.id === 'aqua') ['--hdr-title', '--hdr-glow', '--hdr-sub', '--hdr-sub-glow', '--hdr-lit', '--hdr-line'].forEach(v => root.style.removeProperty(v));
+  else {
+    root.style.setProperty('--hdr-title', mix(.9, .1)); root.style.setProperty('--hdr-glow', [r, g, b].join(','));
+    root.style.setProperty('--hdr-sub', mix(.78, 0)); root.style.setProperty('--hdr-sub-glow', mix(.7, 0));
+    root.style.setProperty('--hdr-lit', [r, g, b].join(',')); root.style.setProperty('--hdr-line', [r, g, b].join(','));
+  }
+  root.classList.toggle('hdr-dim-max', jbCfg.dim === 1); root.classList.toggle('hdr-dim-low', jbCfg.dim === 2);
+  if (HC_ON !== u.vfd || HC_OFF !== u.dim) { HC_ON = u.vfd; HC_OFF = u.dim; hcLast = ''; if (typeof hcEl !== 'undefined' && hcShown()) { drawClock(new Date()); if (clockCfg.mode === 'weather') drawWeather(); } }
+}
 Object.assign(SEG7, { '-': 'g', '°': 'abfg' });
 const DIAS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -244,3 +261,4 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requ
 // after sleep or a long time in the tray, the weather is fetched again when the window comes back
 document.addEventListener('visibilitychange', () => { if (!document.hidden && clockCfg.mode === 'weather' && Date.now() - wxAt > 15 * 60e3) fetchWeather(); });
 syncClockSeg(); layoutClock(); fetchWeather();
+hdrApply();

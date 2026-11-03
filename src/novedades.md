@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.10.9 — 2026-11-03
+
+### Cambios
+- **Letras más grandes en las teclas** del sintonizador, la compactera y el DM-90, del tamaño más grande que entra en cada tecla.
+- **El reloj de arriba sigue a COLOR y DIMMER**: la hora, el tema, la fecha y el clima toman el color de los displays del rack y bajan o suben el brillo con ellos.
+
+### Arreglos
+- **Las mayúsculas con tilde parecían minúsculas** en los displays (BABASóNICOS, EL íDOLO). Ahora son mayúsculas enteras con la tilde arriba: BABASÓNICOS, EL ÍDOLO.
+
 ## 7.10.8 — 2026-11-03
 
 ### Arreglos

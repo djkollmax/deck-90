@@ -140,14 +140,17 @@ function glyph(ch) {
   const base = ch.normalize('NFD').replace(/[̀-ͯ]/g, '');
   return DOT_GLYPHS[base] || DOT_GLYPHS[base.toUpperCase()] || DOT_GLYPHS['?'];
 }
+// 7.10.9: an accented capital is the full capital with its accent in a dot above the cell (in the 5 × 7 cell it
+// had to shrink and looked lower case: BABASóNICOS)
+const ACCENTS={'Á':['A',[3]],'É':['E',[3]],'Í':['I',[3]],'Ó':['O',[3]],'Ú':['U',[3]],'Ü':['U',[1,3]]};
 // a line of dot-matrix text as one path (a long list redraws fast): round dots of a 5 × 7 cell, `max` characters
 function dotsPath(text, x, y, pitch, max = 999) {
   const r = pitch * .42, d = [];   // 7.10.3: fuller dots, easier to read
   let i = 0;
   for (const ch of clean(text).toUpperCase()) {
     if (i >= max) break;
-    const rows = glyph(ch);
-    for (let row = 0; row < 7; row++) for (let col = 0; col < 5; col++) if (rows[row] & (1 << (4 - col))) {
+    const acc = ACCENTS[ch], rows = acc ? DOT_GLYPHS[acc[0]] : glyph(ch);
+    for (let row = acc ? -1 : 0; row < 7; row++) for (let col = 0; col < 5; col++) if (row < 0 ? acc[1].includes(col) : rows[row] & (1 << (4 - col))) {
       const cx = x + (i * 6 + col + .5) * pitch, cy = y + (row + .5) * pitch;
       d.push(`M${(cx - r).toFixed(2)} ${cy.toFixed(2)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`);
     }
@@ -228,8 +231,8 @@ function buildFaceplate(p) {
     </radialGradient>
     <pattern id="${p}-metal-grain" width="612" height="18.4" patternUnits="userSpaceOnUse">${grainMarkup(label)}</pattern>
     <clipPath id="${p}-plate-clip"><rect x="4.8" y="4.8" width="1190.4" height="${H - 9.6}" rx="2.4"/></clipPath>
-    <clipPath id="${p}-title-clip"><rect x="390" y="52" width="505" height="27"/></clipPath>
-    <clipPath id="${p}-artist-clip"><rect x="390" y="91" width="505" height="20"/></clipPath>
+    <clipPath id="${p}-title-clip"><rect x="390" y="48" width="505" height="31"/></clipPath>
+    <clipPath id="${p}-artist-clip"><rect x="390" y="89" width="505" height="22"/></clipPath>
     <clipPath id="${p}-quality-clip"><rect x="390" y="113" width="505" height="15"/></clipPath>
     <filter id="${p}-vfd-glow" x="-5%" y="-10%" width="110%" height="120%"><feGaussianBlur stdDeviation=".55" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <filter id="${p}-vfd-glow-hi" x="-5%" y="-10%" width="110%" height="120%"><feGaussianBlur stdDeviation="1.3" result="halo"/><feGaussianBlur in="SourceGraphic" stdDeviation=".5" result="blur"/>
@@ -432,7 +435,10 @@ class Deck90Music {
         node('path', { d: `M${b.x + 3} ${b.y + 1.3}H${b.x + b.w - 3}`, stroke: '#fff', 'stroke-opacity': .35, 'stroke-width': .7 }));
       let icon = null;
       if (b.icon) { icon = node('path', { d: icons[b.icon], transform: `translate(${b.x + b.w / 2} ${b.y + b.h / 2})`, fill: label, 'pointer-events': 'none' }); g.append(icon); }
-      else { const t = node('text', { x: b.x + b.w / 2, y: b.y + b.h / 2 + 3, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': key === 'power' ? 10 : 8.4, 'font-weight': 700, 'letter-spacing': .7, fill: label, 'pointer-events': 'none' }); t.textContent = b.label; g.append(t); }
+      else {                                                       // 7.10.9: bigger letters, as big as the key lets them be
+        const n = b.label.length, size = Math.max(7, Math.min(key === 'power' ? 12 : 10.5, (b.w - 10 - (n - 1) * .7) / (n * .7)));
+        const t = node('text', { x: b.x + b.w / 2, y: b.y + b.h / 2 + size * .36, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': size, 'font-weight': 700, 'letter-spacing': .7, fill: label, 'pointer-events': 'none' }); t.textContent = b.label; g.append(t);
+      }
       const led = node('rect', { x: b.x + 7, y: b.y + b.h - 3.6, width: b.w - 14, height: 1.2, fill: DIM, opacity: .25 }); g.append(led);
       this._buttons[key] = { g, face, led, icon, pressed: false, hover: false, focused: false };
       this.svg.append(g);

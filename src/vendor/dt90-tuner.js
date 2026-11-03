@@ -26,6 +26,7 @@
  * Deck 90 7.9.21: setRadio({ quality, place }) writes the stream's quality after TUNED and where the station is
  * under the memory.
  * Deck 90 7.10.7: a sixth band key, HI-FI (band-hifi, band 'HIFI'), between FM4 and AM; the memories narrower.
+ * Deck 90 7.10.9: bigger key letters, fitted to each key (keyFont); accented capitals full height, the accent above.
  */
 (function (global) {
 'use strict';
@@ -321,6 +322,10 @@ const LAYOUT=Object.freeze({
     }
   }
 });
+// Deck 90 7.10.9: bigger key letters, as big as the key lets them be (Arial bold capitals ≈ 0.7 em wide each)
+// Deck 90 7.10.9: an accented capital is the full capital with its accent in a dot above the cell
+const ACCENTS={'Á':['A',[3]],'É':['E',[3]],'Í':['I',[3]],'Ó':['O',[3]],'Ú':['U',[3]],'Ü':['U',[1,3]]};
+const keyFont=(text,width,want,ls=.7)=>{const n=String(text).length;return Math.max(7,Math.min(want,(width-10-(n-1)*ls)/(n*.7)));};
 const css=(name,fallback)=>`var(--${name},var(--_d90-${name},${fallback}))`;
 const safePrefix=prefix=>{if(!/^[A-Za-z_][\w.-]*$/.test(prefix))throw new TypeError('A safe unique SVG id prefix is required.');return prefix;};
 
@@ -622,9 +627,10 @@ class Deck90Tuner {
     const group = node('g', { transform: `translate(${x} ${y})`, fill });
     let column = 0;
     for (const char of clean(text).toUpperCase()) {
-      const rows = DOT_GLYPHS[char] || DOT_GLYPHS['?'];
-      for (let row = 0; row < 7; row++) for (let bit = 0; bit < 5; bit++) {
-        const on = Boolean(rows[row] & (1 << (4 - bit)));
+      const acc = ACCENTS[char], rows = acc ? DOT_GLYPHS[acc[0]] : DOT_GLYPHS[char] || DOT_GLYPHS['?'];   // Deck 90 7.10.9
+      for (let row = acc ? -1 : 0; row < 7; row++) for (let bit = 0; bit < 5; bit++) {
+        const on = row < 0 ? acc[1].includes(bit) : Boolean(rows[row] & (1 << (4 - bit)));
+        if (row < 0 && !on) continue;
         if (!on && !ghost) continue;
         group.append(node('circle', { cx: (column * 6 + bit + .5) * pitch, cy: (row + .5) * pitch, r: pitch * .35, fill: on ? fill : DIM }));
       }
@@ -714,8 +720,10 @@ class Deck90Tuner {
       group.append(shadow, face);
       const highlight = node('path', { d: `M${box.x + 3} ${box.y + 1.3}H${box.x + box.width - 3}`, stroke: '#fff', 'stroke-opacity': .36, 'stroke-width': .7 });
       group.append(highlight);
-      const text = node('text', { x: box.x + box.width / 2, y: box.y + box.height / 2 + 3, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': key.startsWith('tune-') ? 9 : key === 'power' ? 10 : 8.8, 'font-weight': 700, 'letter-spacing': .7, fill: 'var(--key-label,var(--_d90-key-label,#d2d7d5))', 'pointer-events': 'none' });
-      text.textContent = /^m\d$/.test(key) ? key.slice(1) : words[key];
+      const said = /^m\d$/.test(key) ? key.slice(1) : words[key];
+      const size = keyFont(said, box.width, key.startsWith('tune-') ? 11 : key === 'power' || /^m\d$/.test(key) ? 12 : 10.5);   // Deck 90 7.10.9
+      const text = node('text', { x: box.x + box.width / 2, y: box.y + box.height / 2 + size * .36, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': size, 'font-weight': 700, 'letter-spacing': .7, fill: 'var(--key-label,var(--_d90-key-label,#d2d7d5))', 'pointer-events': 'none' });
+      text.textContent = said;
       group.append(text);
       const led = node('rect', { x: box.x + 6, y: box.y + box.height - 3.7, width: box.width - 12, height: 1.2, fill: DIM, opacity: .4 });
       group.append(led);
