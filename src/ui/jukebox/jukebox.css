@@ -1,0 +1,18 @@
+/* DM-90 DIGITAL MUSIC SERVER (7.10.0): the rack's double unit (1200 × 560, twice the DT-90 and DC-90), laid like them
+   over its panel; up to 500 px tall, giving up height like the others. Its SETUP dialog, in the phone's card style. */
+#jbPanel{ flex-basis:500px; max-height:500px; min-height:120px; }
+#jukebox{ position:absolute; inset:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+#jukebox svg{ width:100% !important; height:100% !important; }
+#jukebox [data-role="select-knob"]:focus{ outline:none; }
+#jbSetup{ position:fixed; inset:0; z-index:9200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
+#jbSetup.show{ display:flex; }
+.jb-card{ text-align:left; }
+.jb-card label{ display:block; margin:8px 0 0; color:#8d8a7c; letter-spacing:2px; font-size:9px; }
+.jb-card input{ display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:6px 8px; border-radius:5px; border:1px solid rgba(255,255,255,.12);
+  background:#06090c; color:#80ffe5; font-family:Consolas, 'Courier New', monospace; font-size:12px; letter-spacing:.5px; outline:none; }
+.jb-card input:focus{ border-color:rgba(128,255,229,.5); }
+.jb-msg{ min-height:15px; margin-top:8px; color:#ffd27a; font-size:11px; }
+.jb-go{ margin-top:10px; padding:6px 18px; border-radius:5px; border:1px solid rgba(128,255,229,.35); background:#10221e; color:#80ffe5; cursor:pointer; letter-spacing:3px; font-size:11px; }
+.jb-go:hover{ background:#163029; }
+.jb-go:disabled{ opacity:.5; cursor:default; }
+.jb-card .phone-off{ margin-left:8px; }

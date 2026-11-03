@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="ui/app/welcome.css">
 <link rel="stylesheet" href="ui/stereo/stereo.css">
 <link rel="stylesheet" href="ui/tuner/units.css">
+<link rel="stylesheet" href="ui/jukebox/jukebox.css">
 <link rel="stylesheet" href="ui/stereo/stereo-face.css">
 <script src="ui/app/boot.js"></script>
 </head>
@@ -115,6 +116,7 @@
         <button data-v="tape" title="La cinta grande (7)">CINTA</button>
         <button data-v="tuner" title="El sintonizador de radio: las mismas radios y memorias que el estéreo (9)">RADIO</button>
         <button data-v="cdunit" title="El reproductor de CD DC-90: la lectora de CD/DVD de la PC, también por USB (0)">CD</button>
+        <button data-v="jukebox" title="El DM-90: tu música de Jellyfin (J)">MÚSICA</button>
       </div>
       <span class="row-break"></span>
       <div class="seg preset" data-group="preset" title="5 looks favoritos (F1–F5) y 3 tuyos (C1–C3, F6–F8): GUARDAR y C1–C3 guarda lo que ves">
@@ -323,6 +325,8 @@
   <div class="tuner-panel" id="tunerPanel"><div id="tuner"></div></div>
   <!-- CD PLAYER (7.9.2): the DC-90, drawn by vendor/dc90-cd.js, playing the PC's drive (ui/cdunit/cdunit.js) -->
   <div class="tuner-panel" id="cdPanel"><div id="cdUnit"></div></div>
+  <!-- MUSIC SERVER (7.10.0): the DM-90, a double unit for the person's Jellyfin music (ui/jukebox/) -->
+  <div class="tuner-panel" id="jbPanel"><div id="jukebox"></div></div>
 
   <!-- CASSETTE DECK -->
   <div class="panel deck-panel" data-mod="deck">
@@ -353,6 +357,21 @@
       Si no conecta: la primera vez Windows pregunta por el firewall → <b>Permitir</b> en redes privadas.</div>
     <div class="phone-other" id="phoneOther"></div>
     <button id="phoneOff" class="phone-off">APAGAR</button>
+  </div>
+</div>
+
+<!-- THE DM-90'S SERVER (7.10.0): Jellyfin's address, user and password; the password goes to the server only -->
+<div id="jbSetup" role="dialog" aria-label="Servidor de música">
+  <div class="phone-card jb-card">
+    <div class="phone-head">DM-90 · SERVIDOR JELLYFIN <button type="button" id="jbClose" title="Cerrar (Esc)">✕</button></div>
+    <label>SERVIDOR<input id="jbServer" spellcheck="false" placeholder="http://localhost:8096"></label>
+    <label>USUARIO<input id="jbUser" spellcheck="false"></label>
+    <label>CONTRASEÑA<input id="jbPass" type="password"></label>
+    <div class="phone-help">La contraseña va solo a tu servidor; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
+      Solo música: las bibliotecas de música del usuario.</div>
+    <div class="jb-msg" id="jbSetupMsg"></div>
+    <button type="button" id="jbGo" class="jb-go">CONECTAR</button>
+    <button type="button" id="jbSignOut" class="phone-off">DESCONECTAR</button>
   </div>
 </div>
 
@@ -455,11 +474,14 @@
 <script src="ui/app/rotate.js"></script>
 <script src="core/radio.js"></script>
 <script src="core/cd.js"></script>
+<script src="core/music.js"></script>
 <script src="ui/stereo/stereo.js"></script>
 <script src="vendor/dt90-tuner.js"></script>
 <script src="ui/tuner/tuner.js"></script>
 <script src="vendor/dc90-cd.js"></script>
 <script src="ui/cdunit/cdunit.js"></script>
+<script src="ui/jukebox/dm90.js"></script>
+<script src="ui/jukebox/jukebox.js"></script>
 <script src="ui/app/update.js"></script>
 <script src="ui/app/about.js"></script>
 <script src="ui/app/welcome.js"></script>

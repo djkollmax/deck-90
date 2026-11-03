@@ -1,5 +1,19 @@
 # Novedades
 
+## 7.10.0 — 2026-11-03
+
+### Nuevo
+- **El DM-90: tu música de Jellyfin en el rack** (VER → MÚSICA, o la tecla J). Es una unidad doble con el mismo frente que el sintonizador y la compactera.
+  - **SETUP** pide la dirección del servidor, el usuario y la contraseña. Deck 90 guarda el permiso que da Jellyfin, no la contraseña. Solo música, nunca películas.
+  - **Arriba, el tema que suena**: el nombre, artista · álbum, la calidad completa ("FLAC SIN PÉRDIDA · 24 BITS / 96 KHZ · 4608 KBPS · ESTÉREO"), la cuenta regresiva y el lugar en la cola.
+  - **Abajo, una lista larga**: ARTISTAS → ÁLBUMES → TEMAS (con duración y calidad de cada uno), TEMAS (todos), COLA y BUSCAR.
+    - La perilla SELECT, la rueda del mouse o ↑ ↓ la recorren.
+    - Las letras saltan al primer nombre que empieza así.
+    - ENTER (o doble clic) abre o toca desde ahí; ◀ ATRÁS vuelve.
+  - **Q** pone lo marcado para que suene después del tema actual, en el orden en que lo vas eligiendo (un álbum o un artista, enteros). REPEAT, SHUFFLE, ▶ ❚❚ ■ |◀◀ ▶▶|.
+  - Toca cada archivo en su calidad original; lo que la ventana no puede tocar (ALAC, por ejemplo) Jellyfin lo manda convertido a FLAC.
+  - Se turna con la radio y el CD, como ellos entre sí.
+
 ## 7.9.22 — 2026-11-02
 
 ### Arreglos

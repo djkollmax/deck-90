@@ -18,11 +18,13 @@ wants it done then (see Shared names).
 - `electron/`: the main process. `main.js` (window, IPC, the network the page may not reach), `media.ps1` (the
   Windows bridge: now playing, volume keys, the CD drive through MCI), `mpris.js` (the same on Linux),
   `radioproxy.js` (the radio through a local proxy that reads the song and bitrate), `cdnames.js`
-  (MusicBrainz), `remote.js` (the phone), `updater.js`, `tracklog.js`.
+  (MusicBrainz), `jellyfin.js` (the DM-90's Jellyfin server: sign-in, the music library, a song's stream),
+  `audiofile.js` (a data CD file's rate and bits), `remote.js` (the phone), `updater.js`, `tracklog.js`.
 - `src/core/`: what works with no screen. `events.js` is the hub (`deck.on`, `deck.emit`, `deck.notice` for a
   line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
-  (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) say what changed through it and never touch a
-  screen. The screens call their functions and listen. `store.js` reads and writes what's saved (localStorage).
+  (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) and `music.js` (the Jellyfin library, the queue,
+  Q, REPEAT and SHUFFLE, the player) say what changed through it and never touch a screen. The screens call
+  their functions and listen. `store.js` reads and writes what's saved (localStorage).
 - `src/ui/<module>/`: the screens, each folder with its scripts and its CSS.
   - `app/`: the program around the modules. `core.js` (shared state), `audio.js` (capture, measurements,
     toast), `loop.js` (the frame loop), `controls.js` (keys, prefs, the console), `stills.js`, `idle.js`,
@@ -33,7 +35,8 @@ wants it done then (see Shared names).
   - `meters/` (VU, spectrum, oscilloscope, goniometer), `tape/` (the cassette decks, the big tape, the CD-90
     tape style), `header/` (now playing, clock and weather), `mini/` (the strip), `stereo/` (the car stereo
     window; `stereo-face.css` is shared with the phone), `tuner/` (the DT-90; `units.css` styles it and the
-    DC-90), `cdunit/` (the DC-90).
+    DC-90), `cdunit/` (the DC-90), `jukebox/` (the DM-90: `dm90.js` its faceplate, Deck 90's own in the units'
+    style, and `jukebox.js` its lists and keys).
 - `src/index.html` loads every script as a classic script and every stylesheet, in order. The stylesheets are
   one cascade split in files: a later file overrides an earlier one, so moving a rule between files can change
   the look (compare with `scripts/shots.mjs`, below).
@@ -99,7 +102,8 @@ program). Push one release, wait for its run to finish, then the next: two at on
 
 ## Words
 
-- **rack**: the main window's stack of modules. **DT-90**: the tuner unit. **DC-90**: the CD unit.
+- **rack**: the main window's stack of modules. **DT-90**: the tuner unit. **DC-90**: the CD unit. **DM-90**: the
+  music server unit (Jellyfin).
 - **stereo**: the car stereo window (E), with its own radio and CD modes. **mini**: the strip (P).
 - **phone**: the phone's page, served by `electron/remote.js`.
 - **look**: a module's skin (VU faces, spectrum looks, the stereo display's SDM looks).

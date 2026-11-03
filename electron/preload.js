@@ -57,6 +57,14 @@ contextBridge.exposeInMainWorld('weather', {
   now:  (lat, lon) => ipcRenderer.invoke('weather-now', Number(lat), Number(lon)),
 });
 // the stereo's CD drive (Windows): commands to the bridge, and what it says back
+// 7.10.0: the DM-90's Jellyfin server (electron/jellyfin.js)
+contextBridge.exposeInMainWorld('jellyfin', {
+  status: () => ipcRenderer.invoke('jf-status'),
+  signIn: (server, user, pw) => ipcRenderer.invoke('jf-sign-in', String(server || ''), String(user || ''), String(pw || '')),
+  signOut: () => ipcRenderer.invoke('jf-sign-out'),
+  read: (kind, id, query) => ipcRenderer.invoke('jf-read', String(kind), id == null ? '' : String(id), query || {}),
+  stream: (id, playable) => ipcRenderer.invoke('jf-stream', String(id), !!playable),
+});
 contextBridge.exposeInMainWorld('cdrom', {
   cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
   on:  cb => ipcRenderer.on('cd', (e, s) => cb(s)),

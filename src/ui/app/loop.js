@@ -162,6 +162,7 @@ function frame(draw) {
   if (stereoMode && draw) guard('stereo', () => stereoFeed(now));
   if (tunerShown() && draw) guard('tuner', () => tunerFeed(now));
   if (cdUnitShown() && draw) guard('cdunit', () => cdUnitFeed(now));
+  if (jbShown() && draw) guard('jukebox', () => jbFeed(now));
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));

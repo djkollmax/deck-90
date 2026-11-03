@@ -1,5 +1,16 @@
 # Changelog
 
+## 7.10.0
+
+### Added
+- **The DM-90 Digital Music Server**, a double rack unit (1200 × 560, the DT-90 and DC-90's metal, keys, screws, glyphs and VFD) for the person's Jellyfin music (VER → MÚSICA, or J). `src/ui/jukebox/dm90.js` draws it (each list line one dot path, so a long list redraws fast; the SELECT knob turns with the wheel or a drag), `jukebox.js` runs its lists and keys, `src/core/music.js` the library, queue and player, `electron/jellyfin.js` the server.
+  - **SETUP** signs in with the server's address, user and password (`/Users/AuthenticateByName`); only the access token is kept (`userData/jellyfin.json`), never the password. Music only: the first library whose CollectionType is `music`, added to every read; the page reads only through `jf-read`'s list of paths and keys.
+  - **The song playing**: name, artist · album (year), the quality spelled out from its media stream ("FLAC SIN PÉRDIDA · 24 BITS / 96 KHZ · 4608 KBPS · ESTÉREO"), the time left, its place in the queue, PLAY / PAUSE / NET lamps, L/R meters, REPEAT and SHUFFLE lamps.
+  - **The list**: ARTISTAS → an artist's ÁLBUMES → its songs (number, length, "FLAC 24/96" / "MP3 320"), TEMAS (every song), COLA and BUSCAR (artists, albums and songs). SELECT, the wheel, ↑ ↓ PgUp PgDn Home End, letters jump to the first name starting so (articles skipped), ENTER or a double click opens or plays from there, ◀ ATRÁS / Backspace goes back.
+  - **Q** (key and keyboard) puts the marked song, album or artist right after the song playing, in the order chosen, even shuffled. REPEAT (all, one, off) and SHUFFLE, saved in `deck90-music`.
+  - Plays the file as it is (`/Audio/{id}/stream?static=true`); codecs the window can't play (ALAC, WMA, APE, DSD) come as FLAC from the server. Takes turns with the radio and the CD; the PC's player waits and goes on when the unit goes off.
+- Tests: `tests/music.test.mjs` with a pretend Jellyfin (`tests/lib/jellyfin.mjs`: 30 artists, 90 albums, 720 songs and a movie library that must never show).
+
 ## 7.9.22
 
 ### Fixed
