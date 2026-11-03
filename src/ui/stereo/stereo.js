@@ -4,7 +4,7 @@
 //  becomes the stereo's front (img/stereo/front.jpg) with the live DP940 display over its LCD
 //  (vendor/dp940-display.js) and a key over each of its buttons:
 //    VOL ▲▼  Windows' volume (also the mouse wheel anywhere on the front)    ATT  silence
-//    MODE    PC (what the computer plays) or RADIO (stations over the internet)
+//    MODE    PC (what the computer plays), RADIO (stations over the internet), CD, or SERVER (the DM-90's music)
 //    SEL     play / pause: the radio, or the player's song                    DISP  song · time · temp · TIEMPO
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
 //    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3 · FM4 · AM
@@ -67,7 +67,7 @@ let stereoCfg = { disp: 'song', color: 1, dim: 0, mode: 'pc' };
   const c = store.section('stereo');
   if (c) stereoCfg = {
     disp: STEREO_DISP.includes(c.disp) ? c.disp : 'song', color: c.color >= 1 && c.color <= STEREO_COLORS ? c.color | 0 : 1,
-    dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd'].includes(c.mode) ? c.mode : 'pc' };
+    dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd', 'music'].includes(c.mode) ? c.mode : 'pc' };
 }
 
 // ── the display ──
@@ -76,6 +76,7 @@ function stereoOpen(on) {
   document.body.classList.toggle('stereo', on);
   if (on && radioPlaying() && stereoCfg.mode !== 'radio') { stereoCfg.mode = 'radio'; savePrefs(); }   // the tuner's radio goes on here
   else if (on && cdPlaying() && stereoCfg.mode !== 'cd') { stereoCfg.mode = 'cd'; savePrefs(); }        // and the DC-90's CD
+  else if (on && musicPlaying() && stereoCfg.mode !== 'music') { stereoCfg.mode = 'music'; savePrefs(); }   // and the DM-90's music (7.10.4)
   if (on && !stereoDisplay && typeof Deck90Display === 'function') {
     stereoDisplay = new Deck90Display(document.getElementById('stDisplay'), { attackMs: 35, releaseMs: 140, radio: { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 } });
     const svg = stereoDisplay.svg;                             // only its glass, over the photo's own LCD
@@ -88,6 +89,7 @@ function stereoOpen(on) {
     // the stereo off: its radio and CD too (the radio goes on in the rack's tuner, when it's there)
     if ((radioPlaying() || radioNow) && !(typeof tunerKeeps === 'function' && tunerKeeps())) radioStop();
     if (!(typeof cdUnitKeeps === 'function' && cdUnitKeeps())) cdStop();
+    if (musicPlaying() && !(typeof jbKeeps === 'function' && jbKeeps())) musicStop();   // 7.10.4: the DM-90's music goes on in the rack
     if (stereoDisplay) { stereoDisplay.destroy(); stereoDisplay = null; }
   }
   stereoPaint();
@@ -110,6 +112,8 @@ function stereoTemp() {
   if (typeof wx === 'undefined' || !wx || typeof wx.temp !== 'number' || Date.now() - wxAt > 3 * 3600e3) return '';
   return Math.round(wx.temp) + '°C';
 }
+// what the mode plays is sounding (7.10.4: the DM-90's music is a mode too: SERVER)
+const stereoLive = () => stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoCfg.mode === 'music' ? musicPlaying() : stereoPlaying();
 function stereoDispText() {
   if (stereoFlash.until > Date.now()) return stereoFlash.text;   // the volume, for a moment
   let d = stereoCfg.disp;
@@ -120,6 +124,7 @@ function stereoDispText() {
     if (stereoCfg.mode === 'radio') return 'LIVE';
     const i = stereoInfo();
     if (stereoCfg.mode === 'cd') return i.length ? String(i.number).padStart(2, '0') + '  -' + mmss(Math.max(0, i.length - cdPosition())) : '--:--';
+    if (stereoCfg.mode === 'music') return i.length ? String(i.number).padStart(2, '0') + '  -' + mmss(Math.max(0, i.length - musicAudio.currentTime)) : '--:--';
     const dur = np && np.dur > 0 ? np.dur : 0, pos = np ? npPosition() : 0;
     return stereoPlaying() ? (dur ? '-' + mmss(Math.max(0, dur - pos)) : mmss(pos)) : '--:--';
   }
@@ -136,6 +141,10 @@ if (window.nowPlaying && window.nowPlaying.onVolume) window.nowPlaying.onVolume(
 // quality: the radio's stream ("MP3 128"), an audio CD's PCM ("CD 16/44"), a disc of files their format (FLAC, MP3)
 function stereoInfo() {
   if (stereoCfg.mode === 'radio') return { quality: radioPlaying() && !radioTrouble ? radioQuality(radioNow) : '' };
+  if (stereoCfg.mode === 'music') {
+    const m = musicNow();
+    return m ? { number: musicPos + 1, length: isFinite(musicAudio.duration) ? musicAudio.duration : m.len || 0, quality: musicQualityShort(m.media) } : {};
+  }
   if (stereoCfg.mode !== 'cd' || !cdInfo || !cdInfo.present) return {};
   const files = cdFiles();
   if (files.length) return { number: cdFile + 1, length: isFinite(cdAudio.duration) ? cdAudio.duration : 0, quality: cdQuality() };
@@ -149,6 +158,7 @@ function stereoContext() {
     return where;
   }
   if (stereoCfg.mode === 'radio') { const st = radioNow || radioMem[radioMem.band][(radioMem.slot || 1) - 1]; return st ? (st.freq ? radioMem.band + ' ' + st.freq + ' · ' : '') + st.name : radioMem.band; }
+  if (stereoCfg.mode === 'music') { const m = musicNow(); return m ? m.name + (m.artist ? ' · ' + m.artist : '') : 'DM-90'; }
   if (stereoCfg.mode === 'cd') {
     if (cdFiles().length) return String(cdFiles()[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
     const n = cdAudioTracks().length ? cdState.track || cdAudioTracks()[0].n : 0, song = n && cdSongName(n);
@@ -170,11 +180,20 @@ function stereoText(force) {
         stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext(), mono: radioMem.band === 'AM', quality: stereoInfo().quality || '' });
       } else stereoDisplay.setTrack({ title: extra, artist: stereoContext(), playing: true, ...stereoInfo() });
     }
-    stereoDisplay.setElapsed(stereoCfg.mode === 'cd' ? cdPosition() : stereoCfg.mode === 'pc' && np ? npPosition() : 0);
-    if (!(stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying())) stereoDisplay.setLevels(0, 0);
+    stereoDisplay.setElapsed(stereoCfg.mode === 'cd' ? cdPosition() : stereoCfg.mode === 'music' ? musicAudio.currentTime || 0 : stereoCfg.mode === 'pc' && np ? npPosition() : 0);
+    if (!(stereoLive())) stereoDisplay.setLevels(0, 0);
     stereoPaint(); return;
   }
-  if (stereoCfg.mode === 'cd') {
+  if (stereoCfg.mode === 'music') {                            // 7.10.4: the DM-90's song, as the CD's
+    const m = musicNow(), info = stereoInfo();
+    const title = m ? m.name : musicServer.signedIn ? 'SERVER' : 'NO SERVER';
+    const artist = m ? [m.artists || m.artist, m.album].filter(Boolean).join(' · ') + (musicPaused() ? ' · PAUSE' : '')
+      : musicServer.signedIn ? 'DM-90 · SEL PLAYS IT ALL AT RANDOM' : 'DM-90 · SETUP IN THE RACK';
+    key = 'music|' + title + '|' + artist + '|' + JSON.stringify(info);
+    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing: true, ...info }); }
+    stereoDisplay.setElapsed(musicAudio.currentTime || 0);
+    if (!musicPlaying()) stereoDisplay.setLevels(0, 0);
+  } else if (stereoCfg.mode === 'cd') {
     let title, artist = '', playing = true;
     const tr = cdAudioTracks(), files = cdFiles();
     if (!cdInfo) title = 'READING';
@@ -242,7 +261,7 @@ function stereoLevels(now) {
 // every frame from the loop: the meters (smoothed by the display itself); the words a few times a second
 function stereoFeed(now) {
   if (!stereoDisplay) return;
-  if (stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying()) stereoLevels(now);
+  if (stereoLive()) stereoLevels(now);
   if (now - stereoTextAt > 250) { stereoTextAt = now; stereoText(); }
 }
 setInterval(() => { if (stereoMode && !capture.running) stereoText(); }, 500);   // the loop sleeps with nothing running
@@ -258,7 +277,7 @@ function phoneStereoView() {
   const look = stereoLook();
   return {
     kind: rec.kind, radio: rec.radio || null, track: rec.track || null, elapsed: Math.floor(rec.elapsed || 0),
-    live: stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying(),
+    live: stereoLive(),
     hue: look ? 0 : STEREO_HUES[stereoCfg.color - 1], dim: STEREO_DIM[stereoCfg.dim],
     look: look ? look.id : '', light: !!(look && look.light), face: look && look.face || '', aux: !!capture.running || radioPlaying() || cdPlaying(),
   };
@@ -272,7 +291,7 @@ if (window.phoneDisplay && window.phoneDisplay.onStereoKey) window.phoneDisplay.
 // Changing mode pauses what the mode you leave was playing, and coming back to it picks it up again:
 // the player's song (PC), the CD where it was; the radio, a live stream, is tuned again. Returns true when the
 // CD was picked up again (then the drive needn't be read).
-const stereoResume = { pc: false, cd: false };
+const stereoResume = { pc: false, cd: false, music: false };
 function stereoSwitch(next) {
   const from = stereoCfg.mode;
   if (from === 'pc' && np && np.status === 'Playing' && window.nowPlaying) { window.nowPlaying.cmd('pause'); stereoResume.pc = true; }
@@ -281,7 +300,9 @@ function stereoSwitch(next) {
     if (cdState.state === 'playing' && window.cdrom) { cdCmd('cd-pause'); stereoResume.cd = true; }
     else if (!cdAudio.paused) { cdAudio.pause(); stereoResume.cd = true; }
   }
+  if (from === 'music' && musicPlaying()) { musicPauseHere(); stereoResume.music = true; }
   stereoCfg.mode = next; savePrefs();
+  if (next === 'music' && stereoResume.music) { stereoResume.music = false; musicToggle(); toast('MODE · <span>SERVER</span> · sigue donde estaba', 1600); return true; }
   if (next === 'pc' && stereoResume.pc) { stereoResume.pc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
   if (next === 'cd' && stereoResume.cd) {
     stereoResume.cd = false;
@@ -312,11 +333,12 @@ function stereoKey(k, hold) {
     cdStop(); cdCmd('cd-eject'); toast('⏏ · <span>bandeja</span>', 1400); return;
   }
   if (k === 'mode' || k === 'slot') {
-    const next = k === 'slot' ? 'cd' : { pc: 'radio', radio: 'cd', cd: 'pc' }[stereoCfg.mode];
+    const next = k === 'slot' ? 'cd' : { pc: 'radio', radio: 'cd', cd: 'music', music: 'pc' }[stereoCfg.mode];
     if (next === stereoCfg.mode) { cdAsk(); return; }
     const resumed = stereoSwitch(next);
     if (next === 'pc') toast('MODE · <span>PC</span>: lo que suena en la computadora', 1800);
     else if (next === 'radio') { toast('MODE · <span>RADIO</span> por internet', 1600); if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
+    else if (next === 'music') { if (!resumed) toast('MODE · <span>SERVER</span>: la música del DM-90' + (musicServer.signedIn ? ' (SEL la pone)' : ' · conectalo con SETUP en el rack'), 2200); }
     else if (!resumed) { toast('MODE · <span>CD</span> · leyendo la lectora…', 1600); cdAsk(); }
     return stereoText(true);
   }
@@ -350,6 +372,14 @@ function stereoKey(k, hold) {
     return radioMemory(Number(k[1]), hold);
   }
   const radio = stereoCfg.mode === 'radio';
+  if (stereoCfg.mode === 'music' && (k === 'sel' || k === 'prev' || k === 'next')) {   // 7.10.4: the DM-90's queue
+    if (k === 'sel') {
+      if (musicQueue.length || musicAudio.getAttribute('src')) musicToggle();
+      else if (musicServer.signedIn) musicShuffleAll().then(n => n && toast('SHUFFLE ALL · <span>' + n.toLocaleString('es-AR') + ' temas</span> al azar', 2000)).catch(() => {});
+      else toast('MÚSICA · <span>conectá Jellyfin</span> con SETUP en el DM-90 del rack', 2400);
+    } else if (k === 'next') musicNext(); else musicPrev();
+    return;
+  }
   if (stereoCfg.mode === 'cd' && (k === 'sel' || k === 'prev' || k === 'next')) {
     if (k === 'sel') cdToggle(); else cdTrack(k === 'next' ? 1 : -1);
     return;
@@ -401,6 +431,7 @@ function stereoKey(k, hold) {
 // the radio and the CD (src/core) say what changed; in CD mode a disc that comes in plays, as in a car
 deck.on('radio', () => stereoText(true));
 deck.on('cd', () => stereoText(true));
+deck.on('music', () => { if (stereoCfg.mode === 'music') stereoText(true); });
 deck.on('cd-disc', () => {
   if (stereoCfg.mode !== 'cd' || !stereoMode) return;
   if (cdAudioTracks().length) cdCmd('cd-play ' + cdAudioTracks()[0].n);

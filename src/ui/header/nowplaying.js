@@ -62,7 +62,17 @@ function onNowPlaying(info){
 // The player can speak before the page has finished loading its scripts (guard lives in loop.js, further
 // down): what comes that early waits for the page's load and is handled then.
 let npEarly = null;
+// 7.10.4: a source of the program's own (the DM-90) takes the header while it plays or waits paused; what the
+// PC's player says meanwhile is kept, and shown again when it ends
+let npOverride = null, npPc = null;
+function npOverrideSet(info, changed) {
+  npOverride = info;
+  if (info) { if (typeof guard === 'function') guard('nowPlaying', () => onNowPlaying(info)); }
+  else if (changed && typeof guard === 'function') guard('nowPlaying', () => onNowPlaying(npPc || { none: true }));
+}
 if (window.nowPlaying) window.nowPlaying.on(info => {
+  if (!info.ready) npPc = info;
+  if (npOverride && !info.ready) return;
   if (typeof guard !== 'function') { npEarly = info; return; }
   guard('nowPlaying', () => onNowPlaying(info));
 });

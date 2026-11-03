@@ -9,7 +9,7 @@
 //    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
 //    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE · SHUFFLE ALL (the whole library at random)
 //    COLOR  the rack's displays' colour   DIMMER  this display's brightness   letters: jump to the first name
-//  With the pointer on it (or after a click on it) the keyboard is the unit's: ↑ ↓ PgUp PgDn Home End, Enter,
+//  After a click on it the keyboard is the unit's (a click elsewhere, or Esc, gives it back): ↑ ↓ PgUp PgDn Home End, Enter,
 //  Backspace (back), Q, Space (play / pause), / (search: the results come as you type), letters (jump). Esc gives
 //  it back. The scroll bar beside the list drags (or a click jumps there): a long list in a moment.
 // ═══════════════════════════════════════════════════════════
@@ -90,6 +90,7 @@ function jbRow(it, i) {
   if (it.kind === 'album') return { text: it.name, sub: jbView.kind === 'artist' ? '' : it.artist,
     end: jbView.kind === 'search' ? ['ALBUM', it.year || ''].filter(Boolean).join(' · ') : [it.year || '', it.count ? it.count + ' SONGS' : ''].filter(Boolean).join(' · ') };
   if (it.kind === 'more') return { text: it.name, sub: '', end: '', dim: true };
+  if (it.kind === 'head') return { text: '── ' + it.name + ' ──', sub: '', end: '', dim: true };   // a search's groups
   const n = jbView.kind === 'album' && it.n ? String(it.n).padStart(2, '0') + ' ' : '';
   return { text: n + it.name, sub: jbView.kind === 'album' && it.artist === jbView.artist ? '' : it.artist,
     end: [jbTime(it.len), musicQualityShort(it.media)].filter(Boolean).join(' '),
@@ -102,8 +103,8 @@ function jbRenderList() {
   if (v.cursor < v.top) v.top = v.cursor;
   if (v.cursor >= v.top + rows) v.top = v.cursor - rows + 1;
   v.top = Math.max(0, Math.min(v.top, Math.max(0, v.items.length - rows)));
-  const count = v.items.length, fmt = n => n.toLocaleString('es-AR');
-  let header = v.title + (count && v.kind !== 'home' ? ' · ' + fmt(count) : ''), right = '';
+  const count = v.items.length, found = v.kind === 'search' ? v.items.filter(i => i.kind !== 'head').length : count, fmt = n => n.toLocaleString('es-AR');
+  let header = v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : ''), right = '';
   if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = jbLoading || jbFound(); }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
@@ -181,7 +182,12 @@ async function jbShuffleAll() {
     jbLoading = ''; jbOpen('list');
   } catch (_) { jbLoading = ''; jbRenderList(); toast('MÚSICA · <span>el servidor no contestó</span>', 2000); }
 }
-function jbMove(d) { if (!jbView.items.length) return; jbView.cursor = Math.max(0, Math.min(jbView.items.length - 1, jbView.cursor + d)); jbRenderList(); }
+function jbMove(d) {
+  const it = jbView.items; if (!it.length) return;
+  let c = Math.max(0, Math.min(it.length - 1, jbView.cursor + d));
+  if (it[c].kind === 'head') c = c + (d < 0 && c > 0 ? -1 : 1) < it.length ? c + (d < 0 && c > 0 ? -1 : 1) : c - 1;   // a group's title is skipped
+  jbView.cursor = Math.max(0, c); jbRenderList();
+}
 // letters: the first name that starts with what was typed (typed quickly, more than one letter)
 function jbLetter(ch) {
   const now = performance.now();
@@ -220,7 +226,10 @@ function jbSearchLive() {
   if (jbView.kind !== 'search') return;
   const q = jbSearchText === null ? jbView.q : jbSearchText, r = musicSearchNow(q || '');
   jbView.q = q; jbView.title = q ? 'SEARCH “' + q.trim() + '”' : 'SEARCH';
-  jbView.items = [...r.artists, ...r.albums, ...r.songs]; jbView.cursor = 0; jbView.top = 0;
+  // 7.10.4: in three groups, each under its title: ARTISTS · 3, ALBUMS · 12, SONGS · 140
+  const head = (name, list) => list.length ? [{ kind: 'head', name: name + ' · ' + list.length.toLocaleString('es-AR') }, ...list] : [];
+  jbView.items = [...head('ARTISTS', r.artists), ...head('ALBUMS', r.albums), ...head('SONGS', r.songs)];
+  jbView.cursor = jbView.items.length > 1 ? 1 : 0; jbView.top = 0;
   jbSearchN = { artists: r.artists.length, albums: r.albums.length, songs: r.songs.length };
   jbRenderList();
 }
@@ -231,7 +240,7 @@ function jbSearchType(text) {
 
 // ── the keys ──
 function jbKey(k, { hold, index, double, delta, fraction } = {}) {
-  jbActive = true;
+  jbKbd(true);
   if (k === 'power') return jbOn(!jbPower);
   if (k === 'setup') return jbSetup(true);
   if (k === 'color') {                                            // the rack's displays, all three (held: the one before)
@@ -276,9 +285,13 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
 }
 
 // the keyboard, while the unit is the one in use (the pointer on it, or clicked last)
-jbPanel.addEventListener('pointerenter', () => { jbActive = true; });
-jbPanel.addEventListener('pointerleave', () => { if (jbSearchText === null) jbActive = false; });
-document.addEventListener('pointerdown', e => { if (!jbPanel.contains(e.target)) { jbActive = false; if (jbSearchText !== null) { jbSearchText = null; jbRenderList(); } } }, true);
+// 7.10.4: a click on it (not the pointer just passing over) gives it the keyboard, so E, P and the rest still work
+// (the unit glows a little while the keyboard is its)
+function jbKbd(on) { jbActive = on; jbPanel.classList.toggle('kbd', on); }
+document.addEventListener('pointerdown', e => {
+  if (jbPanel.contains(e.target)) { jbKbd(true); return; }
+  jbKbd(false); if (jbSearchText !== null) { jbSearchText = null; jbRenderList(); }
+}, true);
 document.addEventListener('keydown', e => {
   if (!jb || !jbActive || !jbShown() || !jbPower || e.ctrlKey || e.altKey || e.metaKey) return;
   if (e.target && e.target.closest && e.target.closest('input, textarea, select')) return;
@@ -297,7 +310,7 @@ document.addEventListener('keydown', e => {
   if (move) { take(); return jbMove(move); }
   if (k === 'Enter') { take(); return jbEnter(); }
   if (k === 'Backspace') { take(); return jbBack(); }
-  if (k === 'Escape') { take(); jbActive = false; return; }
+  if (k === 'Escape') { take(); jbKbd(false); return; }
   if (k === ' ') { take(); if (!e.repeat) jbKey(musicPlaying() ? 'pause' : 'play'); return; }
   if (k === '/') { take(); return jbOpen('search'); }
   if (k.toLowerCase() === 'q') { take(); if (!e.repeat) jbQueue(); return; }
@@ -336,6 +349,38 @@ document.getElementById('jbSetup').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); jbSignInNow(); }
   if (e.key === 'Escape') { e.preventDefault(); jbSetup(false); }
 });
+
+// the music goes on in the DM-90 when the stereo closes playing it, if the unit is in the rack (7.10.4)
+function jbKeeps() { if (!jbCfg.show || !musicPlaying()) return false; jbPower = true; jb && jb.setPower(true); jbSync(); jbRenderList(); return true; }
+
+// 7.10.4: the header hears the DM-90 (its song, artist, album and time, and the history counts it), and so does
+// Windows (the media flyout, the keyboard's media keys) through the page's media session
+let jbHeaderKey = '';
+function jbHeader() {
+  const s = musicNow(), on = !!s && (musicPlaying() || musicPaused());
+  const info = on ? { app: 'Deck 90 · DM-90', title: s.name, artist: s.artists || s.artist, album: s.album, status: musicPlaying() ? 'Playing' : 'Paused',
+    pos: musicAudio.currentTime || 0, dur: isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0, at: Date.now() } : null;
+  const key = on ? s.id + '|' + info.status : '', changed = key !== jbHeaderKey;
+  if (!changed && !on) return;
+  npOverrideSet(info, changed);
+  jbHeaderKey = key;
+  if (!('mediaSession' in navigator)) return;
+  try {
+    if (on) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: s.name, artist: s.artists || s.artist, album: s.album });
+      navigator.mediaSession.playbackState = musicPlaying() ? 'playing' : 'paused';
+      navigator.mediaSession.setActionHandler('play', () => musicToggle());
+      navigator.mediaSession.setActionHandler('pause', () => musicPauseHere());
+      navigator.mediaSession.setActionHandler('nexttrack', () => musicNext());
+      navigator.mediaSession.setActionHandler('previoustrack', () => musicPrev());
+    } else if (changed) {
+      navigator.mediaSession.metadata = null;
+      for (const a of ['play', 'pause', 'nexttrack', 'previoustrack']) navigator.mediaSession.setActionHandler(a, null);
+    }
+  } catch (_) {}
+}
+setInterval(jbHeader, 1000);
+deck.on('music', () => jbHeader());
 
 // ── the display: what plays, from the player ──
 function jbSync() {

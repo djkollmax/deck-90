@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.10.4
+
+### Added
+- **The car stereo plays the DM-90's music**: a fourth MODE, SERVER (PC → RADIO → CD → SERVER). The display shows the song like a CD's (its number in the queue, the time left, the quality); SEL plays or pauses (with nothing queued, the whole library at random), TRACK ◀ ▶ move through the queue. The stereo opens on SERVER when the DM-90 is playing, and closing it hands the music back to the rack's DM-90 (`jbKeeps`).
+- **The header hears the DM-90**: its song, artist and album and the time, and the history (L) counts its songs. The page's media session says the song too, so Windows' media flyout shows it and the keyboard's media keys play, pause and skip it. What the PC's player says meanwhile is kept and shown again when the DM-90 stops (`npOverrideSet`).
+
+### Changed
+- **SEARCH shows its results in three groups**, each under its title (ARTISTS · 3, ALBUMS · 12, SONGS · 140); the first found is marked and ↑ ↓ skip the titles.
+- **The DM-90 takes the keyboard on a click**, no longer when the pointer just passes over it (E, P and the rest work while the mouse is there); a faint glow round it says it has it, and Esc or a click elsewhere gives it back.
+
 ## 7.10.3
 
 ### Fixed

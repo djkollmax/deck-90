@@ -1,5 +1,18 @@
 # Novedades
 
+## 7.10.4 — 2026-11-03
+
+### Nuevo
+- **El estéreo toca la música del DM-90**: MODE tiene una cuarta posición, SERVER (PC → RADIO → CD → SERVER).
+  - El display muestra el tema como en un CD: su número en la cola, el tiempo que le queda y la calidad.
+  - SEL lo pone o lo pausa; si no hay nada en la cola, toca toda la biblioteca al azar. TRACK ◀ ▶ pasan de tema.
+  - Si el DM-90 está sonando, el estéreo abre en SERVER. Al cerrarlo, la música sigue en el DM-90 del rack.
+- **El encabezado muestra lo que suena en el DM-90**: el tema, el artista, el álbum y el tiempo; y el historial (L) lo anota. Windows también lo ve: aparece en su ventanita de música y las teclas multimedia del teclado lo manejan.
+
+### Cambios
+- **SEARCH muestra los resultados en tres grupos**, cada uno con su título: ARTISTS, ALBUMS y SONGS, con cuántos encontró de cada uno.
+- **El DM-90 toma el teclado cuando le hacés clic**, ya no con solo pasar el mouse por encima: así E, P y las demás teclas siguen andando. Mientras tiene el teclado brilla un poco alrededor; Esc o un clic en otro lado lo devuelve.
+
 ## 7.10.3 — 2026-11-03
 
 ### Arreglos
