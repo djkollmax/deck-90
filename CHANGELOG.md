@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.10.8
+
+### Fixed
+- **Black bands round the car stereo**: its window could take any shape (up to 300 tall), so the face, which keeps its own 2001 × 539 shape, left black above and below or at the sides. The window now has the face's shape (`setAspectRatio`, and a moment after a resize that left it out of shape, as on Linux or with Windows' snapping, it goes back following the edge dragged), from 480 wide up to the widest screen; the face may be up to 2 px wider than the height gives, so a whole-pixel height crops a fraction of a pixel instead of leaving a black hairline.
+
 ## 7.10.7
 
 ### Added

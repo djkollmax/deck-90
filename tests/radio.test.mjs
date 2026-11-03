@@ -116,6 +116,22 @@ test('the car stereo opens on the radio, on its band and dial', async () => {
   await d.win.evaluate(() => toggleStereo()); await d.wait(1200);
 });
 
+test('the stereo window keeps its face shape at any size: no black round it', async () => {
+  await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
+  const ratio = 2001 / 539;
+  const look = () => d.win.evaluate(() => { const f = document.querySelector('.st-face').getBoundingClientRect(); return { w: innerWidth, h: innerHeight, fw: f.width, fh: f.height }; });
+  for (const [w, h] of [[1200, 270], [700, 300], [400, 100], [1500, 600]]) {
+    await d.app.evaluate(({ BrowserWindow }, [w, h]) => BrowserWindow.getAllWindows()[0].setContentSize(w, h), [w, h]);
+    await d.wait(900);
+    const s = await look();
+    assert.ok(Math.abs(s.h - s.w / ratio) <= 1.5, `${w}×${h} asked, ${s.w}×${s.h} kept`);
+    assert.ok(s.w >= 480, 'never narrower than 480');
+    assert.ok(Math.abs(s.fw - s.w) <= 1 && Math.abs(s.fh - s.h) <= 2, `the face fills it: ${JSON.stringify(s)}`);
+  }
+  await d.win.evaluate(() => toggleStereo()); await d.wait(1500);
+  assert.ok((await look()).h >= 600, 'the rack comes back at its own size');
+});
+
 test('the phone shows the stereo and its keys work the PC', async () => {
   const { chromium } = await import('./lib/app.mjs').then(m => m.playwrightModule());
   const st = await d.win.evaluate(() => new Promise(ok => { window.phoneDisplay.on(s => { if (s.on && s.urls.length) ok(s); }); window.phoneDisplay.set(true); }));

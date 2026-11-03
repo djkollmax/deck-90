@@ -91,12 +91,36 @@ app.whenReady().then(() => {
   // the strip comes in two styles: the mini meters ('strip') and the car stereo ('stereo', 7.7), each with its own place and size
   let miniOn = false, miniBusy = false, normalBounds = null, wasMax = false, miniStyle = 'strip';
   const MINI_MAX_H = 300;
-  const miniMaxW = () => miniStyle === 'stereo' ? 1500 : 900;
-  const clampMini = (b, wa) => b && ({ x: b.x, y: b.y, width: Math.min(b.width, miniMaxW(), wa.width), height: Math.min(b.height, 300) });
+  // 7.10.8: the car stereo's window has the shape of its face (2001 × 539, stereo-face.css), so no black shows
+  // round it at any size: from 480 wide up to the widest screen, the height always following the width
+  const ST_RATIO = 2001 / 539, ST_MIN_W = 480;
+  const stereoMaxW = () => Math.max(...screen.getAllDisplays().map(d => d.workArea.width));
+  const miniMaxW = () => miniStyle === 'stereo' ? stereoMaxW() : 900;
+  const fitStereo = (b, wa, byHeight) => {
+    let w = byHeight ? Math.round(b.height * ST_RATIO) : b.width;
+    w = Math.max(ST_MIN_W, Math.min(w, wa.width));
+    let h = Math.round(w / ST_RATIO);
+    if (h > wa.height) { h = wa.height; w = Math.round(h * ST_RATIO); }
+    return { x: b.x, y: b.y, width: w, height: h };
+  };
+  const clampMini = (b, wa) => b && (miniStyle === 'stereo' ? fitStereo(b, wa)
+    : { x: b.x, y: b.y, width: Math.min(b.width, miniMaxW(), wa.width), height: Math.min(b.height, 300) });
+  // the limits of each style: the strip never taller than 300; the stereo kept to its face's shape
+  const miniLimits = style => {
+    if (style === 'stereo') {
+      win.setMinimumSize(ST_MIN_W, Math.round(ST_MIN_W / ST_RATIO));
+      win.setMaximumSize(16384, 16384);
+      win.setAspectRatio(ST_RATIO);
+    } else {
+      win.setAspectRatio(0);
+      win.setMinimumSize(300, 96);
+      win.setMaximumSize(16384, MINI_MAX_H);     // a strip: never taller (dragging an edge, Windows moving it between screens)
+    }
+  };
   const onScreen = b => b && screen.getAllDisplays().some(d => { const a = d.workArea;
     return b.x < a.x + a.width - 40 && b.x + b.width > a.x + 40 && b.y >= a.y - 10 && b.y < a.y + a.height - 40; });
   const miniDefault = wa => miniStyle === 'stereo'
-    ? { width: Math.min(980, wa.width - 40), height: 270, x: wa.x + Math.round((wa.width - Math.min(980, wa.width - 40)) / 2), y: wa.y + wa.height - 300 }
+    ? { width: Math.min(980, wa.width - 40), height: Math.round(Math.min(980, wa.width - 40) / ST_RATIO), x: wa.x + Math.round((wa.width - Math.min(980, wa.width - 40)) / 2), y: wa.y + wa.height - 300 }
     : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 };
   const miniKey = () => miniStyle === 'stereo' ? 'stereo' : 'mini';
   const saveMini = () => { if (!win.isMaximized()) saved[miniKey()] = win.getBounds(); saveState(); };
@@ -108,7 +132,7 @@ app.whenReady().then(() => {
       try {
         saveMini(); miniStyle = style;
         const wa = screen.getDisplayMatching(win.getBounds()).workArea;
-        win.setMinimumSize(style === 'stereo' ? 520 : 300, style === 'stereo' ? 150 : 96);
+        miniLimits(style);
         win.setBounds(onScreen(saved[miniKey()]) ? clampMini(saved[miniKey()], wa) : miniDefault(wa));
         win.webContents.send('mini', true, miniStyle);
       } finally { miniBusy = false; }
@@ -125,8 +149,7 @@ app.whenReady().then(() => {
         normalBounds = wasMax ? win.getNormalBounds() : win.getBounds();
         if (wasMax) win.unmaximize();
         const wa = screen.getDisplayMatching(normalBounds).workArea;
-        win.setMinimumSize(style === 'stereo' ? 520 : 300, style === 'stereo' ? 150 : 96);
-        win.setMaximumSize(16384, MINI_MAX_H);     // a strip: never taller (dragging an edge, Windows moving it between screens)
+        miniLimits(style);
         win.setMaximizable(false); win.setFullScreenable(false);
         win.setBounds(onScreen(saved[miniKey()]) ? clampMini(saved[miniKey()], wa) : miniDefault(wa));
         win.setAlwaysOnTop(true, 'floating');
@@ -135,6 +158,7 @@ app.whenReady().then(() => {
         saveMini();
         miniOn = false;            // before maximize(): on Windows its event fires right away, and the strip guard would undo it
         win.setAlwaysOnTop(false);
+        win.setAspectRatio(0);
         win.setMaximizable(true); win.setFullScreenable(true);
         win.setMaximumSize(16384, 16384);
         win.setMinimumSize(760, 600);
@@ -252,10 +276,27 @@ app.whenReady().then(() => {
   // The strip never maximizes (a double-click on its title bar, Win+Up, Super+Up …) and never grows tall:
   // the maximum size covers dragging; this covers anything that sets the size anyway (a screen coming back)
   win.on('maximize', () => { if (miniOn) win.unmaximize(); });
+  // 7.10.8: the stereo, a moment after a resize that left it out of shape (Linux doesn't keep the aspect ratio while
+  // dragging; Windows' snapping can bypass it): back to its face's shape, following the edge that was dragged
+  let stereoFixT = 0, stereoWas = null;
   win.on('resize', () => {
     if (!miniOn || miniBusy || win.isDestroyed()) return;
     const b = win.getBounds();
-    if (b.height > MINI_MAX_H) { mlog('mini: ' + b.width + '×' + b.height + ' is too tall for the strip, back to ' + MINI_MAX_H); win.setBounds({ x: b.x, y: b.y, width: Math.min(b.width, miniMaxW()), height: MINI_MAX_H }); }
+    if (miniStyle !== 'stereo') {
+      if (b.height > MINI_MAX_H) { mlog('mini: ' + b.width + '×' + b.height + ' is too tall for the strip, back to ' + MINI_MAX_H); win.setBounds({ x: b.x, y: b.y, width: Math.min(b.width, miniMaxW()), height: MINI_MAX_H }); }
+      return;
+    }
+    clearTimeout(stereoFixT);
+    stereoFixT = setTimeout(() => {
+      if (!miniOn || miniStyle !== 'stereo' || miniBusy || win.isDestroyed()) return;
+      const c = win.getContentBounds(), was = stereoWas;
+      stereoWas = c;
+      if (Math.abs(c.height - Math.round(c.width / ST_RATIO)) <= 1) return;
+      const byHeight = was && Math.abs(c.width - was.width) <= 2 && Math.abs(c.height - was.height) > 2;
+      const f = fitStereo(c, screen.getDisplayMatching(c).workArea, byHeight);
+      stereoWas = f;
+      win.setContentBounds(f);
+    }, 250);
   });
   // remember the normal window (not the mini strip, not full screen) a moment after it moves or resizes
   let normT = 0;

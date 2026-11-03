@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.10.8 — 2026-11-03
+
+### Arreglos
+- **El estéreo ya no muestra franjas negras**: la ventana mantiene la forma del frente cuando la agrandás o la achicás. Va desde 480 de ancho hasta el ancho de la pantalla, sin borde negro arriba, abajo ni a los costados.
+
 ## 7.10.7 — 2026-11-03
 
 ### Nuevo
