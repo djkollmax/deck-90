@@ -1,8 +1,8 @@
 // A pretend radio station for the tests, on 127.0.0.1 and a free port:
 //   /tone.mp3  the tone, as a plain file
-//   /s         an ICY stream of the tone in a loop, a song title every 8 KiB, changing every 3 s, icy-br 128
+//   /s         an ICY stream of the tone in a loop (its first 4 s at once), a song title every 8 KiB, changing every 3 s, icy-br 128
 //   /nobr      the same stream without icy-br (the program measures the rate itself)
-// drop() breaks off the streams playing now.
+// drop() breaks off the streams playing now; down(ms) answers 503 for a while (a station that's off the air).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +14,9 @@ export const SONGS = ['Los Pericos - Párrafo', 'Soda Stereo - De Música Ligera
 
 export function startStation() {
   const live = new Set();
+  let downUntil = 0;
   const server = http.createServer((req, res) => {
+    if (Date.now() < downUntil) { res.writeHead(503); res.end(); return; }
     if (req.url.startsWith('/tone.mp3')) {
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': TONE.length });
       res.end(TONE); return;
@@ -28,9 +30,10 @@ export function startStation() {
     const t0 = Date.now();
     live.add(res);
     req.on('close', () => { closed = true; live.delete(res); });
+    let burst = 65536;                                       // the first 4 s at once, as Icecast does (burst-size)
     const tick = () => {
       if (closed) return;
-      let n = 2048;                                          // ~16 KB/s, 128 kbps
+      let n = burst || 2048; burst = 0;                      // then ~16 KB/s, 128 kbps
       while (n > 0) {
         const take = Math.min(n, TONE.length - pos, icy ? metaint - since : Infinity);
         res.write(TONE.subarray(pos, pos + take)); pos = (pos + take) % TONE.length; n -= take; since += take;
@@ -47,6 +50,6 @@ export function startStation() {
   return new Promise(ok => server.listen(0, '127.0.0.1', () => {
     const base = 'http://127.0.0.1:' + server.address().port;
     // drop(): every stream playing now breaks off, as a station's server does when it restarts
-    ok({ base, drop: async () => { for (const r of live) r.destroy(); live.clear(); }, close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }) });
+    ok({ base, drop: async () => { for (const r of live) r.destroy(); live.clear(); }, down: ms => { downUntil = Date.now() + ms; }, close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }) });
   }));
 }

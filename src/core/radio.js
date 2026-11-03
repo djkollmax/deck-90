@@ -43,7 +43,17 @@ const RADIO_FM4 = [
   { name: 'Linn Classic', freq: '', q: 'Linn Classical', cc: 'GB', url: 'http://radio.linn.co.uk:8004/autodj' },
   { name: 'Linn Radio', freq: '', q: 'Linn Radio', cc: 'GB', url: 'http://radio.linn.co.uk:8003/autodj' },
 ];
-const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'AM'];
+// HIFI (7.10.7): lossless and the best streams, internet only: Radio Paradise's four mixes in FLAC (CD quality),
+// Intense Radio and Hi On Line in FLAC. A saved address that stops answering is looked up again by name
+const RADIO_HIFI = [
+  { name: 'Paradise', freq: '', q: 'Radio Paradise Main Mix FLAC', cc: 'US', url: 'http://stream.radioparadise.com/flac' },
+  { name: 'RP Mellow', freq: '', q: 'Radio Paradise Mellow Mix FLAC', cc: 'US', url: 'http://stream.radioparadise.com/mellow-flac' },
+  { name: 'RP Rock', freq: '', q: 'Radio Paradise Rock Mix FLAC', cc: 'US', url: 'http://stream.radioparadise.com/rock-flac' },
+  { name: 'RP Global', freq: '', q: 'Radio Paradise Global Mix FLAC', cc: 'US', url: 'http://stream.radioparadise.com/global-flac' },
+  { name: 'Intense', freq: '', q: 'Intense Radio', cc: 'NL', url: 'http://secure.live-streams.nl/flac.flac' },
+  { name: 'Hi On Line', freq: '', q: 'Hi On Line Radio', cc: 'NL', url: 'http://mscp2.live-streams.nl:8100/flac.flac' },
+];
+const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'HIFI', 'AM'];
 // where a station is (7.9.21, under the memory on the DT-90; 7.9.23: in English, as the displays): the city of the ones that come with Deck 90, the
 // country of any other (Radio Browser's code). short: as it fits there; long: for MODE's line
 const RADIO_CITY = { Aspen: 'BS AS', Metro: 'BS AS', 'Rock & Pop': 'BS AS', 'La 100': 'BS AS', Vorterix: 'BS AS', 'Con Vos': 'BS AS',
@@ -65,13 +75,15 @@ function radioPlace(st, long) {
   return [RADIO_LONG[city] || city, city === 'SCOTLAND' ? 'UK' : country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
 }
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
-let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), AM: RADIO_AM.slice() };
+let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), HIFI: RADIO_HIFI.slice(), AM: RADIO_AM.slice() };
 try {
   const r = store.read(RADIO_KEY);
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
-    if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: 6 }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0 } : null);
+    if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: 6 }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0,
+      hq: r[b][i].hq === 1 ? 1 : 0, gain: r[b][i].gain > 0 && r[b][i].gain <= 1 ? Math.round(r[b][i].gain * 1000) / 1000 : 0 } : null);   // 7.10.7
     if (RADIO_BANDS.includes(r.band)) radioMem.band = r.band;
     if (r.slot >= 0 && r.slot <= 6) radioMem.slot = r.slot | 0;
+    if (typeof r.even === 'boolean') radioMem.even = r.even;
   }
   // 7.8: FM1-6 is Vorterix 92.1 instead of Los 40 (kept if it was stored there by hand)
   if (radioMem.FM1[5] && radioMem.FM1[5].name === 'Los 40' && radioMem.FM1[5].q === 'Los 40') radioMem.FM1[5] = Object.assign({}, RADIO_DEFAULTS[5]);
@@ -96,13 +108,36 @@ const radioLog = m => { try { if (window.appLog) window.appLog('radio: ' + m); }
 function radioSession(st) {
   try { if ('mediaSession' in navigator) navigator.mediaSession.metadata = st ? new MediaMetadata({ title: st.name, artist: 'Deck 90 · radio' + (st.freq ? ' ' + st.freq : ''), album: radioMem.band }) : null; } catch (_) {}
 }
+// 7.10.7: the best stream of a station. Radio Browser's answers for the same station (its name without the
+// quality words) go best first: FLAC, then Opus, AAC and Ogg (worth more than their bitrate), then MP3, each by
+// bitrate. A station saved before is checked once (hq) for a better address of itself
+const RADIO_WORTH = { FLAC: 20, OPUS: 1.7, 'AAC+': 1.6, AAC: 1.5, OGG: 1.3, MP3: 1 };
+const radioScore = (codec, kbps) => (kbps || 64) * (RADIO_WORTH[String(codec || '').toUpperCase()] || 1);
+const radioBase = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/\b(\d+\s*k(bps)?|aac\+?|mp3|flac|ogg|opus|hq|hd|hi-?fi|lossless|stream|low|high|quality)\b/g, '').replace(/[^a-z0-9]+/g, '');
+function radioBest(found) {
+  if (!found.length) return found;
+  const same = f => radioBase(f.name) === radioBase(found[0].name);
+  const group = found.filter(same).sort((a, b) => radioScore(b.codec, b.bitrate) - radioScore(a.codec, a.bitrate));
+  return [...group, ...found.filter(f => !same(f))];
+}
 async function radioResolve(st) {
-  if (st.url) return [st.url];
+  if (st.url && (st.hq || !window.radio)) return [st.url];
   if (!window.radio) return null;
   const found = await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc);
-  if (!found) return null;
+  if (!found) return st.url ? [st.url] : null;
   radioFound = {}; found.forEach(f => { radioFound[f.url] = f; });   // Radio Browser's format and bitrate, for each address
-  return found.map(f => f.url);
+  const best = radioBest(found).map(f => f.url);
+  if (!st.url) return best;
+  // checked once: a better address of the same station first, the saved one right after
+  const top = found.find(f => f.url === best[0]);
+  // only over a saved stream whose quality is known (an unknown one may well be the better), and clearly better
+  if (top && top.url !== st.url && st.kbps && radioScore(top.codec, top.bitrate) > 1.2 * radioScore(st.codec, st.kbps)) {
+    radioLog(st.name + ': a better stream, ' + (top.codec || '?') + ' ' + (top.bitrate || '?') + ' (was ' + (st.codec || '?') + ' ' + (st.kbps || '?') + ')');
+    return [top.url, st.url];
+  }
+  st.hq = 1; saveRadio();
+  return [st.url];
 }
 // What the station says (7.9.3): its format and bitrate, and the song it's playing. They come from the local
 // proxy the radio plays through (electron/radioproxy.js), tagged with the tune they belong to; a station that
@@ -117,6 +152,8 @@ const radioSong = () => radioMeta.id === radioTry && radioPlaying() ? radioMeta.
 if (window.radio && window.radio.onMeta) window.radio.onMeta(m => {
   if (!m || String(m.id) !== String(radioTry)) return;           // an earlier station's
   if (m.codec) radioMeta.codec = m.codec;
+  if (typeof m.ahead === 'number') { radioMeta.ahead = m.ahead; return; }   // 7.10.7: every second, for SIGNAL
+  if (m.bridged) { radioStallAt = Date.now(); radioLog((radioNow ? radioNow.name : '') + ': the stream broke, the proxy bridged it (' + m.bridged + ')'); }
   if (m.kbps && !(m.measured && radioMeta.kbps)) radioMeta.kbps = m.kbps;
   if (typeof m.title === 'string') {
     // "Artist - Song" as the station writes it; an ad or the station's own name says nothing
@@ -157,7 +194,7 @@ async function radioTune(st, label, retry, again) {
       radioLog('playing ' + st.name + ' · ' + u.slice(0, 120));
       radioSession(st);
       radioAired = t; radioRetries = 0; radioTrouble = '';
-      if (!st.url) { st.url = u; saveRadio(); }
+      if (st.url !== u || !st.hq) { st.url = u; st.hq = 1; saveRadio(); }   // 7.10.7: the address that played, checked
       deck.emit('radio-on-air');                                  // (the meters follow it through the PC's sound)
       deck.emit('radio'); return;
     } catch (err) { radioLog(st.name + ' failed at ' + u.slice(0, 120) + (src === proxied ? ' (proxy)' : '') + ': ' + (err && (err.name + ' ' + err.message))); if (t !== radioTry) return; }
@@ -192,6 +229,58 @@ radioAudio.addEventListener('error', () => radioDropped('error'));
 radioAudio.addEventListener('ended', () => radioDropped('ended'));
 radioAudio.addEventListener('waiting', () => { clearTimeout(radioWaitTimer); radioWaitTimer = setTimeout(() => radioDropped('no data for 10 s'), 10000); });
 radioAudio.addEventListener('playing', () => clearTimeout(radioWaitTimer));
+// 7.10.7: SIGNAL on the DT-90, from how the stream is doing: the seconds of sound the player has ahead, as the
+// proxy counts them (radioproxy.js keeps a cushion; 6 s or more, five bars; under 1 s, one; three while it's not
+// known yet or the station plays straight), one bar less for a minute after the sound stalled or the stream broke
+let radioStallAt = 0;
+radioAudio.addEventListener('waiting', () => { if (radioAired === radioTry) radioStallAt = Date.now(); });
+function radioSignal() {
+  if (!radioPlaying()) return 0;
+  const a = radioMeta.id === radioTry && radioMeta.ahead !== undefined ? radioMeta.ahead : 3;
+  const bars = a >= 6 ? 5 : a >= 4 ? 4 : a >= 2.5 ? 3 : a >= 1 ? 2 : 1;
+  return Math.max(1, bars - (radioStallAt && Date.now() - radioStallAt < 60000 ? 1 : 0));
+}
+// 7.10.7: EVEN LEVEL. Stations go out at very different loudness (most AM/FM streams very loud, the hi-fi ones
+// with room): the radio's own volume brings each one down to about −16 LUFS, never up, so changing stations
+// doesn't jump. What Deck 90 hears is the station times that volume; the station's own loudness is what's heard
+// over the volume, followed slowly (half a minute) so songs and talk keep their differences. Each station keeps its
+// level (gain), so it starts right the next time. MODE held turns it off and on (radioMem.even)
+const RADIO_TARGET = -16;
+let radioLevel = { id: -1, full: NaN, n: 0, saved: 0 };
+function radioEvenTick() {
+  const st = radioNow;
+  if (!radioMem.even) { if (radioAudio.volume !== 1) radioAudio.volume = 1; return; }
+  if (!st || !radioPlaying() || radioAired !== radioTry) return;
+  if (radioLevel.id !== radioTry) {                               // a station just came on: its known level first
+    radioLevel = { id: radioTry, full: NaN, n: 0, saved: Date.now() };
+    radioAudio.volume = st.gain > 0 ? st.gain : 1;
+  }
+  // only while the radio is the sound Deck 90 hears (nothing else playing), and there is sound
+  if (typeof capture === 'undefined' || !capture.running || typeof lufsHist === 'undefined' || !lufsHist.length) return;
+  if ((typeof cdPlaying === 'function' && cdPlaying()) || (typeof musicPlaying === 'function' && musicPlaying())) return;
+  const recent = lufsHist.slice(-5).filter(l => l > -50);       // the last half second, the silences left out
+  if (!recent.length) return;
+  const heard = 10 * Math.log10(recent.reduce((a, l) => a + Math.pow(10, l / 10), 0) / recent.length);
+  const full = heard - 20 * Math.log10(Math.max(0.01, radioAudio.volume));
+  radioLevel.n++;
+  const k = radioLevel.n < 20 ? 1 / radioLevel.n : 0.5 / 30;    // the first 10 s averaged, then a half-minute follow
+  radioLevel.full = isFinite(radioLevel.full) ? radioLevel.full + k * (full - radioLevel.full) : full;
+  if (radioLevel.n < 6) return;                                    // 3 s before touching it
+  const goal = Math.min(1, Math.pow(10, (RADIO_TARGET - radioLevel.full) / 20));
+  const now = 20 * Math.log10(Math.max(0.01, radioAudio.volume)), want = 20 * Math.log10(goal);
+  const step = radioLevel.n < 30 ? 2 : 0.5;                        // dB a tick: quick at first, then gently
+  const next = Math.abs(want - now) <= step ? want : now + Math.sign(want - now) * step;
+  radioAudio.volume = Math.max(0.05, Math.min(1, Math.pow(10, next / 20)));
+  if (radioLevel.n >= 30 && Date.now() - radioLevel.saved > 30000) {
+    radioLevel.saved = Date.now(); st.gain = Math.round(radioAudio.volume * 1000) / 1000; saveRadio();
+  }
+}
+setInterval(radioEvenTick, 500);
+function radioEvenSet(on) {
+  radioMem.even = !!on; saveRadio();
+  if (!on) radioAudio.volume = 1; else radioLevel.id = -1;
+  deck.emit('radio');
+}
 // keepOn (7.9.15): the CD took the sound; the rack's tuner stays on, showing its station, just silent
 function radioStop(keepOn) {
   radioTry++; radioScan = 0; radioTrouble = ''; radioAired = 0; clearTimeout(radioWaitTimer); radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); deck.emit('radio'); radioSession(null);

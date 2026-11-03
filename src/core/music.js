@@ -229,5 +229,5 @@ let musicResumePc = false;
 function musicTakeSound() {
   if (radioPlaying()) radioStop(true);
   if (cdPlaying()) cdPauseHere();
-  if (np && np.status === 'Playing' && window.nowPlaying && !musicResumePc) { window.nowPlaying.cmd('pause'); musicResumePc = true; }
+  if (npPcPlaying() && window.nowPlaying && !musicResumePc) { window.nowPlaying.cmd('pause'); musicResumePc = true; }
 }

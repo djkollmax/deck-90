@@ -130,6 +130,8 @@ if (window.nowPlaying && window.nowPlaying.onPlayer) window.nowPlaying.onPlayer(
 const playerIsSpotless = info => !!(info && /spotless/i.test(info.app || ''));
 // dB the player took off what we measure (0 = nothing known), NaN when it can't be known (levelling or equaliser on)
 function playerGainFor(info) {
+  // 7.10.7: the radio's EVEN LEVEL turns loud stations down with the radio's own volume
+  if (info && info.app === 'Deck 90 · Radio' && typeof radioAudio !== 'undefined') return radioAudio.volume < 1 ? 20 * Math.log10(Math.max(0.01, radioAudio.volume)) : 0;
   if (!playerState || !playerIsSpotless(info)) return 0;
   if (playerState.levelling || playerState.eq) return NaN;
   return isFinite(playerState.gainDb) ? playerState.gainDb : 0;

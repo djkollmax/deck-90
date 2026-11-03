@@ -1,5 +1,18 @@
 # Novedades
 
+## 7.10.7 — 2026-11-03
+
+### Nuevo
+- **Las teclas de la casetera manejan lo que suena en Deck 90**: si suena la compactera (DC-90), el DM-90 o la radio, ◀◀ ▶ ■ ▶▶ ❚❚ de las caseteras y del estilo CD-90 manejan eso en vez de Spotless. En la radio, ◀◀ ▶▶ pasan de memoria y ❚❚ la para hasta que apretás ▶. Cuando no suena nada de Deck 90, siguen manejando Spotless.
+- **La radio y el CD en el encabezado y en el historial (L)**: el tema que manda la radio (o la radio y de dónde es) y el tema del CD. Las teclas multimedia del teclado también los manejan.
+- **Banda HI-FI** en el DT-90 (una tecla más, al lado de FM4) y en BAND del estéreo: radios en calidad CD (FLAC). Radio Paradise con sus cuatro mezclas, Intense Radio y Hi On Line. El display dice FLAC.
+- **NIVEL PAREJO (EVEN LEVEL)**: al cambiar de radio ya no salta el volumen. Las radios muy fuertes se bajan solas (nunca se suben) y cada una se acuerda de su nivel. MODE apretado un segundo lo apaga y lo prende.
+- **SIGNAL de verdad**: las rayitas dicen cómo viene la transmisión (cuánto sonido hay guardado por delante). Si se cortó hace poco, una menos.
+
+### Cambios
+- **La mejor calidad de cada radio**: si una radio transmite en varias calidades, Deck 90 elige la mejor (FLAC, después AAC u Opus, después MP3). Las radios que ya tenías guardadas se revisan una vez y pasan a la mejor, si hay.
+- **Menos cortes**: Deck 90 junta unos segundos de sonido por delante antes de empezar, y si la conexión con la radio se corta, la retoma sola sin que se note (sin RECONECTANDO).
+
 ## 7.10.6 — 2026-11-03
 
 ### Arreglos

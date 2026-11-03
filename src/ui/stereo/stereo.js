@@ -7,7 +7,7 @@
 //    MODE    PC (what the computer plays), RADIO (stations over the internet), CD, or SERVER (the DM-90's music)
 //    SEL     play / pause: the radio, or the player's song                    DISP  song · time · temp · TIEMPO
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
-//    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3 · FM4 · AM
+//    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3 · FM4 · HIFI · AM
 //    HDB     the display's brightness   SDM  its colour (or the whole front)   PWR  back to the rack   ⏏  the tray
 //  CD mode (7.8, Windows): the PC's CD/DVD drive, through the program's bridge (electron/media.ps1). An audio CD
 //  plays from the drive (Windows' own CD audio); a disc of MP3s and the like plays its files here. TRACK ◀▶ and
@@ -296,7 +296,7 @@ if (window.phoneDisplay && window.phoneDisplay.onStereoKey) window.phoneDisplay.
 const stereoResume = { pc: false, cd: false, music: false };
 function stereoSwitch(next) {
   const from = stereoCfg.mode;
-  if (from === 'pc' && np && np.status === 'Playing' && window.nowPlaying) { window.nowPlaying.cmd('pause'); stereoResume.pc = true; }
+  if (from === 'pc' && npPcPlaying() && window.nowPlaying) { window.nowPlaying.cmd('pause'); stereoResume.pc = true; }
   if (from === 'radio') radioStop();
   if (from === 'cd') {
     if (cdState.state === 'playing' && window.cdrom) { cdCmd('cd-pause'); stereoResume.cd = true; }

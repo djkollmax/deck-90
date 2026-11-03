@@ -171,6 +171,16 @@ test('the header shows what the DM-90 plays; the stereo has it as SERVER, and gi
   assert.equal(await d.win.evaluate(() => stereoDisplay.state.track.title), next);
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(await d.win.evaluate(() => [musicPlaying(), jbPower]), [true, true], 'the DM-90 goes on');
+  // 7.10.7: the cassette decks keys drive the DM-90 while it plays, not the PC
+  await d.cmds();
+  const at = await d.win.evaluate(() => musicPos);
+  await d.win.evaluate(() => deckCmd('next')); await d.wait(1200);
+  assert.equal(await d.win.evaluate(() => musicPos), at + 1);
+  await d.win.evaluate(() => deckCmd('toggle')); await d.wait(800);
+  assert.equal(await d.win.evaluate(() => musicPaused() && np.status), 'Paused');
+  await d.win.evaluate(() => deckCmd('play')); await d.wait(800);
+  assert.equal(await d.win.evaluate(() => musicPlaying()), true);
+  assert.ok(!(await d.cmds()).some(c => /^(play|pause|toggle|next|prev)$/.test(c)), 'the PC player is left alone');
   await d.click(K('stop'), 1500);
   assert.notEqual(await d.win.evaluate(() => np && np.app), 'Deck 90 · DM-90', 'stopped, the header lets it go');
 });

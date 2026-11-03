@@ -26,7 +26,7 @@ export const playwrightModule = playwright;
 const electronPath = () => process.env.ELECTRON_PATH || require('electron');
 
 // errors that only mean this computer has no system sound to listen to
-const NOISE = /monitor|NotReadable|NotFound|capture|Requested device|Permission denied|502 \(Bad Gateway\)/i;
+const NOISE = /monitor|NotReadable|NotFound|capture|Requested device|Permission denied|502 \(Bad Gateway\)|503 \(Service Unavailable\)/i;   // (a station off the air, on purpose)
 
 /** A disc of n audio tracks of len seconds (with table-of-contents frames, so its names can be looked up). */
 export const disc = (n, len, extra = {}) => ({
@@ -45,7 +45,8 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     if (size) BrowserWindow.getAllWindows()[0]?.setSize(size[0], size[1]);
     const handle = (ch, fn) => { ipcMain.removeHandler(ch); ipcMain.handle(ch, fn); };
     global.cmds = []; global.finds = [];
-    handle('radio-find', (e, q) => { global.finds.push(q); return [{ name: q, url: base + '/s', codec: 'MP3', bitrate: 128 }]; });
+    // global.findAnswer(q, base), when a test sets it, says what Radio Browser has (several streams of a station)
+    handle('radio-find', (e, q) => { global.finds.push(q); return global.findAnswer ? global.findAnswer(q, base) : [{ name: q, url: base + '/s', codec: 'MP3', bitrate: 128 }]; });
     handle('radio-top', () => [
       { name: 'La 100 - 99.9 FM', url: base + '/s' }, { name: 'Radio 10 AM 710', url: base + '/s' }, { name: 'Cadena 3', url: base + '/s' }]);
     handle('weather-find', () => []); handle('weather-now', () => null);

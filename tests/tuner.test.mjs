@@ -17,7 +17,7 @@ before(async () => { station = await startStation(); d = await launch({ station,
 after(async () => { await d?.close(); await station?.close(); });
 
 test('POWER turns the radio on with its memory and pauses the PC', async () => {
-  await d.win.evaluate(() => { np = Object.assign(np || {}, { status: 'Playing', title: 'Tema', artist: 'Banda' }); });
+  await d.win.evaluate(() => { npPc = { app: 'Spotless', status: 'Playing', title: 'Tema', artist: 'Banda' }; np = Object.assign(np || {}, npPc); });
   await d.cmds();
   await d.click(K('power'), 2000);
   const r = await radio();
@@ -34,8 +34,8 @@ test('memory keys tune their station', async () => {
   }
 });
 
-test('band keys FM1 FM2 FM3 FM4 AM, STEREO on FM, MONO on AM', async () => {
-  for (const b of ['FM2', 'FM3', 'FM4', 'AM', 'FM1']) {
+test('band keys FM1 FM2 FM3 FM4 HI-FI AM, STEREO on FM, MONO on AM', async () => {
+  for (const b of ['FM2', 'FM3', 'FM4', 'HIFI', 'AM', 'FM1']) {
     await d.click(K('band-' + b.toLowerCase()), 1500);
     const r = await radio();
     assert.equal(r.band, b, 'band ' + b);
@@ -146,5 +146,21 @@ test('9 hides the tuner and the RADIO button shows it again', async () => {
   assert.equal(await d.win.evaluate(() => getComputedStyle(tunerPanel).display), 'none');
   await d.win.evaluate(() => tunerShow(true, true)); await d.wait(500);
   assert.equal(await d.win.evaluate(() => getComputedStyle(tunerPanel).display), 'block');
+  assert.deepEqual(d.errors(), []);
+});
+
+test('SIGNAL shows how the stream is doing; MODE held turns EVEN LEVEL off and on', async () => {
+  await d.click(K('m1'), 4000);
+  const bars = await d.win.evaluate(() => tuner.getState().radio.signal);
+  assert.ok(bars >= 1 && bars <= 5, 'bars ' + bars);
+  // a stall a moment ago: one bar less
+  const less = await d.win.evaluate(() => { const a = radioSignal(); radioStallAt = Date.now(); return [a, radioSignal()]; });
+  assert.equal(less[1], Math.max(1, less[0] - 1));
+  assert.equal(await d.win.evaluate(() => radioMem.even), true);
+  await d.hold(K('mode'), 1300);
+  assert.equal(await d.win.evaluate(() => radioMem.even && radioAudio.volume), false);
+  assert.equal(await d.win.evaluate(() => radioAudio.volume), 1);
+  await d.hold(K('mode'), 1300);
+  assert.equal(await d.win.evaluate(() => radioMem.even), true);
   assert.deepEqual(d.errors(), []);
 });

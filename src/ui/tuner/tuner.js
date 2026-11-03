@@ -31,7 +31,7 @@ function tunerTheme() {
   tunerPanel.classList.toggle('gold', c === 'GOLD');
 }
 
-// the bands are keys of the tuner itself (FM1 FM2 FM3 FM4 AM, next to POWER); the vendor lights the one in use
+// the bands are keys of the tuner itself (FM1 FM2 FM3 FM4 HI-FI AM, next to POWER); the vendor lights the one in use
 function tunerBands() {}
 // a band: its memory 1 (or the one it was on), on the air if the tuner is on
 function tunerBand(b) {
@@ -115,7 +115,7 @@ function tunerSync() {
     band: am ? 'AM' : radioMem.band === 'AM' ? 'FM1' : radioMem.band, frequency: dial.f,
     label: dial.f === null && st ? shortName(st.name) : '', preset: radioMem.slot || 0,
     name: line.name, text: line.text, stereo: !am, mono: am, auto: true,   // 7.9.4: FM always STEREO, AM always MONO
-    tuned: live, scan: !!radioScan, memo: !!tunerMemo, signal: live ? 5 : tunerPower && radioNow ? 2 : 0,
+    tuned: live, scan: !!radioScan, memo: !!tunerMemo, signal: live ? radioSignal() : tunerPower && radioNow ? 1 : 0,   // 7.10.7: the stream's health
     quality: live ? radioQuality(st) : '', place: tunerPower && tunerCfg.disp === 'name' ? radioPlace(st) : '',   // 7.9.21
   };
   tunerPanel.classList.toggle('idle', tunerPower && !live && cdHasSound());   // 7.9.15: on, the other unit playing
@@ -154,7 +154,7 @@ function tunerOn(on, keyTunes) {
   if (on && !keyTunes && cdHasSound()) toast('RADIO · <span>encendida</span> · el CD sigue: una memoria la pone', 2200);
   else if (on) {
     if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true;   // the CD pauses; the PC's player was waiting for it
-    if (np && np.status === 'Playing' && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
+    if (npPcPlaying() && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
     if (!keyTunes && !radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
   } else {
     radioStop();
@@ -170,6 +170,11 @@ function tunerKey(k, { hold } = {}) {
   if (k === 'disp') {
     tunerCfg.disp = TUNER_DISP[(TUNER_DISP.indexOf(tunerCfg.disp) + 1) % TUNER_DISP.length]; savePrefs();
     toast('DISP · <span>' + { name: 'la radio', clock: 'la hora', temp: 'la temperatura' }[tunerCfg.disp] + '</span>', 1200);
+    return tunerSync();
+  }
+  if (k === 'mode' && hold) {                                       // 7.10.7: MODE held, EVEN LEVEL on or off
+    radioEvenSet(!radioMem.even);
+    toast('EVEN LEVEL · ' + (radioMem.even ? '<span>todas las radios al mismo volumen</span> (bajando las fuertes)' : '<span>apagado</span>: cada radio como sale'), 2200);
     return tunerSync();
   }
   if (k === 'mode') {
@@ -209,3 +214,30 @@ if (tunerCfg.show) tunerBuild();
 // the radio (src/core/radio.js): its changes on the display; stopped for good, the unit goes off
 deck.on('radio', () => { if (tuner) tunerSync(); });
 deck.on('radio-off', () => tunerStopped());
+
+// 7.10.7: the radio in the header, the history, the deck's keys and the keyboard's media keys while it plays: the
+// song the station sends ("Artist - Song"), else the station itself. ◀◀ ▶▶ go through the band's memories; ■ and ❚❚
+// stop it and leave it waiting (▶ puts it back), on the tuner or the stereo
+let tunerHeld = null;
+npSource('radio', () => {
+  const st = radioNow;
+  const on = st && (radioPlaying() || (radioTrouble === 'retry' && radioAired));
+  if (!on) return tunerHeld && !radioPlaying() ? { app: 'Deck 90 · Radio', title: tunerHeld.name, artist: '', album: tunerHeld.freq ? radioMem.band + ' ' + tunerHeld.freq : radioMem.band, status: 'Paused', pos: 0, dur: 0, at: Date.now() } : null;
+  tunerHeld = null;
+  const song = radioSong(), m = /^(.+?) - (.+)$/.exec(song || '');
+  const station = st.name + (st.freq ? ' ' + st.freq : '');
+  return { app: 'Deck 90 · Radio', title: m ? m[2] : song || st.name, artist: m ? m[1] : song ? '' : radioPlace(st, true), album: station,
+    status: 'Playing', pos: 0, dur: 0, at: Date.now() };
+}, c => {
+  if (c === 'prev' || c === 'next') {
+    const list = radioMem[radioMem.band], from = (radioMem.slot || 1) - 1;
+    for (let i = 1; i <= 6; i++) {
+      const k = (from + (c === 'next' ? i : -i) + 12) % 6;
+      if (list[k]) { tunerHeld = null; radioScanSet(false); radioMemory(k + 1); return; }
+    }
+    return;
+  }
+  if (radioPlaying() && (c === 'pause' || c === 'toggle')) { tunerHeld = radioNow; radioStop(true); return; }
+  if (!radioPlaying() && tunerHeld && (c === 'play' || c === 'toggle')) { const st = tunerHeld; tunerHeld = null; if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true; if (npPcPlaying() && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; } radioTune(st); }
+});
+deck.on('radio-off', () => { tunerHeld = null; });

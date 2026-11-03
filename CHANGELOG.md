@@ -1,5 +1,18 @@
 # Changelog
 
+## 7.10.7
+
+### Added
+- **The cassette decks' keys drive Deck 90's own sources**: while the DC-90, the DM-90 or the radio plays (or waits paused), ◀◀ ▶ ■ ▶▶ ❚❚ on the decks and on the CD-90 tape style work it instead of Spotless (on the radio ◀◀ ▶▶ go through the band's memories, ■ and ❚❚ stop it waiting for ▶). nowplaying.js keeps a list of sources (`npSource(name, info, cmd)`): the one playing gets the header, the history, the deck's keys and the media session (the keyboard's media keys, Windows' flyout). The handovers that pause the PC's player now look at the PC's own state (`npPcPlaying`), not at the header.
+- **The radio and the CD in the header and the history (L)**: the song a station sends ("Artist - Song", else the station and where it is), a CD's song from MusicBrainz or a file's name. EVEN LEVEL's gain counts as the player's volume in the history's master figures.
+- **HI-FI band** on the DT-90 (a sixth band key; the memories narrower, vendor patch) and on the stereo's BAND: Radio Paradise's four mixes in FLAC, Intense Radio and Hi On Line in FLAC. The proxy reads an Ogg stream's first page, so Ogg FLAC and Opus show as FLAC and OPUS.
+- **EVEN LEVEL**: the radio's own volume brings loud stations down to about −16 LUFS (never up), following a station's loudness over half a minute; each station keeps its level for the next time. MODE held turns it off and on.
+- **SIGNAL is the stream's health**: the seconds of sound the player has ahead, as the proxy counts them (five bars from 6 s, one under 1 s), one bar less for a minute after a stall or a break.
+
+### Changed
+- **The best stream of a station**: Radio Browser's streams of the same station go best first (FLAC, then Opus, AAC and Ogg, then MP3, each by bitrate). A station saved before is checked once and moves to a clearly better stream of itself, keeping the old one as a fallback.
+- **A cushion against cuts**: the proxy holds a station's first 3 s and hands them over at once (most stations send 4 s at once, so there's no wait), so the player has them ahead; when the station's connection breaks, the proxy asks again (up to 4 times, 0.5–3 s apart) and goes on in the same answer, so MP3 and AAC stations play through without RECONNECTING. The pretend station sends its first 4 s at once, like Icecast, and can go off the air (`down(ms)`).
+
 ## 7.10.6
 
 ### Fixed

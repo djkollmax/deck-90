@@ -31,11 +31,22 @@ test('a station without its rate gets it measured', async () => {
   assert.match((await tunerShows()).quality, /^MP3 1[0-9]{2}$/);
 });
 
-test('a station whose sound drops is tuned again by itself (RECONECTANDO), then plays on', async () => {
+test('a break in the stream is bridged: the sound goes on, nothing to reconnect', async () => {
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(4000);
+  await station.drop();
+  for (const t0 = Date.now(); Date.now() - t0 < 6000;) {
+    assert.equal(await d.win.evaluate(() => radioTrouble), '', 'no RECONNECTING');
+    await d.wait(200);
+  }
+  assert.equal(await d.win.evaluate(() => radioPlaying()), true);
+  assert.ok(await d.win.evaluate(() => Date.now() - radioStallAt < 10000), 'the break is noted (SIGNAL one bar less)');
+});
+
+test('a station that goes off the air is tuned again by itself (RECONECTANDO), then plays on', async () => {
   await d.win.evaluate(() => tunerKey('m1')); await d.wait(3000);
   const seen = new Set();
-  await station.drop();
-  for (const t0 = Date.now(); Date.now() - t0 < 25000;) {
+  station.down(9000); await station.drop();
+  for (const t0 = Date.now(); Date.now() - t0 < 40000;) {
     const s = await d.win.evaluate(() => ({ trouble: radioTrouble, text: tuner.getState().radio.text, playing: radioPlaying() }));
     if (s.trouble) seen.add(s.text);
     if (seen.size && !s.trouble && s.playing) break;
@@ -43,6 +54,46 @@ test('a station whose sound drops is tuned again by itself (RECONECTANDO), then 
   }
   assert.ok(seen.has('RECONNECTING…'), [...seen].join());
   assert.equal(await d.win.evaluate(() => radioPlaying() && !radioTrouble), true, 'back on the air');
+});
+
+test('the best stream of a station plays: FLAC over AAC over MP3; a saved one is checked once', async () => {
+  await d.app.evaluate(() => { global.findAnswer = (q, base) => [
+    { name: q + ' 64k', url: base + '/s?aac64', codec: 'AAC', bitrate: 64 },
+    { name: q, url: base + '/s?mp3', codec: 'MP3', bitrate: 128 },
+    { name: 'Otra Radio', url: base + '/s?otra', codec: 'FLAC', bitrate: 900 },
+    { name: q + ' FLAC', url: base + '/s?flac', codec: 'FLAC', bitrate: 0 },
+    { name: q + ' HQ', url: base + '/s?aac', codec: 'AAC', bitrate: 192 }]; });
+  await d.win.evaluate(() => { radioMem.FM1[2] = { name: 'Nueva', freq: '', q: 'Nueva', cc: 'AR', url: '' }; tunerKey('m3'); });
+  await d.wait(4000);
+  assert.match(await d.win.evaluate(() => radioMem.FM1[2].url), /\?flac$/);
+  // saved before, an MP3 64: a better address of the same station takes its place, once
+  await d.app.evaluate(() => { global.finds = []; });
+  await d.win.evaluate(base => { radioMem.FM1[3] = { name: 'Vieja', freq: '', q: 'Vieja', cc: 'AR', url: base + '/s?old', codec: 'MP3', kbps: 64 }; tunerKey('m4'); }, station.base);
+  await d.wait(4000);
+  assert.match(await d.win.evaluate(() => radioMem.FM1[3].url), /\?flac$/);
+  assert.equal(await d.win.evaluate(() => radioMem.FM1[3].hq), 1);
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
+  await d.win.evaluate(() => tunerKey('m4')); await d.wait(2500);
+  assert.deepEqual(await d.app.evaluate(() => global.finds), ['Vieja'], 'looked up once');
+  await d.app.evaluate(() => { global.findAnswer = null; });
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
+});
+
+test('radio songs go to the header and the history; the deck keys go through the memories', async () => {
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(4500);
+  const head = await d.win.evaluate(() => ({ title: el('npTitle').textContent, artist: el('npArtist').textContent, app: np && np.app }));
+  assert.equal(head.app, 'Deck 90 · Radio');
+  assert.ok(SONGS.some(s => s === head.artist.split(' · ')[0] + ' - ' + head.title), JSON.stringify(head));
+  assert.match(head.artist, /Test FM 99\.1/);
+  // ▶▶ on the deck: the next memory of the band, ❚❚ stops it waiting, ▶ puts it back
+  await d.win.evaluate(() => npSourceNow.cmd('next')); await d.wait(3000);
+  assert.equal(await d.win.evaluate(() => radioMem.slot), 2);
+  await d.win.evaluate(() => npSourceNow.cmd('toggle')); await d.wait(1500);
+  assert.equal(await d.win.evaluate(() => radioPlaying()), false);
+  assert.equal(await d.win.evaluate(() => np && np.status), 'Paused');
+  await d.win.evaluate(() => npSourceNow.cmd('play')); await d.wait(3000);
+  assert.equal(await d.win.evaluate(() => radioPlaying() && radioMem.slot), 2);
+  assert.ok(!(await d.cmds()).some(c => /^(play|pause|toggle|next|prev)$/.test(c)), 'the PC player is left alone');
 });
 
 test('a station that can\'t be found says NO SIGNAL', async () => {

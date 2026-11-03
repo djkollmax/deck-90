@@ -361,32 +361,19 @@ function jbKeeps() { if (!jbCfg.show || !musicPlaying()) return false; jbPower =
 
 // 7.10.4: the header hears the DM-90 (its song, artist, album and time, and the history counts it), and so does
 // Windows (the media flyout, the keyboard's media keys) through the page's media session
-let jbHeaderKey = '';
-function jbHeader() {
-  const s = musicNow(), on = !!s && (musicPlaying() || musicPaused());
-  const info = on ? { app: 'Deck 90 · DM-90', title: s.name, artist: s.artists || s.artist, album: s.album, status: musicPlaying() ? 'Playing' : 'Paused',
-    pos: musicAudio.currentTime || 0, dur: isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0, at: Date.now() } : null;
-  const key = on ? s.id + '|' + info.status : '', changed = key !== jbHeaderKey;
-  if (!changed && !on) return;
-  npOverrideSet(info, changed);
-  jbHeaderKey = key;
-  if (!('mediaSession' in navigator)) return;
-  try {
-    if (on) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: s.name, artist: s.artists || s.artist, album: s.album });
-      navigator.mediaSession.playbackState = musicPlaying() ? 'playing' : 'paused';
-      navigator.mediaSession.setActionHandler('play', () => musicToggle());
-      navigator.mediaSession.setActionHandler('pause', () => musicPauseHere());
-      navigator.mediaSession.setActionHandler('nexttrack', () => musicNext());
-      navigator.mediaSession.setActionHandler('previoustrack', () => musicPrev());
-    } else if (changed) {
-      navigator.mediaSession.metadata = null;
-      for (const a of ['play', 'pause', 'nexttrack', 'previoustrack']) navigator.mediaSession.setActionHandler(a, null);
-    }
-  } catch (_) {}
-}
-setInterval(jbHeader, 1000);
-deck.on('music', () => jbHeader());
+// 7.10.4: the header, the history and the keyboard's media keys follow the DM-90 while it plays or waits paused;
+// 7.10.7: through nowplaying.js's sources, with the radio and the CD (the deck's keys drive it too)
+npSource('dm90', () => {
+  const s = musicNow();
+  if (!s || !(musicPlaying() || musicPaused())) return null;
+  return { app: 'Deck 90 · DM-90', title: s.name, artist: s.artists || s.artist, album: s.album, status: musicPlaying() ? 'Playing' : 'Paused',
+    pos: musicAudio.currentTime || 0, dur: isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0, at: Date.now() };
+}, c => {
+  if (c === 'prev') return musicPrev();
+  if (c === 'next') return musicNext();
+  if (c === 'pause') return musicPauseHere();
+  if (c === 'toggle' || (c === 'play' && !musicPlaying())) return musicToggle();
+});
 
 // ── the display: what plays, from the player ──
 function jbSync() {

@@ -125,7 +125,7 @@ function cdUnitTakeSound() {
     if (tunerResumePc) { tunerResumePc = false; cdUnitResumePc = true; }
     radioStop(true);
   }
-  if (np && np.status === 'Playing' && window.nowPlaying && !cdUnitResumePc) { window.nowPlaying.cmd('pause'); cdUnitResumePc = true; }
+  if (npPcPlaying() && window.nowPlaying && !cdUnitResumePc) { window.nowPlaying.cmd('pause'); cdUnitResumePc = true; }
 }
 // the radio took it: the CD pauses where it was and stays on (7.9.15; PLAY goes on from there)
 function cdUnitYield() {
@@ -222,3 +222,25 @@ if (cdUnitCfg.show) cdUnitBuild();
 // the CD (src/core/cd.js): its changes on the display; a disc read, the one asked to play starts
 deck.on('cd', () => { if (cdUnit) cdUnitSync(); });
 deck.on('cd-disc', () => cdUnitInfo());
+
+// 7.10.7: the CD in the header, the history, the deck's keys and the keyboard's media keys while it plays or waits
+// paused (from the DC-90 or the car stereo): the song's names when MusicBrainz knows the disc, a file's name
+npSource('cd', () => {
+  if (!cdInfo || !cdInfo.present) return null;
+  const files = cdFiles(), playing = cdPlaying() && cdState.state !== 'paused';
+  const paused = files.length ? !!cdAudio.getAttribute('src') && cdAudio.paused : cdState.state === 'paused';
+  if (!playing && !paused) return null;
+  const base = { app: 'Deck 90 · CD', status: playing ? 'Playing' : 'Paused', at: Date.now() };
+  if (files.length) {
+    const f = String(files[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, ''), m = /^(?:\d+[\s.-]+)?(.+?) - (.+)$/.exec(f);
+    return Object.assign(base, { title: m ? m[2] : f, artist: m ? m[1] : '', album: cdInfo.name || '', pos: cdAudio.currentTime || 0, dur: isFinite(cdAudio.duration) ? cdAudio.duration : 0 });
+  }
+  const tr = cdAudioTracks(), n = cdState.track || (tr[0] && tr[0].n) || 0, t = tr.find(x => x.n === n), song = cdSongName(n);
+  if (!n) return null;
+  return Object.assign(base, { title: song ? song.title : 'Track ' + String(n).padStart(2, '0'), artist: song ? song.artist : '',
+    album: song && cdNames.album ? cdNames.album : 'Audio CD', pos: cdPosition(), dur: t && t.len || 0 });
+}, c => {
+  if (c === 'prev' || c === 'next') return cdTrack(c === 'next' ? 1 : -1);
+  const playing = cdPlaying() && cdState.state !== 'paused';
+  if (playing ? c === 'pause' || c === 'toggle' : c === 'play' || c === 'toggle') { if (!playing) cdUnitTakeSound(); cdToggle(); }
+});

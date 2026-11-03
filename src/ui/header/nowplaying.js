@@ -76,9 +76,54 @@ if (window.nowPlaying) window.nowPlaying.on(info => {
   if (typeof guard !== 'function') { npEarly = info; return; }
   guard('nowPlaying', () => onNowPlaying(info));
 });
+// 7.10.7: Deck 90's own sources (the DM-90, the DC-90, the radio) register here: info() says what plays (null when
+// nothing), cmd(c) takes 'play', 'pause', 'toggle', 'prev' and 'next'. One playing wins (the first registered if
+// several), else one waiting paused; it gets the header, the history, the deck's keys and the keyboard's media keys
+const npSources = [];
+let npSourceNow = null, npSourceKey = '';
+function npSource(name, info, cmd) { npSources.push({ name, info, cmd }); }
+function npSourcesTick() {
+  let pick = null, info = null;
+  for (const want of ['Playing', 'Paused']) {
+    for (const s of npSources) { let i = null; try { i = s.info(); } catch (_) {} if (i && i.status === want) { pick = s; info = i; break; } }
+    if (pick) break;
+  }
+  const key = pick ? pick.name + '|' + info.title + '|' + info.artist + '|' + info.status : '', changed = key !== npSourceKey;
+  if (!changed && !pick) return;
+  const was = npSourceNow;
+  npSourceNow = pick; npSourceKey = key;
+  npOverrideSet(info, changed);
+  if (!('mediaSession' in navigator) || (!changed && was === pick)) return;
+  try {
+    if (pick) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: info.title || '', artist: info.artist || '', album: info.album || '' });
+      navigator.mediaSession.playbackState = info.status === 'Playing' ? 'playing' : 'paused';
+      const go = c => () => { if (npSourceNow) npSourceNow.cmd(c); };
+      navigator.mediaSession.setActionHandler('play', go('play'));
+      navigator.mediaSession.setActionHandler('pause', go('pause'));
+      navigator.mediaSession.setActionHandler('nexttrack', go('next'));
+      navigator.mediaSession.setActionHandler('previoustrack', go('prev'));
+    } else {
+      navigator.mediaSession.metadata = null;
+      for (const a of ['play', 'pause', 'nexttrack', 'previoustrack']) navigator.mediaSession.setActionHandler(a, null);
+    }
+  } catch (_) {}
+}
+let npSourcesSoon = 0;
+const npSourcesLater = () => { if (!npSourcesSoon) npSourcesSoon = setTimeout(() => { npSourcesSoon = 0; npSourcesTick(); }, 50); };
+setInterval(npSourcesTick, 1000);
+if (typeof deck !== 'undefined' && deck.on) for (const ev of ['music', 'cd', 'radio']) deck.on(ev, npSourcesLater);
+// the PC's own player is playing (not one of Deck 90's sources, which take the header while they play)
+const npPcPlaying = () => !!(npPc && npPc.status === 'Playing');
 window.addEventListener('load', () => { if (npEarly) { const i = npEarly; npEarly = null; guard('nowPlaying', () => onNowPlaying(i)); } });
 
-// Deck keys are live: they drive Spotless (or whatever player Windows reports).
+// Deck keys are live: they drive Spotless (or whatever player Windows reports); 7.10.7: while one of Deck 90's own
+// sources plays or waits paused (the DM-90, the DC-90, the radio), they drive that one
+function deckCmd(cmd) {
+  if (npSourceNow) { npSourceNow.cmd(cmd); return true; }
+  if (!window.nowPlaying) { toast('Las teclas manejan Spotless desde el programa (Deck 90.exe).', 3500); return false; }
+  window.nowPlaying.cmd(cmd); return true;
+}
 let deckHits = [];
 const deckPressed = {};
 const DECK_CMD = { '◀◀': 'prev', '▶': 'play', '■': 'pause', '▶▶': 'next', '❚❚': 'toggle' };
@@ -86,14 +131,13 @@ function deckKeyAt(ev){
   const r = cDK.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
   return deckHits.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
 }
-cDK.addEventListener('mousemove', ev => { const h = deckKeyAt(ev); cDK.style.cursor = h && (window.nowPlaying || h.k === '●') ? 'pointer' : 'default'; });
+cDK.addEventListener('mousemove', ev => { const h = deckKeyAt(ev); cDK.style.cursor = h && (window.nowPlaying || npSourceNow || h.k === '●') ? 'pointer' : 'default'; });
 cDK.addEventListener('click', ev => {
   const h = deckKeyAt(ev); if (!h) return;
   if (h.k === '●') { toast('REC · esta casetera solo reproduce 🙂', 2200); return; }
-  if (!window.nowPlaying) { toast('Las teclas manejan Spotless desde el programa (Deck 90.exe).', 3500); return; }
   const cmd = DECK_CMD[h.k];
+  if (!cmd || !deckCmd(cmd)) return;
   deckPressed[h.k] = performance.now();
-  if (cmd) window.nowPlaying.cmd(cmd);
   if (!capture.running) drawDeck(cDK, xDK, false);
 });
 
@@ -101,7 +145,7 @@ cTP.addEventListener('mousemove', ev => { cTP.style.cursor = tapeKeyAt(ev) ? 'po
 cTP.addEventListener('click', ev => {
   const h = tapeKeyAt(ev); if (!h) return;
   if (h.local) { deckPressed[h.k] = performance.now(); h.local(); return; }     // the CD-90's own keys (TIME, REPEAT, eject)
-  if (!window.nowPlaying) { toast('Las teclas manejan Spotless desde el programa (Deck 90.exe).', 3500); return; }
+  const cmd = DECK_CMD[h.k];
+  if (!cmd || !deckCmd(cmd)) return;
   deckPressed[h.k] = performance.now();
-  const cmd = DECK_CMD[h.k]; if (cmd) window.nowPlaying.cmd(cmd);
 });

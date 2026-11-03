@@ -33,7 +33,7 @@ wants it done then (see Shared names).
     look, layered), `dialogs.css`, `window.css`, `chassis.css` (the metal frames), `console.css`,
     `welcome.css`.
   - `meters/` (VU, spectrum, oscilloscope, goniometer), `tape/` (the cassette decks, the big tape, the CD-90
-    tape style), `header/` (now playing, clock and weather), `mini/` (the strip), `stereo/` (the car stereo
+    tape style), `header/` (now playing, clock and weather; `nowplaying.js` also keeps Deck 90's own sources, `npSource`: the DM-90, the DC-90 and the radio register there, and the one playing gets the header, the history, the deck's keys and the media keys), `mini/` (the strip), `stereo/` (the car stereo
     window; `stereo-face.css` is shared with the phone), `tuner/` (the DT-90; `units.css` styles it and the
     DC-90), `cdunit/` (the DC-90), `jukebox/` (the DM-90: `dm90.js` its faceplate, Deck 90's own in the units'
     style, and `jukebox.js` its lists and keys).

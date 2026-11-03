@@ -108,6 +108,26 @@ test('a disc whose names don\'t come at first gets them on the next read', async
   await d.drive({ disc: disc(10, 180) });
 });
 
+test('the header and history follow the CD, and the cassette decks keys drive it, not the PC', async () => {
+  if ((await cd()).state !== 'playing') { await d.click(K('play'), 1500); }
+  await d.wait(1500);
+  const head = () => d.win.evaluate(() => ({ app: np && np.app, title: el('npTitle').textContent, artist: el('npArtist').textContent, status: np && np.status }));
+  let h = await head();
+  assert.equal(h.app, 'Deck 90 · CD'); assert.equal(h.title, (await cd()).title, 'the song the DC-90 shows'); assert.ok(h.artist.length > 0);
+  const from = (await cd()).track;
+  await d.cmds();
+  await d.win.evaluate(() => deckCmd('next')); await d.wait(1500);
+  assert.equal((await cd()).track, from + 1);
+  assert.equal((await head()).title, (await cd()).title);
+  await d.win.evaluate(() => deckCmd('toggle')); await d.wait(1200);
+  assert.equal((await cd()).state, 'paused'); assert.equal((await head()).status, 'Paused');
+  await d.win.evaluate(() => deckCmd('play')); await d.wait(1200);
+  assert.equal((await cd()).state, 'playing');
+  const sent = await d.cmds();
+  assert.ok(!sent.some(c => /^(play|pause|toggle|next|prev)$/.test(c)), sent.join());
+  assert.ok(sent.includes('cd-play ' + (from + 1)) && sent.includes('cd-pause'), sent.join());
+});
+
 test('POWER off stops the disc', async () => {
   await d.click(K('power'), 600);
   const c = await cd(); assert.equal(c.power, false); assert.equal(c.title, 'COMPACT DISC');
