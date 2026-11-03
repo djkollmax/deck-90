@@ -34,6 +34,11 @@ async function musicSignOut() { musicStop(); await musicApi().signOut(); musicLi
 // ── the library (kept once read: a big library is read once per session) ──
 let musicLib = { artists: null, albums: {}, songs: null, tracks: {} };
 const ticks = t => Math.round((Number(t) || 0) / 1e7);
+// names in order as a person reads them: no accents, case or a leading article in the way
+const musicSortKey = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^(the|los|las|el|la)\s+/i, '').toLowerCase();
+const musicCmp = (a, b) => musicSortKey(a).localeCompare(musicSortKey(b));
+// a long list sorted by a name, each key made once (15,000 songs in a moment)
+const musicSortBy = (list, name) => list.map(x => [musicSortKey(name(x)), x]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0).map(p => p[1]);
 // a song as the screens use it; its quality when the server said it (album lists ask for it)
 function musicSong(i) {
   const src = i.MediaSources && i.MediaSources[0], a = src && (src.MediaStreams || []).find(s => s.Type === 'Audio');
@@ -50,7 +55,7 @@ async function musicRead(kind, id, query) {
 async function musicArtists() {
   if (!musicLib.artists) {
     const r = await musicRead('artists', '', { Limit: 50000 });
-    musicLib.artists = (r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?' }));
+    musicLib.artists = musicSortBy((r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?' })), a => a.name);   // 7.10.4: libraries merged
   }
   return musicLib.artists;
 }
@@ -62,7 +67,8 @@ async function musicAlbums(artistId) {
     if (artistId) q.AlbumArtistIds = artistId;
     let r = await musicRead('items', '', q);
     if (artistId && !(r.Items || []).length) { delete q.AlbumArtistIds; q.ArtistIds = artistId; r = await musicRead('items', '', q); }   // older servers
-    musicLib.albums[key] = (r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?', artist: i.AlbumArtist || '', year: i.ProductionYear || 0, count: i.ChildCount || 0 }));
+    musicLib.albums[key] = (r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?', artist: i.AlbumArtist || '', year: i.ProductionYear || 0, count: i.ChildCount || 0 }))
+      .sort((a, b) => (artistId ? 0 : musicCmp(a.artist, b.artist)) || (a.year - b.year) || musicCmp(a.name, b.name));
   }
   return musicLib.albums[key];
 }
@@ -80,10 +86,18 @@ async function musicArtistSongs(artistId) {
   if (!(r.Items || []).length) { delete q.AlbumArtistIds; q.ArtistIds = artistId; r = await musicRead('items', '', q); }
   return (r.Items || []).map(musicSong);
 }
+// 7.10.4: SHUFFLE ALL: every song of the library, in a random order
+async function musicShuffleAll() {
+  const all = await musicSongs();
+  if (!all.length) return 0;
+  musicModes.shuffle = true; musicModesSave();
+  await musicPlay(all, Math.floor(Math.random() * all.length));
+  return all.length;
+}
 async function musicSongs() {
   if (!musicLib.songs) {
     const r = await musicRead('items', '', { IncludeItemTypes: 'Audio', Recursive: true, SortBy: 'SortName', Limit: 100000 });
-    musicLib.songs = (r.Items || []).map(musicSong);
+    musicLib.songs = musicSortBy((r.Items || []).map(musicSong), s => s.name);
   }
   return musicLib.songs;
 }
@@ -144,7 +158,7 @@ function musicShuffleDeal() {
 }
 // play `list` (songs) from its i-th: the queue becomes the list
 function musicPlay(list, i) {
-  musicQueue = list.slice(0, 5000); musicPos = Math.max(0, Math.min(i | 0, musicQueue.length - 1)); musicNextAt = -1;
+  musicQueue = list.slice(0, 100000); musicPos = Math.max(0, Math.min(i | 0, musicQueue.length - 1)); musicNextAt = -1;
   if (musicModes.shuffle) musicShuffleDeal();
   return musicStart();
 }

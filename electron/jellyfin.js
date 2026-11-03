@@ -16,10 +16,10 @@ function createJellyfin({ net, dir, log, version }) {
   function save() { try { fs.writeFileSync(FILE, JSON.stringify(cfg)); } catch (e) { log('jellyfin: ' + e.message); } }
 
   const auth = token => 'MediaBrowser Client="Deck 90", Device="Deck 90", DeviceId="' + cfg.device + '", Version="' + version + '"' + (token ? ', Token="' + token + '"' : '');
-  async function call(method, p, query, body, token = cfg.token) {
+  async function call(method, p, query, body, token = cfg.token, wait = 20000) {
     const u = new URL(cfg.server.replace(/\/+$/, '') + p);
     for (const [k, v] of Object.entries(query || {})) if (v !== undefined && v !== null && v !== '') u.searchParams.set(k, String(v));
-    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 20000);
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait);
     try {
       const r = await net.fetch(u.href, { method, signal: ac.signal, body: body ? JSON.stringify(body) : undefined,
         headers: { Authorization: auth(token), 'X-Emby-Authorization': auth(token), Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) } });
@@ -30,7 +30,7 @@ function createJellyfin({ net, dir, log, version }) {
   }
   const clean = s => /^https?:\/\/[^\s/?#]+(:\d+)?(\/[^\s?#]*)?$/i.test(String(s || '').trim()) ? String(s).trim().replace(/\/+$/, '') : '';
 
-  // the music libraries (CollectionType "music"); the first is the one browsed
+  // the music libraries (CollectionType "music"); 7.10.4: all of them are browsed together
   async function libraries() {
     const v = await call('GET', '/Users/' + cfg.user + '/Views');
     return (v && v.Items || []).filter(i => i.CollectionType === 'music').map(i => ({ id: i.Id, name: i.Name }));
@@ -56,7 +56,7 @@ function createJellyfin({ net, dir, log, version }) {
         if (!r || !r.AccessToken || !r.User) throw new Error('no token');
         Object.assign(cfg, { token: r.AccessToken, user: r.User.Id, name: r.User.Name || String(user) });
         const libs = await libraries();
-        cfg.library = libs[0] ? libs[0].id : '';
+        cfg.library = libs[0] ? libs[0].id : ''; cfg.libraries = libs.map(l => l.id);
         save(); log('jellyfin: signed in to ' + s + ' as ' + cfg.name + ', ' + libs.length + ' music librar' + (libs.length === 1 ? 'y' : 'ies'));
         return { ok: true, name: cfg.name, library: cfg.library, libraries: libs.length };
       } catch (e) {
@@ -65,17 +65,33 @@ function createJellyfin({ net, dir, log, version }) {
         return { error: e.code === 401 ? 'Usuario o contraseña incorrectos' : 'No contesta el servidor (' + e.message + ')' };
       }
     },
-    signOut() { delete cfg.token; delete cfg.user; delete cfg.library; save(); return { ok: true }; },
+    signOut() { delete cfg.token; delete cfg.user; delete cfg.library; delete cfg.libraries; save(); return { ok: true }; },
     async read(kind, id, query) {
       if (!cfg.token || !READS[kind]) return { error: 'signed out' };
       const [p, keys] = READS[kind];
       if (p.includes('{id}') && !ID.test(String(id || ''))) return { error: 'bad id' };
       const q = {};
       for (const k of keys) if (query && query[k] !== undefined) q[k] = String(query[k]).slice(0, 200);
-      if (kind !== 'item' && !q.ParentId && !q.Ids && cfg.library) q.ParentId = cfg.library;   // music only
       if (kind === 'artists') q.UserId = cfg.user;
-      try { return await call('GET', p.replace('{user}', cfg.user).replace('{id}', String(id)), q); }
-      catch (e) { log('jellyfin: ' + kind + ' failed: ' + e.message); return { error: e.code === 401 ? 'signed out' : e.message }; }
+      const path_ = p.replace('{user}', cfg.user).replace('{id}', String(id));
+      try {
+        if (kind === 'item' || q.ParentId || q.Ids) return await call('GET', path_, q);
+        // 7.10.4: every music library (music only), each read in pages of 2,000 with no images or user data, so
+        // a big library (1,400 albums, 15,000 songs) comes whole instead of timing out in one huge answer
+        if (!cfg.libraries) { cfg.libraries = (await libraries()).map(l => l.id); save(); }
+        const want = Number(q.Limit) || 100000, out = [];
+        for (const lib of cfg.libraries.length ? cfg.libraries : [cfg.library]) {
+          for (let start = 0; out.length < want;) {
+            const page = Math.min(2000, want - out.length);
+            const r = await call('GET', path_, Object.assign({}, q, { ParentId: lib, StartIndex: start, Limit: page, EnableImages: 'false', EnableUserData: 'false', ImageTypeLimit: 0 }), null, cfg.token, 60000);
+            const items = r && r.Items || [];
+            out.push(...items); start += items.length;
+            if (items.length < page || start >= (r.TotalRecordCount || 0)) break;
+          }
+        }
+        const seen = new Set();                                    // an artist in two libraries once
+        return { Items: out.filter(i => !i.Id || (seen.has(i.Id) ? false : seen.add(i.Id))), TotalRecordCount: out.length };
+      } catch (e) { log('jellyfin: ' + kind + ' failed: ' + e.message); return { error: e.code === 401 ? 'signed out' : e.message }; }
     },
     // where a song's sound comes from: the file as it is (static) when Chromium plays its codec, or made FLAC
     // by the server when it doesn't (ALAC, WMA, APE, DSD…)

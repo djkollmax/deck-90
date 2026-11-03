@@ -7,13 +7,36 @@
 //    ARTISTS · ALBUMS · SONGS · QUEUE · SEARCH   what the list shows         ◀ BACK   the list before
 //    SELECT (the knob, the wheel, ↑ ↓)  moves through the list   ENTER (or a double click)  opens it or plays from it
 //    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
-//    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE    letters: jump to the first name that starts so
+//    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE · SHUFFLE ALL (the whole library at random)
+//    COLOR  the rack's displays' colour   DIMMER  this display's brightness   letters: jump to the first name
 //  With the pointer on it (or after a click on it) the keyboard is the unit's: ↑ ↓ PgUp PgDn Home End, Enter,
 //  Backspace (back), Q, Space (play / pause), / (search: the results come as you type), letters (jump). Esc gives
 //  it back. The scroll bar beside the list drags (or a click jumps there): a long list in a moment.
 // ═══════════════════════════════════════════════════════════
-let jbCfg = { show: false, remain: true };
-{ const c = store.section('jukebox'); if (c) jbCfg = { show: c.show === true, remain: c.remain !== false }; }
+// 7.10.3: COLOR is the rack's displays' colour (the DT-90, the DC-90 and the DM-90 together, as one system), DIMMER
+// the DM-90's brightness
+const UNIT_COLORS = [
+  { id: 'aqua', name: 'AGUA', vfd: '#80ffe5', dim: '#193e34' }, { id: 'amber', name: 'ÁMBAR', vfd: '#ffb84a', dim: '#3e2b0f' },
+  { id: 'green', name: 'VERDE', vfd: '#8cff5a', dim: '#1d3b12' }, { id: 'blue', name: 'AZUL', vfd: '#8fd0ff', dim: '#152f48' },
+  { id: 'white', name: 'BLANCO', vfd: '#eef4ff', dim: '#2b3038' }, { id: 'red', name: 'ROJO', vfd: '#ff5f4f', dim: '#40150f' },
+  { id: 'violet', name: 'VIOLETA', vfd: '#c6a0ff', dim: '#2b1d45' },
+  // 7.10.4: seven more
+  { id: 'orange', name: 'NARANJA', vfd: '#ff8a2a', dim: '#40220c' }, { id: 'yellow', name: 'AMARILLO', vfd: '#ffe14a', dim: '#3d3510' },
+  { id: 'cyan', name: 'CIAN', vfd: '#4ae8ff', dim: '#0f3540' }, { id: 'pink', name: 'ROSA', vfd: '#ff7ac8', dim: '#40142e' },
+  { id: 'lime', name: 'LIMA', vfd: '#c8ff3a', dim: '#2f3d0e' }, { id: 'ice', name: 'HIELO', vfd: '#c8f0ff', dim: '#203640' },
+  { id: 'gold', name: 'ORO', vfd: '#ffd27a', dim: '#3d3018' }];
+const JB_DIM_NAME = ['ALTO', 'MÁXIMO', 'BAJO'];
+let jbCfg = { show: false, remain: true, color: 'aqua', dim: 0 };
+{ const c = store.section('jukebox'); if (c) jbCfg = { show: c.show === true, remain: c.remain !== false,
+  color: UNIT_COLORS.some(u => u.id === c.color) ? c.color : 'aqua', dim: [0, 1, 2].includes(c.dim) ? c.dim : 0 }; }
+function unitColorApply() {
+  const u = UNIT_COLORS.find(x => x.id === jbCfg.color) || UNIT_COLORS[0];
+  for (const id of ['tunerPanel', 'cdPanel', 'jbPanel']) {
+    const el = document.getElementById(id); if (!el) continue;
+    el.style.setProperty('--vfd', u.vfd); el.style.setProperty('--vfd-dim', u.dim);
+  }
+}
+unitColorApply();
 let jb = null, jbPower = false, jbActive = false, jbShownKey = '', jbAvg = -24, jbAt = 0, jbLv = { L: 0, R: 0 };
 const jbPanel = document.getElementById('jbPanel');
 const jbShown = () => jbCfg.show && !miniMode;
@@ -29,7 +52,7 @@ function jbTheme() {
 function jbBuild() {
   if (jb || typeof Deck90Music !== 'function') return;
   jb = new Deck90Music(document.getElementById('jukebox'), { theme: 'silver' });
-  jbTheme(); jb.setPower(jbPower); jb.setModes(musicModes); jb.setTimeMode(jbCfg.remain ? 'remain' : 'elapsed');
+  jbTheme(); jb.setPower(jbPower); jb.setDimmer(jbCfg.dim); jb.setModes(musicModes); jb.setTimeMode(jbCfg.remain ? 'remain' : 'elapsed');
   jb.onKey(jbKey);
   jbShownKey = ''; jbSync(); jbRenderList();
 }
@@ -147,6 +170,17 @@ async function jbQueue() {
   if (jbView.kind !== 'list' && jbView.cursor < jbView.items.length - 1) jbView.cursor++;   // the next one, ready for another Q
   jbRenderList();
 }
+// SHUFFLE ALL (7.10.4): every song of the library, at random; the queue shows them
+async function jbShuffleAll() {
+  if (!jbReady()) return;
+  jbLoading = 'READING LIBRARY…'; jbRenderList();
+  try {
+    const n = await musicShuffleAll();
+    jb.setModes(musicModes);
+    toast('SHUFFLE ALL · <span>' + n.toLocaleString('es-AR') + ' temas</span> al azar', 2000);
+    jbLoading = ''; jbOpen('list');
+  } catch (_) { jbLoading = ''; jbRenderList(); toast('MÚSICA · <span>el servidor no contestó</span>', 2000); }
+}
 function jbMove(d) { if (!jbView.items.length) return; jbView.cursor = Math.max(0, Math.min(jbView.items.length - 1, jbView.cursor + d)); jbRenderList(); }
 // letters: the first name that starts with what was typed (typed quickly, more than one letter)
 function jbLetter(ch) {
@@ -200,6 +234,13 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   jbActive = true;
   if (k === 'power') return jbOn(!jbPower);
   if (k === 'setup') return jbSetup(true);
+  if (k === 'color') {                                            // the rack's displays, all three (held: the one before)
+    const i = UNIT_COLORS.findIndex(u => u.id === jbCfg.color), n = UNIT_COLORS.length;
+    jbCfg.color = UNIT_COLORS[(i + (hold ? n - 1 : 1)) % n].id; unitColorApply(); savePrefs();
+    toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack', 1400);
+    return;
+  }
+  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span>', 1200); return; }
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
   if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked
@@ -212,6 +253,7 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   if (k === 'back') return jbBack();
   if (k === 'enter') return jbEnter();
   if (k === 'queue') return jbQueue();
+  if (k === 'all') return jbShuffleAll();
   if (k === 'repeat' || k === 'shuffle') {
     if (k === 'repeat') musicModes.repeat = { off: 'all', all: 'one', one: 'off' }[musicModes.repeat];
     else { musicModes.shuffle = !musicModes.shuffle; if (musicModes.shuffle) musicShuffleDeal(); }

@@ -92,6 +92,7 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 - Arriba, el tema que suena: nombre, artista · álbum, la calidad completa ("FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO"; los displays hablan en inglés, como un equipo de los 90), la cuenta regresiva y el lugar en la cola.
 - Abajo, una lista larga en el display: **ARTISTS → ALBUMS → SONGS**, **SONGS** (todos los temas), **QUEUE** (la cola) y **SEARCH**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ BACK** vuelve.
 - **Q** (o la tecla Q · PLAY NEXT) pone lo marcado para que suene después del tema actual; un álbum o un artista, enteros. **REPEAT**, **SHUFFLE**, **▶ ❚❚ ■ |◀◀ ▶▶|**.
+- **COLOR** cambia el color de los displays de todo el rack (14 colores) y **DIMMER** el brillo del DM-90. **SHUFFLE ALL** toca toda la biblioteca al azar.
 - Toca el archivo en su calidad original; lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
 
 ### Estéreo de auto, con radio por internet

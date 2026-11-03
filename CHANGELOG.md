@@ -1,5 +1,18 @@
 # Changelog
 
+## 7.10.3
+
+### Fixed
+- **SONGS (and so SEARCH) failed on a big library**: all its songs came in one answer that took longer than the 20 s the program waits ("items failed: This operation was aborted"), and only the first of the server's music libraries was read. Lists now come from every music library, in pages of 2,000 with no images or user data, each page waiting up to 60 s; the page sorts the merged lists (accents and a leading article aside). The pretend server has a second music library.
+
+### Added
+- **SHUFFLE ALL** on the DM-90: every song of the library at random (`musicShuffleAll`; the queue holds up to 100,000).
+- **COLOR on the DM-90 colours the displays of the whole rack** (the DT-90, the DC-90 and the DM-90, as one system): aqua, amber, green, blue, white, red, violet, orange, yellow, cyan, pink, lime, ice and gold; held, the one before. Set as `--vfd` / `--vfd-dim` on the three panels, saved in the prefs (`jukebox.color`).
+- **DIMMER on the DM-90**: bright (the new default, a halo round the dots), brightest, low.
+
+### Changed
+- **The DM-90's display reads better**: fuller dots, the list's letters bigger (pitch 2.2), the quality line and the list's header bigger, everything brighter. The keys are narrower to make room for DIMMER and COLOR.
+
 ## 7.10.2
 
 ### Changed

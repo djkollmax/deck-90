@@ -6,7 +6,7 @@
 //    const dm = new Deck90Music(container, { theme: 'silver' | 'black' });
 //    dm.setNow({ title, artist, quality, index, total, elapsed, duration, playing, paused, online })
 //    dm.setList({ header, right, rows: [{ text, sub, end, playing }], cursor, top, count })   // rows: the visible ones
-//    dm.setModes({ repeat, shuffle }); dm.setView(key); dm.setLevels(l, r); dm.setPower(on); dm.setTheme(t)
+//    dm.setModes({ repeat, shuffle }); dm.setView(key); dm.setLevels(l, r); dm.setPower(on); dm.setTheme(t); dm.setDimmer(0–2)
 //    dm.onKey((key, { hold, index, double, delta, fraction }) => …)   keys: the ids in LAYOUT.keys, 'row' (a list
 //      row clicked: index is its place among the visible rows), 'wheel' (the knob or the list: delta in rows),
 //      'seek' (the scroll bar clicked or dragged: fraction 0–1 of the list)
@@ -142,7 +142,7 @@ function glyph(ch) {
 }
 // a line of dot-matrix text as one path (a long list redraws fast): round dots of a 5 × 7 cell, `max` characters
 function dotsPath(text, x, y, pitch, max = 999) {
-  const r = pitch * .36, d = [];
+  const r = pitch * .42, d = [];   // 7.10.3: fuller dots, easier to read
   let i = 0;
   for (const ch of clean(text).toUpperCase()) {
     if (i >= max) break;
@@ -158,26 +158,29 @@ function dotsPath(text, x, y, pitch, max = 999) {
 // a text cut to `max` characters, with … when it was longer
 const fit = (t, max) => { const a = [...clean(t)]; return a.length > max ? a.slice(0, Math.max(1, max - 1)).join('') + '…' : a.join(''); };
 
-const ROWS = 10, ROW_Y = 175, ROW_H = 23.4, PITCH = 2.05;
-const COLS = { main: { x: 70, max: 45 }, sub: { x: 640, max: 23 }, end: { right: 1132, max: 16 } };
+const ROWS = 10, ROW_Y = 174, ROW_H = 23.4, PITCH = 2.2;
+const COLS = { main: { x: 70, max: 42 }, sub: { x: 640, max: 21 }, end: { right: 1132, max: 15 } };
 const LAYOUT = Object.freeze({
-  keys: {
+  keys: {   // 7.10.3: narrower keys, and DIMMER and COLOR
     power: { x: 35, y: 445, w: 80, h: 32, label: 'POWER' },
     setup: { x: 35, y: 492, w: 80, h: 30, label: 'SETUP' },
-    prev: { x: 145, y: 446, w: 110, h: 29, icon: 'prev' }, play: { x: 263, y: 446, w: 130, h: 29, icon: 'play' },
-    pause: { x: 401, y: 446, w: 110, h: 29, icon: 'pause' }, stop: { x: 519, y: 446, w: 110, h: 29, icon: 'stop' },
-    next: { x: 637, y: 446, w: 110, h: 29, icon: 'next' }, repeat: { x: 755, y: 446, w: 74, h: 29, label: 'REPEAT' },
-    shuffle: { x: 837, y: 446, w: 74, h: 29, label: 'SHUFFLE' }, queue: { x: 919, y: 446, w: 110, h: 29, label: 'Q · PLAY NEXT' },
-    artists: { x: 145, y: 493, w: 110, h: 29, label: 'ARTISTS' }, albums: { x: 263, y: 493, w: 130, h: 29, label: 'ALBUMS' },
-    songs: { x: 401, y: 493, w: 110, h: 29, label: 'SONGS' }, list: { x: 519, y: 493, w: 110, h: 29, label: 'QUEUE' },
-    search: { x: 637, y: 493, w: 110, h: 29, label: 'SEARCH' }, back: { x: 755, y: 493, w: 74, h: 29, label: '◀ BACK' },
-    enter: { x: 837, y: 493, w: 192, h: 29, label: 'ENTER ▶' },
+    prev: { x: 145, y: 446, w: 100, h: 29, icon: 'prev' }, play: { x: 253, y: 446, w: 120, h: 29, icon: 'play' },
+    pause: { x: 381, y: 446, w: 100, h: 29, icon: 'pause' }, stop: { x: 489, y: 446, w: 100, h: 29, icon: 'stop' },
+    next: { x: 597, y: 446, w: 100, h: 29, icon: 'next' }, repeat: { x: 705, y: 446, w: 74, h: 29, label: 'REPEAT' },
+    shuffle: { x: 787, y: 446, w: 74, h: 29, label: 'SHUFFLE' }, queue: { x: 869, y: 446, w: 92, h: 29, label: 'Q · PLAY NEXT' },
+    dimmer: { x: 969, y: 446, w: 60, h: 29, label: 'DIMMER' },
+    artists: { x: 145, y: 493, w: 100, h: 29, label: 'ARTISTS' }, albums: { x: 253, y: 493, w: 120, h: 29, label: 'ALBUMS' },
+    songs: { x: 381, y: 493, w: 100, h: 29, label: 'SONGS' }, list: { x: 489, y: 493, w: 100, h: 29, label: 'QUEUE' },
+    search: { x: 597, y: 493, w: 100, h: 29, label: 'SEARCH' }, back: { x: 705, y: 493, w: 74, h: 29, label: '◀ BACK' },
+    enter: { x: 787, y: 493, w: 82, h: 29, label: 'ENTER ▶' }, all: { x: 877, y: 493, w: 84, h: 29, label: 'SHUFFLE ALL' },   // 7.10.4
+    color: { x: 969, y: 493, w: 60, h: 29, label: 'COLOR' },
   },
   knob: { cx: 1100, cy: 484, r: 40 },
 });
 const NAMES = { power: 'POWER', setup: 'SETUP: el servidor Jellyfin', prev: 'Tema anterior', play: 'PLAY', pause: 'PAUSA', stop: 'STOP', next: 'Tema siguiente',
   repeat: 'REPEAT: toda la cola, un tema o apagado', shuffle: 'SHUFFLE: al azar', queue: 'Q: lo marcado suena después de este',
-  artists: 'Artistas', albums: 'Álbumes', songs: 'Todos los temas', list: 'La cola', search: 'Buscar', back: 'Atrás', enter: 'ENTER: abrir o tocar lo marcado' };
+  artists: 'Artistas', albums: 'Álbumes', songs: 'Todos los temas', list: 'La cola', search: 'Buscar', back: 'Atrás', enter: 'ENTER: abrir o tocar lo marcado',
+  dimmer: 'DIMMER: el brillo del display', all: 'SHUFFLE ALL: toda la biblioteca al azar', color: 'COLOR: el color de los displays del rack' };
 const VIEW_KEYS = ['artists', 'albums', 'songs', 'list', 'search'];
 
 function grainMarkup(label) {
@@ -227,8 +230,10 @@ function buildFaceplate(p) {
     <clipPath id="${p}-plate-clip"><rect x="4.8" y="4.8" width="1190.4" height="${H - 9.6}" rx="2.4"/></clipPath>
     <clipPath id="${p}-title-clip"><rect x="390" y="52" width="505" height="27"/></clipPath>
     <clipPath id="${p}-artist-clip"><rect x="390" y="91" width="505" height="20"/></clipPath>
-    <clipPath id="${p}-quality-clip"><rect x="390" y="114" width="505" height="13"/></clipPath>
+    <clipPath id="${p}-quality-clip"><rect x="390" y="113" width="505" height="15"/></clipPath>
     <filter id="${p}-vfd-glow" x="-5%" y="-10%" width="110%" height="120%"><feGaussianBlur stdDeviation=".55" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="${p}-vfd-glow-hi" x="-5%" y="-10%" width="110%" height="120%"><feGaussianBlur stdDeviation="1.3" result="halo"/><feGaussianBlur in="SourceGraphic" stdDeviation=".5" result="blur"/>
+      <feMerge><feMergeNode in="halo"/><feMergeNode in="halo"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <radialGradient id="${p}-screw-metal" cx="30%" cy="20%" r="79%">
       <stop offset="0" stop-color="#a4ada4"/><stop offset=".23" stop-color="#5c685e"/><stop offset=".60" stop-color="#263329"/><stop offset="1" stop-color="#0c140e"/>
     </radialGradient>
@@ -311,7 +316,16 @@ class Deck90Music {
   setView(key) { this._state.view = VIEW_KEYS.includes(key) ? key : ''; this._updateLeds(); return this; }
   setTimeMode(mode) { this._remain = mode !== 'elapsed'; this._cache.time = null; this._renderNow(); return this; }
   setLevels(left, right) { this._state.levels = { left: clamp(left), right: clamp(right) }; this._paintLevels(); return this; }
-  setPower(on) { this._state.powered = !!on; this._display.setAttribute('opacity', on ? '1' : '.035'); this._powerLed.setAttribute('fill', on ? LIT : DIM); this._paintLevels(); this._updateLeds(); this._schedule(); return this; }
+  // 7.10.3: DIMMER: 0 bright (a halo round the dots, the default), 1 brightest (a wider halo, the dim cells darker),
+  // 2 low (for a dark room)
+  setDimmer(level) { this._dim = [0, 1, 2].includes(level) ? level : 0; this._paintDim(); return this; }
+  _paintDim() {
+    const d = this._dim || 0;
+    this._display.setAttribute('filter', `url(#${this.prefix}-vfd-glow${d === 2 ? '' : '-hi'})`);
+    this._display.setAttribute('opacity', !this._state.powered ? '.035' : d === 2 ? '.6' : '1');
+    this._display.style.filter = d === 1 ? 'brightness(1.25) saturate(1.1)' : '';
+  }
+  setPower(on) { this._state.powered = !!on; this._paintDim(); this._powerLed.setAttribute('fill', on ? LIT : DIM); this._paintLevels(); this._updateLeds(); this._schedule(); return this; }
   setTheme(theme) { this._state.theme = theme === 'black' ? 'black' : 'silver'; this._applyTheme(); return this; }
   rows() { return ROWS; }
   _emit(key, info = {}) { for (const cb of [...this._callbacks]) cb(key, Object.assign({ hold: false }, info)); }
@@ -346,7 +360,7 @@ class Deck90Music {
     const clip = (id, el) => { const g = node('g', { 'clip-path': `url(#${p}-${id}-clip)` }); g.append(el); D.append(g); return el; };
     this._title = clip('title', node('path', { fill: LIT }));
     this._artist = clip('artist', node('path', { fill: LIT }));
-    this._quality = clip('quality', node('path', { fill: LIT, opacity: .85 }));
+    this._quality = clip('quality', node('path', { fill: LIT }));
     D.append(node('rect', { x: 391, y: 133, width: 503, height: 2, fill: DIM }));
     this._progress = node('rect', { x: 391, y: 133, width: 0, height: 2, fill: LIT }); D.append(this._progress);
     this._indicators = {};
@@ -368,7 +382,7 @@ class Deck90Music {
       const y = ROW_Y + i * ROW_H;
       const hit = node('rect', { x: 44, y: y - 4, width: 1096, height: ROW_H, fill: 'transparent', 'data-row': i });
       hit.style.cursor = 'pointer';
-      const mark = node('path', { fill: LIT }), main = node('path', { fill: LIT }), sub = node('path', { fill: LIT, opacity: .85 }), end = node('path', { fill: LIT, opacity: .92 });   // 7.10.2: brighter
+      const mark = node('path', { fill: LIT }), main = node('path', { fill: LIT }), sub = node('path', { fill: LIT, opacity: .9 }), end = node('path', { fill: LIT });   // 7.10.3: brighter
       D.append(mark, main, sub, end); this._rowNodes.push({ y, mark, main, sub, end, hit });
     }
     D.append(node('rect', { x: 1143, y: ROW_Y - 3, width: 6, height: ROWS * ROW_H - 4, rx: 1.5, fill: DIM }));
@@ -506,7 +520,7 @@ class Deck90Music {
     if (c.total !== total) { this._total.setAttribute('d', dotsPath(total, 348, 107, 1.05)); c.total = total; }
     if (c.title !== n.title) { this._title.setAttribute('d', dotsPath(n.title, 0, 0, 3.3)); this._titleW = [...n.title].length * 19.8; this._titleT = performance.now(); c.title = n.title; }
     if (c.artist !== n.artist) { this._artist.setAttribute('d', dotsPath(n.artist, 0, 0, 2.15)); this._artistW = [...n.artist].length * 12.9; this._artistT = performance.now(); c.artist = n.artist; }
-    if (c.quality !== n.quality) { this._quality.setAttribute('d', dotsPath(n.quality, 0, 0, 1.5)); this._qualityW = [...n.quality].length * 9; this._qualityT = performance.now(); c.quality = n.quality; }
+    if (c.quality !== n.quality) { this._quality.setAttribute('d', dotsPath(n.quality, 0, 0, 1.75)); this._qualityW = [...n.quality].length * 10.5; this._qualityT = performance.now(); c.quality = n.quality; }
     this._place(this._title, 53, this._titleW, this._titleT, performance.now());
     this._place(this._artist, 92, this._artistW, this._artistT, performance.now());
     this._place(this._quality, 116, this._qualityW, this._qualityT, performance.now());
@@ -529,9 +543,9 @@ class Deck90Music {
   }
   _renderList() {
     const l = this._state.list;
-    this._header.setAttribute('d', dotsPath(fit(l.header, 70), 52, 155, 1.5));
-    const right = fit(l.right, 40);
-    this._headerRight.setAttribute('d', dotsPath(right, 1146 - [...right].length * 9 + 1.5, 155, 1.5));
+    this._header.setAttribute('d', dotsPath(fit(l.header, 64), 52, 154, 1.65));
+    const right = fit(l.right, 36);
+    this._headerRight.setAttribute('d', dotsPath(right, 1146 - [...right].length * 9.9 + 1.65, 154, 1.65));
     for (let i = 0; i < ROWS; i++) {
       const r = l.rows[i], n = this._rowNodes[i], sel = r && l.top + i === l.cursor;
       n.mark.setAttribute('d', r ? dotsPath(sel ? '>' : r.playing ? '*' : '', 52, n.y, PITCH) : '');
@@ -539,10 +553,10 @@ class Deck90Music {
       n.sub.setAttribute('d', r && r.sub ? dotsPath(fit(r.sub, COLS.sub.max), COLS.sub.x, n.y, PITCH) : '');
       const end = r ? fit(r.end, COLS.end.max) : '';
       n.end.setAttribute('d', end ? dotsPath(end, COLS.end.right - [...end].length * 6 * PITCH + PITCH, n.y, PITCH) : '');
-      const o = !r ? 0 : sel || r.playing ? 1 : r.dim ? .5 : .9;
+      const o = !r ? 0 : sel || r.playing ? 1 : r.dim ? .55 : .96;
       n.main.setAttribute('opacity', o); n.mark.setAttribute('opacity', o);
       n.hit.style.pointerEvents = r ? 'auto' : 'none';
-      if (sel) { this._rowBar.setAttribute('y', n.y - 3.6); this._rowBar.setAttribute('opacity', .13); }
+      if (sel) { this._rowBar.setAttribute('y', n.y - 3.2); this._rowBar.setAttribute('opacity', .15); }
     }
     if (!(l.cursor >= l.top && l.cursor < l.top + l.rows.length)) this._rowBar.setAttribute('opacity', 0);
     const H = ROWS * ROW_H - 4, h = l.count > ROWS ? Math.max(14, H * ROWS / l.count) : 0;

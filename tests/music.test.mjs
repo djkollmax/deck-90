@@ -35,7 +35,7 @@ test('signed in, ARTISTS lists the music library only, and the password is not k
   await d.win.fill('#jbPass', 'secreto'); await d.win.click('#jbGo'); await d.wait(2000);
   assert.equal(await d.win.evaluate(() => document.getElementById('jbSetup').classList.contains('show')), false);
   const v = await view();
-  assert.equal(v.kind, 'artists'); assert.equal(v.count, 30); assert.match(v.list.header, /^ARTISTS · 30$/);
+  assert.equal(v.kind, 'artists'); assert.equal(v.count, 31, 'both music libraries'); assert.match(v.list.header, /^ARTISTS · 31$/);
   assert.ok(!jf.log.some(l => /lib-movies/.test(l)), 'never the movies');
   const file = path.join(await d.app.evaluate(({ app }) => app.getPath('userData')), 'jellyfin.json');
   const saved = fs.readFileSync(file, 'utf8');
@@ -115,16 +115,39 @@ test('SEARCH finds as you type, any words in any field; ESC keeps the results, B
 
 test('SONGS lists every song, and its scroll bar drags through them', async () => {
   await d.click(K('songs'), 1500);
-  assert.equal((await view()).count, 720);
+  assert.equal((await view()).count, 723);
   const bar = await d.win.locator('#jukebox [data-role="scrollbar"]').boundingBox();
   await d.win.mouse.move(bar.x + bar.width / 2, bar.y + 3); await d.win.mouse.down();
   await d.win.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2, { steps: 5 }); await d.wait(100);
   const mid = (await view()).list.top;
   await d.win.mouse.move(bar.x + bar.width / 2, bar.y + bar.height + 20, { steps: 5 }); await d.win.mouse.up(); await d.wait(100);
   const end = (await view()).list.top;
-  assert.ok(mid > 250 && mid < 470, 'half way: ' + mid); assert.equal(end, 710, 'the end');
+  assert.ok(mid > 250 && mid < 470, 'half way: ' + mid); assert.equal(end, 713, 'the end');
   await d.win.mouse.click(bar.x + bar.width / 2, bar.y + 2); await d.wait(100);
   assert.equal((await view()).list.top, 0, 'a click at the top jumps there');
+});
+
+test('COLOR changes the displays of the whole rack, DIMMER the DM-90 brightness, both remembered', async () => {
+  const vfd = () => d.win.evaluate(() => ['tunerPanel', 'cdPanel', 'jbPanel'].map(id => getComputedStyle(document.getElementById(id)).getPropertyValue('--vfd').trim()));
+  assert.deepEqual(await vfd(), ['#80ffe5', '#80ffe5', '#80ffe5']);
+  await d.click(K('color'), 200);
+  assert.deepEqual(await vfd(), ['#ffb84a', '#ffb84a', '#ffb84a'], 'amber on the tuner, the CD and the DM-90');
+  await d.hold(K('color'));
+  assert.deepEqual(await vfd(), ['#80ffe5', '#80ffe5', '#80ffe5'], 'held: the one before');
+  await d.click(K('color'), 200);
+  const dim = () => d.win.evaluate(() => [jbCfg.dim, jb._display.getAttribute('opacity'), jb._display.getAttribute('filter')]);
+  assert.match((await dim())[2], /vfd-glow-hi/, 'bright, with a halo');
+  await d.click(K('dimmer'), 200); assert.equal((await dim())[0], 1);
+  await d.click(K('dimmer'), 200); assert.deepEqual((await dim()).slice(0, 2), [2, '.6']);
+  await d.click(K('dimmer'), 200);
+  assert.deepEqual(await d.win.evaluate(() => { const p = JSON.parse(localStorage.getItem('deck90-prefs')).jukebox; return [p.color, p.dim]; }), ['amber', 0]);
+});
+
+test('SHUFFLE ALL plays the whole library at random', async () => {
+  await d.click(K('all'), 1500);
+  const s = await d.win.evaluate(() => ({ q: musicQueue.length, shuffle: musicModes.shuffle, playing: musicPlaying(), kind: jbView.kind }));
+  assert.deepEqual(s, { q: 723, shuffle: true, playing: true, kind: 'list' });
+  await d.click(K('shuffle'), 200);
 });
 
 test('the radio taking the sound pauses the music', async () => {

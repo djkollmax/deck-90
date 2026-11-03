@@ -1,5 +1,20 @@
 # Novedades
 
+## 7.10.3 — 2026-11-03
+
+### Arreglos
+- **SONGS y SEARCH no andaban con una biblioteca grande.** El servidor tardaba más de lo que el programa esperaba en mandar todos los temas juntos, y además se leía solo la primera de tus bibliotecas de música. Ahora lee todas, de a partes.
+
+### Nuevo
+- **Tecla SHUFFLE ALL en el DM-90**: toda tu biblioteca al azar.
+- **Tecla COLOR en el DM-90**: cambia el color de los displays de todo el rack (sintonizador, compactera y DM-90 juntos, como un equipo).
+  - 14 colores: agua, ámbar, verde, azul, blanco, rojo, violeta, naranja, amarillo, cian, rosa, lima, hielo y oro.
+  - Si la mantenés apretada, vuelve al color anterior.
+- **Tecla DIMMER en el DM-90**: brillo alto (el nuevo normal), máximo y bajo.
+
+### Cambios
+- **El display del DM-90 se lee mejor**: letras más gruesas y más grandes en la lista, la calidad más grande y todo con más brillo.
+
 ## 7.10.2 — 2026-11-03
 
 ### Cambios
