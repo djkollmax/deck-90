@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.9.22
+
+### Fixed
+- **PAUSE on an audio CD didn't light, and PLAY started the song over.** Windows' CD audio (MCI) has no paused state: after `pause` it reports `stopped` at the same place. After the program's own pause (`cdCmd` remembers it) a stopped disc is now paused: the PAUSE lamp lights and PLAY goes on with `cd-resume`. The pretend drive in the tests now answers a pause as Windows does.
+
+### Added
+- **The disc's quality on the DC-90**, under the track count, and the same on the car stereo (`cdQuality`): an audio CD "CD 16/44"; a file its format with bits and kHz from its header (FLAC 24/96, WAV 16/44) or its average kbps without the tags (MP3 320), read by the main process (`electron/audiofile.js`, `cd-file-info`). A disc of files says its format ("DISCO FLAC · 1 DE 12").
+- **The DC-90's artist line scrolls** when it doesn't fit, as the title does (vendor patch 7.9.22).
+
 ## 7.9.21
 
 ### Changed

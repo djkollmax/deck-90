@@ -61,6 +61,7 @@ contextBridge.exposeInMainWorld('cdrom', {
   cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
   on:  cb => ipcRenderer.on('cd', (e, s) => cb(s)),
   names: info => ipcRenderer.invoke('cd-names', info),   // 7.9.5: the disc's album and songs (MusicBrainz)
+  fileInfo: f => ipcRenderer.invoke('cd-file-info', String(f).slice(0, 1024)),   // 7.9.22: a file's size, rate and bits
 });
 // the stereo's internet radio: stations by name, and the most heard in Argentina
 contextBridge.exposeInMainWorld('radio', {

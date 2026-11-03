@@ -1,5 +1,17 @@
 # Novedades
 
+## 7.9.22 — 2026-11-02
+
+### Arreglos
+- **PAUSA en un CD de audio no prendía la luz y PLAY empezaba el tema de nuevo.** Windows dice "detenido" cuando un CD está en pausa; ahora el programa sabe que lo pausó: se prende PAUSE y PLAY sigue desde donde estaba.
+
+### Nuevo
+- **La calidad del disco en la compactera**, debajo del número de tema (y también en el estéreo):
+  - Un CD de audio: "CD 16/44".
+  - Un disco de archivos, la calidad real de cada tema: "FLAC 24/96", "WAV 16/44", "MP3 320".
+  - Arriba dice de qué es el disco: "DISCO FLAC · 1 DE 12".
+- **La línea del artista y el álbum corre** cuando no entra, igual que el nombre del tema.
+
 ## 7.9.21 — 2026-11-02
 
 ### Cambios

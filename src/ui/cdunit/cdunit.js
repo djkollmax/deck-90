@@ -74,7 +74,7 @@ function cdUnitLine() {
   const files = cdFiles();
   if (files.length) {
     const f = String(files[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
-    return { title: f || 'MP3', artist: 'DISCO MP3 · ' + (cdFile + 1) + ' DE ' + files.length };
+    return { title: f || 'ARCHIVO', artist: 'DISCO ' + (cdExt(files[cdFile]) || 'MP3') + ' · ' + (cdFile + 1) + ' DE ' + files.length };   // 7.9.22: its format
   }
   const tr = cdAudioTracks();
   if (!tr.length) return { title: 'DISCO SIN AUDIO', artist: cdInfo.name || cdInfo.drive };
@@ -96,7 +96,8 @@ function cdUnitSync() {
     const cur = cdState.track || tr[0].n, i = Math.max(0, tr.findIndex(t => t.n === cur));
     track = i + 1; total = tr.length; elapsed = cdState.state ? cdPosition() : 0; duration = tr[i] ? tr[i].len || 0 : 0;
   }
-  const r = { title: line.title, artist: line.artist, track, totalTracks: total, elapsed: Math.floor(elapsed), duration: Math.round(duration), playing, paused: !playing && paused };
+  const r = { title: line.title, artist: line.artist, track, totalTracks: total, elapsed: Math.floor(elapsed), duration: Math.round(duration), playing, paused: !playing && paused,
+    quality: cdUnitPower ? cdQuality() : '' };   // 7.9.22: CD 16/44, FLAC 24/96, MP3 320
   cdUnitPanel.classList.toggle('idle', cdUnitPower && !cdPlaying() && radioPlaying());   // 7.9.15: on, the radio playing
   const key = JSON.stringify(r) + cdUnitPower;
   if (key === cdUnitShownKey) return;
@@ -186,16 +187,16 @@ function cdUnitKey(k, { hold } = {}) {
   if (k === 'eject') {
     const open = cdUnit.getState().drawerOpen;
     if (!open) {
-      cdStop(); window.cdrom.cmd('cd-eject'); cdUnit.setDrawer(true); toast('⏏ · <span>bandeja abierta</span>: poné el disco y OPEN / CLOSE otra vez', 2600);
+      cdStop(); cdCmd('cd-eject'); cdUnit.setDrawer(true); toast('⏏ · <span>bandeja abierta</span>: poné el disco y OPEN / CLOSE otra vez', 2600);
     } else {
-      cdUnit.setDrawer(false); window.cdrom.cmd('cd-close');
+      cdUnit.setDrawer(false); cdCmd('cd-close');
       clearTimeout(cdUnitClosing);
       cdUnitClosing = setTimeout(() => { cdUnitClosing = 0; cdUnitRead(); }, 3500);   // the disc spins up before it can be read
       toast('⏏ · <span>cerrando</span> y leyendo el disco…', 2200);
     }
     return cdUnitSync();
   }
-  if (cdUnit.getState().drawerOpen) { cdUnit.setDrawer(false); window.cdrom.cmd('cd-close'); cdUnitClosing = setTimeout(() => { cdUnitClosing = 0; cdUnitRead(); }, 3500); return cdUnitSync(); }
+  if (cdUnit.getState().drawerOpen) { cdUnit.setDrawer(false); cdCmd('cd-close'); cdUnitClosing = setTimeout(() => { cdUnitClosing = 0; cdUnitRead(); }, 3500); return cdUnitSync(); }
   if (!cdInfo || !cdInfo.present) { cdUnitRead(); return; }
   const files = cdFiles();
   if (k === 'play') {

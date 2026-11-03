@@ -50,7 +50,7 @@ export async function launch({ station, size, drive, names, welcome = false, toa
       { name: 'La 100 - 99.9 FM', url: base + '/s' }, { name: 'Radio 10 AM 710', url: base + '/s' }, { name: 'Cadena 3', url: base + '/s' }]);
     handle('weather-find', () => []); handle('weather-now', () => null);
     handle('cd-names', () => names || null);
-    // the drive: plays a disc straight through as Windows' CD audio does, reporting every 0.5 s
+    // the drive: plays a disc straight through as Windows' CD audio does, reporting every 0.5 s (a pause says stopped)
     const D = global.drive = { disc: drive || null, tr: 0, st: 'stopped', t0: 0, pos: 0, slow: false, heard: [] };
     const send = m => BrowserWindow.getAllWindows()[0]?.webContents.send('cd', m);
     const at = () => D.st === 'playing' ? (Date.now() - D.t0) / 1000 : D.pos;
@@ -83,7 +83,8 @@ export async function launch({ station, size, drive, names, welcome = false, toa
         if (D.slow) { setTimeout(() => send({ state: 'seeking', track: was || 1, pos: 0 }), 150); setTimeout(() => send({ state: 'playing', track: D.tr, pos: at() }), 700); }
         else setTimeout(() => send({ state: 'playing', track: D.tr, pos: at() }), 80);
       }
-      else if (c === 'cd-pause') { D.pos = at(); D.st = 'paused'; send({ state: 'paused', track: D.tr, pos: D.pos }); }
+      // Windows' CD audio has no paused state: after "pause" it says "stopped", at the same place
+      else if (c === 'cd-pause') { D.pos = at(); D.st = 'paused'; send({ state: 'stopped', track: D.tr, pos: D.pos }); }
       else if (c === 'cd-resume') { D.t0 = Date.now() - D.pos * 1000; D.st = 'playing'; send({ state: 'playing', track: D.tr, pos: D.pos }); }
       else if (c === 'cd-stop') { D.st = 'stopped'; D.pos = 0; D.heard.push('STOP'); send({ state: 'stopped', track: D.tr, pos: 0 }); }
       else if (c === 'cd-eject') { D.st = 'stopped'; send({ state: 'ejected' }); }

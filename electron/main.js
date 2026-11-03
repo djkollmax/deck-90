@@ -577,6 +577,8 @@ ipcMain.handle('cd-names', async (e, info) => {
   const tracks = (Array.isArray(info.tracks) ? info.tracks : []).slice(0, 99).map(t => ({ n: t.n | 0, audio: !!t.audio, start: t.start | 0 }));
   try { return await cdNames.lookup({ tracks, leadout: info.leadout | 0 }); } catch (err) { mlog('cd names: ' + (err && err.message || err)); return null; }
 });
+// 7.9.22: what a file on a data CD is made of (audiofile.js), for its quality on the displays
+ipcMain.handle('cd-file-info', (e, file) => fromWin(e) ? require('./audiofile').audioFileInfo(file) : null);
 // the radio through the local proxy (radioproxy.js): the song a station sends, and its format and bitrate
 let radioProxy = null;
 ipcMain.handle('radio-proxy', async (e, u, id) => {

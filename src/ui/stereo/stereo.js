@@ -138,12 +138,9 @@ function stereoInfo() {
   if (stereoCfg.mode === 'radio') return { quality: radioPlaying() && !radioTrouble ? radioQuality(radioNow) : '' };
   if (stereoCfg.mode !== 'cd' || !cdInfo || !cdInfo.present) return {};
   const files = cdFiles();
-  if (files.length) {
-    const ext = (String(files[cdFile] || '').match(/\.([a-z0-9]{2,4})$/i) || [])[1] || '';
-    return { number: cdFile + 1, length: isFinite(cdAudio.duration) ? cdAudio.duration : 0, quality: ext.toUpperCase().replace('M4A', 'AAC') };
-  }
+  if (files.length) return { number: cdFile + 1, length: isFinite(cdAudio.duration) ? cdAudio.duration : 0, quality: cdQuality() };
   const tr = cdAudioTracks(), n = cdState.track || (tr[0] && tr[0].n) || 0, t = tr.find(x => x.n === n);
-  return tr.length ? { number: n, length: t && t.len || 0, quality: 'CD 16/44' } : {};
+  return tr.length ? { number: n, length: t && t.len || 0, quality: cdQuality() } : {};
 }
 function stereoContext() {
   const d = stereoCfg.disp;
@@ -281,7 +278,7 @@ function stereoSwitch(next) {
   if (from === 'pc' && np && np.status === 'Playing' && window.nowPlaying) { window.nowPlaying.cmd('pause'); stereoResume.pc = true; }
   if (from === 'radio') radioStop();
   if (from === 'cd') {
-    if (cdState.state === 'playing' && window.cdrom) { window.cdrom.cmd('cd-pause'); stereoResume.cd = true; }
+    if (cdState.state === 'playing' && window.cdrom) { cdCmd('cd-pause'); stereoResume.cd = true; }
     else if (!cdAudio.paused) { cdAudio.pause(); stereoResume.cd = true; }
   }
   stereoCfg.mode = next; savePrefs();
@@ -289,7 +286,7 @@ function stereoSwitch(next) {
   if (next === 'cd' && stereoResume.cd) {
     stereoResume.cd = false;
     if (cdFiles().length && cdAudio.getAttribute('src')) cdAudio.play().catch(() => {});
-    else if (cdState.state === 'paused' && window.cdrom) window.cdrom.cmd('cd-resume');
+    else if (cdState.state === 'paused' && window.cdrom) cdCmd('cd-resume');
     else return false;
     toast('MODE · <span>CD</span> · sigue donde estaba', 1600);
     return true;                                                // picked up again: no need to read the drive
@@ -312,7 +309,7 @@ function stereoKey(k, hold) {
   if (k === 'pwr') return toggleStereo();
   if (k === 'eject') {
     if (!window.cdrom) { toast('La bandeja se abre desde el programa en Windows.', 2400); return; }
-    cdStop(); window.cdrom.cmd('cd-eject'); toast('⏏ · <span>bandeja</span>', 1400); return;
+    cdStop(); cdCmd('cd-eject'); toast('⏏ · <span>bandeja</span>', 1400); return;
   }
   if (k === 'mode' || k === 'slot') {
     const next = k === 'slot' ? 'cd' : { pc: 'radio', radio: 'cd', cd: 'pc' }[stereoCfg.mode];
@@ -406,6 +403,6 @@ deck.on('radio', () => stereoText(true));
 deck.on('cd', () => stereoText(true));
 deck.on('cd-disc', () => {
   if (stereoCfg.mode !== 'cd' || !stereoMode) return;
-  if (cdAudioTracks().length) window.cdrom.cmd('cd-play ' + cdAudioTracks()[0].n);
+  if (cdAudioTracks().length) cdCmd('cd-play ' + cdAudioTracks()[0].n);
   else if (cdFiles().length) cdPlayFile(0);
 });

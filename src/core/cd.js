@@ -14,14 +14,21 @@ const cdAudioTracks = () => cdInfo && cdInfo.tracks ? cdInfo.tracks.filter(t => 
 const cdFiles = () => cdInfo && cdInfo.files ? cdInfo.files : [];
 const cdPlaying = () => ['playing', 'seeking', 'not ready'].includes(cdState.state) || (!cdAudio.paused && !!cdAudio.getAttribute('src'));
 const fileUrl = p => 'file:///' + String(p).replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/').replace(/^([A-Za-z])%3A/, '$1:');
+// 7.9.22: the drive's commands go through here. Windows' CD audio (MCI) has no paused state: after "pause" it says
+// "stopped" (at the same place, and "play" goes on from there), so after our own pause a stopped disc is paused
+let cdPauseSent = false;
+function cdCmd(c) {
+  if (c === 'cd-pause') cdPauseSent = true; else if (/^cd-(play|resume|stop|eject|close)/.test(c)) cdPauseSent = false;
+  window.cdrom.cmd(c);
+}
 const mmss = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function cdAsk() {
   cdInfo = null; cdAsked = performance.now();
   if (!window.cdrom) { cdInfo = { drive: null, none: 'windows' }; deck.emit('cd'); return; }
-  window.cdrom.cmd('cd-info'); deck.emit('cd');
+  cdCmd('cd-info'); deck.emit('cd');
 }
 function cdStop() {
-  if (cdState.state === 'playing' || cdState.state === 'paused') window.cdrom && window.cdrom.cmd('cd-stop');
+  if (cdState.state === 'playing' || cdState.state === 'paused') window.cdrom && cdCmd('cd-stop');
   cdState = { state: '', track: 0, pos: 0, at: 0 };
   cdAudio.pause(); cdAudio.removeAttribute('src'); cdAudio.load();
 }
@@ -116,7 +123,7 @@ setInterval(() => {
   if (cdModes.repeat === 'off' && !cdModes.shuffle) return;
   const want = cdAfter(cdState.track, false);
   if (want === natural) return;
-  if (want === null) { window.cdrom.cmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; deck.emit('cd'); return; }
+  if (want === null) { cdCmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; deck.emit('cd'); return; }
   cdGo(want);
 }, 200);
 const cdSongName = n => cdNames && cdNames.tracks && cdNames.tracks[n] ? cdNames.tracks[n] : null;
@@ -125,7 +132,7 @@ let cdJump = null;                                             // the track aske
 // then only the last one goes, 0.25 s after the presses stop, so the drive seeks once instead of on every press.
 let cdGoT = 0, cdGoAt = 0;
 function cdGo(n) {
-  const now = performance.now(), send = () => { cdGoT = 0; window.cdrom.cmd('cd-play ' + n); cdJump = { n, until: performance.now() + 4000 }; };
+  const now = performance.now(), send = () => { cdGoT = 0; cdCmd('cd-play ' + n); cdJump = { n, until: performance.now() + 4000 }; };
   clearTimeout(cdGoT);
   if (now - cdGoAt > 600) send(); else cdGoT = setTimeout(send, 250);
   cdGoAt = now;
@@ -136,21 +143,40 @@ function cdGo(n) {
 // STOP: the disc stops at the start of the song it was on (cdStop, for POWER and the tray, forgets the song)
 function cdStopHere() {
   if (cdFiles().length) { cdAudio.pause(); cdAudio.currentTime = 0; }
-  else if (window.cdrom) { window.cdrom.cmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; }
+  else if (window.cdrom) { cdCmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; }
   deck.emit('cd');
 }
 // a pause from outside (the radio took the sound): the disc waits where it was
 function cdPauseHere() {
   if (cdFiles().length) { if (!cdAudio.paused) cdAudio.pause(); }
-  else if (cdPlaying() && window.cdrom) { window.cdrom.cmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
+  else if (cdPlaying() && window.cdrom) { cdCmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
   deck.emit('cd');
 }
 function cdToggle() {
   if (cdFiles().length) { if (cdAudio.paused) { if (cdAudio.getAttribute('src')) cdAudio.play().catch(() => {}); else cdPlayFile(0); } else cdAudio.pause(); return; }
   const tr = cdAudioTracks(); if (!tr.length || !window.cdrom) return;
-  if (cdState.state === 'paused') window.cdrom.cmd('cd-resume');
-  else if (cdPlaying()) window.cdrom.cmd('cd-pause');
+  if (cdState.state === 'paused') cdCmd('cd-resume');
+  else if (cdPlaying()) { cdCmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; deck.emit('cd'); }
   else cdGo(cdState.track || tr[0].n);
+}
+// 7.9.22: the quality of what the disc plays. An audio CD is PCM, 16 bits at 44.1 kHz ("CD 16/44"); a file says its
+// format, with bits and kHz when the file says them (FLAC 24/96, WAV 16/44), or its average kbps (MP3 320), from
+// what the main process reads of it (window.cdrom.fileInfo: its size without tags, and the header's rate and bits)
+const cdFileInfo = {};
+const cdExt = f => (((String(f || '').match(/\.([a-z0-9]{2,4})$/i) || [])[1] || '').toUpperCase().replace('M4A', 'AAC'));
+function cdQuality() {
+  if (!cdInfo || !cdInfo.present) return '';
+  const files = cdFiles();
+  if (!files.length) return cdAudioTracks().length ? 'CD 16/44' : '';
+  const f = String(files[cdFile] || ''), ext = cdExt(f), i = cdFileInfo[f];
+  if (i === undefined && window.cdrom && window.cdrom.fileInfo) {
+    cdFileInfo[f] = null;
+    window.cdrom.fileInfo(f).then(r => { cdFileInfo[f] = r || {}; deck.emit('cd'); }).catch(() => { cdFileInfo[f] = {}; });
+  }
+  if (i && i.bits && i.rate) return ext + ' ' + i.bits + '/' + Math.floor(i.rate / 1000);
+  const dur = cdAudio.duration;
+  if (i && i.audio > 0 && isFinite(dur) && dur > 1 && cdAudio.getAttribute('src')) return ext + ' ' + Math.round(i.audio * 8 / dur / 1000);
+  return ext;
 }
 function cdPosition() {
   if (cdFiles().length) return cdAudio.currentTime || 0;
@@ -173,7 +199,7 @@ if (window.cdrom) window.cdrom.on(m => {
       cdState = { state: 'seeking', track: cdJump.n, pos: 0, at: performance.now() };   // still on the way: a report from before the jump
     } else {
       if (cdJump && (m.track === cdJump.n || performance.now() >= cdJump.until)) cdJump = null;
-      cdState = { state: m.state, track: m.track | 0, pos: m.pos || 0, at: performance.now() };
+      cdState = { state: m.state === 'stopped' && cdPauseSent ? 'paused' : m.state, track: m.track | 0, pos: m.pos || 0, at: performance.now() };
     }
     deck.emit('cd');
   }

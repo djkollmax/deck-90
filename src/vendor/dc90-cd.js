@@ -18,6 +18,8 @@
  *
  * Deck 90 7.9.14: REPEAT and SHUFFLE keys (OPEN / CLOSE narrower) and their lamps under the meters, setModes(). 7.9.13: meters end yellow/red; setTimeMode(remain). 7.9.10: Damián's DC-90 revision 3 (the big display); src/ui/cdunit/cdunit.js drives it with the PC's drive.
  * One change: a long title scrolls even when Windows says "reduced motion" (animations off).
+ * Deck 90 7.9.22: setTrack({ quality }) writes the disc's quality under the track count ("CD 16/44", "FLAC 24/96",
+ * "MP3 320"), and the artist line scrolls too when it doesn't fit.
  */
 (function(global){
 'use strict';
@@ -359,6 +361,7 @@ class Deck90CD {
     if(track.duration>0)track.elapsed=Math.min(track.elapsed,track.duration);
     if('playing'in update){track.playing=Boolean(update.playing);if(track.playing)track.paused=false;}
     if('paused'in update){track.paused=Boolean(update.paused);if(track.paused)track.playing=false;}
+    if('quality'in update)track.quality=String(update.quality||'').toUpperCase().slice(0,12);   /* Deck 90 7.9.22 */
     if(this._state.drawerOpen){track.playing=false;track.paused=false;}
     this._renderTrack();this._paintLevels();this._schedule();return this;
   }
@@ -404,7 +407,7 @@ class Deck90CD {
   _paintDigits(cells,text){for(let i=0;i<cells.length;i++){const names=DIGIT_MAP[text[i]]||[];for(const[name,segment]of Object.entries(cells[i]))segment.setAttribute('fill',names.includes(name)?LIT:DIM);}}
   _buildDisplay(){
     this._timeDigits=this._digitGroup(58,54,4,1.23,true);this._minus=node('rect',{x:42,y:83,width:11,height:5,rx:1,fill:DIM,'data-role':'remain'});this._display.append(this._minus);/* Deck 90 7.9.13: remaining-time minus */this._trackDigits=this._digitGroup(282,78,2,.72);
-    this._display.append(this._dots('TRACK',278,53,1.4));this._total=node('g',{'data-role':'total-tracks'});this._display.append(this._total);
+    this._display.append(this._dots('TRACK',278,53,1.4));this._total=node('g',{'data-role':'total-tracks'});this._display.append(this._total);this._quality=node('g',{'data-role':'quality'});this._display.append(this._quality);/* Deck 90 7.9.22 */
     const clip=node('g',{'data-role':'title-viewport','clip-path':`url(#${this.prefix}-title-clip)`});this._title=node('g',{'data-role':'title'});clip.append(this._title);this._display.append(clip);
     const artistClip=node('g',{'clip-path':`url(#${this.prefix}-artist-clip)`});this._artist=node('g',{'data-role':'artist'});artistClip.append(this._artist);this._display.append(artistClip);
     this._display.append(node('rect',{x:391,y:126,width:503,height:2,fill:DIM}));this._progress=node('rect',{x:391,y:126,width:0,height:2,fill:LIT,'data-role':'progress'});this._display.append(this._progress);
@@ -449,7 +452,8 @@ class Deck90CD {
     const title=open?'BANDEJA ABIERTA':t.title||'COMPACT DISC';
     if(this._cache.title!==title){this._title.replaceChildren(this._dots(title,0,0,3.3));this._title.setAttribute('transform','translate(391 53)');this._titleWidth=[...title.toUpperCase()].length*19.8;this._titleStarted=performance.now();this._cache.title=title;}
     const artist=open?'OPEN / CLOSE':t.artist;
-    if(this._cache.artist!==artist){this._artist.replaceChildren(this._dots(artist,391,92,2.15));this._cache.artist=artist;}
+    if(this._cache.artist!==artist){this._artist.replaceChildren(this._dots(artist,0,0,2.15));this._artist.setAttribute('transform','translate(391 92)');this._artistWidth=[...String(artist||'').toUpperCase()].length*12.9;this._artistStarted=performance.now();this._cache.artist=artist;}   /* Deck 90 7.9.22: drawn at 0 0 to scroll */
+    const quality=open||!this._state.powered?'':t.quality||'';if(this._cache.quality!==quality){const pitch=Math.min(1.05,80/Math.max(1,[...quality].length*6));this._quality.replaceChildren(...(quality?[this._dots(quality,278,121,pitch)]:[]));this._cache.quality=quality;}   /* Deck 90 7.9.22 */
     for(const[key,indicator]of Object.entries(this._indicators)){const on=!open&&(key==='disc'||key==='play'&&t.playing||key==='pause'&&t.paused);for(const dot of indicator.children)dot.setAttribute('fill',on?LIT:DIM);indicator.setAttribute('opacity',open&&key==='play'?'0':'1');}
     this._openStatus.setAttribute('opacity',open?'1':'0');this._progress.setAttribute('width',String(t.duration>0?503*clamp(t.elapsed/t.duration):0));this._cache.open=open;
     this.svg.setAttribute('aria-label',`DECK 90 DC-90. ${open?'Bandeja abierta.':`Pista ${t.track}. ${t.title}. ${t.artist}. ${t.playing?'Reproduciendo':t.paused?'Pausa':'Detenido'}.`}`);this._updateLeds();
@@ -463,6 +467,9 @@ class Deck90CD {
     if(diff!==0){this._drawerPosition=this._motion?.matches?this._drawerTarget:this._drawerPosition+diff*(1-Math.exp(-dt/150));if(Math.abs(this._drawerTarget-this._drawerPosition)<=.00003)this._drawerPosition=this._drawerTarget;this._paintDrawer();}
     const distance=Math.max(0,(this._titleWidth||0)-502);let scroll=false;
     if(distance>0&&this._state.powered){/* Deck 90: scrolls even with Windows' animations off */const travel=distance/30*1000,delay=1500,phase=Math.max(0,time-this._titleStarted)%(2*travel+2*delay);let offset=0;if(phase>delay&&phase<delay+travel)offset=(phase-delay)*.03;else if(phase>=delay+travel&&phase<2*delay+travel)offset=distance;else if(phase>=2*delay+travel)offset=distance-(phase-2*delay-travel)*.03;this._title.setAttribute('transform',`translate(${(391-offset).toFixed(3)} 53)`);scroll=true;}else this._title.setAttribute('transform','translate(391 53)');
+    /* Deck 90 7.9.22: the artist line scrolls the same way when it doesn't fit */
+    const far=Math.max(0,(this._artistWidth||0)-502);
+    if(far>0&&this._state.powered){const travel=far/30*1000,delay=1500,phase=Math.max(0,time-this._artistStarted)%(2*travel+2*delay);let offset=0;if(phase>delay&&phase<delay+travel)offset=(phase-delay)*.03;else if(phase>=delay+travel&&phase<2*delay+travel)offset=far;else if(phase>=2*delay+travel)offset=far-(phase-2*delay-travel)*.03;this._artist.setAttribute('transform',`translate(${(391-offset).toFixed(3)} 92)`);scroll=true;}else if(this._artist)this._artist.setAttribute('transform','translate(391 92)');
     if(scroll||Math.abs(this._drawerTarget-this._drawerPosition)>.00003)this._schedule();
   }
 }
