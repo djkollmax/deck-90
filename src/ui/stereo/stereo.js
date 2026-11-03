@@ -5,10 +5,10 @@
 //  (vendor/dp940-display.js) and a key over each of its buttons:
 //    VOL ▲▼  Windows' volume (also the mouse wheel anywhere on the front)    ATT  silence
 //    MODE    PC (what the computer plays) or RADIO (stations over the internet)
-//    SEL     play / pause: the radio, or the player's song                    DISP  song · BPM · loudness · time
+//    SEL     play / pause: the radio, or the player's song                    DISP  song · time · temp · TIEMPO
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
 //    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3 · FM4 · AM
-//    HDB     the display's brightness   SDM  its colour   PWR  back to the rack   ⏏  opens the drive's tray
+//    HDB     the display's brightness   SDM  its colour (or the whole front)   PWR  back to the rack   ⏏  the tray
 //  CD mode (7.8, Windows): the PC's CD/DVD drive, through the program's bridge (electron/media.ps1). An audio CD
 //  plays from the drive (Windows' own CD audio); a disc of MP3s and the like plays its files here. TRACK ◀▶ and
 //  SEL work on it; the display shows TRACK 03 and its time, or the file's name.
@@ -17,9 +17,11 @@
 //  The window side is the mini strip's (its own size and place, always on top); see electron/main.js.
 // ═══════════════════════════════════════════════════════════
 // DISP: what the big letters show, in any mode: the normal screen (song, station or track), the time, the
-// temperature (the header's weather), the BPM or the loudness; the line under it says what's playing
-const STEREO_DISP = ['song', 'clock', 'temp', 'bpm', 'lufs'];
-const STEREO_DISP_NAME = { song: 'NORMAL', clock: 'HORA', temp: 'TEMPERATURA', bpm: 'BPM', lufs: 'LOUDNESS' };
+// temperature (the header's weather), both taking turns, or what's left of the song (7.9.21); the line under it
+// says what's playing
+// 7.9.21: BPM and loudness went; HORA Y TEMP alternates the two, TIEMPO counts down what's left of the song big
+const STEREO_DISP = ['song', 'clock', 'temp', 'clocktemp', 'time'];
+const STEREO_DISP_NAME = { song: 'NORMAL', clock: 'HORA', temp: 'TEMPERATURA', clocktemp: 'HORA Y TEMPERATURA', time: 'TIEMPO (lo que le queda al tema)' };
 const STEREO_HUES = [0, 38, 150, 196, 248, 300];          // SDM: the original burgundy and amber, then five more lights
 const STEREO_DIM = [1, 1.32, .72, .48];                    // HDB: the display's brightness (normal, high, medium, low)
 const STEREO_DIM_NAME = ['NORMAL', 'ALTO', 'MEDIO', 'BAJO'];
@@ -48,6 +50,14 @@ const STEREO_LOOKS = [
   { id: 'lcdblue', name: 'LCD AZUL', say: 'LCD con luz azul, letras blancas' },
   { id: 'lcdamber', name: 'LCD ÁMBAR', say: 'LCD con luz ámbar, letras oscuras', light: true },
   { id: 'duo', name: 'BICOLOR', say: 'negro, letras amarillas, carteles celestes, vúmetros verdes' },
+  // 7.9.21: four more for the glass, and three that change the whole front (face: the panel and its keys too)
+  { id: 'carbon', name: 'CARBONO', say: 'negro, letras blancas, carteles rojos' },
+  { id: 'neon', name: 'NEÓN', say: 'negro, letras celestes, carteles fucsia' },
+  { id: 'emerald', name: 'ESMERALDA', say: 'verde profundo, letras verde claro, vúmetros dorados' },
+  { id: 'plasma', name: 'PLASMA', say: 'el naranja rojizo de las pantallas de plasma' },
+  { id: 'tokio', name: 'TOKIO', say: 'al estilo Sony de los 2000: frente negro, teclas con luz azul, letras blancas', face: 'tokio' },
+  { id: 'studio', name: 'ESTUDIO', say: 'frente negro mate de equipo pro, letras ámbar, vúmetros verdes', face: 'pro' },
+  { id: 'titan', name: 'TITANIO', say: 'frente plateado de equipo pro, vidrio negro, letras blancas y naranja', face: 'titan' },
 ];
 const STEREO_COLORS = STEREO_HUES.length + STEREO_LOOKS.length;   // SDM: six lights, then the looks
 const stereoLook = () => STEREO_LOOKS[stereoCfg.color - STEREO_HUES.length - 1] || null;
@@ -91,6 +101,7 @@ function stereoPaint() {
   const look = stereoLook(), d = document.getElementById('stDisplay');
   p.style.setProperty('--st-hue', (look ? 0 : STEREO_HUES[stereoCfg.color - 1]) + 'deg');
   d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (look ? ' look look-' + look.id + (look.light ? ' look-light' : '') : '');
+  p.querySelector('.st-face').dataset.face = look && look.face || '';   // 7.9.21: the looks that change the whole front
   p.style.setProperty('--st-dim', STEREO_DIM[stereoCfg.dim]);
   p.classList.toggle('aux-on', !!capture.running || radioPlaying() || cdPlaying());
 }
@@ -100,12 +111,39 @@ function stereoTemp() {
   return Math.round(wx.temp) + '°C';
 }
 function stereoDispText() {
-  const d = stereoCfg.disp;
+  if (stereoFlash.until > Date.now()) return stereoFlash.text;   // the volume, for a moment
+  let d = stereoCfg.disp;
+  if (d === 'clocktemp') d = stereoTemp() && Math.floor(Date.now() / 4000) % 2 ? 'temp' : 'clock';   // 4 s each
   if (d === 'clock') { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); }
   if (d === 'temp') return stereoTemp() || 'SIN CLIMA';
-  if (d === 'bpm') return bpmVal > 0 && capture.running ? Math.round(bpmVal) + ' BPM' : '--- BPM';
-  if (d === 'lufs') { const i = isFinite(miniVals.i) ? miniVals.i : NaN; return isFinite(i) ? i.toFixed(1) + ' LUFS' : '--.- LUFS'; }
+  if (d === 'time') {
+    if (stereoCfg.mode === 'radio') return 'EN VIVO';
+    const i = stereoInfo();
+    if (stereoCfg.mode === 'cd') return i.length ? String(i.number).padStart(2, '0') + '  -' + mmss(Math.max(0, i.length - cdPosition())) : '--:--';
+    const dur = np && np.dur > 0 ? np.dur : 0, pos = np ? npPosition() : 0;
+    return stereoPlaying() ? (dur ? '-' + mmss(Math.max(0, dur - pos)) : mmss(pos)) : '--:--';
+  }
   return '';
+}
+// 7.9.21: VOL ▲ ▼ and ATT write the volume big on the display for two seconds ("VOL 24"), Windows' own number
+const stereoFlash = { text: '', until: 0 };
+function stereoFlashSay(text) { stereoFlash.text = text; stereoFlash.until = Date.now() + 2000; stereoText(true); }
+if (window.nowPlaying && window.nowPlaying.onVolume) window.nowPlaying.onVolume(v => {
+  if (!v || !stereoMode || stereoFlash.until < Date.now() - 1500) return;   // only an answer to the stereo's own keys
+  stereoFlashSay(v.mute ? 'ATT' : v.vol >= 0 ? 'VOL ' + v.vol : stereoFlash.text);
+});
+// 7.9.21: the small print at the bottom: the song's number and length (the time left counts down there) and the
+// quality: the radio's stream ("MP3 128"), an audio CD's PCM ("CD 16/44"), a disc of files their format (FLAC, MP3)
+function stereoInfo() {
+  if (stereoCfg.mode === 'radio') return { quality: radioPlaying() && !radioTrouble ? radioQuality(radioNow) : '' };
+  if (stereoCfg.mode !== 'cd' || !cdInfo || !cdInfo.present) return {};
+  const files = cdFiles();
+  if (files.length) {
+    const ext = (String(files[cdFile] || '').match(/\.([a-z0-9]{2,4})$/i) || [])[1] || '';
+    return { number: cdFile + 1, length: isFinite(cdAudio.duration) ? cdAudio.duration : 0, quality: ext.toUpperCase().replace('M4A', 'AAC') };
+  }
+  const tr = cdAudioTracks(), n = cdState.track || (tr[0] && tr[0].n) || 0, t = tr.find(x => x.n === n);
+  return tr.length ? { number: n, length: t && t.len || 0, quality: 'CD 16/44' } : {};
 }
 function stereoContext() {
   const d = stereoCfg.disp;
@@ -116,7 +154,8 @@ function stereoContext() {
   if (stereoCfg.mode === 'radio') { const st = radioNow || radioMem[radioMem.band][(radioMem.slot || 1) - 1]; return st ? (st.freq ? radioMem.band + ' ' + st.freq + ' · ' : '') + st.name : radioMem.band; }
   if (stereoCfg.mode === 'cd') {
     if (cdFiles().length) return String(cdFiles()[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
-    return cdAudioTracks().length ? 'CD · TRACK ' + String(cdState.track || cdAudioTracks()[0].n).padStart(2, '0') : 'CD';
+    const n = cdAudioTracks().length ? cdState.track || cdAudioTracks()[0].n : 0, song = n && cdSongName(n);
+    return song ? song.title + (song.artist ? ' · ' + song.artist : '') : n ? 'CD · TRACK ' + String(n).padStart(2, '0') : 'CD';
   }
   return np && np.title ? np.title + (np.artist ? ' · ' + np.artist : '') : '';
 }
@@ -126,13 +165,13 @@ function stereoText(force) {
   let key;
   const extra = stereoDispText();
   if (extra) {                                                 // DISP: the time, the temperature, BPM or loudness
-    key = 'disp|' + stereoCfg.mode + '|' + extra + '|' + stereoContext() + '|' + radioPlaying();
+    key = 'disp|' + stereoCfg.mode + '|' + extra + '|' + stereoContext() + '|' + radioPlaying() + '|' + JSON.stringify(stereoInfo());
     if (key !== stereoShown || force) {
       stereoShown = key;
       if (stereoCfg.mode === 'radio') {                        // the radio keeps its own screen, the words in place of the dial
         stereoDisplay.setPlayback(false);
-        stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext(), mono: radioMem.band === 'AM' });
-      } else stereoDisplay.setTrack({ title: extra, artist: stereoContext(), playing: true });
+        stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext(), mono: radioMem.band === 'AM', quality: stereoInfo().quality || '' });
+      } else stereoDisplay.setTrack({ title: extra, artist: stereoContext(), playing: true, ...stereoInfo() });
     }
     stereoDisplay.setElapsed(stereoCfg.mode === 'cd' ? cdPosition() : stereoCfg.mode === 'pc' && np ? npPosition() : 0);
     if (!(stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying())) stereoDisplay.setLevels(0, 0);
@@ -153,22 +192,25 @@ function stereoText(force) {
       if (song) { title = song.title; artist = song.artist + ' · ' + String(n).padStart(2, '0') + (cdState.state === 'paused' ? ' · PAUSA' : ''); }
       else { title = 'TRACK ' + String(n).padStart(2, '0'); artist = 'CD · ' + tr.length + ' PISTAS · ' + mmss(total) + (cdState.state === 'paused' ? ' · PAUSA' : ''); }
     } else { title = 'SIN AUDIO'; artist = 'ESTE DISCO NO TIENE MÚSICA'; }
-    key = 'cd|' + title + '|' + artist;
-    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing }); }
+    const info = stereoInfo();
+    key = 'cd|' + title + '|' + artist + '|' + JSON.stringify(info);
+    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing, ...info }); }
     stereoDisplay.setElapsed(cdPosition());
     if (!cdPlaying()) stereoDisplay.setLevels(0, 0);
   } else if (stereoCfg.mode === 'radio') {
     const st = radioNow || (radioMem[radioMem.band][(radioMem.slot || 1) - 1]) || RADIO_DEFAULTS[0];
     const live = radioPlaying();
     const freq = st.freq ? st.freq : shortName(st.name).toUpperCase();
-    const q = live ? radioQuality(st) : '', song = radioSong();
-    // the line under the frequency is short: the song, and every few seconds the station with its quality
-    const line = !live ? '' : song && Math.floor(Date.now() / 4000) % 3 !== 2 ? song : [st.name, q].filter(Boolean).join(' · ');
-    key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot + '|' + line;
+    const q = stereoInfo().quality || '', song = radioSong();
+    // the line under the frequency is short: the song, and every few seconds the station (7.9.21: the quality is
+    // at the bottom now; a station that dropped says so)
+    const trouble = radioNow && radioTrouble === 'retry' ? 'RECONECTANDO…' : radioNow && radioTrouble === 'lost' ? 'SIN SEÑAL' : '';
+    const line = trouble || (!live ? '' : song && Math.floor(Date.now() / 4000) % 3 !== 2 ? song : st.name);
+    key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot + '|' + line + '|' + q;
     if (key !== stereoShown || force) {
       stereoShown = key;
       stereoDisplay.setPlayback(false);
-      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, mono: radioMem.band === 'AM' });
+      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, mono: radioMem.band === 'AM', quality: q });
     }
   } else {
     const playing = stereoPlaying();
@@ -182,7 +224,7 @@ function stereoText(force) {
     if (key !== stereoShown || force) {
       stereoShown = key;
       if (playing) stereoDisplay.setTrack({ title, artist, playing: true });
-      else { stereoDisplay.setRadio({ band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false }); stereoDisplay.setPlayback(false); }
+      else { stereoDisplay.setRadio({ band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, quality: '' }); stereoDisplay.setPlayback(false); }
     }
     if (playing) stereoDisplay.setElapsed(np ? npPosition() : 0);
   }
@@ -221,7 +263,7 @@ function phoneStereoView() {
     kind: rec.kind, radio: rec.radio || null, track: rec.track || null, elapsed: Math.floor(rec.elapsed || 0),
     live: stereoCfg.mode === 'radio' ? radioPlaying() : stereoCfg.mode === 'cd' ? cdPlaying() : stereoPlaying(),
     hue: look ? 0 : STEREO_HUES[stereoCfg.color - 1], dim: STEREO_DIM[stereoCfg.dim],
-    look: look ? look.id : '', light: !!(look && look.light), aux: !!capture.running || radioPlaying() || cdPlaying(),
+    look: look ? look.id : '', light: !!(look && look.light), face: look && look.face || '', aux: !!capture.running || radioPlaying() || cdPlaying(),
   };
 }
 const PHONE_STEREO_KEYS = ['volup', 'voldown', 'att', 'sel', 'mode', 'disp', 'band', 'hdb', 'sdm', 'scan', 'prev', 'next', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'slot', 'eject'];
@@ -258,6 +300,7 @@ function stereoSwitch(next) {
 const STEREO_VOL_DOWN = 3;
 function stereoVolume(step) {
   if (!window.nowPlaying) { toast('El volumen se maneja desde el programa en Windows.', 2400); return; }
+  stereoFlashSay(step > 0 ? 'VOL +' : step < 0 ? 'VOL -' : 'ATT');   // until Windows says the number
   if (step < 0) { for (let i = 0; i < STEREO_VOL_DOWN; i++) window.nowPlaying.cmd('voldown'); return; }
   window.nowPlaying.cmd(step > 0 ? 'volup' : 'mute');
   if (!step) toast('ATT · <span>silencio</span> (otra vez para volver)', 1400);

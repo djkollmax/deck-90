@@ -84,6 +84,7 @@ function stApply(v) {
   stFace.style.setProperty('--st-hue', (v.hue || 0) + 'deg');
   stFace.style.setProperty('--st-dim', v.dim || 1);
   d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (v.look ? ' look look-' + v.look + (v.light ? ' look-light' : '') : '');
+  el('stFace').dataset.face = v.face || '';                    // 7.9.21: a look that changes the whole front
   el('stereoView').classList.toggle('aux-on', !!v.aux);
   if (v.kind === 'radio' && v.radio) { stDisp.setPlayback(false); stDisp.setRadio(v.radio); }
   else if (v.kind === 'track' && v.track) { stDisp.setTrack(v.track); stDisp.setElapsed(v.elapsed || 0); }

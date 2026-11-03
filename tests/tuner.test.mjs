@@ -9,7 +9,8 @@ const K = k => `#tuner g[data-key="${k}"]`;
 const radio = () => d.win.evaluate(() => {
   const r = tuner.getState().radio;
   return { power: tunerPower, playing: radioPlaying(), band: radioMem.band, shown: r.band, freq: r.frequency, label: r.label,
-    preset: r.preset, name: r.name, text: r.text, stereo: r.stereo, mono: r.mono, scan: r.scan, memo: r.memo, slot: radioMem.slot };
+    preset: r.preset, name: r.name, text: r.text, stereo: r.stereo, mono: r.mono, scan: r.scan, memo: r.memo, slot: radioMem.slot,
+    quality: r.quality, place: r.place };
 });
 
 before(async () => { station = await startStation(); d = await launch({ station, size: [1300, 1100] }); });
@@ -83,7 +84,8 @@ test('holding a memory key stores the station; MEMO then a number does too', asy
   await d.hold(K('m5'));
   let r = await radio();
   assert.equal(r.preset, 5);
-  const name = r.name;
+  const name = await d.win.evaluate(() => radioNow.name);
+  assert.ok(r.name.startsWith(name), r.name);
   assert.equal(await d.win.evaluate(() => radioMem.FM1[4].name), name);
   await d.click(K('memo'), 300);
   assert.equal((await radio()).memo, true);
@@ -104,11 +106,21 @@ test('SCAN moves on by itself and SCAN again stays', async () => {
   assert.equal((await radio()).scan, false);
 });
 
-test('MODE picks the line under the name; DISP the clock and the weather', async () => {
-  await d.click(K('m1'), 1500);
+test('one line with the station and its song, the quality after TUNED, the city under the memory', async () => {
+  await d.click(K('m1'), 2500);
+  const r = await radio();
+  assert.match(r.name, /^Aspen · (Los Pericos|Soda Stereo|Charly García) - /); assert.equal(r.text, '');
+  assert.equal(r.quality, 'MP3 128'); assert.equal(r.place, 'BS AS');
+  await d.click(K('m2'), 2500);
+  assert.equal((await radio()).place, 'ALEMANIA', 'a station from elsewhere: its country');
+  await d.click(K('m1'), 2500);
+});
+
+test('MODE picks what follows the station; DISP the clock and the weather', async () => {
   const lines = [];
-  for (let i = 0; i < 3; i++) { await d.click(K('mode'), 300); lines.push((await radio()).text); }
-  assert.match(lines[0], /FM1 .*MHZ/); assert.match(lines[1], /KBPS|CALIDAD/);
+  for (let i = 0; i < 3; i++) { await d.click(K('mode'), 300); lines.push((await radio()).name); }
+  assert.match(lines[0], /^Aspen · BUENOS AIRES, ARGENTINA · FM1 102\.3 MHZ$/); assert.equal(lines[1], 'Aspen · CALIDAD MP3 · 128 KBPS');
+  assert.match(lines[2], /^Aspen · .+ - /);
   await d.click(K('disp'), 300); assert.match((await radio()).name, /^\d\d:\d\d$/);
   await d.click(K('disp'), 300); assert.equal((await radio()).name, 'SIN CLIMA');
   await d.click(K('disp'), 300); assert.notEqual((await radio()).name, 'SIN CLIMA');

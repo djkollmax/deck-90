@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('nowPlaying', {
   cmd: c  => ipcRenderer.send('media-cmd', c),
   // Spotless' volume and levelling, read from its settings ({ volume, levelling, gainDb } or null)
   onPlayer: cb => ipcRenderer.on('spotless', (e, s) => cb(s)),
+  // 7.9.21: Windows' volume after the stereo's VOL keys ({ vol: 0-100 or -1 when unknown, mute })
+  onVolume: cb => ipcRenderer.on('volume', (e, v) => cb(v)),
 });
 contextBridge.exposeInMainWorld('winCtl', {
   min:   () => ipcRenderer.send('win', 'min'),

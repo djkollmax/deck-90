@@ -44,6 +44,26 @@ const RADIO_FM4 = [
   { name: 'Linn Radio', freq: '', q: 'Linn Radio', cc: 'GB', url: 'http://radio.linn.co.uk:8003/autodj' },
 ];
 const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'AM'];
+// where a station is (7.9.21, under the memory on the DT-90): the city of the ones that come with Deck 90, the
+// country of any other (Radio Browser's code). short: as it fits there; long: for MODE's line
+const RADIO_CITY = { Aspen: 'BS AS', Metro: 'BS AS', 'Rock & Pop': 'BS AS', 'La 100': 'BS AS', Vorterix: 'BS AS', 'Con Vos': 'BS AS',
+  'Clásica': 'BS AS', Blackie: 'BS AS', Delta: 'BS AS', Blue: 'BS AS', 'Nac Rock': 'BS AS', Mitre: 'BS AS', 'Radio 10': 'BS AS',
+  Continental: 'BS AS', Rivadavia: 'BS AS', 'Radio Nacional': 'BS AS', 'La Red': 'BS AS', 'Ibiza Global': 'IBIZA',
+  'Heart 80s': 'LONDRES', 'Groove Salad': 'S. FRANCISCO', FIP: 'PARÍS', 'FIP Jazz': 'PARÍS', KEXP: 'SEATTLE' };
+const RADIO_LONG = { 'BS AS': 'BUENOS AIRES', 'S. FRANCISCO': 'SAN FRANCISCO' };
+const RADIO_COUNTRY = { AR: 'ARGENTINA', UY: 'URUGUAY', CL: 'CHILE', BR: 'BRASIL', PY: 'PARAGUAY', BO: 'BOLIVIA', PE: 'PERÚ',
+  CO: 'COLOMBIA', VE: 'VENEZUELA', EC: 'ECUADOR', MX: 'MÉXICO', CU: 'CUBA', US: 'EE.UU.', CA: 'CANADÁ', ES: 'ESPAÑA',
+  PT: 'PORTUGAL', FR: 'FRANCIA', IT: 'ITALIA', DE: 'ALEMANIA', AT: 'AUSTRIA', CH: 'SUIZA', GB: 'R. UNIDO', IE: 'IRLANDA',
+  NL: 'HOLANDA', BE: 'BÉLGICA', DK: 'DINAMARCA', SE: 'SUECIA', NO: 'NORUEGA', FI: 'FINLANDIA', PL: 'POLONIA', GR: 'GRECIA',
+  RU: 'RUSIA', JP: 'JAPÓN', AU: 'AUSTRALIA', NZ: 'N. ZELANDA' };
+function radioPlace(st, long) {
+  if (!st) return '';
+  const known = RADIO_CITY[st.name], country = RADIO_COUNTRY[st.cc] || st.cc || '';
+  // the Linn stations are Scottish
+  const city = known || (/^Linn /.test(st.name) && st.cc === 'GB' ? 'ESCOCIA' : '');
+  if (!long) return city || country;
+  return [RADIO_LONG[city] || city, city === 'ESCOCIA' ? 'R. UNIDO' : country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
+}
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
 let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), AM: RADIO_AM.slice() };
 try {
@@ -108,15 +128,18 @@ if (window.radio && window.radio.onMeta) window.radio.onMeta(m => {
   if (st && (radioMeta.codec || radioMeta.kbps)) { st.codec = radioMeta.codec || st.codec || ''; st.kbps = radioMeta.kbps || st.kbps || 0; }
   deck.emit('radio');
 });
-async function radioTune(st, label, retry) {
+// again (7.9.21): the station's sound dropped and it's being tuned again (radioTrouble 'retry', no notice)
+async function radioTune(st, label, retry, again) {
   if (!st) return;
   const t = ++radioTry;
+  radioAired = 0; clearTimeout(radioWaitTimer); clearTimeout(radioRetryTimer);
+  if (!again) { radioRetries = 0; radioTrouble = ''; }
   radioNow = st; deck.emit('radio');
-  deck.notice('RADIO · <span>' + (st.freq ? st.freq + ' ' : '') + st.name.replace(/[<>&]/g, '') + '</span>' + (label ? ' · ' + label : ''), 1800);
+  if (!again) deck.notice('RADIO · <span>' + (st.freq ? st.freq + ' ' : '') + st.name.replace(/[<>&]/g, '') + '</span>' + (label ? ' · ' + label : ''), 1800);
   const urls = await radioResolve(st);
   if (t !== radioTry) return;                                  // another station was chosen meanwhile
-  if (!urls) { radioLog('no lookup for ' + st.name); deck.notice('⚠ No pude buscar la radio: ¿hay internet?', 3200); return; }
-  if (!urls.length) { radioLog('not found: ' + st.name); deck.notice('⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser', 3200); return; }
+  if (!urls) { radioLog('no lookup for ' + st.name); return radioFailed(st, t, again, '⚠ No pude buscar la radio: ¿hay internet?'); }
+  if (!urls.length) { radioLog('not found: ' + st.name); return radioFailed(st, t, again, '⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser'); }
   radioMeta = { id: t, codec: '', kbps: 0, title: '' };
   for (const u of urls) {
     // through the local proxy first (the station's song and bitrate), straight when that can't play it
@@ -133,6 +156,7 @@ async function radioTune(st, label, retry) {
       if (rb && !radioMeta.kbps && rb.bitrate) { st.kbps = rb.bitrate; }
       radioLog('playing ' + st.name + ' · ' + u.slice(0, 120));
       radioSession(st);
+      radioAired = t; radioRetries = 0; radioTrouble = '';
       if (!st.url) { st.url = u; saveRadio(); }
       deck.emit('radio-on-air');                                  // (the meters follow it through the PC's sound)
       deck.emit('radio'); return;
@@ -141,13 +165,36 @@ async function radioTune(st, label, retry) {
   }
   if (st.url) {                                                 // an old address: look the station up again, once
     st.url = ''; saveRadio();
-    if (!retry) { radioLog(st.name + ': saved address failed, looking it up again'); return radioTune(st, label, true); }
+    if (!retry) { radioLog(st.name + ': saved address failed, looking it up again'); return radioTune(st, label, true, again); }
   }
-  deck.notice('⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora', 3200);
+  radioFailed(st, t, again, '⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora');
 }
+// 7.9.21: what's wrong with the station, for the displays: 'lost' (it doesn't answer, or there's no internet: SIN
+// SEÑAL) or 'retry' (its sound dropped while playing and it's being tuned again: RECONECTANDO, every 10 s for a minute)
+let radioTrouble = '', radioAired = 0, radioRetries = 0, radioRetryTimer = 0, radioWaitTimer = 0;
+function radioFailed(st, t, again, notice) {
+  if (again && ++radioRetries < 6) {
+    radioTrouble = 'retry'; deck.emit('radio');
+    radioRetryTimer = setTimeout(() => { if (t === radioTry && radioNow === st) radioTune(st, '', false, true); }, 10000);
+    return;
+  }
+  radioTrouble = 'lost'; deck.emit('radio');
+  deck.notice(notice, 3200);
+}
+// the sound of a station that was on the air stopped by itself (the stream ended or broke, or it waited 10 s for data)
+function radioDropped(why) {
+  if (!radioAired || radioAired !== radioTry || !radioNow) return;
+  radioLog(radioNow.name + ' dropped (' + why + '): tuning it again');
+  radioRetries = 0; radioTrouble = 'retry';
+  radioTune(radioNow, '', false, true);
+}
+radioAudio.addEventListener('error', () => radioDropped('error'));
+radioAudio.addEventListener('ended', () => radioDropped('ended'));
+radioAudio.addEventListener('waiting', () => { clearTimeout(radioWaitTimer); radioWaitTimer = setTimeout(() => radioDropped('no data for 10 s'), 10000); });
+radioAudio.addEventListener('playing', () => clearTimeout(radioWaitTimer));
 // keepOn (7.9.15): the CD took the sound; the rack's tuner stays on, showing its station, just silent
 function radioStop(keepOn) {
-  radioTry++; radioScan = 0; radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); deck.emit('radio'); radioSession(null);
+  radioTry++; radioScan = 0; radioTrouble = ''; radioAired = 0; clearTimeout(radioWaitTimer); radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); deck.emit('radio'); radioSession(null);
   if (!keepOn) deck.emit('radio-off');                       // (the rack's tuner shows it off too)
 }
 radioAudio.addEventListener('pause', () => deck.emit('radio'));

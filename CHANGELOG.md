@@ -1,5 +1,18 @@
 # Changelog
 
+## 7.9.21
+
+### Changed
+- **POWER on one unit no longer cuts the other.** The DT-90's POWER with the DC-90 playing turns the tuner on in standby (its station shown, `EN ESPERA · SUENA EL CD`); a memory, band, ◀ ▶ or SCAN tunes and pauses the CD. The DC-90's POWER with the radio playing only reads the disc (`cd-info`: names and songs on the display); PLAY or another CD key plays it. A key that wakes a unit still plays at once (`cdUnitOn(on, keyPlays)`).
+- **HIELO and ZAFIRO without the readout strip** (`noRead`): the face fills the panel. New thumbnails.
+- **The DT-90's display says more**: one line "STATION · ARTIST - SONG"; the stream's quality after TUNED ("MP3 128") and where the station is under the memory ("BS AS", "PARÍS", "SEATTLE", or the country from Radio Browser's code: `radioPlace`), drawn by a vendor patch, `setRadio({ quality, place })`. MODE picks what follows the station: the song, its city, country and dial, or the quality spelled out.
+- **The car stereo's DISP**: BPM and LOUDNESS go; HORA Y TEMPERATURA alternates both every 4 s; TIEMPO counts down what's left of the song in the big digits ("03  -2:41", on a CD and on the PC's player when it sends the length). At the bottom, a CD shows the time left and its song's number big on the right, and the quality: the radio's stream ("MP3 128"), an audio CD "CD 16/44", a disc of files its format (FLAC, MP3, WAV). LOCAL is red. Vendor patch "info" on the DP940: `setTrack({ number, length, quality })`, `setRadio({ quality })`.
+
+### Added
+- **The volume on the stereo's display**: VOL ▲ ▼ write "VOL 24" big for two seconds, ATT "ATT". Windows' number comes from the bridge after the keys (Core Audio, `{ vol, mute }`, -1 when it can't be read; checked in the Windows job); on Linux the keys move the default sink with `pactl`.
+- **Seven SDM looks**: CARBONO, NEÓN, ESMERALDA, PLASMA, and three that change the whole front (`face`): TOKIO (black front, keys lit blue, after Sony's 2000s units), ESTUDIO (matte black pro front, amber glass) and TITANIO (silver pro front, black glass). On the phone too.
+- **A station whose sound drops is tuned again by itself**: an error, the end of the stream or 10 s without data while on the air tune it again (RECONECTANDO…, every 10 s for a minute); a station that can't be reached says SIN SEÑAL (`radioTrouble`), on the DT-90 and the stereo. The pretend station can drop its streams (`drop()`).
+
 ## 7.9.20
 
 ### Added

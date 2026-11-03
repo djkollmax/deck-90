@@ -7,7 +7,7 @@
 //    BAND           FM1 → FM2 → FM3 → AM, or the four band keys under it (7.9.0)
 //    ◀ ▶ / the knob the country's most heard stations
 //    1–6            the band's memories (hold 1 s, or MEMO then the number: keep what plays there)
-//    SCAN           8 s of each                     MODE   the line: song · station · quality
+//    SCAN           8 s of each                     MODE   after the station: song · place and dial · quality
 //    DISP           the line under the dial: station, time, temperature
 //  It isn't one of the looks' modules: a look or the rotation never hides it.
 // ═══════════════════════════════════════════════════════════
@@ -72,20 +72,26 @@ function tunerLine() {
   }
   const st = tunerStation();
   const name = st ? st.name : radioMem.band + ' VACÍA';
-  // live: the song the station sends (or EN VIVO) and its quality, "LOS PERICOS - PARA XIMENA · MP3 128"
-  const live = radioPlaying(), q = live ? radioQuality(st) : '', song = live ? radioSong() : '';
-  // MODE picks it: the song and quality (TEMA), the station with its band, dial and quality (RADIO), or the
-  // quality alone, spelled out (CALIDAD)
+  const live = tunerLive(), q = live ? radioQuality(st) : '', song = live ? radioSong() : '';
+  // 7.9.21: on the air, one line "ASPEN · DARYL HALL & JOHN OATES - MANEATER" (the quality stays after TUNED, the
+  // place under the memory). MODE picks what follows the station: the song (TEMA), where it is and its dial
+  // (RADIO), or the quality spelled out (CALIDAD)
   const dial = tunerDial(st), where = !st ? '' : radioMem.band + ' ' + (dial.f === null ? 'INTERNET' : dial.f + (dial.am ? ' KHZ' : ' MHZ'));
-  const kb = q ? q.replace(/^(\S+)\s+(\d+)$/, '$1 · $2 KBPS') : 'CALIDAD SIN DATOS';
-  const liveText = tunerCfg.line === 'station' ? [where, q].filter(Boolean).join(' · ')
-    : tunerCfg.line === 'quality' ? kb
-    : [song || (dial.f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO'), q].filter(Boolean).join(' · ');
+  const kb = q ? 'CALIDAD ' + q.replace(/^(\S+)\s+(\d+)$/, '$1 · $2 KBPS') : 'CALIDAD SIN DATOS';
+  if (tunerPower && live) {
+    const after = tunerCfg.line === 'station' ? [radioPlace(st, true), where].filter(Boolean).join(' · ')
+      : tunerCfg.line === 'quality' ? kb : song || (dial.f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO');
+    return { name: [name, after].filter(Boolean).join(' · '), text: '' };
+  }
   const cdHas = cdHasSound();                                   // 7.9.15: on, the CD has the sound
-  const text = !tunerPower ? 'STANDBY' : live ? liveText : cdHas ? 'EN ESPERA · SUENA EL CD'
-    : radioNow && radioAudio.getAttribute('src') ? 'SINTONIZANDO…' : st ? 'EN ESPERA · UNA MEMORIA O ▶ LA PONE' : 'ELEGÍ UNA MEMORIA 1–6';
+  // 7.9.21: a station that doesn't answer, or whose sound dropped and is being tuned again
+  const trouble = !radioNow ? '' : radioTrouble === 'retry' ? 'RECONECTANDO…' : radioTrouble === 'lost' ? 'SIN SEÑAL' : '';
+  const text = !tunerPower ? 'STANDBY' : trouble || (cdHas ? 'EN ESPERA · SUENA EL CD'
+    : radioNow && radioAudio.getAttribute('src') ? 'SINTONIZANDO…' : st ? 'EN ESPERA · UNA MEMORIA O ▶ LA PONE' : 'ELEGÍ UNA MEMORIA 1–6');
   return { name, text };
 }
+// on the air: playing and no trouble (a stream that broke keeps playing() true while it's tuned again)
+const tunerLive = () => radioPlaying() && !radioTrouble;
 // the dial: the station's own frequency, or one in its name ("La 100 - 99.9 FM", "Radio 10 AM 710"); none (a station
 // heard only over the internet, 80s80s): its name in big letters where the digits go
 function tunerDial(st) {
@@ -102,7 +108,7 @@ function tunerDial(st) {
 }
 function tunerSync() {
   if (!tuner) return;
-  const st = tunerStation(), live = radioPlaying(), dial = tunerDial(st), am = dial.am;
+  const st = tunerStation(), live = tunerLive(), dial = tunerDial(st), am = dial.am;
   const line = tunerLine();
   tunerBands();
   const r = {
@@ -110,6 +116,7 @@ function tunerSync() {
     label: dial.f === null && st ? shortName(st.name) : '', preset: radioMem.slot || 0,
     name: line.name, text: line.text, stereo: !am, mono: am, auto: true,   // 7.9.4: FM always STEREO, AM always MONO
     tuned: live, scan: !!radioScan, memo: !!tunerMemo, signal: live ? 5 : tunerPower && radioNow ? 2 : 0,
+    quality: live ? radioQuality(st) : '', place: tunerPower && tunerCfg.disp === 'name' ? radioPlace(st) : '',   // 7.9.21
   };
   tunerPanel.classList.toggle('idle', tunerPower && !live && cdHasSound());   // 7.9.15: on, the other unit playing
   const key = JSON.stringify(r) + tunerPower;
@@ -142,7 +149,10 @@ function tunerFeed(now) {
 function tunerOn(on, keyTunes) {
   if (on === tunerPower) return;
   tunerPower = on; tunerMemo = 0;
-  if (on) {
+  // 7.9.21: POWER with the CD playing turns the tuner on in standby, its station on the display, and the CD goes on;
+  // a station key (a memory, a band, ◀ ▶, SCAN) puts the radio on and pauses the CD
+  if (on && !keyTunes && cdHasSound()) toast('RADIO · <span>encendida</span> · el CD sigue: una memoria la pone', 2200);
+  else if (on) {
     if (typeof cdUnitYield === 'function' && cdUnitYield()) tunerResumePc = true;   // the CD pauses; the PC's player was waiting for it
     if (np && np.status === 'Playing' && window.nowPlaying && !tunerResumePc) { window.nowPlaying.cmd('pause'); tunerResumePc = true; }
     if (!keyTunes && !radioPlaying()) { if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
@@ -164,7 +174,7 @@ function tunerKey(k, { hold } = {}) {
   }
   if (k === 'mode') {
     tunerCfg.line = TUNER_LINES[(TUNER_LINES.indexOf(tunerCfg.line) + 1) % TUNER_LINES.length]; savePrefs();
-    toast('MODE · <span>' + { song: 'el tema', station: 'la radio', quality: 'la calidad' }[tunerCfg.line] + '</span> en la línea de abajo', 1400);
+    toast('MODE · <span>' + { song: 'el tema', station: 'de dónde es', quality: 'la calidad' }[tunerCfg.line] + '</span> después de la radio', 1400);
     return tunerSync();
   }
   if (k === 'memo') {

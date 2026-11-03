@@ -199,10 +199,10 @@ const VU_THEMES = {
   // from the middle; ZAFIRO: sapphire blue, brighter in the middle
   PETROL:   { face: ['#2f566b', '#1a3b50', '#0a1c28'], glow: 'rgba(120,200,225,.20)', ink: '#f1f6f8', red: '#e8584b', soft: 'rgba(220,236,245,.7)',
               needle: '#f2dea6', needleGlow: null, needleW: 2.2, bezel: ['#1b1f22', '#0b0d0f'], read: '#9fd8e8', title: 'VU', sub: 'PEAK',
-              noBand: true, noPct: true, vignette: 'rgba(0,8,14,.55)' },
+              noBand: true, noPct: true, noRead: true, vignette: 'rgba(0,8,14,.55)' },
   SAPPHIRE: { face: ['#4384dc', '#1f55a8', '#0b2862'], glow: 'rgba(130,190,255,.34)', ink: '#ffffff', red: '#ff6a55', soft: 'rgba(225,238,255,.8)',
               needle: '#f6dda2', needleGlow: null, needleW: 2.2, bezel: ['#1b1f27', '#0a0c10'], read: '#b9d4ff', title: 'VU', sub: 'PEAK',
-              noBand: true, noPct: true, vignette: 'rgba(0,10,42,.45)' },
+              noBand: true, noPct: true, noRead: true, vignette: 'rgba(0,10,42,.45)' },
   BLUE:   { face: ['#2a6fd6', '#1546a0', '#071a44'], glow: 'rgba(80,170,255,.45)', ink: '#e6f3ff', red: '#ff6a5a', soft: 'rgba(200,230,255,.7)',
             needle: '#ffb347', needleGlow: 'rgba(255,170,60,.8)', bezel: ['#1b1f27', '#0a0c10'], read: '#9fd7ff', title: 'VU', sub: 'PEAK' },
 };

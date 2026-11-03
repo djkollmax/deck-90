@@ -4,7 +4,10 @@
    7.8.3: setRadio({ mono }) lights MONO instead of STEREO (an AM station), and the L/R meters' cells
    (METER_DATA.channels) were redrawn like the real DP940's: curved columns that step up from the inside out, the
    bottom rows reaching in under the status labels, the top ones short (made by a small script from the same 14
-   levels, two to six cells a row). */
+   levels, two to six cells a row).
+   7.9.21, marked "info": setTrack({ number, length, quality }) and setRadio({ quality }): the song's number big on the
+   right (where the radio's memory goes) and, with a length, the time left counting down at the bottom; the quality
+   ("MP3 128", "CD 16/44", "FLAC") at the bottom; LOCAL in red. */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -45,8 +48,8 @@ class Deck90Display {
     this.id = `d90-${++nextId}`;
     this.state = {
       mode: 'radio',
-      radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, ...options.radio },
-      track: { title: '', artist: '', elapsed: 0, playing: false },
+      radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, quality: '', ...options.radio },
+      track: { title: '', artist: '', elapsed: 0, playing: false, number: 0, length: 0, quality: '' },
       levels: { left: 0, right: 0 },
     };
     this._visual = { left: 0, right: 0 };
@@ -104,6 +107,7 @@ class Deck90Display {
     this._assertAlive();
     for (const key of ['band', 'frequency', 'name']) if (key in radio) this.state.radio[key] = safeText(radio[key]);
     if ('mono' in radio) this.state.radio.mono = Boolean(radio.mono);   // mono
+    if ('frequency' in radio) this.state.radio.quality = safeText(radio.quality).slice(0, 12);   // info
     if ('live' in radio) { this.state.radio.live = Boolean(radio.live); if (!this.state.radio.live) { this.state.levels = { left: 0, right: 0 }; } }   // radio live
     if ('preset' in radio) this.state.radio.preset = Math.max(1, Math.min(99, Math.trunc(Number(radio.preset) || 1)));
     if (this.state.mode === 'radio') this._renderText();
@@ -115,6 +119,11 @@ class Deck90Display {
     if ('title' in track) this.state.track.title = safeText(track.title);
     if ('artist' in track) this.state.track.artist = safeText(track.artist);
     if ('elapsed' in track) this.state.track.elapsed = safeSeconds(track.elapsed);
+    if ('title' in track) {   // info: a new title brings its own (none: none)
+      this.state.track.number = Math.max(0, Math.min(99, Math.trunc(Number(track.number) || 0)));
+      this.state.track.length = safeSeconds(track.length);
+      this.state.track.quality = safeText(track.quality).slice(0, 12);
+    }
     if ('playing' in track) return this.setPlayback(Boolean(track.playing));
     this._renderText();
     return this;
@@ -280,7 +289,7 @@ class Deck90Display {
     const mono = !music && this.state.radio.mono;   // mono: an AM station lights MONO, STEREO goes dark
     this._status.append(label(music ? 'PLAY' : 'STEREO', 158, 60, { fill: mono ? '#809641' : '#ffdd50', 'font-size': 23 }));
     this._status.append(label(music ? 'CD' : 'MONO', 159, 84, { fill: music || mono ? '#ffdd50' : '#809641', 'font-size': 22 }));
-    this._status.append(label(music ? 'TRACK' : 'LOCAL', 155, 115, { 'font-size': 21 }));
+    this._status.append(label(music ? 'TRACK' : 'LOCAL', 155, 115, music ? { 'font-size': 21 } : { 'font-size': 21, fill: '#ff1e1e' }));   // info: LOCAL red
     this._artist.textContent = (music ? this.state.track.artist : this.state.radio.live ? this.state.radio.name : '').toLocaleUpperCase('es').slice(0, 42);   // radio live: the station
     this.svg.setAttribute('aria-label', music ? `DECK 90. Reproduciendo: ${title}${this.state.track.artist ? ', ' + this.state.track.artist : ''}` : `DECK 90. Radio ${this.state.radio.band} ${this.state.radio.frequency}`);
     this._renderFooter();
@@ -292,14 +301,19 @@ class Deck90Display {
     this._footer.append(label('S-HDB', 299, 180, { fill: '#ffde46', 'font-size': 24 }));
     const music = this.state.mode === 'music';
     if (music) {
-      const seconds = Math.floor(this.state.track.elapsed);
-      const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+      const track = this.state.track, left = track.length > 0;   // info: with a length, the time left
+      const seconds = Math.floor(left ? Math.max(0, track.length - track.elapsed) : track.elapsed);
+      const time = `${left ? '-' : ''}${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
       this._footer.append(label('STEREO', 423, 180, { 'font-size': 23 }));
-      this._footer.append(label(time, 581, 180, { fill: '#ffdd50', 'font-size': 24, 'letter-spacing': 2 }));
-      this._footer.append(label('CD', 786, 180, { 'font-size': 22 }));
+      this._footer.append(label(time, left ? 566 : 581, 180, { fill: '#ffdd50', 'font-size': 24, 'letter-spacing': 2 }));
+      if (track.quality) this._footer.append(label(track.quality, 712, 180, { fill: '#ffdd50', 'font-size': 22 }));   // info
+      else this._footer.append(label('CD', 786, 180, { 'font-size': 22 }));
       this._footer.append(label('PLAY', 865, 180, { fill: '#c8d997', 'font-size': 22 }));
+      if (track.number) this._footer.append(label(String(track.number), 956, 121, { fill: '#ffdf4f', 'font-size': 45 }));   // info
     } else {
-      for (const [text, x] of [['LOUD', 423], ['MTL', 521], ['B-SKIP', 660], ['REP', 783], ['RAND', 866]]) this._footer.append(label(text, x, 180, { 'font-size': 22 }));
+      const quality = this.state.radio.quality;   // info: the quality in place of MTL and B-SKIP
+      for (const [text, x] of [['LOUD', 423], ...(quality ? [] : [['MTL', 521], ['B-SKIP', 660]]), ['REP', 783], ['RAND', 866]]) this._footer.append(label(text, x, 180, { 'font-size': 22 }));
+      if (quality) this._footer.append(label(quality, 560, 180, { fill: '#ffdd50', 'font-size': 24, 'letter-spacing': 1 }));
       this._footer.append(label(String(this.state.radio.preset), 956, 121, { fill: '#ffdf4f', 'font-size': 45 }));
     }
   }

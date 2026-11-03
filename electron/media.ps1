@@ -157,6 +157,41 @@ function CdCommand([string]$c) {
 
 # A real async reader: [Console]::In.ReadLineAsync() is synchronous in .NET Framework (it blocked the
 # loop until a command arrived, so "now playing" only updated when a deck key was pressed).
+# Windows' volume after the stereo's volume keys (7.9.21: the stereo's display shows "VOL 24"), read from the
+# default output device through Core Audio (compiled once, the first time). { vol: -1 } when it can't be read.
+$volCode = @'
+using System.Runtime.InteropServices;
+[Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IDeck90EndpointVolume {
+  int f(); int g(); int h(); int i(); int SetMasterVolumeLevelScalar(float level, System.Guid ctx); int j();
+  int GetMasterVolumeLevelScalar(out float level); int k(); int l(); int m(); int n();
+  int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute, System.Guid ctx); int GetMute(out bool mute);
+}
+[Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IDeck90Device { int Activate(ref System.Guid id, int ctx, int p, out IDeck90EndpointVolume v); }
+[Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IDeck90Devices { int f(); int GetDefaultAudioEndpoint(int flow, int role, out IDeck90Device device); }
+[ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] class Deck90DevicesObject { }
+public static class Deck90Volume {
+  static IDeck90EndpointVolume Get() {
+    var devices = new Deck90DevicesObject() as IDeck90Devices;
+    IDeck90Device device = null; Marshal.ThrowExceptionForHR(devices.GetDefaultAudioEndpoint(0, 1, out device));
+    IDeck90EndpointVolume v = null; var id = typeof(IDeck90EndpointVolume).GUID;
+    Marshal.ThrowExceptionForHR(device.Activate(ref id, 23, 0, out v));
+    return v;
+  }
+  public static int Level() { float v; Marshal.ThrowExceptionForHR(Get().GetMasterVolumeLevelScalar(out v)); return (int)System.Math.Round(v * 100); }
+  public static bool Muted() { bool m; Marshal.ThrowExceptionForHR(Get().GetMute(out m)); return m; }
+}
+'@
+function SayVolume {
+  try {
+    if (-not ('Deck90Volume' -as [type])) { Add-Type -TypeDefinition $volCode }
+    Start-Sleep -Milliseconds 60                  # the shell applies the key a moment after it's pressed
+    Say ([ordered]@{ vol = [Deck90Volume]::Level(); mute = [Deck90Volume]::Muted() })
+  } catch { Say ([ordered]@{ vol = -1; mute = $false }) }
+}
+
 $stdin = New-Object System.IO.StreamReader([Console]::OpenStandardInput())
 $pending = $stdin.ReadLineAsync()
 $volKeys = @{ 'volup' = 0xAF; 'voldown' = 0xAE; 'mute' = 0xAD }
@@ -174,14 +209,16 @@ while ($true) {
       $c = $cmd.Trim(); $fresh = $false
       # the volume keys, pressed for Deck 90's car stereo knob (compiled once, the first time). They come in bursts
       # (VOL down is three at once, a held key repeats): each is pressed right away, with any already waiting behind it
+      $tapped = $false
       while ($c -and $volKeys.ContainsKey($c)) {
         if (-not ('Deck90Keys' -as [type])) {
           Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class Deck90Keys { [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra); public static void Tap(byte vk) { keybd_event(vk, 0, 1, UIntPtr.Zero); keybd_event(vk, 0, 3, UIntPtr.Zero); } }'
         }
-        [Deck90Keys]::Tap([byte]$volKeys[$c])
+        [Deck90Keys]::Tap([byte]$volKeys[$c]); $tapped = $true
         $pending = $stdin.ReadLineAsync(); $fresh = $true; $c = ''
         if ($pending.Wait(25)) { $cmd = $pending.Result; if ($null -eq $cmd) { break }; $c = $cmd.Trim(); $fresh = $false }
       }
+      if ($tapped -and $null -ne $cmd) { SayVolume }
       if ($null -eq $cmd) { break }
       if ($c -like 'cd-*') { CdCommand $c }
       $s = if ($c) { Pick } else { $null }

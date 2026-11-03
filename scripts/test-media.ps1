@@ -85,6 +85,8 @@ if ($o -match '"ready":\s*true') {
   elseif ($p.ExitCode -ne 0) { Bad "the bridge ended with code $($p.ExitCode)" }
   if ($o -notmatch '"hb":\s*1') { Bad 'no heartbeat in 10 seconds' }
   if ($o -notmatch '"none":\s*true|"app":') { Bad 'no report of what is playing' }
+  # 7.9.21: Windows' volume after the volume keys (-1 on a machine whose sound can't be read, as CI's may be)
+  if ($o -notmatch '"vol":-?\d+') { Bad 'no volume after the volume keys' } else { Write-Host "ok   volume after the keys: $([regex]::Match($o, '"vol":-?\d+').Value)" }
   if ($o -notmatch '"cd":\{') { Bad 'no answer to cd-info' } elseif ($o -match '"cd":\{"error"') { Bad 'cd-info failed' }
 } elseif ($e -match 'no media session manager') {
   Write-Host '::warning::This Windows has no media session service: the bridge loaded its Windows types but could not watch players.'

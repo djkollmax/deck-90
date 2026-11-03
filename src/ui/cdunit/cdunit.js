@@ -153,10 +153,13 @@ function cdUnitInfo() {
 }
 function cdUnitRead() { cdUnitWants = true; cdAsk(); cdUnitSync(); }
 
-function cdUnitOn(on) {
+// 7.9.21: POWER with the radio playing reads the disc (its names and songs on the display) and the radio goes on;
+// PLAY or another CD key plays it. A key that wakes the unit (keyPlays) plays it at once, as before.
+function cdUnitOn(on, keyPlays) {
   if (on === cdUnitPower) return;
   cdUnitPower = on; cdUnit && cdUnit.setPower(on);
-  if (on) cdUnitRead();
+  if (on && !keyPlays && radioPlaying()) { cdUnitWants = false; cdAsk(); toast('CD · <span>encendido</span> · la radio sigue: PLAY pone el disco', 2200); }
+  else if (on) cdUnitRead();
   else {
     cdUnitWants = false; cdStop();
     if (cdUnitResumePc) { cdUnitResumePc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
@@ -169,7 +172,7 @@ function cdUnitKey(k, { hold } = {}) {
   if (k === 'power') return cdUnitOn(!cdUnitPower);
   if (!window.cdrom || (cdInfo && cdInfo.none === 'windows')) { toast('La lectora de CD se usa desde el programa en Windows.', 2600); return; }
   if (!cdUnitPower) {
-    if (k !== 'eject') { cdUnitOn(true); return; }              // any key wakes it and plays the disc that's in
+    if (k !== 'eject') { cdUnitOn(true, true); return; }              // any key wakes it and plays the disc that's in
     cdUnitPower = true; cdUnit.setPower(true);                  // OPEN / CLOSE wakes it with the tray open
   }
   if (k === 'repeat' || k === 'shuffle') {                     // 7.9.14: the play modes

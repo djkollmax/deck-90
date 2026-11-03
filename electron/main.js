@@ -480,6 +480,7 @@ function startMedia() {
         mediaSeen = Date.now();
         if (info.hb) continue;                                  // heartbeat: the bridge is alive
         if (info.cd) { if (win && !win.isDestroyed()) win.webContents.send('cd', info.cd); continue; }   // the stereo's CD
+        if ('vol' in info) { sendVolume(info); continue; }       // 7.9.21: Windows' volume after the stereo's VOL keys
         if (info.ready) { mlog('bridge ready'); mediaUp = Date.now(); }
         sendMedia(info);
       } catch (e) { mlog('bad line: ' + line.slice(0, 200)); }
@@ -504,7 +505,24 @@ setInterval(() => {
 }, 10000).unref();
 const fromWin = e => !!win && !win.isDestroyed() && e.sender === win.webContents;
 ipcMain.on('app-log', (e, msg) => { if (fromWin(e)) mlog('page: ' + String(msg).slice(0, 800)); });
+// 7.9.21: the volume after the stereo's VOL keys, for its display ({ vol: 0-100, mute }, vol -1 when unknown)
+function sendVolume(v) { if (win && !win.isDestroyed()) win.webContents.send('volume', { vol: Math.round(Number(v.vol)), mute: !!v.mute }); }
+// on Linux the volume keys move the default output of PulseAudio / PipeWire with pactl, as GNOME's keys do
+function linuxVolume(cmd) {
+  const { execFile } = require('child_process');
+  const arg = { volup: ['set-sink-volume', '@DEFAULT_SINK@', '+2%'], voldown: ['set-sink-volume', '@DEFAULT_SINK@', '-2%'], mute: ['set-sink-mute', '@DEFAULT_SINK@', 'toggle'] }[cmd];
+  execFile('pactl', arg, { timeout: 3000 }, err => {
+    if (err) return sendVolume({ vol: -1 });
+    execFile('pactl', ['get-sink-volume', '@DEFAULT_SINK@'], { timeout: 3000 }, (e1, out) => {
+      execFile('pactl', ['get-sink-mute', '@DEFAULT_SINK@'], { timeout: 3000 }, (e2, mute) => {
+        const m = /(\d+)%/.exec(String(out || ''));
+        sendVolume({ vol: e1 || !m ? -1 : Math.min(150, Number(m[1])), mute: /yes|sí/i.test(String(mute || '')) });
+      });
+    });
+  });
+}
 function mediaCommand(cmd) {
+  if (process.platform === 'linux' && ['volup', 'voldown', 'mute'].includes(cmd)) return linuxVolume(cmd);
   if (media && media.stdin.writable && (['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)
     || /^cd-(info|pause|resume|stop|eject|close|play \d{1,2})$/.test(cmd))) media.stdin.write(cmd + '\n');
   if (mpris && !/^cd-/.test(cmd)) mpris.command(cmd);

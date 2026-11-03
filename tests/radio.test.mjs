@@ -6,7 +6,7 @@ import { launch } from './lib/app.mjs';
 import { startStation, SONGS } from './lib/station.mjs';
 
 let station, d;
-const tunerText = () => d.win.evaluate(() => tuner.getState().radio.text);
+const tunerShows = () => d.win.evaluate(() => { const r = tuner.getState().radio; return { name: r.name, text: r.text, quality: r.quality }; });
 
 before(async () => {
   station = await startStation(); d = await launch({ station });
@@ -21,14 +21,36 @@ after(async () => { await d?.close(); await station?.close(); });
 test('the song and the quality the station sends show on the tuner', async () => {
   await d.win.evaluate(() => tunerKey('power')); await d.wait(4000);
   assert.ok(await d.win.evaluate(() => radioAudio.src.startsWith('http://127.0.0.1:') && !radioAudio.src.includes(':9')), 'through the proxy');
-  const text = await tunerText();
-  assert.ok(SONGS.some(s => text.startsWith(s)), text);
-  assert.match(text, /· MP3 128$/);
+  const { name, quality } = await tunerShows();
+  assert.ok(SONGS.some(s => name === 'Test FM · ' + s), name);
+  assert.equal(quality, 'MP3 128');
 });
 
 test('a station without its rate gets it measured', async () => {
   await d.win.evaluate(() => tunerKey('m2')); await d.wait(14000);
-  assert.match(await tunerText(), /MP3 1[0-9]{2}$/);
+  assert.match((await tunerShows()).quality, /^MP3 1[0-9]{2}$/);
+});
+
+test('a station whose sound drops is tuned again by itself (RECONECTANDO), then plays on', async () => {
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(3000);
+  const seen = new Set();
+  await station.drop();
+  for (const t0 = Date.now(); Date.now() - t0 < 25000;) {
+    const s = await d.win.evaluate(() => ({ trouble: radioTrouble, text: tuner.getState().radio.text, playing: radioPlaying() }));
+    if (s.trouble) seen.add(s.text);
+    if (seen.size && !s.trouble && s.playing) break;
+    await d.wait(100);
+  }
+  assert.ok(seen.has('RECONECTANDO…'), [...seen].join());
+  assert.equal(await d.win.evaluate(() => radioPlaying() && !radioTrouble), true, 'back on the air');
+});
+
+test('a station that can\'t be found says SIN SEÑAL', async () => {
+  await d.app.evaluate(({ ipcMain }) => { ipcMain.removeHandler('radio-find'); ipcMain.handle('radio-find', () => []); });
+  await d.win.evaluate(() => { radioMem.FM1[2] = { name: 'Muda', freq: '', q: 'Muda', cc: 'AR', url: '' }; tunerKey('m3'); });
+  await d.wait(1500);
+  assert.equal((await tunerShows()).text, 'SIN SEÑAL');
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
 });
 
 test('the car stereo opens on the radio, on its band and dial', async () => {
@@ -37,6 +59,9 @@ test('the car stereo opens on the radio, on its band and dial', async () => {
   const label = await d.win.evaluate(() => document.querySelector('#stDisplay svg').getAttribute('aria-label'));
   assert.equal(await d.win.evaluate(() => stereoCfg.mode), 'radio');
   assert.match(label, /Radio FM1 99\.1/);
+  // 7.9.21: the quality at the bottom, LOCAL in red
+  const foot = await d.win.evaluate(() => [...document.querySelectorAll('#stDisplay text')].map(t => t.textContent + '=' + t.getAttribute('fill')));
+  assert.ok(foot.includes('MP3 128=#ffdd50'), foot.join()); assert.ok(foot.includes('LOCAL=#ff1e1e'), foot.join());
   await d.win.evaluate(() => toggleStereo()); await d.wait(1200);
 });
 

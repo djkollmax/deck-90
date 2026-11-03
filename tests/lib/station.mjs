@@ -2,6 +2,7 @@
 //   /tone.mp3  the tone, as a plain file
 //   /s         an ICY stream of the tone in a loop, a song title every 8 KiB, changing every 3 s, icy-br 128
 //   /nobr      the same stream without icy-br (the program measures the rate itself)
+// drop() breaks off the streams playing now.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,6 +13,7 @@ export const TONE = fs.readFileSync(path.join(here, '..', 'fixtures', 'tone.mp3'
 export const SONGS = ['Los Pericos - Párrafo', 'Soda Stereo - De Música Ligera', 'Charly García - Demoliendo Hoteles'];
 
 export function startStation() {
+  const live = new Set();
   const server = http.createServer((req, res) => {
     if (req.url.startsWith('/tone.mp3')) {
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': TONE.length });
@@ -24,7 +26,8 @@ export function startStation() {
     res.writeHead(200, head);
     let pos = 0, since = 0, closed = false;
     const t0 = Date.now();
-    req.on('close', () => { closed = true; });
+    live.add(res);
+    req.on('close', () => { closed = true; live.delete(res); });
     const tick = () => {
       if (closed) return;
       let n = 2048;                                          // ~16 KB/s, 128 kbps
@@ -43,6 +46,7 @@ export function startStation() {
   });
   return new Promise(ok => server.listen(0, '127.0.0.1', () => {
     const base = 'http://127.0.0.1:' + server.address().port;
-    ok({ base, close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }) });
+    // drop(): every stream playing now breaks off, as a station's server does when it restarts
+    ok({ base, drop: async () => { for (const r of live) r.destroy(); live.clear(); }, close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }) });
   }));
 }

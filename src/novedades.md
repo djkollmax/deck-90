@@ -1,5 +1,35 @@
 # Novedades
 
+## 7.9.21 — 2026-11-02
+
+### Cambios
+- **Prender una unidad no corta la otra.**
+  - Si venís escuchando un CD y prendés la radio, el sintonizador se prende en espera mostrando su radio y el CD sigue sonando. Una memoria, una banda, ◀ ▶ o SCAN ponen la radio y pausan el CD.
+  - Al revés, si suena la radio y prendés la compactera, lee el disco (nombres y temas en el display) sin cortar la radio. PLAY u otra tecla del CD lo pone.
+- **HIELO y ZAFIRO sin la barrita de abajo**: el vúmetro ocupa todo el panel.
+- **El sintonizador dice más**:
+  - Arriba, una sola línea con la radio y el tema ("ASPEN · ARTISTA - TEMA").
+  - La calidad fija al lado de TUNED ("MP3 128").
+  - La ciudad debajo de la memoria ("BS AS", "PARÍS", "SEATTLE"; de otras radios, el país).
+  - MODE elige qué sigue a la radio: el tema, de dónde es, o la calidad explicada.
+- **El DISP del estéreo**: se van BPM y LOUDNESS, y hay dos posiciones nuevas:
+  - HORA Y TEMPERATURA: unos segundos la hora, otros la temperatura.
+  - TIEMPO: lo que le queda al tema, en grande y en cuenta regresiva ("03 -2:41").
+- **Abajo, en el display del estéreo**:
+  - Con un CD, el tiempo que le queda al tema y su número grande a la derecha.
+  - La calidad: en la radio "MP3 128"; un CD de audio "CD 16/44" (16 bits, 44,1 kHz, la calidad del CD); un disco de archivos, su formato (FLAC, MP3, WAV).
+  - LOCAL en rojo.
+
+### Nuevo
+- **El volumen en el display del estéreo**: con VOL ▲ ▼ aparece "VOL 24" en grande un par de segundos, con el número de Windows; ATT muestra "ATT".
+- **Siete looks nuevos de SDM**:
+  - Cuatro de vidrio: CARBONO, NEÓN, ESMERALDA y PLASMA.
+  - Tres que cambian todo el frente:
+    - TOKIO, al estilo de los Sony de los 2000: frente negro y teclas con luz azul.
+    - ESTUDIO: frente negro mate de equipo pro y letras ámbar.
+    - TITANIO: frente plateado de equipo pro y vidrio negro.
+- **Si una radio se corta, se vuelve a sintonizar sola** (RECONECTANDO…). Si no responde, el display dice SIN SEÑAL.
+
 ## 7.9.20 — 2026-11-02
 
 ### Nuevo

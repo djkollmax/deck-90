@@ -23,6 +23,8 @@
  * internet-only station (digits show dashes, the needle hides) and setRadio({ label }) then writes its name
  * big where the digits go; preset 0 shows M-; band FM4; MODE has no lamp (it picks the text line in Deck 90);
  * the RDS line scrolls even with Windows' animations off.
+ * Deck 90 7.9.21: setRadio({ quality, place }) writes the stream's quality after TUNED and where the station is
+ * under the memory.
  */
 (function (global) {
 'use strict';
@@ -532,7 +534,7 @@ class Deck90Tuner {
     }
     if ('preset' in update && finite(update.preset)) radio.preset = Math.max(0, Math.min(6, Math.round(Number(update.preset))));   // 0: no memory
     if ('signal' in update && finite(update.signal)) radio.signal = Math.max(0, Math.min(5, Math.round(Number(update.signal))));
-    for (const key of ['name', 'text', 'label']) if (key in update) radio[key] = clean(update[key]);
+    for (const key of ['name', 'text', 'label', 'quality', 'place']) if (key in update) radio[key] = clean(update[key]);   // quality, place: Deck 90 7.9.21
     for (const key of ['stereo', 'mono', 'tuned', 'auto', 'scan', 'memo']) if (key in update) radio[key] = Boolean(update[key]);
     this._needleTarget = this._fraction();
     this._renderRadio();
@@ -675,6 +677,10 @@ class Deck90Tuner {
       }
       this._display.append(group);
     }
+    /* Deck 90 7.9.21: the stream's quality after TUNED ("MP3 128") and where the station is under the memory ("BS AS") */
+    this._quality = node('g', { 'data-role': 'quality' });
+    this._place = node('g', { 'data-role': 'place' });
+    this._display.append(this._quality, this._place);
     const rdsClip = node('g', { 'clip-path': `url(#${this.prefix}-rds-clip)`, 'data-role': 'rds-viewport' });
     this._rds = node('g', { 'data-role': 'rds-text' });
     rdsClip.append(this._rds); this._display.append(rdsClip);
@@ -805,6 +811,18 @@ class Deck90Tuner {
       for (const dot of indicator.children) dot.setAttribute('fill', lit ? VFD : DIM);
     }
     for (let i = 0; i < 5; i++) this._signal[i].setAttribute('fill', i < radio.signal ? VFD : DIM);
+    /* Deck 90 7.9.21: quality and place, small dots that shrink to fit their room */
+    const quality = String(radio.quality || '').toUpperCase().slice(0, 12), place = String(radio.place || '').toUpperCase().slice(0, 14);
+    if (this._cache.quality !== quality) {
+      const pitch = Math.min(1.3, 78 / Math.max(1, [...quality].length * 6));
+      this._quality.replaceChildren(...(quality ? [this._dots(quality, 838, 90 + (7 * 1.3 - 7 * pitch) / 2, pitch)] : []));
+      this._cache.quality = quality;
+    }
+    if (this._cache.place !== place) {
+      const pitch = Math.min(1.3, 86 / Math.max(1, [...place].length * 6));
+      this._place.replaceChildren(...(place ? [this._dots(place, 58, 114 + (7 * 1.3 - 7 * pitch) / 2, pitch)] : []));
+      this._cache.place = place;
+    }
     const text = clean([radio.name, radio.text].filter(Boolean).join(' - ')) || 'DECK 90';
     if (this._cache.rds !== text) {
       this._rds.replaceChildren(this._dots(text, 0, 0, 2.7));

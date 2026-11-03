@@ -68,6 +68,13 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     ipcMain.removeAllListeners('media-cmd');
     ipcMain.on('media-cmd', (e, c) => {
       global.cmds.push(c);
+      // Windows' volume: 2 % a key, as the bridge reports it after the stereo's VOL keys
+      if (/^(volup|voldown|mute)$/.test(c)) {
+        const V = global.volume = global.volume || { vol: 50, mute: false };
+        if (c === 'mute') V.mute = !V.mute; else { V.vol = Math.max(0, Math.min(100, V.vol + (c === 'volup' ? 2 : -2))); V.mute = false; }
+        clearTimeout(global.volTimer); global.volTimer = setTimeout(() => BrowserWindow.getAllWindows()[0]?.webContents.send('volume', { ...V }), 60);
+        return;
+      }
       if (!/^cd-/.test(c)) return;
       let m;
       if (c === 'cd-info') setTimeout(() => send(D.disc || { drive: null }), 30);
