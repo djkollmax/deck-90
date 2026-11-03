@@ -65,32 +65,32 @@ function cdUnitShow(on, quiet) {
 // what plays: an audio CD (its track and time from the drive) or a disc of MP3s (the file playing here)
 const cdUnitPlaying = () => cdPlaying();
 function cdUnitLine() {
-  if (!window.cdrom || (cdInfo && cdInfo.none === 'windows')) return { title: 'LA LECTORA SE USA EN WINDOWS', artist: 'DC-90' };
-  if (!cdUnitPower) return { title: 'COMPACT DISC', artist: 'POWER PARA PRENDER' };
-  if (cdUnitClosing) return { title: 'CERRANDO LA BANDEJA…', artist: '' };
-  if (!cdInfo) return { title: 'LEYENDO EL DISCO…', artist: '' };
-  if (!cdInfo.drive) return { title: 'NO HAY LECTORA DE CD', artist: 'CONECTÁ UNA POR USB' };
-  if (!cdInfo.present) return { title: 'SIN DISCO', artist: (cdInfo.name || cdInfo.drive) + ' · OPEN / CLOSE' };
+  if (!window.cdrom || (cdInfo && cdInfo.none === 'windows')) return { title: 'CD DRIVE ON WINDOWS ONLY', artist: 'DC-90' };
+  if (!cdUnitPower) return { title: 'COMPACT DISC', artist: 'PRESS POWER' };
+  if (cdUnitClosing) return { title: 'CLOSING…', artist: '' };
+  if (!cdInfo) return { title: 'READING DISC…', artist: '' };
+  if (!cdInfo.drive) return { title: 'NO CD DRIVE', artist: 'CONNECT ONE BY USB' };
+  if (!cdInfo.present) return { title: 'NO DISC', artist: (cdInfo.name || cdInfo.drive) + ' · OPEN / CLOSE' };
   const files = cdFiles();
   if (files.length) {
     const f = String(files[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
-    return { title: f || 'ARCHIVO', artist: 'DISCO ' + (cdExt(files[cdFile]) || 'MP3') + ' · ' + (cdFile + 1) + ' DE ' + files.length };   // 7.9.22: its format
+    return { title: f || 'FILE', artist: (cdExt(files[cdFile]) || 'MP3') + ' DISC · ' + (cdFile + 1) + ' OF ' + files.length };   // 7.9.22: its format
   }
   const tr = cdAudioTracks();
-  if (!tr.length) return { title: 'DISCO SIN AUDIO', artist: cdInfo.name || cdInfo.drive };
+  if (!tr.length) return { title: 'NO AUDIO ON DISC', artist: cdInfo.name || cdInfo.drive };
   const total = tr.reduce((s, t) => s + (t.len || 0), 0), n = cdState.track || tr[0].n, song = cdSongName(n);
   if (song) {                                                    // 7.9.5: from MusicBrainz
     const line = song.artist + (cdNames.album ? ' · ' + cdNames.album : '');
     return { title: song.title, artist: line + (cdNames.year && line.length + 7 <= 39 ? ' (' + cdNames.year + ')' : '') };   // the year if it fits
   }
-  return { title: 'CD AUDIO · PISTA ' + String(n).padStart(2, '0'), artist: tr.length + ' PISTAS · ' + mmss(total) + ' · ' + (cdInfo.name || cdInfo.drive) };
+  return { title: 'AUDIO CD · TRACK ' + String(n).padStart(2, '0'), artist: tr.length + ' TRACKS · ' + mmss(total) + ' · ' + (cdInfo.name || cdInfo.drive) };
 }
 function cdUnitSync() {
   if (!cdUnit) return;
   const line = cdUnitLine(), files = cdFiles(), tr = cdAudioTracks();
   const playing = cdUnitPlaying() && cdState.state !== 'paused';
   const paused = files.length ? !!cdAudio.getAttribute('src') && cdAudio.paused : cdState.state === 'paused';
-  let track = 1, total = 1, elapsed = 0, duration = 0;
+  let track = 0, total = 0, elapsed = 0, duration = 0;   // 7.9.23: no disc, no track (dashes)
   if (files.length) { track = cdFile + 1; total = files.length; elapsed = cdAudio.currentTime || 0; duration = isFinite(cdAudio.duration) ? cdAudio.duration : 0; }
   else if (tr.length) {
     const cur = cdState.track || tr[0].n, i = Math.max(0, tr.findIndex(t => t.n === cur));

@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.10.1
+
+### Changed
+- **The units' displays speak English**, as 90s hi-fi did: the DT-90 (STANDBY · CD PLAYING, TUNING…, NO SIGNAL, RECONNECTING…, LIVE, QUALITY MP3 · 128 KBPS, places and countries in English), the DC-90 (TRAY OPEN, READING DISC…, NO DISC, NO CD DRIVE, AUDIO CD · TRACK 01, MP3 DISC · 1 OF 2), the DM-90 (its keys ARTISTS, ALBUMS, SONGS, QUEUE, SEARCH, ◀ BACK, Q · PLAY NEXT; SELECT A SONG, NO SERVER · SETUP; "FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO") and the car stereo (READING, NO DISC, NO WEATHER, LIVE, PC AUDIO). Toasts, SETUP and the notes stay in Spanish.
+
+### Fixed
+- **The DC-90 kept "TRACK 01 /01" with the tray open** (and with no disc). It shows dashes and no count now (vendor patch 7.9.23: track 0 is no track).
+
 ## 7.10.0
 
 ### Added

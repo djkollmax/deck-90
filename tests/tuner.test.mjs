@@ -112,18 +112,18 @@ test('one line with the station and its song, the quality after TUNED, the city 
   assert.match(r.name, /^Aspen · (Los Pericos|Soda Stereo|Charly García) - /); assert.equal(r.text, '');
   assert.equal(r.quality, 'MP3 128'); assert.equal(r.place, 'BS AS');
   await d.click(K('m2'), 2500);
-  assert.equal((await radio()).place, 'ALEMANIA', 'a station from elsewhere: its country');
+  assert.equal((await radio()).place, 'GERMANY', 'a station from elsewhere: its country');
   await d.click(K('m1'), 2500);
 });
 
 test('MODE picks what follows the station; DISP the clock and the weather', async () => {
   const lines = [];
   for (let i = 0; i < 3; i++) { await d.click(K('mode'), 300); lines.push((await radio()).name); }
-  assert.match(lines[0], /^Aspen · BUENOS AIRES, ARGENTINA · FM1 102\.3 MHZ$/); assert.equal(lines[1], 'Aspen · CALIDAD MP3 · 128 KBPS');
+  assert.match(lines[0], /^Aspen · BUENOS AIRES, ARGENTINA · FM1 102\.3 MHZ$/); assert.equal(lines[1], 'Aspen · QUALITY MP3 · 128 KBPS');
   assert.match(lines[2], /^Aspen · .+ - /);
   await d.click(K('disp'), 300); assert.match((await radio()).name, /^\d\d:\d\d$/);
-  await d.click(K('disp'), 300); assert.equal((await radio()).name, 'SIN CLIMA');
-  await d.click(K('disp'), 300); assert.notEqual((await radio()).name, 'SIN CLIMA');
+  await d.click(K('disp'), 300); assert.equal((await radio()).name, 'NO WEATHER');
+  await d.click(K('disp'), 300); assert.notEqual((await radio()).name, 'NO WEATHER');
   assert.equal(await d.win.evaluate(() => tuner.svg.querySelector('[data-key="mode"] rect:last-child').getAttribute('opacity')), '.22', 'MODE has no lamp');
 });
 

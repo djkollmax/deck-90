@@ -31,11 +31,11 @@ test('J shows the DM-90; POWER asks for the server; a wrong password says so', a
   assert.match(await d.win.textContent('#jbSetupMsg'), /contraseña incorrectos/);
 });
 
-test('signed in, ARTISTAS lists the music library only, and the password is not kept', async () => {
+test('signed in, ARTISTS lists the music library only, and the password is not kept', async () => {
   await d.win.fill('#jbPass', 'secreto'); await d.win.click('#jbGo'); await d.wait(2000);
   assert.equal(await d.win.evaluate(() => document.getElementById('jbSetup').classList.contains('show')), false);
   const v = await view();
-  assert.equal(v.kind, 'artists'); assert.equal(v.count, 30); assert.match(v.list.header, /^ARTISTAS · 30$/);
+  assert.equal(v.kind, 'artists'); assert.equal(v.count, 30); assert.match(v.list.header, /^ARTISTS · 30$/);
   assert.ok(!jf.log.some(l => /lib-movies/.test(l)), 'never the movies');
   const file = path.join(await d.app.evaluate(({ app }) => app.getPath('userData')), 'jellyfin.json');
   const saved = fs.readFileSync(file, 'utf8');
@@ -48,7 +48,7 @@ test('letters jump, ENTER opens an artist and an album; its songs say their leng
   assert.equal((await view()).marked, 'Banda Inventada');
   await press('Enter', 1000);
   let v = await view();
-  assert.equal(v.kind, 'artist'); assert.equal(v.count, 3); assert.match(v.title, /^Banda Inventada › ÁLBUMES/);
+  assert.equal(v.kind, 'artist'); assert.equal(v.count, 3); assert.match(v.title, /^Banda Inventada › ALBUMS/);
   await press('ArrowDown'); await press('Enter', 1000);
   v = await view();
   assert.equal(v.kind, 'album'); assert.equal(v.count, 8);
@@ -64,7 +64,7 @@ test('ENTER on a song plays the album from it, its name, artist and quality spel
   assert.match(s.src, /\/Audio\/c[0-9a-f]+\/stream\?static=true&api_key=tok-123$/);
   assert.equal(v.now.title, 'Canción C de Banda Inventada');
   assert.equal(v.now.artist, 'Banda Inventada · En Vivo En Ningún Lado (1984)');
-  assert.equal(v.now.quality, 'FLAC SIN PÉRDIDA · 24 BITS / 96 KHZ · 4608 KBPS · ESTÉREO');
+  assert.equal(v.now.quality, 'FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO');
   assert.equal(v.now.index, 3); assert.equal(v.now.total, 8);
 });
 
@@ -79,7 +79,7 @@ test('Q puts the marked songs next, in the order chosen', async () => {
   assert.equal((await view()).now.title, 'Canción A de Zona Sur');
   await d.click(K('list'), 400);
   const v = await view();
-  assert.equal(v.kind, 'list'); assert.equal(v.count, 10); assert.match(v.list.right, /^COLA 4\/10$/);
+  assert.equal(v.kind, 'list'); assert.equal(v.count, 10); assert.match(v.list.right, /^QUEUE 4\/10$/);
 });
 
 test('REPEAT all, one, off and SHUFFLE, remembered', async () => {
@@ -95,11 +95,11 @@ test('REPEAT all, one, off and SHUFFLE, remembered', async () => {
 test('BUSCAR finds artists, albums and songs; TEMAS lists every song', async () => {
   await d.click(K('search'), 300);
   await d.win.hover('#jbPanel');
-  await d.win.keyboard.type('pampa'); assert.equal((await view()).list.header, 'BUSCAR: pampa_');
+  await d.win.keyboard.type('pampa'); assert.equal((await view()).list.header, 'SEARCH: pampa_');
   await press('Enter', 1500);
   const v = await view();
   assert.equal(v.kind, 'search'); assert.equal(v.count, 1 + 24, 'the artist and its 24 songs');
-  assert.deepEqual(v.list.rows[0], { text: 'Pampa Seca', sub: 'ARTISTA', end: '', playing: false, dim: false });
+  assert.deepEqual(v.list.rows[0], { text: 'Pampa Seca', sub: 'ARTIST', end: '', playing: false, dim: false });
   await d.click(K('songs'), 1500);
   assert.equal((await view()).count, 720);
 });

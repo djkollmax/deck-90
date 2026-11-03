@@ -44,25 +44,25 @@ const RADIO_FM4 = [
   { name: 'Linn Radio', freq: '', q: 'Linn Radio', cc: 'GB', url: 'http://radio.linn.co.uk:8003/autodj' },
 ];
 const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'AM'];
-// where a station is (7.9.21, under the memory on the DT-90): the city of the ones that come with Deck 90, the
+// where a station is (7.9.21, under the memory on the DT-90; 7.9.23: in English, as the displays): the city of the ones that come with Deck 90, the
 // country of any other (Radio Browser's code). short: as it fits there; long: for MODE's line
 const RADIO_CITY = { Aspen: 'BS AS', Metro: 'BS AS', 'Rock & Pop': 'BS AS', 'La 100': 'BS AS', Vorterix: 'BS AS', 'Con Vos': 'BS AS',
   'Clásica': 'BS AS', Blackie: 'BS AS', Delta: 'BS AS', Blue: 'BS AS', 'Nac Rock': 'BS AS', Mitre: 'BS AS', 'Radio 10': 'BS AS',
   Continental: 'BS AS', Rivadavia: 'BS AS', 'Radio Nacional': 'BS AS', 'La Red': 'BS AS', 'Ibiza Global': 'IBIZA',
-  'Heart 80s': 'LONDRES', 'Groove Salad': 'S. FRANCISCO', FIP: 'PARÍS', 'FIP Jazz': 'PARÍS', KEXP: 'SEATTLE' };
+  'Heart 80s': 'LONDON', 'Groove Salad': 'S. FRANCISCO', FIP: 'PARIS', 'FIP Jazz': 'PARIS', KEXP: 'SEATTLE' };
 const RADIO_LONG = { 'BS AS': 'BUENOS AIRES', 'S. FRANCISCO': 'SAN FRANCISCO' };
-const RADIO_COUNTRY = { AR: 'ARGENTINA', UY: 'URUGUAY', CL: 'CHILE', BR: 'BRASIL', PY: 'PARAGUAY', BO: 'BOLIVIA', PE: 'PERÚ',
-  CO: 'COLOMBIA', VE: 'VENEZUELA', EC: 'ECUADOR', MX: 'MÉXICO', CU: 'CUBA', US: 'EE.UU.', CA: 'CANADÁ', ES: 'ESPAÑA',
-  PT: 'PORTUGAL', FR: 'FRANCIA', IT: 'ITALIA', DE: 'ALEMANIA', AT: 'AUSTRIA', CH: 'SUIZA', GB: 'R. UNIDO', IE: 'IRLANDA',
-  NL: 'HOLANDA', BE: 'BÉLGICA', DK: 'DINAMARCA', SE: 'SUECIA', NO: 'NORUEGA', FI: 'FINLANDIA', PL: 'POLONIA', GR: 'GRECIA',
-  RU: 'RUSIA', JP: 'JAPÓN', AU: 'AUSTRALIA', NZ: 'N. ZELANDA' };
+const RADIO_COUNTRY = { AR: 'ARGENTINA', UY: 'URUGUAY', CL: 'CHILE', BR: 'BRAZIL', PY: 'PARAGUAY', BO: 'BOLIVIA', PE: 'PERU',
+  CO: 'COLOMBIA', VE: 'VENEZUELA', EC: 'ECUADOR', MX: 'MEXICO', CU: 'CUBA', US: 'USA', CA: 'CANADA', ES: 'SPAIN',
+  PT: 'PORTUGAL', FR: 'FRANCE', IT: 'ITALY', DE: 'GERMANY', AT: 'AUSTRIA', CH: 'SWITZERLAND', GB: 'UK', IE: 'IRELAND',
+  NL: 'NETHERLANDS', BE: 'BELGIUM', DK: 'DENMARK', SE: 'SWEDEN', NO: 'NORWAY', FI: 'FINLAND', PL: 'POLAND', GR: 'GREECE',
+  RU: 'RUSSIA', JP: 'JAPAN', AU: 'AUSTRALIA', NZ: 'NEW ZEALAND' };
 function radioPlace(st, long) {
   if (!st) return '';
   const known = RADIO_CITY[st.name], country = RADIO_COUNTRY[st.cc] || st.cc || '';
   // the Linn stations are Scottish
-  const city = known || (/^Linn /.test(st.name) && st.cc === 'GB' ? 'ESCOCIA' : '');
+  const city = known || (/^Linn /.test(st.name) && st.cc === 'GB' ? 'SCOTLAND' : '');
   if (!long) return city || country;
-  return [RADIO_LONG[city] || city, city === 'ESCOCIA' ? 'R. UNIDO' : country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
+  return [RADIO_LONG[city] || city, city === 'SCOTLAND' ? 'UK' : country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
 }
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
 let radioMem = { v: 2, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), AM: RADIO_AM.slice() };

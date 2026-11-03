@@ -88,6 +88,7 @@ test('OPEN/CLOSE: the tray opens, closes and the disc plays again', async () => 
   await d.cmds();
   await d.click(K('eject'), 900);
   let c = await cd(); assert.equal(c.open, true);
+  assert.deepEqual(await d.win.evaluate(() => [cdUnit._cache.track, cdUnit._cache.total]), ['--', ''], 'no track while the tray is open');
   await d.click(K('eject'), 4500);
   c = await cd(); assert.equal(c.open, false); assert.equal(c.state, 'playing'); assert.equal(c.track, 1);
   assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-')), ['cd-stop', 'cd-eject', 'cd-close', 'cd-info', 'cd-play 1']);
@@ -100,7 +101,7 @@ test('a disc whose names don\'t come at first gets them on the next read', async
   await d.app.evaluate(({ ipcMain }, names) => { let n = 0; ipcMain.removeHandler('cd-names'); ipcMain.handle('cd-names', () => ++n === 1 ? { error: 'no answer in 30 s' } : names); }, names8);
   await d.drive({ disc: disc(8, 200) });
   await d.click(K('eject'), 900); await d.click(K('eject'), 4500);
-  let c = await cd(); assert.equal(c.total, 8); assert.equal(c.title, 'CD AUDIO · PISTA 01');
+  let c = await cd(); assert.equal(c.total, 8); assert.equal(c.title, 'AUDIO CD · TRACK 01');
   await d.click(K('eject'), 900); await d.click(K('eject'), 4500);
   c = await cd(); assert.equal(c.title, 'Canción 1'); assert.equal(c.artist, 'Banda Inventada · Otro Disco (1993)');
   await d.app.evaluate(({ ipcMain }, names) => { ipcMain.removeHandler('cd-names'); ipcMain.handle('cd-names', () => names); }, NAMES);
@@ -115,7 +116,7 @@ test('POWER off stops the disc', async () => {
 test('a disc of MP3s plays its files', async () => {
   await d.drive({ disc: { drive: 'E:', name: 'USB DVD', present: true, tracks: [{ n: 1, audio: false, len: 0 }], files: [TONE, TONE] } });
   await d.click(K('power'), 1500);
-  let c = await cd(); assert.equal(c.total, 2); assert.equal(c.track, 1); assert.equal(c.artist, 'DISCO MP3 · 1 DE 2');
+  let c = await cd(); assert.equal(c.total, 2); assert.equal(c.track, 1); assert.equal(c.artist, 'MP3 DISC · 1 OF 2');
   assert.match(c.quality, /^MP3 \d{2,3}$/, 'its average kbps');
   await d.click(K('next'), 900); assert.equal((await cd()).track, 2);
   assert.equal(await d.win.evaluate(() => !cdAudio.paused), true);
@@ -124,18 +125,18 @@ test('a disc of MP3s plays its files', async () => {
   // a disc of FLACs: their bits and kHz
   await d.drive({ disc: { drive: 'E:', name: 'USB DVD', present: true, tracks: [{ n: 1, audio: false, len: 0 }], files: [FLAC] } });
   await d.click(K('power'), 1500);
-  c = await cd(); assert.equal(c.artist, 'DISCO FLAC · 1 DE 1'); assert.equal(c.quality, 'FLAC 24/96');
+  c = await cd(); assert.equal(c.artist, 'FLAC DISC · 1 OF 1'); assert.equal(c.quality, 'FLAC 24/96');
   await d.click(K('power'), 600);
 });
 
 test('no disc, and no drive at all', async () => {
   await d.drive({ disc: { drive: 'E:', name: 'USB DVD', present: false, tracks: [], files: [] } });
   await d.click(K('power'), 1200);
-  assert.equal((await cd()).title, 'SIN DISCO');
+  assert.equal((await cd()).title, 'NO DISC');
   await d.click(K('power'), 600);
   await d.drive({ disc: { drive: null } });
   await d.click(K('power'), 1200);
-  assert.equal((await cd()).title, 'NO HAY LECTORA DE CD');
+  assert.equal((await cd()).title, 'NO CD DRIVE');
   await d.win.keyboard.press('0'); await d.wait(400);
   assert.equal(await d.win.evaluate(() => getComputedStyle(cdUnitPanel).display), 'none');
   assert.deepEqual(d.errors(), []);

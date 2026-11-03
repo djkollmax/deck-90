@@ -1,11 +1,12 @@
 'use strict';
 // ═══════════════════════════════════════════════════════════
 //  DM-90 DIGITAL MUSIC SERVER (7.10.0): the rack's double unit for the person's Jellyfin music (VER → MÚSICA, or J).
-//  The faceplate is ui/jukebox/dm90.js; the library, the queue and the player are core/music.js.
+//  The faceplate is ui/jukebox/dm90.js; the library, the queue and the player are core/music.js. Its display and
+//  keys speak English, as a 90s unit would (7.9.23); the toasts and SETUP, Spanish.
 //    POWER     on and off (off: the music stops, the PC's player goes on)     SETUP   the server and the user
-//    ARTISTAS · ÁLBUMES · TEMAS · COLA · BUSCAR   what the list shows        ◀ ATRÁS   the list before
+//    ARTISTS · ALBUMS · SONGS · QUEUE · SEARCH   what the list shows         ◀ BACK   the list before
 //    SELECT (the knob, the wheel, ↑ ↓)  moves through the list   ENTER (or a double click)  opens it or plays from it
-//    Q · A LA COLA (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
+//    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
 //    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE    letters: jump to the first name that starts so
 //  With the pointer on it (or after a click on it) the keyboard is the unit's: ↑ ↓ PgUp PgDn Home End, Enter,
 //  Backspace (back), Q, Space (play / pause), / (search: type, Enter), letters (jump). Esc gives it back.
@@ -61,8 +62,8 @@ async function jbOn(on) {
 const jbTime = s => s ? mmss(s) : '';
 function jbRow(it, i) {
   const now = musicNow();
-  if (it.kind === 'artist') return { text: it.name, sub: jbView.kind === 'search' ? 'ARTISTA' : '', end: '' };
-  if (it.kind === 'album') return { text: it.name, sub: jbView.kind === 'artist' ? '' : it.artist, end: [it.year || '', it.count ? it.count + ' TEMAS' : ''].filter(Boolean).join(' · ') };
+  if (it.kind === 'artist') return { text: it.name, sub: jbView.kind === 'search' ? 'ARTIST' : '', end: '' };
+  if (it.kind === 'album') return { text: it.name, sub: jbView.kind === 'artist' ? '' : it.artist, end: [it.year || '', it.count ? it.count + ' SONGS' : ''].filter(Boolean).join(' · ') };
   if (it.kind === 'more') return { text: it.name, sub: '', end: '', dim: true };
   const n = jbView.kind === 'album' && it.n ? String(it.n).padStart(2, '0') + ' ' : '';
   return { text: n + it.name, sub: jbView.kind === 'album' && it.artist === jbView.artist ? '' : it.artist,
@@ -78,10 +79,10 @@ function jbRenderList() {
   v.top = Math.max(0, Math.min(v.top, Math.max(0, v.items.length - rows)));
   const count = v.items.length, fmt = n => n.toLocaleString('es-AR');
   let header = v.title + (count && v.kind !== 'home' ? ' · ' + fmt(count) : ''), right = '';
-  if (jbSearchText !== null) { header = 'BUSCAR: ' + jbSearchText + '_'; right = 'ENTER BUSCA · ESC SALE'; }
+  if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = 'ENTER TO SEARCH · ESC'; }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
-  else right = musicQueue.length ? 'COLA ' + (musicPos >= 0 ? musicPos + 1 + '/' : '') + musicQueue.length : '';
+  else right = musicQueue.length ? 'QUEUE ' + (musicPos >= 0 ? musicPos + 1 + '/' : '') + musicQueue.length : '';
   jb.setList({ header, right, rows: v.items.slice(v.top, v.top + rows).map((it, k) => jbRow(it, v.top + k)), cursor: v.cursor, top: v.top, count });
   jb.setView(jbSearchText !== null || v.kind === 'search' ? 'search' : { artists: 'artists', albums: 'albums', songs: 'songs', list: 'list' }[v.kind] || '');
 }
@@ -90,7 +91,7 @@ function jbHome(text) { jbView = { kind: 'home', items: (text || []).map(name =>
 let jbAsk = 0;
 async function jbLoad(view, load, push) {
   const t = ++jbAsk;
-  jbLoading = 'LEYENDO…'; jbRenderList();
+  jbLoading = 'READING…'; jbRenderList();
   try {
     const items = await load();
     if (t !== jbAsk) return;
@@ -104,10 +105,10 @@ async function jbLoad(view, load, push) {
 function jbOpen(kind) {
   if (!jbReady()) return;
   jbSearchText = null;
-  if (kind === 'artists') return jbLoad({ kind: 'artists', title: 'ARTISTAS' }, async () => (await musicArtists()).map(a => Object.assign({ kind: 'artist' }, a)));
-  if (kind === 'albums') return jbLoad({ kind: 'albums', title: 'ÁLBUMES' }, async () => (await musicAlbums()).map(a => Object.assign({ kind: 'album' }, a)));
-  if (kind === 'songs') return jbLoad({ kind: 'songs', title: 'TEMAS' }, async () => (await musicSongs()).map(s => Object.assign({ kind: 'song' }, s)));
-  if (kind === 'list') { jbStack = []; jbView = { kind: 'list', title: 'COLA', items: musicQueue.map(s => Object.assign({ kind: 'song' }, s)), cursor: Math.max(0, musicPos), top: 0 }; return jbRenderList(); }
+  if (kind === 'artists') return jbLoad({ kind: 'artists', title: 'ARTISTS' }, async () => (await musicArtists()).map(a => Object.assign({ kind: 'artist' }, a)));
+  if (kind === 'albums') return jbLoad({ kind: 'albums', title: 'ALBUMS' }, async () => (await musicAlbums()).map(a => Object.assign({ kind: 'album' }, a)));
+  if (kind === 'songs') return jbLoad({ kind: 'songs', title: 'SONGS' }, async () => (await musicSongs()).map(s => Object.assign({ kind: 'song' }, s)));
+  if (kind === 'list') { jbStack = []; jbView = { kind: 'list', title: 'QUEUE', items: musicQueue.map(s => Object.assign({ kind: 'song' }, s)), cursor: Math.max(0, musicPos), top: 0 }; return jbRenderList(); }
   if (kind === 'search') { jbSearchText = ''; jbRenderList(); }
 }
 function jbReady() {
@@ -119,7 +120,7 @@ const jbSongs = () => jbView.items.filter(it => it.kind === 'song');
 // ENTER: an artist opens its albums, an album its songs; a song plays, with the rest of the list after it
 async function jbEnter() {
   const it = jbView.items[jbView.cursor]; if (!it || !jbReady()) return;
-  if (it.kind === 'artist') return jbLoad({ kind: 'artist', title: it.name + ' › ÁLBUMES', artistId: it.id }, async () => (await musicAlbums(it.id)).map(a => Object.assign({ kind: 'album' }, a)), true);
+  if (it.kind === 'artist') return jbLoad({ kind: 'artist', title: it.name + ' › ALBUMS', artistId: it.id }, async () => (await musicAlbums(it.id)).map(a => Object.assign({ kind: 'album' }, a)), true);
   if (it.kind === 'album') return jbLoad({ kind: 'album', title: it.name + (it.year ? ' (' + it.year + ')' : ''), artist: it.artist, albumId: it.id }, async () => (await musicTracks(it.id)).map(s => Object.assign({ kind: 'song' }, s)), true);
   if (it.kind !== 'song') return;
   if (jbView.kind === 'list') { musicJump(jbView.cursor); return; }
@@ -163,7 +164,7 @@ async function jbRunSearch() {
   const q = (jbSearchText || '').trim();
   jbSearchText = null;
   if (!q) return jbRenderList();
-  await jbLoad({ kind: 'search', title: 'BUSCAR “' + q + '”' }, async () => (await musicSearch(q)), true);
+  await jbLoad({ kind: 'search', title: 'SEARCH “' + q + '”' }, async () => (await musicSearch(q)), true);
 }
 
 // ── the keys ──
@@ -250,7 +251,7 @@ async function jbSignInNow() {
   if (!jbPower) jbOn(true); else jbOpen('artists');
 }
 document.getElementById('jbGo').addEventListener('click', jbSignInNow);
-document.getElementById('jbSignOut').addEventListener('click', async () => { await musicSignOut(); jbSetup(false); jbHome(['SIN SERVIDOR: SETUP PARA CONECTAR']); toast('MÚSICA · <span>desconectado</span>', 1600); });
+document.getElementById('jbSignOut').addEventListener('click', async () => { await musicSignOut(); jbSetup(false); jbHome(['NO SERVER: PRESS SETUP TO CONNECT']); toast('MÚSICA · <span>desconectado</span>', 1600); });
 document.getElementById('jbClose').addEventListener('click', () => jbSetup(false));
 document.getElementById('jbSetup').addEventListener('click', e => { if (e.target.id === 'jbSetup') jbSetup(false); });
 document.getElementById('jbSetup').addEventListener('keydown', e => {
@@ -264,9 +265,9 @@ function jbSync() {
   if (!jb) return;
   const s = musicNow(), on = jbPower;
   const r = {
-    title: !on ? '' : s ? s.name : musicServer.signedIn ? 'ELEGÍ UN TEMA' : musicServer.none ? 'JELLYFIN EN EL PROGRAMA INSTALADO' : 'SIN SERVIDOR · SETUP',
+    title: !on ? '' : s ? s.name : musicServer.signedIn ? 'SELECT A SONG' : musicServer.none ? 'JELLYFIN IN THE INSTALLED PROGRAM' : 'NO SERVER · SETUP',
     artist: !on ? '' : s ? [s.artists || s.artist, s.album + (s.year ? ' (' + s.year + ')' : '')].filter(Boolean).join(' · ') : musicServer.signedIn ? (musicServer.name + ' · ' + musicServer.server.replace(/^https?:\/\//, '')).toUpperCase() : '',
-    quality: on && s ? musicQualityLong(s.media) || 'CALIDAD: LEYENDO…' : '',
+    quality: on && s ? musicQualityLong(s.media) || 'QUALITY: READING…' : '',
     index: s ? musicPos + 1 : 0, total: musicQueue.length, elapsed: on && s ? Math.floor(musicAudio.currentTime || 0) : 0,
     duration: on && s ? Math.round(isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0) : 0,
     playing: on && musicPlaying(), paused: on && musicPaused(), online: on && !!musicServer.signedIn,
@@ -297,4 +298,4 @@ function jbFeed(now) {
 
 jbPanel.classList.toggle('mod-off', !jbCfg.show);
 if (jbCfg.show) jbBuild();
-musicStatus().then(() => { if (!musicServer.signedIn) jbHome([musicServer.none ? 'JELLYFIN SE USA DESDE EL PROGRAMA INSTALADO' : 'SIN SERVIDOR: SETUP PARA CONECTAR']); else jbHome(['ARTISTAS, ÁLBUMES, TEMAS O BUSCAR']); });
+musicStatus().then(() => { if (!musicServer.signedIn) jbHome([musicServer.none ? 'JELLYFIN WORKS IN THE INSTALLED PROGRAM' : 'NO SERVER: PRESS SETUP TO CONNECT']); else jbHome(['ARTISTS, ALBUMS, SONGS OR SEARCH']); });

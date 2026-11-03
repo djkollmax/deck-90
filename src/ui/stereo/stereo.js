@@ -115,9 +115,9 @@ function stereoDispText() {
   let d = stereoCfg.disp;
   if (d === 'clocktemp') d = stereoTemp() && Math.floor(Date.now() / 4000) % 2 ? 'temp' : 'clock';   // 4 s each
   if (d === 'clock') { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); }
-  if (d === 'temp') return stereoTemp() || 'SIN CLIMA';
+  if (d === 'temp') return stereoTemp() || 'NO WEATHER';
   if (d === 'time') {
-    if (stereoCfg.mode === 'radio') return 'EN VIVO';
+    if (stereoCfg.mode === 'radio') return 'LIVE';
     const i = stereoInfo();
     if (stereoCfg.mode === 'cd') return i.length ? String(i.number).padStart(2, '0') + '  -' + mmss(Math.max(0, i.length - cdPosition())) : '--:--';
     const dur = np && np.dur > 0 ? np.dur : 0, pos = np ? npPosition() : 0;
@@ -177,18 +177,18 @@ function stereoText(force) {
   if (stereoCfg.mode === 'cd') {
     let title, artist = '', playing = true;
     const tr = cdAudioTracks(), files = cdFiles();
-    if (!cdInfo) title = 'LEYENDO';
-    else if (cdInfo.none === 'windows') { title = 'SOLO WINDOWS'; artist = 'EL CD SE LEE DESDE EL PROGRAMA EN WINDOWS'; }
-    else if (!cdInfo.drive) { title = 'SIN LECTORA'; artist = 'CONECTÁ LA LECTORA DE CD Y TOCÁ MODE'; }
-    else if (!cdInfo.present) { title = 'NO DISC'; artist = 'PONÉ UN CD Y TOCÁ LA RANURA'; }
+    if (!cdInfo) title = 'READING';
+    else if (cdInfo.none === 'windows') { title = 'WINDOWS ONLY'; artist = 'THE CD DRIVE WORKS ON WINDOWS'; }
+    else if (!cdInfo.drive) { title = 'NO CD DRIVE'; artist = 'CONNECT A CD DRIVE AND PRESS MODE'; }
+    else if (!cdInfo.present) { title = 'NO DISC'; artist = 'INSERT A DISC AND PRESS THE SLOT'; }
     else if (files.length) {
       const f = String(files[cdFile] || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
-      title = f || 'MP3'; artist = 'DISCO · ' + (cdFile + 1) + '/' + files.length;
+      title = f || 'MP3'; artist = 'DISC · ' + (cdFile + 1) + '/' + files.length;
     } else if (tr.length) {
       const n = cdState.track || tr[0].n, total = tr.reduce((a, t) => a + (t.len || 0), 0), song = cdSongName(n);
-      if (song) { title = song.title; artist = song.artist + ' · ' + String(n).padStart(2, '0') + (cdState.state === 'paused' ? ' · PAUSA' : ''); }
-      else { title = 'TRACK ' + String(n).padStart(2, '0'); artist = 'CD · ' + tr.length + ' PISTAS · ' + mmss(total) + (cdState.state === 'paused' ? ' · PAUSA' : ''); }
-    } else { title = 'SIN AUDIO'; artist = 'ESTE DISCO NO TIENE MÚSICA'; }
+      if (song) { title = song.title; artist = song.artist + ' · ' + String(n).padStart(2, '0') + (cdState.state === 'paused' ? ' · PAUSE' : ''); }
+      else { title = 'TRACK ' + String(n).padStart(2, '0'); artist = 'CD · ' + tr.length + ' TRACKS · ' + mmss(total) + (cdState.state === 'paused' ? ' · PAUSE' : ''); }
+    } else { title = 'NO AUDIO'; artist = 'THIS DISC HAS NO MUSIC'; }
     const info = stereoInfo();
     key = 'cd|' + title + '|' + artist + '|' + JSON.stringify(info);
     if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing, ...info }); }
@@ -201,7 +201,7 @@ function stereoText(force) {
     const q = stereoInfo().quality || '', song = radioSong();
     // the line under the frequency is short: the song, and every few seconds the station (7.9.21: the quality is
     // at the bottom now; a station that dropped says so)
-    const trouble = radioNow && radioTrouble === 'retry' ? 'RECONECTANDO…' : radioNow && radioTrouble === 'lost' ? 'SIN SEÑAL' : '';
+    const trouble = radioNow && radioTrouble === 'retry' ? 'RECONNECTING…' : radioNow && radioTrouble === 'lost' ? 'NO SIGNAL' : '';
     const line = trouble || (!live ? '' : song && Math.floor(Date.now() / 4000) % 3 !== 2 ? song : st.name);
     key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot + '|' + line + '|' + q;
     if (key !== stereoShown || force) {
@@ -213,7 +213,7 @@ function stereoText(force) {
     const playing = stereoPlaying();
     let title = '', artist = '';
     if (playing) {
-      const song = np && np.title ? np.title : activeSource === 'demo' ? 'DEMO 124 BPM' : activeSource === 'mic' ? 'MICRÓFONO' : 'AUDIO DE LA PC';
+      const song = np && np.title ? np.title : activeSource === 'demo' ? 'DEMO 124 BPM' : activeSource === 'mic' ? 'MICROPHONE' : 'PC AUDIO';
       artist = np && np.artist ? np.artist : '';
       title = song;
     }

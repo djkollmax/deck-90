@@ -37,7 +37,7 @@ const ticks = t => Math.round((Number(t) || 0) / 1e7);
 // a song as the screens use it; its quality when the server said it (album lists ask for it)
 function musicSong(i) {
   const src = i.MediaSources && i.MediaSources[0], a = src && (src.MediaStreams || []).find(s => s.Type === 'Audio');
-  return { id: i.Id, name: i.Name || 'SIN NOMBRE', artist: i.AlbumArtist || (i.Artists || [])[0] || '', artists: (i.Artists || []).join(', '),
+  return { id: i.Id, name: i.Name || 'UNTITLED', artist: i.AlbumArtist || (i.Artists || [])[0] || '', artists: (i.Artists || []).join(', '),
     album: i.Album || '', albumId: i.AlbumId || '', n: i.IndexNumber || 0, disc: i.ParentIndexNumber || 0, len: ticks(i.RunTimeTicks),
     year: i.ProductionYear || 0, media: a ? { codec: String(a.Codec || '').toLowerCase(), container: String(src.Container || '').toLowerCase(),
       kbps: Math.round((a.BitRate || src.Bitrate || 0) / 1000), rate: a.SampleRate || 0, bits: a.BitDepth || 0, ch: a.Channels || 0 } : null };
@@ -111,9 +111,9 @@ function musicQualityShort(m) {
 }
 function musicQualityLong(m) {
   if (!m) return '';
-  const khz = m.rate ? String(Math.round(m.rate / 100) / 10).replace('.', ',') + ' KHZ' : '';
-  return [musicCodec(m) + (musicLossless(m) ? ' SIN PÉRDIDA' : ''), m.bits && khz ? m.bits + ' BITS / ' + khz : khz,
-    m.kbps ? m.kbps + ' KBPS' : '', m.ch === 1 ? 'MONO' : m.ch === 2 ? 'ESTÉREO' : m.ch > 2 ? m.ch + ' CANALES' : ''].filter(Boolean).join(' · ');
+  const khz = m.rate ? String(Math.round(m.rate / 100) / 10) + ' KHZ' : '';
+  return [musicCodec(m) + (musicLossless(m) ? ' LOSSLESS' : ''), m.bits && khz ? m.bits + ' BIT / ' + khz : khz,
+    m.kbps ? m.kbps + ' KBPS' : '', m.ch === 1 ? 'MONO' : m.ch === 2 ? 'STEREO' : m.ch > 2 ? m.ch + ' CHANNELS' : ''].filter(Boolean).join(' · ');
 }
 // what Chromium plays as it is; anything else the server turns into FLAC on the way
 const musicPlayable = m => !m || /^(mp3|aac|flac|opus|vorbis)$/.test(m.codec) || /^pcm_(s16le|s24le|s32le|f32le|u8)$/.test(m.codec);

@@ -18,7 +18,7 @@ test('POWER on the tuner while the CD plays: it waits showing its station, the C
   await d.win.evaluate(() => cdUnitKey('power')); await d.wait(1500);
   await d.win.evaluate(() => tunerKey('power')); await d.wait(2500);
   const s = await both();
-  assert.deepEqual(s.radio, { power: true, playing: false, idle: true, text: 'EN ESPERA · SUENA EL CD' });
+  assert.deepEqual(s.radio, { power: true, playing: false, idle: true, text: 'STANDBY · CD PLAYING' });
   assert.deepEqual(s.cd, { power: true, state: 'playing', idle: false });
 });
 
@@ -35,7 +35,7 @@ test('PLAY on the CD silences the radio, which stays on showing it waits', async
   await d.win.evaluate(() => cdUnitKey('play')); await d.wait(1500);
   const s = await both();
   assert.equal(s.cd.state, 'playing'); assert.equal(s.cd.idle, false);
-  assert.deepEqual(s.radio, { power: true, playing: false, idle: true, text: 'EN ESPERA · SUENA EL CD' });
+  assert.deepEqual(s.radio, { power: true, playing: false, idle: true, text: 'STANDBY · CD PLAYING' });
 });
 
 test('POWER on the CD while the radio plays reads the disc and the radio goes on; PLAY plays it', async () => {

@@ -1,5 +1,18 @@
 # Novedades
 
+## 7.10.1 — 2026-11-03
+
+### Cambios
+- **Los displays de los equipos, en inglés**, como un equipo de los 90:
+  - El sintonizador: STANDBY · CD PLAYING, NO SIGNAL, RECONNECTING…, LIVE; ciudades y países en inglés.
+  - La compactera: TRAY OPEN, READING DISC…, NO DISC, AUDIO CD · TRACK 01.
+  - El DM-90: las teclas ARTISTS, ALBUMS, SONGS, QUEUE, SEARCH, ◀ BACK, Q · PLAY NEXT y "FLAC LOSSLESS · 24 BIT / 96 KHZ · STEREO".
+  - El estéreo: NO DISC, NO WEATHER, LIVE.
+  - Los avisos, el SETUP y las novedades siguen en castellano.
+
+### Arreglos
+- **Con la bandeja abierta, la compactera seguía mostrando "TRACK 01 /01".** Ahora muestra guiones, igual que sin disco.
+
 ## 7.10.0 — 2026-11-03
 
 ### Nuevo

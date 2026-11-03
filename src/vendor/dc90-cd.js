@@ -19,7 +19,8 @@
  * Deck 90 7.9.14: REPEAT and SHUFFLE keys (OPEN / CLOSE narrower) and their lamps under the meters, setModes(). 7.9.13: meters end yellow/red; setTimeMode(remain). 7.9.10: Damián's DC-90 revision 3 (the big display); src/ui/cdunit/cdunit.js drives it with the PC's drive.
  * One change: a long title scrolls even when Windows says "reduced motion" (animations off).
  * Deck 90 7.9.22: setTrack({ quality }) writes the disc's quality under the track count ("CD 16/44", "FLAC 24/96",
- * "MP3 320"), and the artist line scrolls too when it doesn't fit.
+ * "MP3 320"), and the artist line scrolls too when it doesn't fit. 7.9.23: track 0 (no disc) and the tray open show
+ * dashes and no count.
  */
 (function(global){
 'use strict';
@@ -353,8 +354,8 @@ class Deck90CD {
     this._assertAlive();if(!update||typeof update!=='object')return this;
     const track=this._state.track;
     for(const key of ['title','artist'])if(key in update)track[key]=clean(update[key]);
-    if('track'in update)track.track=Math.max(1,Math.min(99,Math.round(safeNumber(update.track,track.track))));
-    if('totalTracks'in update)track.totalTracks=Math.max(1,Math.min(99,Math.round(safeNumber(update.totalTracks,track.totalTracks))));
+    if('track'in update)track.track=Math.max(0,Math.min(99,Math.round(safeNumber(update.track,track.track))));   /* Deck 90 7.9.23: 0, no track */
+    if('totalTracks'in update)track.totalTracks=Math.max(0,Math.min(99,Math.round(safeNumber(update.totalTracks,track.totalTracks))));
     track.track=Math.min(track.track,track.totalTracks);
     if('duration'in update)track.duration=Math.max(0,Math.min(5999,safeNumber(update.duration,track.duration)));
     if('elapsed'in update)track.elapsed=Math.max(0,Math.min(5999,safeNumber(update.elapsed,track.elapsed)));
@@ -447,9 +448,9 @@ class Deck90CD {
     const remain=this._remain&&t.duration>0,seconds=remain?Math.ceil(t.duration-t.elapsed):Math.floor(t.elapsed),time=String(Math.floor(seconds/60)).padStart(2,'0')+String(seconds%60).padStart(2,'0');
     if(this._minus)this._minus.setAttribute('fill',remain&&!open?LIT:DIM);   // Deck 90 7.9.13: remaining time
     if(this._cache.time!==time||this._cache.open!==open){this._paintDigits(this._timeDigits,open?'----':time);this._cache.time=time;}
-    const track=String(t.track).padStart(2,'0');if(this._cache.track!==track){this._paintDigits(this._trackDigits,track);this._cache.track=track;}
-    if(this._cache.total!==t.totalTracks){this._total.replaceChildren(this._dots('/'+String(t.totalTracks).padStart(2,'0'),333,107,1.3));this._cache.total=t.totalTracks;}
-    const title=open?'BANDEJA ABIERTA':t.title||'COMPACT DISC';
+    const none=open||!t.track,track=none?'--':String(t.track).padStart(2,'0');if(this._cache.track!==track){this._paintDigits(this._trackDigits,track);this._cache.track=track;}   /* Deck 90 7.9.23: the tray open, or no disc: dashes */
+    const total=none||!t.totalTracks?'':'/'+String(t.totalTracks).padStart(2,'0');if(this._cache.total!==total){this._total.replaceChildren(...(total?[this._dots(total,333,107,1.3)]:[]));this._cache.total=total;}
+    const title=open?'TRAY OPEN':t.title||'COMPACT DISC';   /* Deck 90 7.9.23: the displays in English */
     if(this._cache.title!==title){this._title.replaceChildren(this._dots(title,0,0,3.3));this._title.setAttribute('transform','translate(391 53)');this._titleWidth=[...title.toUpperCase()].length*19.8;this._titleStarted=performance.now();this._cache.title=title;}
     const artist=open?'OPEN / CLOSE':t.artist;
     if(this._cache.artist!==artist){this._artist.replaceChildren(this._dots(artist,0,0,2.15));this._artist.setAttribute('transform','translate(391 92)');this._artistWidth=[...String(artist||'').toUpperCase()].length*12.9;this._artistStarted=performance.now();this._cache.artist=artist;}   /* Deck 90 7.9.22: drawn at 0 0 to scroll */

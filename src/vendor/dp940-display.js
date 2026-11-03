@@ -275,7 +275,7 @@ class Deck90Display {
     this._titleGroup.replaceChildren();
     this._status.replaceChildren();
     const music = this.state.mode === 'music';
-    const title = music ? this.state.track.title || 'REPRODUCIENDO' : `${this.state.radio.band} ${this.state.radio.frequency}`;
+    const title = music ? this.state.track.title || 'PLAYING' : `${this.state.radio.band} ${this.state.radio.frequency}`;
     const text = this._drawSegmentText(title, music ? 84 : 96);
     this._titleWidth = text.width;
     this._titleY = music ? 33 : 31;

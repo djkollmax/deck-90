@@ -41,15 +41,15 @@ test('a station whose sound drops is tuned again by itself (RECONECTANDO), then 
     if (seen.size && !s.trouble && s.playing) break;
     await d.wait(100);
   }
-  assert.ok(seen.has('RECONECTANDO…'), [...seen].join());
+  assert.ok(seen.has('RECONNECTING…'), [...seen].join());
   assert.equal(await d.win.evaluate(() => radioPlaying() && !radioTrouble), true, 'back on the air');
 });
 
-test('a station that can\'t be found says SIN SEÑAL', async () => {
+test('a station that can\'t be found says NO SIGNAL', async () => {
   await d.app.evaluate(({ ipcMain }) => { ipcMain.removeHandler('radio-find'); ipcMain.handle('radio-find', () => []); });
   await d.win.evaluate(() => { radioMem.FM1[2] = { name: 'Muda', freq: '', q: 'Muda', cc: 'AR', url: '' }; tunerKey('m3'); });
   await d.wait(1500);
-  assert.equal((await tunerShows()).text, 'SIN SEÑAL');
+  assert.equal((await tunerShows()).text, 'NO SIGNAL');
   await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
 });
 

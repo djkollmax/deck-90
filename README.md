@@ -89,9 +89,9 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 **VER → MÚSICA** (o la tecla `J`) muestra el DM-90, una unidad doble con el mismo frente que el sintonizador y la compactera, para escuchar la música de tu servidor [Jellyfin](https://jellyfin.org) (solo música, no películas). **SETUP** pide la dirección del servidor, el usuario y la contraseña; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
 
-- Arriba, el tema que suena: nombre, artista · álbum, la calidad completa ("FLAC SIN PÉRDIDA · 24 BITS / 96 KHZ · 4608 KBPS · ESTÉREO"), la cuenta regresiva y el lugar en la cola.
-- Abajo, una lista larga en el display: **ARTISTAS → ÁLBUMES → TEMAS**, **TEMAS** (todos), **COLA** y **BUSCAR**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ ATRÁS** vuelve.
-- **Q** (o la tecla Q · A LA COLA) pone lo marcado para que suene después del tema actual; un álbum o un artista, enteros. **REPEAT**, **SHUFFLE**, **▶ ❚❚ ■ |◀◀ ▶▶|**.
+- Arriba, el tema que suena: nombre, artista · álbum, la calidad completa ("FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO"; los displays hablan en inglés, como un equipo de los 90), la cuenta regresiva y el lugar en la cola.
+- Abajo, una lista larga en el display: **ARTISTS → ALBUMS → SONGS**, **SONGS** (todos los temas), **QUEUE** (la cola) y **SEARCH**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ BACK** vuelve.
+- **Q** (o la tecla Q · PLAY NEXT) pone lo marcado para que suene después del tema actual; un álbum o un artista, enteros. **REPEAT**, **SHUFFLE**, **▶ ❚❚ ■ |◀◀ ▶▶|**.
 - Toca el archivo en su calidad original; lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
 
 ### Estéreo de auto, con radio por internet

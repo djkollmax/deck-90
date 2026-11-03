@@ -68,26 +68,26 @@ function tunerLine() {
   if (tunerCfg.disp === 'clock') { const t = new Date(); return { name: String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'), text: '' }; }
   if (tunerCfg.disp === 'temp') {
     const where = typeof clockCfg === 'object' && clockCfg.place ? clockCfg.place.name : '';
-    return { name: stereoTemp() || 'SIN CLIMA', text: where };
+    return { name: stereoTemp() || 'NO WEATHER', text: where };
   }
   const st = tunerStation();
-  const name = st ? st.name : radioMem.band + ' VACÍA';
+  const name = st ? st.name : radioMem.band + ' EMPTY';
   const live = tunerLive(), q = live ? radioQuality(st) : '', song = live ? radioSong() : '';
   // 7.9.21: on the air, one line "ASPEN · DARYL HALL & JOHN OATES - MANEATER" (the quality stays after TUNED, the
   // place under the memory). MODE picks what follows the station: the song (TEMA), where it is and its dial
   // (RADIO), or the quality spelled out (CALIDAD)
   const dial = tunerDial(st), where = !st ? '' : radioMem.band + ' ' + (dial.f === null ? 'INTERNET' : dial.f + (dial.am ? ' KHZ' : ' MHZ'));
-  const kb = q ? 'CALIDAD ' + q.replace(/^(\S+)\s+(\d+)$/, '$1 · $2 KBPS') : 'CALIDAD SIN DATOS';
+  const kb = q ? 'QUALITY ' + q.replace(/^(\S+)\s+(\d+)$/, '$1 · $2 KBPS') : 'QUALITY UNKNOWN';
   if (tunerPower && live) {
     const after = tunerCfg.line === 'station' ? [radioPlace(st, true), where].filter(Boolean).join(' · ')
-      : tunerCfg.line === 'quality' ? kb : song || (dial.f === null ? 'EN VIVO POR INTERNET' : 'EN VIVO');
+      : tunerCfg.line === 'quality' ? kb : song || (dial.f === null ? 'LIVE ON THE INTERNET' : 'LIVE');
     return { name: [name, after].filter(Boolean).join(' · '), text: '' };
   }
   const cdHas = cdHasSound();                                   // 7.9.15: on, the CD has the sound
   // 7.9.21: a station that doesn't answer, or whose sound dropped and is being tuned again
-  const trouble = !radioNow ? '' : radioTrouble === 'retry' ? 'RECONECTANDO…' : radioTrouble === 'lost' ? 'SIN SEÑAL' : '';
-  const text = !tunerPower ? 'STANDBY' : trouble || (cdHas ? 'EN ESPERA · SUENA EL CD'
-    : radioNow && radioAudio.getAttribute('src') ? 'SINTONIZANDO…' : st ? 'EN ESPERA · UNA MEMORIA O ▶ LA PONE' : 'ELEGÍ UNA MEMORIA 1–6');
+  const trouble = !radioNow ? '' : radioTrouble === 'retry' ? 'RECONNECTING…' : radioTrouble === 'lost' ? 'NO SIGNAL' : '';
+  const text = !tunerPower ? 'STANDBY' : trouble || (cdHas ? 'STANDBY · CD PLAYING'
+    : radioNow && radioAudio.getAttribute('src') ? 'TUNING…' : st ? 'STANDBY · PRESS A MEMORY OR ▶' : 'SELECT A MEMORY 1–6');
   return { name, text };
 }
 // on the air: playing and no trouble (a stream that broke keeps playing() true while it's tuned again)
