@@ -10,11 +10,12 @@
 //    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE · SHUFFLE ALL (the whole library at random)
 //    COLOR  the rack's displays' colour   DIMMER  this display's brightness   letters: jump to the first name
 //  After a click on it the keyboard is the unit's (a click elsewhere, or Esc, gives it back): ↑ ↓ PgUp PgDn Home End, Enter,
-//  Backspace (back), Q, Space (play / pause), / (search: the results come as you type), letters (jump). Esc gives
+//  Backspace (back), Q, Space (play / pause), / (search: the results come as you type), letters (jump; E, P and J
+//  stay the program's, Shift + a letter jumps with any). Esc gives
 //  it back. The scroll bar beside the list drags (or a click jumps there): a long list in a moment.
 // ═══════════════════════════════════════════════════════════
 // 7.10.3: COLOR is the rack's displays' colour (the DT-90, the DC-90 and the DM-90 together, as one system), DIMMER
-// the DM-90's brightness
+// their brightness (7.10.6: all three too)
 const UNIT_COLORS = [
   { id: 'aqua', name: 'AGUA', vfd: '#80ffe5', dim: '#193e34' }, { id: 'amber', name: 'ÁMBAR', vfd: '#ffb84a', dim: '#3e2b0f' },
   { id: 'green', name: 'VERDE', vfd: '#8cff5a', dim: '#1d3b12' }, { id: 'blue', name: 'AZUL', vfd: '#8fd0ff', dim: '#152f48' },
@@ -34,6 +35,8 @@ function unitColorApply() {
   for (const id of ['tunerPanel', 'cdPanel', 'jbPanel']) {
     const el = document.getElementById(id); if (!el) continue;
     el.style.setProperty('--vfd', u.vfd); el.style.setProperty('--vfd-dim', u.dim);
+    // 7.10.6: DIMMER too, on the tuner and the CD as on the DM-90 (brightest / low; the DM-90 draws its own)
+    el.classList.toggle('dim-max', jbCfg.dim === 1); el.classList.toggle('dim-low', jbCfg.dim === 2);
   }
 }
 unitColorApply();
@@ -249,7 +252,7 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
     toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack', 1400);
     return;
   }
-  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span>', 1200); return; }
+  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack', 1200); return; }
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
   if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked
@@ -314,7 +317,10 @@ document.addEventListener('keydown', e => {
   if (k === ' ') { take(); if (!e.repeat) jbKey(musicPlaying() ? 'pause' : 'play'); return; }
   if (k === '/') { take(); return jbOpen('search'); }
   if (k.toLowerCase() === 'q') { take(); if (!e.repeat) jbQueue(); return; }
-  if (/^[\p{L}\p{N}]$/u.test(k)) { take(); return jbLetter(k); }
+  // 7.10.6: E (the stereo), P (the strip) and J (this unit) stay the program's even here; Shift + a letter jumps
+  // with any letter (Shift+E: the first name with E)
+  if (!e.shiftKey && /^[epj]$/i.test(k)) return;
+  if (/^[\p{L}\p{N}]$/u.test(k)) { take(); return jbLetter(k.toLowerCase()); }
 }, true);
 
 // ── SETUP: the Jellyfin server, the user and the password (the password goes to the server, never kept) ──

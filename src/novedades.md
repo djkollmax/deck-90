@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.10.6 — 2026-11-03
+
+### Arreglos
+- **La E no abría el estéreo** después de usar el DM-90, y a veces tampoco recién abierto el programa. Ahora E, P y J andan siempre; para saltar con esas letras en la lista del DM-90, Shift + la letra.
+
+### Cambios
+- **DIMMER cambia el brillo de todo el rack**: el sintonizador y la compactera siguen al DM-90, igual que con COLOR.
+
 ## 7.10.5 — 2026-11-03
 
 ### Nuevo

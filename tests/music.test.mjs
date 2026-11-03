@@ -143,6 +143,7 @@ test('COLOR changes the displays of the whole rack, DIMMER the DM-90 brightness,
   assert.match((await dim())[2], /vfd-glow-hi/, 'bright, with a halo');
   await d.click(K('dimmer'), 200); assert.equal((await dim())[0], 1);
   await d.click(K('dimmer'), 200); assert.deepEqual((await dim()).slice(0, 2), [2, '.6']);
+  assert.deepEqual(await d.win.evaluate(() => ['tunerPanel', 'cdPanel'].map(id => getComputedStyle(document.querySelector('#' + id + ' [data-role="display"]')).opacity)), ['0.55', '0.55'], 'the tuner and the CD dim too');
   await d.click(K('dimmer'), 200);
   assert.deepEqual(await d.win.evaluate(() => { const p = JSON.parse(localStorage.getItem('deck90-prefs')).jukebox; return [p.color, p.dim]; }), ['amber', 0]);
 });
@@ -160,8 +161,7 @@ test('the header shows what the DM-90 plays; the stereo has it as SERVER, and gi
   assert.equal(await d.win.textContent('#npTitle'), now);
   assert.equal(await d.win.evaluate(() => np && np.app), 'Deck 90 · DM-90');
   assert.equal(await d.win.evaluate(() => jbPanel.classList.contains('kbd')), true, 'the DM-90 has the keyboard, and shows it');
-  await press('Escape'); assert.equal(await d.win.evaluate(() => jbPanel.classList.contains('kbd')), false);
-  await d.win.keyboard.press('e'); await d.wait(1500);
+  await d.win.keyboard.press('e'); await d.wait(1500);            // E is still the stereo's (7.10.6)
   assert.equal(await d.win.evaluate(() => stereoCfg.mode), 'music', 'the stereo opens on the music playing');
   assert.equal(await d.win.evaluate(() => stereoDisplay.state.track.title), now);
   const pos = await d.win.evaluate(() => musicPos);

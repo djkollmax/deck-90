@@ -287,8 +287,11 @@ app.whenReady().then(() => {
     if (shownOnce || win.isDestroyed()) return; shownOnce = true;
     const hidden = START_HIDDEN && tray;
     if (saved.maximized && !miniOn) { if (hidden) pendingMax = true; else win.maximize(); }
-    if (!hidden) win.show();
+    if (!hidden) { win.show(); win.webContents.focus(); }
   };
+  // 7.10.6: the window coming to the front gives the page the keyboard too (a frameless window on Windows can be
+  // in front with its page deaf to the keys until clicked: E, P and the rest did nothing)
+  win.on('focus', () => { if (!win.isDestroyed()) win.webContents.focus(); });
   // if the first paint never comes, show the window anyway instead of leaving an invisible program
   win.once('ready-to-show', () => setTimeout(firstShow, 2500));
   setTimeout(firstShow, 5000);                                 // even if the first paint never comes

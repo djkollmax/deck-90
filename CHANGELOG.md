@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.10.6
+
+### Fixed
+- **E didn't open the stereo** after using the DM-90 (it had the keyboard, and E was a letter to jump to) and, at times, right after the program started (a frameless window on Windows in front with its page deaf to the keys). E, P and J are now always the program's (Shift + a letter jumps with any letter), and the window coming to the front gives its page the keyboard.
+
+### Changed
+- **DIMMER dims the whole rack**: the tuner and the CD follow the DM-90's DIMMER (brightest: brighter with a glow; low: dimmer), as COLOR already did.
+
 ## 7.10.5
 
 ### Added

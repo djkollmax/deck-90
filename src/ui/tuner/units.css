@@ -14,3 +14,7 @@
 #tunerPanel, #cdPanel{ flex-basis:250px; max-height:250px; }
 /* 7.9.15: both units stay on; the one not sounding has its display a bit dimmer */
 .tuner-panel.idle [data-role="display"]{ opacity:.55; transition:opacity .4s; }   /* tuner and CD revisions are 1200 × 280 (the big displays); two units of one rack */
+/* 7.10.6: the DM-90's DIMMER on the tuner and the CD too: brightest, or low for a dark room */
+#tunerPanel.dim-max [data-role="display"], #cdPanel.dim-max [data-role="display"]{ filter:brightness(1.3) saturate(1.1) drop-shadow(0 0 1.5px var(--vfd, #80ffe5)); }
+#tunerPanel.dim-low [data-role="display"], #cdPanel.dim-low [data-role="display"]{ opacity:.55; }
+#tunerPanel.dim-low.idle [data-role="display"], #cdPanel.dim-low.idle [data-role="display"]{ opacity:.35; }
