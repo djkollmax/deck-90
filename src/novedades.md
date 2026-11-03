@@ -1,5 +1,16 @@
 # Novedades
 
+## 7.10.2 — 2026-11-03
+
+### Cambios
+- **La barra de la lista del DM-90 se agarra**: la arrastrás, o tocás la barra y salta ahí. Con 1.400 discos llegás a cualquier lado al toque. También es más ancha.
+- **La lista tiene más brillo.**
+- **SEARCH busca mientras escribís**, en toda la biblioteca:
+  - Cualquier palabra, en cualquier orden, del tema, el artista o el álbum, con o sin acentos ("seca vivo").
+  - A la derecha dice cuánto encontró ("1 ARTIST · 3 ALBUMS · 24 SONGS").
+  - Con ↑ ↓ elegís sin dejar de escribir y ENTER lo abre o lo toca. ESC deja los resultados en pantalla y ◀ BACK vuelve a ellos.
+  - La primera búsqueda lee toda la biblioteca (READING LIBRARY…); después es instantánea.
+
 ## 7.10.1 — 2026-11-03
 
 ### Cambios

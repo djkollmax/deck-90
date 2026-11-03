@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.2
+
+### Changed
+- **The DM-90's scroll bar takes the pointer**: drag its thumb, or click the bar to jump there (`seek`, a fraction of the list) — through 1,400 albums in a moment. Wider, its thumb at least 14 units tall.
+- **The list is brighter**: rows at .9 (were .72), the artist column .85, the time and quality .92.
+- **SEARCH finds as you type**, over the whole library read once (`musicSearchReady`: artists, albums and every song, indexed without accents): any words in any order in the song, the artist or the album ("seca vivo"), names starting with what was typed first; counts on the right ("1 ARTIST · 3 ALBUMS · 24 SONGS"). ↑ ↓ move through the results while typing, ENTER opens or plays the marked one, ESC keeps the results, ◀ BACK returns to them.
+
 ## 7.10.1
 
 ### Changed

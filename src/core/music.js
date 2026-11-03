@@ -26,10 +26,10 @@ async function musicStatus() {
 }
 async function musicSignIn(server, user, pw) {
   const r = await musicApi().signIn(server, user, pw).catch(e => ({ error: e.message }));
-  if (r && r.ok) { musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; await musicStatus(); }
+  if (r && r.ok) { musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; musicIndex = null; await musicStatus(); }
   return r || { error: 'sin respuesta' };
 }
-async function musicSignOut() { musicStop(); await musicApi().signOut(); musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; await musicStatus(); }
+async function musicSignOut() { musicStop(); await musicApi().signOut(); musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; musicIndex = null; await musicStatus(); }
 
 // ── the library (kept once read: a big library is read once per session) ──
 let musicLib = { artists: null, albums: {}, songs: null, tracks: {} };
@@ -87,17 +87,33 @@ async function musicSongs() {
   }
   return musicLib.songs;
 }
-async function musicSearch(q) {
-  q = String(q || '').trim().slice(0, 80);
-  if (!q) return [];
-  const [ar, al, so] = await Promise.all([
-    musicRead('artists', '', { SearchTerm: q, Limit: 30 }),
-    musicRead('items', '', { SearchTerm: q, IncludeItemTypes: 'MusicAlbum', Recursive: true, Limit: 40, Fields: 'ProductionYear' }),
-    musicRead('items', '', { SearchTerm: q, IncludeItemTypes: 'Audio', Recursive: true, Limit: 150, SortBy: 'SortName' })]);
-  return [...(ar.Items || []).map(i => ({ kind: 'artist', id: i.Id, name: i.Name || '?' })),
-    ...(al.Items || []).map(i => ({ kind: 'album', id: i.Id, name: i.Name || '?', artist: i.AlbumArtist || '', year: i.ProductionYear || 0 })),
-    ...(so.Items || []).map(i => Object.assign(musicSong(i), { kind: 'song' }))];
+// 7.10.2: the search runs here, over the whole library read once (artists, albums, every song): instant while
+// typing, any word in any order, in the name, the artist or the album, with or without accents ("sting fields"
+// finds Fields of Gold). Names that start with what was typed come first.
+const musicKey = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+let musicIndex = null;
+async function musicSearchReady() {
+  if (!musicIndex) {
+    const [ar, al, so] = await Promise.all([musicArtists(), musicAlbums(), musicSongs()]);
+    const k = (it, ...f) => Object.assign(it, { _k: musicKey(f.join(' ')), _n: musicKey(it.name) });
+    musicIndex = { artists: ar.map(a => k(Object.assign({ kind: 'artist' }, a), a.name)),
+      albums: al.map(a => k(Object.assign({ kind: 'album' }, a), a.name, a.artist, a.year || '')),
+      songs: so.map(x => k(Object.assign({ kind: 'song' }, x), x.name, x.artist, x.artists, x.album)) };
+  }
+  return musicIndex;
 }
+function musicSearchNow(q) {
+  const words = musicKey(q).split(/\s+/).filter(Boolean);
+  if (!words.length || !musicIndex) return { artists: [], albums: [], songs: [] };
+  const first = musicKey(q).trim();
+  const find = (list, max) => {
+    const hit = list.filter(it => words.every(w => it._k.includes(w)));
+    hit.sort((a, b) => (b._n.startsWith(first) - a._n.startsWith(first)) || 0);
+    return hit.slice(0, max);
+  };
+  return { artists: find(musicIndex.artists, 60), albums: find(musicIndex.albums, 200), songs: find(musicIndex.songs, 800) };
+}
+async function musicSearch(q) { await musicSearchReady(); const r = musicSearchNow(q); return [...r.artists, ...r.albums, ...r.songs]; }
 
 // ── the quality: short for the lists ("FLAC 24/96", "MP3 320") and spelled out for the song playing ──
 const MUSIC_CODEC = { pcm: 'WAV', vorbis: 'OGG', wmav2: 'WMA', wmapro: 'WMA', mp3: 'MP3', aac: 'AAC', flac: 'FLAC', alac: 'ALAC', opus: 'OPUS', ape: 'APE' };

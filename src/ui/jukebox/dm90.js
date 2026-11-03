@@ -7,8 +7,9 @@
 //    dm.setNow({ title, artist, quality, index, total, elapsed, duration, playing, paused, online })
 //    dm.setList({ header, right, rows: [{ text, sub, end, playing }], cursor, top, count })   // rows: the visible ones
 //    dm.setModes({ repeat, shuffle }); dm.setView(key); dm.setLevels(l, r); dm.setPower(on); dm.setTheme(t)
-//    dm.onKey((key, { hold, index, double, delta }) => …)   keys: the ids in LAYOUT.keys, 'row' (a list row
-//      clicked: index is its place among the visible rows), 'wheel' (the knob or the list: delta in rows)
+//    dm.onKey((key, { hold, index, double, delta, fraction }) => …)   keys: the ids in LAYOUT.keys, 'row' (a list
+//      row clicked: index is its place among the visible rows), 'wheel' (the knob or the list: delta in rows),
+//      'seek' (the scroll bar clicked or dragged: fraction 0–1 of the list)
 // ═══════════════════════════════════════════════════════════
 (function (global) {
 // the DC-90's glyphs (5 × 7 dots) and seven-segment digits, the same on every unit of the rack
@@ -367,11 +368,11 @@ class Deck90Music {
       const y = ROW_Y + i * ROW_H;
       const hit = node('rect', { x: 44, y: y - 4, width: 1096, height: ROW_H, fill: 'transparent', 'data-row': i });
       hit.style.cursor = 'pointer';
-      const mark = node('path', { fill: LIT }), main = node('path', { fill: LIT }), sub = node('path', { fill: LIT, opacity: .7 }), end = node('path', { fill: LIT, opacity: .8 });
+      const mark = node('path', { fill: LIT }), main = node('path', { fill: LIT }), sub = node('path', { fill: LIT, opacity: .85 }), end = node('path', { fill: LIT, opacity: .92 });   // 7.10.2: brighter
       D.append(mark, main, sub, end); this._rowNodes.push({ y, mark, main, sub, end, hit });
     }
-    D.append(node('rect', { x: 1144, y: ROW_Y - 3, width: 4, height: ROWS * ROW_H - 4, rx: 1, fill: DIM }));
-    this._thumb = node('rect', { x: 1144, y: ROW_Y - 3, width: 4, height: 0, rx: 1, fill: LIT }); D.append(this._thumb);
+    D.append(node('rect', { x: 1143, y: ROW_Y - 3, width: 6, height: ROWS * ROW_H - 4, rx: 1.5, fill: DIM }));
+    this._thumb = node('rect', { x: 1143, y: ROW_Y - 3, width: 6, height: 0, rx: 1.5, fill: LIT }); D.append(this._thumb);
     // the rows take clicks (the display ignores the pointer otherwise)
     this._hits = node('g', { 'data-role': 'list-rows' });
     for (const r of this._rowNodes) this._hits.append(r.hit);
@@ -383,6 +384,27 @@ class Deck90Music {
     const wheel = e => { e.preventDefault(); acc += e.deltaY / (e.deltaMode === 1 ? 3 : 60); const n = Math.trunc(acc); if (n) { acc -= n; this._turnKnob(n); this._emit('wheel', { delta: n }); } };
     this._listen(this._hits, 'wheel', wheel, { passive: false });
     this._wheel = wheel;
+    // 7.10.2: the scroll bar takes the pointer: a click on it jumps there, the thumb drags (a long list in a moment)
+    const H = ROWS * ROW_H - 4, bar = node('rect', { x: 1137, y: ROW_Y - 6, width: 21, height: H + 6, fill: 'transparent', 'data-role': 'scrollbar' });
+    bar.style.cursor = 'pointer'; this.svg.append(bar); this._bar = bar;
+    const yOf = e => { const m = this.svg.getScreenCTM(); return m ? (e.clientY - m.f) / m.d : 0; };
+    let grab = null;
+    const seek = y => {
+      const l = this._state.list; if (l.count <= ROWS) return;
+      const h = Number(this._thumb.getAttribute('height')) || 8, f = Math.max(0, Math.min(1, (y - grab - (ROW_Y - 3)) / Math.max(1, H - h)));
+      this._emit('seek', { fraction: f });
+    };
+    this._listen(bar, 'pointerdown', e => {
+      if (e.button) return;
+      e.preventDefault(); try { bar.setPointerCapture(e.pointerId); } catch (_) {}
+      const y = yOf(e), ty = Number(this._thumb.getAttribute('y')), th = Number(this._thumb.getAttribute('height')) || 0;
+      grab = y >= ty && y <= ty + th ? y - ty : th / 2;            // on the thumb: hold it where it was taken; elsewhere: its middle
+      seek(y);
+    });
+    this._listen(bar, 'pointermove', e => { if (grab !== null) seek(yOf(e)); });
+    const drop = () => { grab = null; };
+    this._listen(bar, 'pointerup', drop); this._listen(bar, 'pointercancel', drop); this._listen(bar, 'lostpointercapture', drop);
+    this._listen(bar, 'wheel', wheel, { passive: false });
   }
   _buildKeys() {
     this._buttons = {};
@@ -517,13 +539,13 @@ class Deck90Music {
       n.sub.setAttribute('d', r && r.sub ? dotsPath(fit(r.sub, COLS.sub.max), COLS.sub.x, n.y, PITCH) : '');
       const end = r ? fit(r.end, COLS.end.max) : '';
       n.end.setAttribute('d', end ? dotsPath(end, COLS.end.right - [...end].length * 6 * PITCH + PITCH, n.y, PITCH) : '');
-      const o = !r ? 0 : sel || r.playing ? 1 : r.dim ? .45 : .72;
+      const o = !r ? 0 : sel || r.playing ? 1 : r.dim ? .5 : .9;
       n.main.setAttribute('opacity', o); n.mark.setAttribute('opacity', o);
       n.hit.style.pointerEvents = r ? 'auto' : 'none';
       if (sel) { this._rowBar.setAttribute('y', n.y - 3.6); this._rowBar.setAttribute('opacity', .13); }
     }
     if (!(l.cursor >= l.top && l.cursor < l.top + l.rows.length)) this._rowBar.setAttribute('opacity', 0);
-    const H = ROWS * ROW_H - 4, h = l.count > ROWS ? Math.max(8, H * ROWS / l.count) : 0;
+    const H = ROWS * ROW_H - 4, h = l.count > ROWS ? Math.max(14, H * ROWS / l.count) : 0;
     this._thumb.setAttribute('height', h);
     this._thumb.setAttribute('y', ROW_Y - 3 + (l.count > ROWS ? (H - h) * l.top / Math.max(1, l.count - ROWS) : 0));
   }

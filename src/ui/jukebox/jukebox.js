@@ -9,7 +9,8 @@
 //    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
 //    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE    letters: jump to the first name that starts so
 //  With the pointer on it (or after a click on it) the keyboard is the unit's: ↑ ↓ PgUp PgDn Home End, Enter,
-//  Backspace (back), Q, Space (play / pause), / (search: type, Enter), letters (jump). Esc gives it back.
+//  Backspace (back), Q, Space (play / pause), / (search: the results come as you type), letters (jump). Esc gives
+//  it back. The scroll bar beside the list drags (or a click jumps there): a long list in a moment.
 // ═══════════════════════════════════════════════════════════
 let jbCfg = { show: false, remain: true };
 { const c = store.section('jukebox'); if (c) jbCfg = { show: c.show === true, remain: c.remain !== false }; }
@@ -63,7 +64,8 @@ const jbTime = s => s ? mmss(s) : '';
 function jbRow(it, i) {
   const now = musicNow();
   if (it.kind === 'artist') return { text: it.name, sub: jbView.kind === 'search' ? 'ARTIST' : '', end: '' };
-  if (it.kind === 'album') return { text: it.name, sub: jbView.kind === 'artist' ? '' : it.artist, end: [it.year || '', it.count ? it.count + ' SONGS' : ''].filter(Boolean).join(' · ') };
+  if (it.kind === 'album') return { text: it.name, sub: jbView.kind === 'artist' ? '' : it.artist,
+    end: jbView.kind === 'search' ? ['ALBUM', it.year || ''].filter(Boolean).join(' · ') : [it.year || '', it.count ? it.count + ' SONGS' : ''].filter(Boolean).join(' · ') };
   if (it.kind === 'more') return { text: it.name, sub: '', end: '', dim: true };
   const n = jbView.kind === 'album' && it.n ? String(it.n).padStart(2, '0') + ' ' : '';
   return { text: n + it.name, sub: jbView.kind === 'album' && it.artist === jbView.artist ? '' : it.artist,
@@ -79,7 +81,7 @@ function jbRenderList() {
   v.top = Math.max(0, Math.min(v.top, Math.max(0, v.items.length - rows)));
   const count = v.items.length, fmt = n => n.toLocaleString('es-AR');
   let header = v.title + (count && v.kind !== 'home' ? ' · ' + fmt(count) : ''), right = '';
-  if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = 'ENTER TO SEARCH · ESC'; }
+  if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = jbLoading || jbFound(); }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
   else right = musicQueue.length ? 'QUEUE ' + (musicPos >= 0 ? musicPos + 1 + '/' : '') + musicQueue.length : '';
@@ -104,12 +106,12 @@ async function jbLoad(view, load, push) {
 }
 function jbOpen(kind) {
   if (!jbReady()) return;
-  jbSearchText = null;
+  if (kind !== 'search') jbSearchText = null;
   if (kind === 'artists') return jbLoad({ kind: 'artists', title: 'ARTISTS' }, async () => (await musicArtists()).map(a => Object.assign({ kind: 'artist' }, a)));
   if (kind === 'albums') return jbLoad({ kind: 'albums', title: 'ALBUMS' }, async () => (await musicAlbums()).map(a => Object.assign({ kind: 'album' }, a)));
   if (kind === 'songs') return jbLoad({ kind: 'songs', title: 'SONGS' }, async () => (await musicSongs()).map(s => Object.assign({ kind: 'song' }, s)));
   if (kind === 'list') { jbStack = []; jbView = { kind: 'list', title: 'QUEUE', items: musicQueue.map(s => Object.assign({ kind: 'song' }, s)), cursor: Math.max(0, musicPos), top: 0 }; return jbRenderList(); }
-  if (kind === 'search') { jbSearchText = ''; jbRenderList(); }
+  if (kind === 'search') return jbSearchStart();
 }
 function jbReady() {
   if (!jbPower) { jbOn(true); return false; }
@@ -160,20 +162,51 @@ function jbBack() {
   if (jbSearchText !== null) { jbSearchText = null; return jbRenderList(); }
   if (jbStack.length) { jbView = jbStack.pop(); jbRenderList(); }
 }
-async function jbRunSearch() {
-  const q = (jbSearchText || '').trim();
-  jbSearchText = null;
-  if (!q) return jbRenderList();
-  await jbLoad({ kind: 'search', title: 'SEARCH “' + q + '”' }, async () => (await musicSearch(q)), true);
+// SEARCH (7.10.2): the results come while typing, from the whole library (read once: READING LIBRARY…); any words,
+// in any order, in the song, the artist or the album. ↑ ↓ move through them as you type, ENTER opens or plays the
+// marked one, ESC leaves the typing with the results on screen, ◀ BACK goes back to them from what was opened
+let jbSearchT = 0, jbSearchN = { artists: 0, albums: 0, songs: 0 };
+const jbPlural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+function jbFound() {
+  const n = jbSearchN, parts = [n.artists && jbPlural(n.artists, 'ARTIST', 'ARTISTS'), n.albums && jbPlural(n.albums, 'ALBUM', 'ALBUMS'), n.songs && jbPlural(n.songs, 'SONG', 'SONGS')].filter(Boolean);
+  return (jbSearchText || '').trim() ? parts.join(' · ') || 'NOTHING FOUND' : 'TYPE A SONG, ARTIST OR ALBUM';
+}
+async function jbSearchStart() {
+  if (jbView.kind !== 'search') { if (jbView.kind !== 'home') jbStack.push(jbView); jbView = { kind: 'search', title: 'SEARCH', items: [], cursor: 0, top: 0 }; jbSearchN = { artists: 0, albums: 0, songs: 0 }; }
+  jbSearchText = jbView.q || '';
+  if (!musicIndex) {
+    jbLoading = 'READING LIBRARY…'; jbRenderList();
+    try { await musicSearchReady(); } catch (_) { toast('MÚSICA · <span>el servidor no contestó</span>', 2000); }
+    jbLoading = '';
+  }
+  jbSearchLive();
+}
+function jbSearchLive() {
+  clearTimeout(jbSearchT);
+  if (jbView.kind !== 'search') return;
+  const q = jbSearchText === null ? jbView.q : jbSearchText, r = musicSearchNow(q || '');
+  jbView.q = q; jbView.title = q ? 'SEARCH “' + q.trim() + '”' : 'SEARCH';
+  jbView.items = [...r.artists, ...r.albums, ...r.songs]; jbView.cursor = 0; jbView.top = 0;
+  jbSearchN = { artists: r.artists.length, albums: r.albums.length, songs: r.songs.length };
+  jbRenderList();
+}
+function jbSearchType(text) {
+  jbSearchText = text.slice(0, 60); jbRenderList();
+  clearTimeout(jbSearchT); jbSearchT = setTimeout(jbSearchLive, 90);
 }
 
 // ── the keys ──
-function jbKey(k, { hold, index, double, delta } = {}) {
+function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   jbActive = true;
   if (k === 'power') return jbOn(!jbPower);
   if (k === 'setup') return jbSetup(true);
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
+  if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked
+    const rows = jb.rows(), n = jbView.items.length; if (n <= rows) return;
+    const top = Math.round(fraction * (n - rows)), off = Math.max(0, Math.min(rows - 1, jbView.cursor - jbView.top));
+    jbView.top = top; jbView.cursor = top + off; jbRenderList(); return;
+  }
   if (k === 'row') { jbView.cursor = jbView.top + index; jbRenderList(); if (double) jbEnter(); return; }
   if (['artists', 'albums', 'songs', 'list', 'search'].includes(k)) return jbOpen(k);
   if (k === 'back') return jbBack();
@@ -209,11 +242,13 @@ document.addEventListener('keydown', e => {
   if (e.target && e.target.closest && e.target.closest('input, textarea, select')) return;
   if (document.querySelector('#jbSetup.show, #phoneModal.show, #histModal.show')) return;
   const k = e.key, take = () => { e.preventDefault(); e.stopImmediatePropagation(); };
-  if (jbSearchText !== null) {                                   // typing a search
-    if (k === 'Enter') { take(); jbRunSearch(); }
-    else if (k === 'Escape') { take(); jbSearchText = null; jbRenderList(); }
-    else if (k === 'Backspace') { take(); jbSearchText = jbSearchText.slice(0, -1); jbRenderList(); }
-    else if (k.length === 1 && jbSearchText.length < 60) { take(); jbSearchText += k; jbRenderList(); }
+  if (jbSearchText !== null) {                                   // typing a search: the results follow each letter
+    const step = { ArrowDown: 1, ArrowUp: -1, PageDown: jb.rows(), PageUp: -jb.rows() }[k];
+    if (step) { take(); jbMove(step); }
+    else if (k === 'Enter') { take(); jbSearchLive(); jbSearchText = null; jbEnter(); }
+    else if (k === 'Escape') { take(); jbSearchLive(); jbSearchText = null; jbRenderList(); }
+    else if (k === 'Backspace') { take(); if (jbSearchText) jbSearchType(jbSearchText.slice(0, -1)); else { jbSearchText = null; jbRenderList(); } }
+    else if (k.length === 1) { take(); jbSearchType(jbSearchText + k); }
     return;
   }
   const move = { ArrowDown: 1, ArrowUp: -1, PageDown: jb.rows(), PageUp: -jb.rows(), Home: -1e9, End: 1e9 }[k];

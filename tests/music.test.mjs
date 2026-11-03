@@ -92,16 +92,39 @@ test('REPEAT all, one, off and SHUFFLE, remembered', async () => {
   assert.equal((await modes())[2], '{"repeat":"off","shuffle":false}');
 });
 
-test('BUSCAR finds artists, albums and songs; TEMAS lists every song', async () => {
-  await d.click(K('search'), 300);
+test('SEARCH finds as you type, any words in any field; ESC keeps the results, BACK returns to them', async () => {
+  await d.click(K('search'), 1500);                                // the first time it reads the whole library
   await d.win.hover('#jbPanel');
-  await d.win.keyboard.type('pampa'); assert.equal((await view()).list.header, 'SEARCH: pampa_');
-  await press('Enter', 1500);
-  const v = await view();
-  assert.equal(v.kind, 'search'); assert.equal(v.count, 1 + 24, 'the artist and its 24 songs');
-  assert.deepEqual(v.list.rows[0], { text: 'Pampa Seca', sub: 'ARTIST', end: '', playing: false, dim: false });
+  await d.win.keyboard.type('pampa'); await d.wait(400);
+  let v = await view();
+  assert.equal(v.list.header, 'SEARCH: pampa_'); assert.equal(v.list.right, '1 ARTIST · 3 ALBUMS · 24 SONGS');
+  assert.equal(v.count, 28); assert.deepEqual(v.list.rows[0], { text: 'Pampa Seca', sub: 'ARTIST', end: '', playing: false, dim: false });
+  await d.win.keyboard.type(' vivo h'); await d.wait(400);          // words from the album and the song, accents aside
+  v = await view();
+  assert.equal(v.count, 1); assert.equal(v.list.rows[0].text, 'Canción H de Pampa Seca'); assert.equal(v.list.right, '1 SONG');
+  await press('Escape');
+  v = await view();
+  assert.equal(v.list.header, 'SEARCH “pampa vivo h” · 1');
+  await d.click(K('search'), 300); await d.win.hover('#jbPanel');
+  for (let i = 0; i < 7; i++) await press('Backspace', 30);
+  await d.wait(300); await press('Enter', 1000);                    // the artist, opened from the results
+  assert.equal((await view()).kind, 'artist');
+  await d.click(K('back'), 300);
+  assert.equal((await view()).list.header, 'SEARCH “pampa” · 28');
+});
+
+test('SONGS lists every song, and its scroll bar drags through them', async () => {
   await d.click(K('songs'), 1500);
   assert.equal((await view()).count, 720);
+  const bar = await d.win.locator('#jukebox [data-role="scrollbar"]').boundingBox();
+  await d.win.mouse.move(bar.x + bar.width / 2, bar.y + 3); await d.win.mouse.down();
+  await d.win.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2, { steps: 5 }); await d.wait(100);
+  const mid = (await view()).list.top;
+  await d.win.mouse.move(bar.x + bar.width / 2, bar.y + bar.height + 20, { steps: 5 }); await d.win.mouse.up(); await d.wait(100);
+  const end = (await view()).list.top;
+  assert.ok(mid > 250 && mid < 470, 'half way: ' + mid); assert.equal(end, 710, 'the end');
+  await d.win.mouse.click(bar.x + bar.width / 2, bar.y + 2); await d.wait(100);
+  assert.equal((await view()).list.top, 0, 'a click at the top jumps there');
 });
 
 test('the radio taking the sound pauses the music', async () => {
