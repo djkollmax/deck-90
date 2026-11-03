@@ -69,6 +69,20 @@
 .st-display.look-tokio{ --lcd:#02060f; --seg:#eef5ff; --ghost:#16263f; --ghost-op:.42; --lit:#ffffff; --lbl:#3ea6ff; --off:#17335a; --artist:#a8d4ff; --vu:#ff8a1e; --vu-off:#2a1a0c; }
 .st-display.look-studio{ --lcd:#070401; --seg:#ffae2e; --ghost:#3a260c; --ghost-op:.3; --lit:#ffbd4f; --lbl:#e8e2d4; --off:#4a3a24; --artist:#ffd08a; --vu:#58f07a; --vu-off:#10281a; }
 .st-display.look-titan{ --lcd:#050709; --seg:#eef4ff; --ghost:#1e252e; --ghost-op:.45; --lit:#ffffff; --lbl:#ff8a2a; --off:#4a2c14; --artist:#d8e2ee; --vu:#ff8a2a; --vu-off:#22180f; }
+.st-display.look-real{ --lcd:#6a1d58; --seg:#fff27a; --ghost:#7f8138; --ghost-op:.62; --lit:#ffef74; --lbl:#86a248; --off:#6f8c3f; --artist:#e9e79a; --vu:#eadfe8; --vu-off:#5a2650; }
+/* ORIGINAL (7.10.5): as on the real glass, S-HDB is dark red letters on a bright red-orange lamp, the meters' tips stay white */
+.st-display.look-real rect[fill="#e32322"]{ fill:#ff5a40; }
+.st-display.look-real text[fill="#ffde46"]{ fill:#8e0600; }
+.st-display.look-real g[data-channel] > g[fill="#c5f4df"][data-level]{ fill:var(--vu); }
+
+/* 7.10.5: the ▽△ and DISC mark take each look's labels (lit: its lit colour); the pill behind DISC, its glass */
+.st-display.look g[data-role="disc-logo"]{ stroke:var(--lbl); }
+.st-display.look g[data-role="disc-logo"][data-lit="1"]{ stroke:var(--lit); }
+.st-display.look g[data-role="disc-logo"] text{ fill:var(--lbl); }
+.st-display.look g[data-role="disc-logo"][data-lit="1"] text{ fill:var(--lit); }
+.st-display.look g[data-role="disc-logo"] rect{ fill:var(--lcd); }
+.st-display.look-real g[data-role="disc-logo"]{ stroke:#c9a86a; }
+.st-display.look-real g[data-role="disc-logo"] text{ fill:#c9a86a; }
 
 /* the meters' last stretch, in every colour of the stereo: two yellow, one amber, two red (true in colour 1 and HD;
    the other colours tint them like the rest of the glass) */

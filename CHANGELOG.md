@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.10.5
+
+### Added
+- **SDM ORIGINAL**: the colours of Damián's own DP940, sampled from photos of it lit: violet glass, pale yellow segments over olive unlit ones (as visible as on the real glass), olive labels, S-HDB in dark red on a red-orange lamp, white meters.
+- **The real unit's ▽△ and round DISC mark** above the R meter, where the display was empty; DISC lights with a disc in (vendor patch "disc logo", `setTrack({ disc })`), every look colours them.
+
 ## 7.10.4
 
 ### Added

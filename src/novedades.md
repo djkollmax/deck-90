@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.10.5 — 2026-11-03
+
+### Nuevo
+- **SDM ORIGINAL**: los colores de tu DP940 de verdad, sacados de las fotos del estéreo prendido.
+  - Vidrio violeta y letras amarillas.
+  - Los segmentos apagados en verde oliva, bien visibles como en el real.
+  - S-HDB rojo y vúmetros blancos.
+- **El ▽△ y el logo DISC del equipo real**, a la derecha, donde el display quedaba vacío. DISC se prende cuando hay un disco.
+
 ## 7.10.4 — 2026-11-03
 
 ### Nuevo

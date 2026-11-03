@@ -73,6 +73,7 @@ test('the stereo\'s display: the song\'s number, the time left and CD 16/44; DIS
   let t = await texts();
   assert.ok(t.includes('CD 16/44') && t.includes(String(n)), t.join());
   assert.ok(t.some(x => /^-0[23]:\d\d$/.test(x)), 'the time left: ' + t.join());
+  assert.equal(await d.win.evaluate(() => document.querySelector('#stDisplay [data-role="disc-logo"]').dataset.lit), '1', 'the DISC mark lights with a disc in');
   const disps = [];
   for (let i = 0; i < 5; i++) { await press('disp', 300); disps.push(await d.win.evaluate(() => stereoCfg.disp)); }
   assert.deepEqual(disps, ['clock', 'temp', 'clocktemp', 'time', 'song'], 'BPM and LOUDNESS are gone');
@@ -86,13 +87,14 @@ test('the stereo\'s display: the song\'s number, the time left and CD 16/44; DIS
   await press('att', 400); assert.equal(await title(), 'ATT');
   await press('att', 400); assert.equal(await title(), 'VOL 46');
   await d.wait(2300); assert.notEqual(await title(), 'VOL 46', 'and then the song again');
-  // SDM held goes back one: the last three looks change the whole front (TITANIO, ESTUDIO, TOKIO), then the glass alone
+  // SDM held goes back one: ORIGINAL (7.10.5), then the three looks that change the whole front (TITANIO, ESTUDIO, TOKIO)
   const front = () => d.win.evaluate(() => [document.querySelector('#stereo .st-face').dataset.face, getComputedStyle(document.querySelector('#stereo .st-photo')).filter]);
   await d.win.evaluate(() => { stereoCfg.color = 1; stereoPaint(); });
   const faces = [];
   for (let i = 0; i < 4; i++) { await d.hold('.st-hot[data-st="sdm"]'); faces.push(await front()); }
-  assert.deepEqual(faces.map(f => f[0]), ['titan', 'pro', 'tokio', '']);
-  assert.match(faces[0][1], /grayscale/); assert.equal(faces[3][1], 'none');
+  assert.deepEqual(faces.map(f => f[0]), ['', 'titan', 'pro', 'tokio'], 'ORIGINAL (the glass alone), then the three fronts');
+  assert.equal(await d.win.evaluate(() => { stereoCfg.color = STEREO_COLORS; return stereoLook().id; }), 'real');
+  assert.match(faces[1][1], /grayscale/); assert.equal(faces[0][1], 'none');
   await d.win.evaluate(() => { stereoCfg.color = 1; stereoPaint(); });
   assert.deepEqual(await front(), ['', 'none']);
   await d.win.keyboard.press('e'); await d.wait(1200);

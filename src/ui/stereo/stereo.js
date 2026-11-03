@@ -58,6 +58,8 @@ const STEREO_LOOKS = [
   { id: 'tokio', name: 'TOKIO', say: 'al estilo Sony de los 2000: frente negro, teclas con luz azul, letras blancas', face: 'tokio' },
   { id: 'studio', name: 'ESTUDIO', say: 'frente negro mate de equipo pro, letras ámbar, vúmetros verdes', face: 'pro' },
   { id: 'titan', name: 'TITANIO', say: 'frente plateado de equipo pro, vidrio negro, letras blancas y naranja', face: 'titan' },
+  // 7.10.5: the colours of Damián's own DP940, taken from photos of it lit in the car
+  { id: 'real', name: 'ORIGINAL', say: 'los colores del DP940 de verdad: vidrio violeta, letras amarillas, segmentos apagados verde oliva' },
 ];
 const STEREO_COLORS = STEREO_HUES.length + STEREO_LOOKS.length;   // SDM: six lights, then the looks
 const stereoLook = () => STEREO_LOOKS[stereoCfg.color - STEREO_HUES.length - 1] || null;
@@ -147,9 +149,9 @@ function stereoInfo() {
   }
   if (stereoCfg.mode !== 'cd' || !cdInfo || !cdInfo.present) return {};
   const files = cdFiles();
-  if (files.length) return { number: cdFile + 1, length: isFinite(cdAudio.duration) ? cdAudio.duration : 0, quality: cdQuality() };
+  if (files.length) return { number: cdFile + 1, length: isFinite(cdAudio.duration) ? cdAudio.duration : 0, quality: cdQuality(), disc: true };
   const tr = cdAudioTracks(), n = cdState.track || (tr[0] && tr[0].n) || 0, t = tr.find(x => x.n === n);
-  return tr.length ? { number: n, length: t && t.len || 0, quality: cdQuality() } : {};
+  return tr.length ? { number: n, length: t && t.len || 0, quality: cdQuality(), disc: true } : {};
 }
 function stereoContext() {
   const d = stereoCfg.disp;

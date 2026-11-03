@@ -7,7 +7,8 @@
    levels, two to six cells a row).
    7.9.21, marked "info": setTrack({ number, length, quality }) and setRadio({ quality }): the song's number big on the
    right (where the radio's memory goes) and, with a length, the time left counting down at the bottom; the quality
-   ("MP3 128", "CD 16/44", "FLAC") at the bottom; LOCAL in red. */
+   ("MP3 128", "CD 16/44", "FLAC") at the bottom; LOCAL in red.
+   7.10.5, marked "disc logo": the real unit's ▽△ and round DISC mark above the R meter; setTrack({ disc }) lights DISC. */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -123,6 +124,7 @@ class Deck90Display {
       this.state.track.number = Math.max(0, Math.min(99, Math.trunc(Number(track.number) || 0)));
       this.state.track.length = safeSeconds(track.length);
       this.state.track.quality = safeText(track.quality).slice(0, 12);
+      this.state.track.disc = Boolean(track.disc);   // disc logo: a disc is in
     }
     if ('playing' in track) return this.setPlayback(Boolean(track.playing));
     this._renderText();
@@ -297,6 +299,14 @@ class Deck90Display {
 
   _renderFooter() {
     this._footer.replaceChildren();
+    // Deck 90 7.10.5, "disc logo": the real DP940's ▽△ and its round DISC mark, above the R meter; DISC lights with a
+    // disc in (data-lit for the SDM looks to colour)
+    const lit = this.state.mode === 'music' && this.state.track.disc, logo = svgNode('g', { 'data-role': 'disc-logo', 'data-lit': lit ? '1' : '0',
+      fill: 'none', stroke: lit ? '#ffdd50' : '#9ab34b', 'stroke-width': 2.8, 'stroke-linejoin': 'round' });
+    logo.append(svgNode('path', { d: 'M972 29.5H1018L995 44.5Z' }), svgNode('path', { d: 'M1006 44.5H1052L1029 29.5Z' }),
+      svgNode('circle', { cx: 1006, cy: 69, r: 21.5 }), svgNode('rect', { x: 986, y: 58.5, width: 60, height: 21, rx: 10.5, fill: '#3a0d1d' }));
+    const disc = label('DISC', 1016, 74.5, { 'font-size': 15, 'text-anchor': 'middle', fill: lit ? '#ffdd50' : '#9ab34b', stroke: 'none', 'data-role': 'disc-word' });
+    logo.append(disc); this._footer.append(logo);
     this._footer.append(svgNode('rect', { x: 289, y: 159, width: 107, height: 27, rx: 3, fill: '#e32322', opacity: .95 }));
     this._footer.append(label('S-HDB', 299, 180, { fill: '#ffde46', 'font-size': 24 }));
     const music = this.state.mode === 'music';
