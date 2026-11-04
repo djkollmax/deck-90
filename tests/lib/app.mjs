@@ -26,7 +26,7 @@ export const playwrightModule = playwright;
 const electronPath = () => process.env.ELECTRON_PATH || require('electron');
 
 // errors that only mean this computer has no system sound to listen to
-const NOISE = /monitor|NotReadable|NotFound|capture|Requested device|Permission denied|502 \(Bad Gateway\)|503 \(Service Unavailable\)/i;   // (a station off the air, on purpose)
+const NOISE = /monitor|NotReadable|NotFound|capture|Requested device|Permission denied|502 \(Bad Gateway\)|503 \(Service Unavailable\)|404 \(Not Found\)/i;   // (a station off the air, on purpose)
 
 /** A disc of n audio tracks of len seconds (with table-of-contents frames, so its names can be looked up). */
 export const disc = (n, len, extra = {}) => ({

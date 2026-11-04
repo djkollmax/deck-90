@@ -1,5 +1,31 @@
 # Novedades
 
+## 7.10.13 — 2026-11-04
+
+### Nuevo
+- **Arriba a la derecha del sintonizador**: la hora y, debajo, cuánto falta para SLEEP, cuánto baja NIVEL PAREJO esa radio o cuánto sonido tiene guardado.
+- **SLEEP** (DISP apretado un segundo): la radio se apaga sola en 15, 30, 60 o 90 minutos.
+- **DISP** pasa por la radio, el tema solo, la temperatura y el tiempo que llevás escuchando esa radio. **MODE** suma "todo junto": tema, de dónde es y la calidad.
+
+### Cambios
+- **El contador de temas del DM-90 tiene cuatro cifras**: con SHUFFLE ALL se quedaba en 999.
+
+### Arreglos
+- **Radio**:
+  - Al cambiar de radio, la anterior se calla en el momento.
+  - Si una radio guardada no contesta, su dirección ya no se borra: se buscan sus otras transmisiones una vez, y si se cortó internet se reintenta más tarde.
+  - Si la compactera o el DM-90 toman el sonido mientras la radio está sintonizando o reconectando, la radio ya no vuelve a meterse.
+  - La pausa de la radio en el estéreo la deja esperando ▶.
+- **DM-90**:
+  - Un tema que no se puede tocar (ALAC, WMA…) se pide en FLAC, y si tampoco anda pasa al siguiente (antes SHUFFLE ALL se quedaba callado).
+  - La búsqueda y la cola ya no se pisan con listas que llegan tarde.
+  - Q con la cola terminada pone esos temas primero en vez de borrar la cola.
+  - Si el servidor ya no acepta la sesión, SETUP lo dice.
+- **Otros**:
+  - La radio encuentra las direcciones más rápido.
+  - Spotless vuelve a sonar si la radio se apaga desde el estéreo o con SLEEP.
+  - Last.fm anota también un tema que se repite.
+
 ## 7.10.12 — 2026-11-04
 
 ### Cambios

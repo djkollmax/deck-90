@@ -68,25 +68,31 @@ function musicLibrarySet(id) {
   musicLib = { artists: null, albums: {}, songs: null, tracks: musicLib.tracks }; musicIndex = null;   // an album's songs stay the same
   deck.emit('music');
 }
-async function musicArtists() {
-  if (!musicLib.artists) {
+// 7.10.13: one read at a time for each list (SEARCH and SHUFFLE ALL together read 15,000 songs once), kept in the
+// library it was asked for: a library chosen meanwhile starts its own (musicLib is a new object then)
+function musicOnce(lib, key, read) {
+  if (lib[key]) return Promise.resolve(lib[key]);
+  lib._reading = lib._reading || {};
+  return lib._reading[key] || (lib._reading[key] = read().then(v => { lib[key] = v; return v; }).finally(() => { delete lib._reading[key]; }));
+}
+function musicArtists() {
+  return musicOnce(musicLib, 'artists', async () => {
     const r = await musicRead('artists', '', { Limit: 50000 });
-    musicLib.artists = musicSortBy((r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?' })), a => a.name);   // 7.10.4: libraries merged
-  }
-  return musicLib.artists;
+    return musicSortBy((r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?' })), a => a.name);   // 7.10.4: libraries merged
+  });
 }
 async function musicAlbums(artistId) {
-  const key = artistId || '*';
-  if (!musicLib.albums[key]) {
+  const key = artistId || '*', lib = musicLib;
+  if (!lib.albums[key]) {
     const q = { IncludeItemTypes: 'MusicAlbum', Recursive: true, Limit: 50000, Fields: 'ProductionYear,ChildCount',
       SortBy: artistId ? 'ProductionYear,SortName' : 'AlbumArtist,ProductionYear,SortName' };
     if (artistId) q.AlbumArtistIds = artistId;
     let r = await musicRead('items', '', q);
     if (artistId && !(r.Items || []).length) { delete q.AlbumArtistIds; q.ArtistIds = artistId; r = await musicRead('items', '', q); }   // older servers
-    musicLib.albums[key] = (r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?', artist: i.AlbumArtist || '', year: i.ProductionYear || 0, count: i.ChildCount || 0 }))
+    lib.albums[key] = (r.Items || []).map(i => ({ id: i.Id, name: i.Name || '?', artist: i.AlbumArtist || '', year: i.ProductionYear || 0, count: i.ChildCount || 0 }))
       .sort((a, b) => (artistId ? 0 : musicCmp(a.artist, b.artist)) || (a.year - b.year) || musicCmp(a.name, b.name));
   }
-  return musicLib.albums[key];
+  return lib.albums[key];
 }
 async function musicTracks(albumId) {
   if (!musicLib.tracks[albumId]) {
@@ -110,12 +116,11 @@ async function musicShuffleAll() {
   await musicPlay(all, Math.floor(Math.random() * all.length));
   return all.length;
 }
-async function musicSongs() {
-  if (!musicLib.songs) {
+function musicSongs() {
+  return musicOnce(musicLib, 'songs', async () => {
     const r = await musicRead('items', '', { IncludeItemTypes: 'Audio', Recursive: true, SortBy: 'SortName', Limit: 100000 });
-    musicLib.songs = musicSortBy((r.Items || []).map(musicSong), s => s.name);
-  }
-  return musicLib.songs;
+    return musicSortBy((r.Items || []).map(musicSong), s => s.name);
+  });
 }
 // 7.10.2: the search runs here, over the whole library read once (artists, albums, every song): instant while
 // typing, any word in any order, in the name, the artist or the album, with or without accents ("sting fields"
@@ -124,11 +129,14 @@ const musicKey = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/
 let musicIndex = null;
 async function musicSearchReady() {
   if (!musicIndex) {
+    const lib = musicLib;
     const [ar, al, so] = await Promise.all([musicArtists(), musicAlbums(), musicSongs()]);
     const k = (it, ...f) => Object.assign(it, { _k: musicKey(f.join(' ')), _n: musicKey(it.name) });
-    musicIndex = { artists: ar.map(a => k(Object.assign({ kind: 'artist' }, a), a.name)),
+    const index = { artists: ar.map(a => k(Object.assign({ kind: 'artist' }, a), a.name)),
       albums: al.map(a => k(Object.assign({ kind: 'album' }, a), a.name, a.artist, a.year || '')),
       songs: so.map(x => k(Object.assign({ kind: 'song' }, x), x.name, x.artist, x.artists, x.album)) };
+    if (lib !== musicLib) return index;                            // another library was chosen meanwhile: not kept
+    musicIndex = index;
   }
   return musicIndex;
 }
@@ -182,7 +190,12 @@ function musicPlay(list, i) {
 function musicQueueNext(songs) {
   songs = songs.filter(s => s && s.id);
   if (!songs.length) return 0;
-  if (musicPos < 0) { musicQueue = songs.slice(); musicPos = -1; musicNextAt = -1; deck.emit('music'); return songs.length; }
+  if (musicPos < 0 && !musicQueue.length) { musicQueue = songs.slice(); musicPos = -1; musicNextAt = -1; deck.emit('music'); return songs.length; }
+  if (musicPos < 0) {                                              // 7.10.13: a queue that ended: these first, the rest kept
+    musicQueue.unshift(...songs); musicNextAt = songs.length;
+    if (musicModes.shuffle) musicShuf = [...songs.map((_, k) => k), ...musicShuf.map(k => k + songs.length)];
+    deck.emit('music'); return songs.length;
+  }
   const at = musicNextAt > musicPos ? musicNextAt : musicPos + 1;
   musicQueue.splice(at, 0, ...songs);
   if (musicModes.shuffle) {                                      // shuffled: they still come next
@@ -201,13 +214,14 @@ async function musicStart() {
   if (!s.media) {                                                  // its quality: the server's details of it
     musicRead('item', s.id).then(i => { const full = musicSong(i); s.media = full.media; if (!s.len) s.len = full.len; if (musicNow() === s) { musicNowInfo = s; deck.emit('music'); } }).catch(() => {});
   }
-  const url = await musicApi().stream(s.id, musicPlayable(s.media));
+  musicTry = { s, flac: !musicPlayable(s.media) };
+  const url = await musicApi().stream(s.id, !musicTry.flac);
   if (musicNow() !== s) return;
   musicAudio.src = url;
   musicAudio.play().catch(e => { if (musicNow() === s && e.name !== 'AbortError') { musicError = 'no pude tocar ' + s.name; deck.notice('⚠ No pude tocar <span>' + s.name.replace(/[<>&]/g, '') + '</span>', 2600); } });
   deck.emit('music');
 }
-function musicJump(i) { if (i >= 0 && i < musicQueue.length) { musicPos = i; musicNextAt = -1; musicStart(); } }
+function musicJump(i) { if (i >= 0 && i < musicQueue.length) { if (!(i < musicNextAt && i > musicPos)) musicNextAt = -1; musicPos = i; musicStart(); } }   // 7.10.13: into the Q'd ones, the rest of them still come first
 // what comes after the queue position `from`; byUser: ▶▶ (REPEAT one moves on anyway); null: the end
 function musicAfter(from, byUser) {
   if (musicModes.repeat === 'one' && !byUser) return from;
@@ -226,7 +240,7 @@ function musicPrev() {
 function musicToggle() {
   if (musicPlaying()) musicAudio.pause();
   else if (musicAudio.getAttribute('src')) { musicTakeSound(); musicAudio.play().catch(() => {}); }
-  else if (musicQueue.length) { if (musicPos < 0) musicPos = musicModes.shuffle ? (musicShuffleDeal(), musicShuf[0]) : 0; musicStart(); }
+  else if (musicQueue.length) { if (musicPos < 0) musicPos = musicNextAt > 0 ? (musicModes.shuffle ? musicShuf[0] : 0) : musicModes.shuffle ? (musicShuffleDeal(), musicShuf[0]) : 0; musicStart(); }
 }
 function musicStop() { musicAudio.pause(); musicAudio.removeAttribute('src'); musicAudio.load(); deck.emit('music'); }
 function musicPauseHere() { if (musicPlaying()) musicAudio.pause(); }
@@ -237,13 +251,30 @@ musicAudio.addEventListener('ended', () => {
   else musicJump(n);
 });
 ['play', 'pause', 'loadedmetadata', 'error'].forEach(ev => musicAudio.addEventListener(ev, () => deck.emit('music')));
-musicAudio.addEventListener('error', () => { if (musicAudio.getAttribute('src')) { const s = musicNow(); deck.notice('⚠ El servidor no mandó <span>' + (s ? s.name.replace(/[<>&]/g, '') : 'el tema') + '</span>', 2600); } });
+// 7.10.13: a song that won't play as it is (ALAC, WMA… whose format the list didn't say) is asked again as FLAC; one
+// that won't play at all is skipped, so a long SHUFFLE ALL goes on (five in a row stop it)
+let musicTry = { s: null, flac: false }, musicFails = 0;
+musicAudio.addEventListener('playing', () => { musicFails = 0; });
+musicAudio.addEventListener('error', async () => {
+  if (!musicAudio.getAttribute('src')) return;
+  const s = musicNow(); if (!s) return;
+  if (musicTry.s === s && !musicTry.flac) {
+    musicTry.flac = true;
+    const url = await musicApi().stream(s.id, false);
+    if (musicNow() !== s) return;
+    musicAudio.src = url; musicAudio.play().catch(() => {});
+    return;
+  }
+  deck.notice('⚠ El servidor no mandó <span>' + s.name.replace(/[<>&]/g, '') + '</span>' + (musicFails < 4 ? ': sigo con el próximo' : ''), 2600);
+  const n = musicAfter(musicPos, true);
+  if (++musicFails < 5 && n !== null && n !== musicPos) setTimeout(() => { if (musicNow() === s) musicJump(n); }, 1200);
+});
 
 // the music takes the sound (as the CD and the radio do): the radio and the CD go quiet, the PC's player waits;
 // screens may add to this (ui/jukebox/jukebox.js)
 let musicResumePc = false;
 function musicTakeSound() {
-  if (radioPlaying()) radioStop(true);
+  if (radioActive()) radioStop(true);                              // 7.10.13: one being tuned or reconnecting too
   if (cdPlaying()) cdPauseHere();
   if (npPcPlaying() && window.nowPlaying && !musicResumePc) { window.nowPlaying.cmd('pause'); musicResumePc = true; }
 }

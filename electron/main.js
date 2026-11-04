@@ -586,8 +586,8 @@ ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
 // From Open-Meteo (free, no key; data under CC BY 4.0): a place looked up once by the name typed in the drawer,
 // then its weather now and today's high and low, every 15 minutes. Only numbers go back to the page.
 let weatherErr = '';
-async function getJson(url) {
-  const ac = new AbortController(), t = setTimeout(() => ac.abort(), 15000);
+async function getJson(url, wait = 15000) {
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait);
   try {
     const r = await net.fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Deck90/' + app.getVersion() } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -602,10 +602,13 @@ function weatherFail(what, err) {
 // ── The stereo's internet radio (7.7): stations from Radio Browser (radio-browser.info, free, no key) ──
 // Only the name looked for (or "the most heard in Argentina") goes there; the page gets names and stream addresses back.
 const RB_HOSTS = ['de1', 'nl1', 'at1', 'de2'].map(h => `https://${h}.api.radio-browser.info`);
+// 7.10.13: the host that answered last is asked first, and each gets 7 s (four slow ones were a minute of TUNING…)
+let rbGood = 0;
 async function radioBrowser(query) {
   let lastErr = null;
-  for (const h of RB_HOSTS) {
-    try { return await getJson(h + '/json/stations/search?' + query); } catch (err) { lastErr = err; }
+  for (let i = 0; i < RB_HOSTS.length; i++) {
+    const k = (rbGood + i) % RB_HOSTS.length;
+    try { const r = await getJson(RB_HOSTS[k] + '/json/stations/search?' + query, 7000); rbGood = k; return r; } catch (err) { lastErr = err; }
   }
   throw lastErr || new Error('sin respuesta');
 }

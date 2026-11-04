@@ -16,7 +16,7 @@ after(async () => { await d?.close(); });
 test('the tuner, the CD, the stereo and the radio memories come back after a restart', async () => {
   await d.win.evaluate(() => cdUnitKey('power')); await d.wait(800);   // (a key on a unit that's off only wakes it)
   await d.win.evaluate(() => {
-    tunerKey('mode'); tunerKey('disp');                                    // line: station, display: clock
+    tunerKey('mode'); tunerKey('disp');                                    // line: station, display: the song alone
     cdUnitKey('repeat'); cdUnitKey('shuffle');                             // REPEAT all, SHUFFLE
     cdUnitCfg.remain = true; stereoCfg.color = 9; stereoCfg.dim = 2; savePrefs();
     radioMem.FM2[5] = { name: 'Guardada', freq: '104.3', q: 'Guardada', cc: 'AR', url: '', codec: '', kbps: 0 }; radioMem.band = 'AM'; saveRadio();
@@ -24,7 +24,7 @@ test('the tuner, the CD, the stereo and the radio memories come back after a res
   await reload();
   assert.deepEqual(await d.win.evaluate(() => ({ line: tunerCfg.line, disp: tunerCfg.disp, modes: { ...cdModes }, remain: cdUnitCfg.remain,
     color: stereoCfg.color, dim: stereoCfg.dim, saved: radioMem.FM2[5] && radioMem.FM2[5].name, band: radioMem.band })),
-    { line: 'station', disp: 'clock', modes: { repeat: 'all', shuffle: true }, remain: true, color: 9, dim: 2, saved: 'Guardada', band: 'AM' });
+    { line: 'station', disp: 'song', modes: { repeat: 'all', shuffle: true }, remain: true, color: 9, dim: 2, saved: 'Guardada', band: 'AM' });
   assert.equal(await d.win.evaluate(() => cdUnit._remain), true, 'the DC-90 counts down again');
 });
 

@@ -396,7 +396,13 @@ function stereoKey(k, hold) {
     return;
   }
   if (k === 'sel') {
-    if (radio) { if (radioPlaying()) { radioAudio.pause(); toast('RADIO · <span>pausa</span>', 1200); } else if (radioNow && radioAudio.src) radioAudio.play().catch(() => radioTune(radioNow)); else radioMemory(radioMem.slot || 1); }
+    // 7.10.13: the radio "paused" is stopped and waiting (a live stream doesn't wait): ▶ tunes it back (tuner.js's source)
+    if (radio) {
+      const src = npSources.find(x => x.name === 'radio');
+      if (radioPlaying()) { src.cmd('pause'); toast('RADIO · <span>pausa</span>', 1200); }
+      else if (tunerHeld) src.cmd('play');
+      else if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1);
+    }
     else if (window.nowPlaying) window.nowPlaying.cmd('toggle');
     return;
   }

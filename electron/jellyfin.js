@@ -50,7 +50,7 @@ function createJellyfin({ net, dir, log, version }) {
     async signIn(server, user, pw) {
       const s = clean(server);
       if (!s) return { error: 'La dirección tiene que empezar con http:// o https://' };
-      const was = cfg.server; cfg.server = s;
+      const was = cfg.server, before = { token: cfg.token, user: cfg.user, name: cfg.name }; cfg.server = s;
       try {
         const r = await call('POST', '/Users/AuthenticateByName', null, { Username: String(user || '').slice(0, 128), Pw: String(pw || '').slice(0, 256) }, '');
         if (!r || !r.AccessToken || !r.User) throw new Error('no token');
@@ -60,7 +60,7 @@ function createJellyfin({ net, dir, log, version }) {
         save(); log('jellyfin: signed in to ' + s + ' as ' + cfg.name + ', ' + libs.length + ' music librar' + (libs.length === 1 ? 'y' : 'ies'));
         return { ok: true, name: cfg.name, library: cfg.library, libraries: libs.length };
       } catch (e) {
-        cfg.server = was || s;
+        cfg.server = was || s; Object.assign(cfg, before);            // 7.10.13: the session before, whole
         log('jellyfin: sign-in to ' + s + ' failed: ' + e.message);
         return { error: e.code === 401 ? 'Usuario o contraseña incorrectos' : 'No contesta el servidor (' + e.message + ')' };
       }
@@ -97,7 +97,11 @@ function createJellyfin({ net, dir, log, version }) {
         }
         const seen = new Set();                                    // an artist in two libraries once
         return { Items: out.filter(i => !i.Id || (seen.has(i.Id) ? false : seen.add(i.Id))), TotalRecordCount: out.length };
-      } catch (e) { log('jellyfin: ' + kind + ' failed: ' + e.message); return { error: e.code === 401 ? 'signed out' : e.message }; }
+      } catch (e) {
+        log('jellyfin: ' + kind + ' failed: ' + e.message);
+        if (e.code === 401) { delete cfg.token; save(); log('jellyfin: the server no longer takes the token: signed out'); }   // 7.10.13: SETUP says so
+        return { error: e.code === 401 ? 'signed out' : e.message };
+      }
     },
     // where a song's sound comes from: the file as it is (static) when Chromium plays its codec, or made FLAC
     // by the server when it doesn't (ALAC, WMA, APE, DSD…)

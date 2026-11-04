@@ -69,7 +69,7 @@ function createRadioProxy({ net, log, onMeta, agent }) {
     // the seconds of sound handed over minus the seconds played since (the "ahead"), every second, for SIGNAL
     let held = [], heldBytes = 0, flowing = false, rate = 0, firstAt = 0, handed = 0, aheadTimer = 0;
     const HOLD = 3;
-    const hand = a => { handed += a.length; try { res.write(a); } catch (_) {} };
+    const hand = a => { if (res.writableLength > 8e6) return; handed += a.length; try { res.write(a); } catch (_) {} };   // 7.10.13: a player that stopped reading isn't fed without end
     const ahead = () => {
       if (!rate || !firstAt) return null;
       let a = handed * 8 / (rate * 1000) - (Date.now() - firstAt) / 1000;

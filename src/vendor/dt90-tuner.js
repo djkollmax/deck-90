@@ -26,6 +26,7 @@
  * Deck 90 7.9.21: setRadio({ quality, place }) writes the stream's quality after TUNED and where the station is
  * under the memory.
  * Deck 90 7.10.7: a sixth band key, HI-FI (band-hifi, band 'HIFI'), between FM4 and AM; the memories narrower.
+ * Deck 90 7.10.13: setRadio({ corner, cornerSub }) writes the top right of the display, over L and R.
  * Deck 90 7.10.12: presets 7–12 (the keys 1–6 held), shown M7…M12, their key's lamp lit.
  * Deck 90 7.10.11: a seventh band key, FM5 (band-fm5); the band keys and the memories narrower.
  * Deck 90 7.10.9: bigger key letters, fitted to each key (keyFont); accented capitals full height, the accent above.
@@ -556,7 +557,7 @@ class Deck90Tuner {
     }
     if ('preset' in update && finite(update.preset)) radio.preset = Math.max(0, Math.min(12, Math.round(Number(update.preset))));   // 0: no memory; Deck 90 7.10.12: 7–12 (1–6 held)
     if ('signal' in update && finite(update.signal)) radio.signal = Math.max(0, Math.min(5, Math.round(Number(update.signal))));
-    for (const key of ['name', 'text', 'label', 'quality', 'place']) if (key in update) radio[key] = clean(update[key]);   // quality, place: Deck 90 7.9.21
+    for (const key of ['name', 'text', 'label', 'quality', 'place', 'corner', 'cornerSub']) if (key in update) radio[key] = clean(update[key]);   // quality, place: Deck 90 7.9.21; corner, cornerSub: 7.10.13
     for (const key of ['stereo', 'mono', 'tuned', 'auto', 'scan', 'memo']) if (key in update) radio[key] = Boolean(update[key]);
     this._needleTarget = this._fraction();
     this._renderRadio();
@@ -703,7 +704,8 @@ class Deck90Tuner {
     /* Deck 90 7.9.21: the stream's quality after TUNED ("MP3 128") and where the station is under the memory ("BS AS") */
     this._quality = node('g', { 'data-role': 'quality' });
     this._place = node('g', { 'data-role': 'place' });
-    this._display.append(this._quality, this._place);
+    this._corner = node('g', { 'data-role': 'corner' });   /* Deck 90 7.10.13: the top right, over L and R */
+    this._display.append(this._quality, this._place, this._corner);
     const rdsClip = node('g', { 'clip-path': `url(#${this.prefix}-rds-clip)`, 'data-role': 'rds-viewport' });
     this._rds = node('g', { 'data-role': 'rds-text' });
     rdsClip.append(this._rds); this._display.append(rdsClip);
@@ -722,7 +724,7 @@ class Deck90Tuner {
     this._buttons = {};
     const words = { power: 'POWER', band: 'BAND', 'band-fm1': 'FM1', 'band-fm2': 'FM2', 'band-fm3': 'FM3', 'band-fm4': 'FM4', 'band-fm5': 'FM5', 'band-hifi': 'HI-FI', 'band-am': 'AM',   /* Deck 90 7.10.7 */ 'tune-down': '◀', 'tune-up': '▶', scan: 'SCAN', memo: 'MEMO', mode: 'MODE', disp: 'DISP' };
     for (const [key, box] of Object.entries(LAYOUT.buttons)) {
-      const group = node('g', { 'data-key': key, role: 'button', tabindex: 0, 'aria-label': key.startsWith('m') && /^m\d$/.test(key) ? `Memoria ${key.slice(1)}. Mantener un segundo para memorizar.` : words[key], 'aria-pressed': 'false' });
+      const group = node('g', { 'data-key': key, role: 'button', tabindex: 0, 'aria-label': key.startsWith('m') && /^m\d$/.test(key) ? `Memoria ${key.slice(1)}. Mantener un segundo: memoria ${Number(key.slice(1)) + 6}.` : words[key],   /* Deck 90 7.10.12 */ 'aria-pressed': 'false' });
       group.style.cursor = 'pointer'; group.style.outline = 'none';
       const face = node('rect', { x: box.x, y: box.y, width: box.width, height: box.height, rx: 2.4, fill: `url(#${this.prefix}-key)`, stroke: 'var(--edge,var(--_d90-edge))', 'stroke-width': .9 });
       const shadow = node('rect', { x: box.x, y: box.y + 1.8, width: box.width, height: box.height, rx: 2.4, fill: '#080e0a', opacity: .75 });
@@ -847,6 +849,14 @@ class Deck90Tuner {
       const pitch = Math.min(1.3, 86 / Math.max(1, [...place].length * 6));
       this._place.replaceChildren(...(place ? [this._dots(place, 58, 114 + (7 * 1.3 - 7 * pitch) / 2, pitch)] : []));
       this._cache.place = place;
+    }
+    /* Deck 90 7.10.13: the corner over L and R (x 912-1137): a clock-sized line and a small one under it, at the right */
+    const corner = clean(String(radio.corner || '')).toUpperCase().slice(0, 8), cornerSub = clean(String(radio.cornerSub || '')).toUpperCase().slice(0, 20);
+    if (this._cache.corner !== corner + '|' + cornerSub) {
+      const big = corner ? Math.min(2.4, 215 / ([...corner].length * 6)) : 1, small = cornerSub ? Math.min(1.1, 215 / ([...cornerSub].length * 6)) : 1;
+      this._corner.replaceChildren(...(corner ? [this._dots(corner, 1137 - ([...corner].length * 6 - 1) * big, 52, big)] : []),
+        ...(cornerSub ? [this._dots(cornerSub, 1137 - ([...cornerSub].length * 6 - 1) * small, 73, small)] : []));
+      this._cache.corner = corner + '|' + cornerSub;
     }
     const text = clean([radio.name, radio.text].filter(Boolean).join(' - ')) || 'DECK 90';
     if (this._cache.rds !== text) {

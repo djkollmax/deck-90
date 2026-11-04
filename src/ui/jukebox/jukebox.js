@@ -155,7 +155,7 @@ function jbOpen(kind) {
   if (kind === 'artists') return jbLoad({ kind: 'artists', title: 'ARTISTS' }, async () => (await musicArtists()).map(a => Object.assign({ kind: 'artist' }, a)));
   if (kind === 'albums') return jbLoad({ kind: 'albums', title: 'ALBUMS' }, async () => (await musicAlbums()).map(a => Object.assign({ kind: 'album' }, a)));
   if (kind === 'songs') return jbLoad({ kind: 'songs', title: 'SONGS' }, async () => (await musicSongs()).map(s => Object.assign({ kind: 'song' }, s)));
-  if (kind === 'list') { jbStack = []; jbView = { kind: 'list', title: 'QUEUE', items: musicQueue.map(s => Object.assign({ kind: 'song' }, s)), cursor: Math.max(0, musicPos), top: 0 }; return jbRenderList(); }
+  if (kind === 'list') { ++jbAsk; jbLoading = ''; jbStack = []; jbView = { kind: 'list', title: 'QUEUE', items: musicQueue.map(s => Object.assign({ kind: 'song' }, s)), cursor: Math.max(0, musicPos), top: 0 }; return jbRenderList(); }
   if (kind === 'search') return jbSearchStart();
 }
 function jbReady() {
@@ -233,6 +233,7 @@ function jbFound() {
   return (jbSearchText || '').trim() ? parts.join(' · ') || 'NOTHING FOUND' : 'TYPE A SONG, ARTIST OR ALBUM';
 }
 async function jbSearchStart() {
+  ++jbAsk;                                                         // 7.10.13: a slower list asked before doesn't cover the search
   if (jbView.kind !== 'search') { if (jbView.kind !== 'home') jbStack.push(jbView); jbView = { kind: 'search', title: 'SEARCH', items: [], cursor: 0, top: 0 }; jbSearchN = { artists: 0, albums: 0, songs: 0 }; }
   jbSearchText = jbView.q || '';
   if (!musicIndex) {

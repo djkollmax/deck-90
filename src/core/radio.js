@@ -113,6 +113,10 @@ const radioAudio = new Audio();
 radioAudio.preload = 'none';
 let radioNow = null, radioTop = null, radioTopAt = -1, radioScan = 0, radioTry = 0;
 const radioPlaying = () => !radioAudio.paused && !!radioNow;
+// 7.10.13: the radio busy with the sound: playing, being tuned, reconnecting or scanning (another unit taking the
+// sound stops all of it, not only what's playing)
+let radioTuning = 0;
+const radioActive = () => !!radioNow && (radioPlaying() || radioTuning === radioTry || radioTrouble === 'retry' || !!radioScan);
 const shortName = n => String(n || '').replace(/\b(fm|radio|am)\b/gi, '').replace(/\s+/g, ' ').trim().slice(0, 12) || 'RADIO';
 // what the radio does goes to media.log (a station that won't start says why there)
 const radioLog = m => { try { if (window.appLog) window.appLog('radio: ' + m); } catch (_) {} };
@@ -134,7 +138,13 @@ function radioBest(found) {
   const group = found.filter(same).sort((a, b) => radioScore(b.codec, b.bitrate) - radioScore(a.codec, a.bitrate));
   return [...group, ...found.filter(f => !same(f))];
 }
-async function radioResolve(st) {
+async function radioResolve(st, failed) {
+  if (failed && st.url && window.radio) {                          // 7.10.13: the saved address failed: the others
+    const found = await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc).catch(() => null);
+    if (!found) return null;
+    radioFound = {}; found.forEach(f => { radioFound[f.url] = f; });
+    return radioBest(found).map(f => f.url).filter(u => u !== st.url);
+  }
   if (st.url && (st.hq || !window.radio)) return [st.url];
   if (!window.radio) return null;
   const found = await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc);
@@ -182,11 +192,15 @@ if (window.radio && window.radio.onMeta) window.radio.onMeta(m => {
 async function radioTune(st, label, retry, again) {
   if (!st) return;
   const t = ++radioTry;
-  radioAired = 0; clearTimeout(radioWaitTimer); clearTimeout(radioRetryTimer);
-  if (!again) { radioRetries = 0; radioTrouble = ''; }
+  radioAired = 0; radioTuning = t; clearTimeout(radioWaitTimer); clearTimeout(radioRetryTimer);
+  if (!again) {
+    radioRetries = 0; radioTrouble = ''; radioStallAt = 0;
+    // 7.10.13: the station before goes quiet now, not when the new one's address arrives (a lookup takes seconds)
+    if (radioAudio.getAttribute('src')) { radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); }
+  }
   radioNow = st; deck.emit('radio');
   if (!again) deck.notice('RADIO · <span>' + (st.freq ? st.freq + ' ' : '') + st.name.replace(/[<>&]/g, '') + '</span>' + (label ? ' · ' + label : ''), 1800);
-  const urls = await radioResolve(st);
+  const urls = await radioResolve(st, retry);
   if (t !== radioTry) return;                                  // another station was chosen meanwhile
   if (!urls) { radioLog('no lookup for ' + st.name); return radioFailed(st, t, again, '⚠ No pude buscar la radio: ¿hay internet?'); }
   if (!urls.length) { radioLog('not found: ' + st.name); return radioFailed(st, t, again, '⚠ No encontré <span>' + st.name.replace(/[<>&]/g, '') + '</span> en Radio Browser'); }
@@ -199,30 +213,37 @@ async function radioTune(st, label, retry, again) {
     try {
       radioLog('tuning ' + st.name + ' · ' + u.slice(0, 120) + (src === proxied ? ' (proxy)' : ''));
       radioAudio.src = src;
-      await Promise.race([radioAudio.play(), new Promise((_, no) => setTimeout(() => no(new Error('no answer in 12 s')), 12000))]);
+      let late = 0;
+      try { await Promise.race([radioAudio.play(), new Promise((_, no) => { late = setTimeout(() => no(new Error('no answer in 12 s')), 12000); })]); }
+      finally { clearTimeout(late); }
       if (t !== radioTry) return;
       const rb = radioFound[u];
       if (rb && !radioMeta.codec) { st.codec = rb.codec || st.codec || ''; }
       if (rb && !radioMeta.kbps && rb.bitrate) { st.kbps = rb.bitrate; }
       radioLog('playing ' + st.name + ' · ' + u.slice(0, 120));
       radioSession(st);
-      radioAired = t; radioRetries = 0; radioTrouble = '';
+      radioAired = t; radioTuning = 0; radioRetries = 0; radioTrouble = '';
       if (st.url !== u || !st.hq) { st.url = u; st.hq = 1; saveRadio(); }   // 7.10.7: the address that played, checked
       deck.emit('radio-on-air');                                  // (the meters follow it through the PC's sound)
       deck.emit('radio'); return;
-    } catch (err) { radioLog(st.name + ' failed at ' + u.slice(0, 120) + (src === proxied ? ' (proxy)' : '') + ': ' + (err && (err.name + ' ' + err.message))); if (t !== radioTry) return; }
+    } catch (err) {
+      radioLog(st.name + ' failed at ' + u.slice(0, 120) + (src === proxied ? ' (proxy)' : '') + ': ' + (err && (err.name + ' ' + err.message)));
+      if (t !== radioTry) return;
+      radioAudio.pause();                                       // 7.10.13: a late answer doesn't start it behind our back
+    }
     }
   }
-  if (st.url) {                                                 // an old address: look the station up again, once
-    st.url = ''; saveRadio();
-    if (!retry) { radioLog(st.name + ': saved address failed, looking it up again'); return radioTune(st, label, true, again); }
-  }
+  // 7.10.13: the address saved didn't answer: other streams of the station are looked up once (the saved one is kept;
+  // a reconnect after a break doesn't look up, it tries again later)
+  if (st.url && !retry && !again) { radioLog(st.name + ': saved address failed, looking for another stream of it'); return radioTune(st, label, true, again); }
+  radioAudio.removeAttribute('src'); radioAudio.load();
   radioFailed(st, t, again, '⚠ <span>' + st.name.replace(/[<>&]/g, '') + '</span> no responde ahora');
 }
 // 7.9.21: what's wrong with the station, for the displays: 'lost' (it doesn't answer, or there's no internet: SIN
 // SEÑAL) or 'retry' (its sound dropped while playing and it's being tuned again: RECONECTANDO, every 10 s for a minute)
 let radioTrouble = '', radioAired = 0, radioRetries = 0, radioRetryTimer = 0, radioWaitTimer = 0;
 function radioFailed(st, t, again, notice) {
+  if (t === radioTry) radioTuning = 0;
   if (again && ++radioRetries < 6) {
     radioTrouble = 'retry'; deck.emit('radio');
     radioRetryTimer = setTimeout(() => { if (t === radioTry && radioNow === st) radioTune(st, '', false, true); }, 10000);
@@ -242,6 +263,7 @@ radioAudio.addEventListener('error', () => radioDropped('error'));
 radioAudio.addEventListener('ended', () => radioDropped('ended'));
 radioAudio.addEventListener('waiting', () => { clearTimeout(radioWaitTimer); radioWaitTimer = setTimeout(() => radioDropped('no data for 10 s'), 10000); });
 radioAudio.addEventListener('playing', () => clearTimeout(radioWaitTimer));
+radioAudio.addEventListener('pause', () => clearTimeout(radioWaitTimer));   // 7.10.13: paused isn't stalled
 // 7.10.7: SIGNAL on the DT-90, from how the stream is doing: the seconds of sound the player has ahead, as the
 // proxy counts them (radioproxy.js keeps a cushion; 6 s or more, five bars; under 1 s, one; three while it's not
 // known yet or the station plays straight), one bar less for a minute after the sound stalled or the stream broke
@@ -296,7 +318,7 @@ function radioEvenSet(on) {
 }
 // keepOn (7.9.15): the CD took the sound; the rack's tuner stays on, showing its station, just silent
 function radioStop(keepOn) {
-  radioTry++; radioScan = 0; radioTrouble = ''; radioAired = 0; clearTimeout(radioWaitTimer); radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); deck.emit('radio'); radioSession(null);
+  radioTry++; radioScan = 0; radioTrouble = ''; radioAired = 0; radioTuning = 0; clearTimeout(radioWaitTimer); clearTimeout(radioRetryTimer); radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); deck.emit('radio'); radioSession(null);
   if (!keepOn) deck.emit('radio-off');                       // (the rack's tuner shows it off too)
 }
 radioAudio.addEventListener('pause', () => deck.emit('radio'));

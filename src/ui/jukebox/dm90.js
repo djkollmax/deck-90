@@ -357,7 +357,7 @@ class Deck90Music {
     this._timeDigits = this._digits(58, 54, 4, 1.23, true);
     this._minus = node('rect', { x: 42, y: 83, width: 11, height: 5, rx: 1, fill: DIM }); D.append(this._minus);
     D.append(this._text('TRACK', 278, 53, 1.4));
-    this._trackDigits = this._digits(276, 78, 3, .66, false);
+    this._trackDigits = this._digits(276, 80, 4, .55, false);      // 7.10.13: four digits (SHUFFLE ALL queues thousands)
     this._total = node('path', { fill: LIT }); D.append(this._total);
     this._net = node('path', { fill: DIM, d: dotsPath('JELLYFIN', 278, 121, 1.05) }); D.append(this._net);
     const clip = (id, el) => { const g = node('g', { 'clip-path': `url(#${p}-${id}-clip)` }); g.append(el); D.append(g); return el; };
@@ -520,10 +520,10 @@ class Deck90Music {
     const time = n.index ? String(Math.min(99, Math.floor(s / 60))).padStart(2, '0') + String(s % 60).padStart(2, '0') : '----';
     if (c.time !== time) { this._paintDigits(this._timeDigits, time); c.time = time; }
     this._minus.setAttribute('fill', remain && n.index ? LIT : DIM);
-    const tr = n.total ? String(Math.min(999, n.index)).padStart(3, ' ') : '---';
+    const tr = n.total ? String(n.index % 10000).padStart(4, ' ') : '----';
     if (c.track !== tr) { this._paintDigits(this._trackDigits, tr); c.track = tr; }
-    const total = n.total ? '/' + Math.min(9999, n.total) : '';
-    if (c.total !== total) { this._total.setAttribute('d', dotsPath(total, 348, 107, 1.05)); c.total = total; }
+    const total = n.total ? '/' + Math.min(99999, n.total) : '';
+    if (c.total !== total) { this._total.setAttribute('d', dotsPath(total, 354, 107, .95)); c.total = total; }
     if (c.title !== n.title) { this._title.setAttribute('d', dotsPath(n.title, 0, 0, 3.3)); this._titleW = [...n.title].length * 19.8; this._titleT = performance.now(); c.title = n.title; }
     if (c.artist !== n.artist) { this._artist.setAttribute('d', dotsPath(n.artist, 0, 0, 2.15)); this._artistW = [...n.artist].length * 12.9; this._artistT = performance.now(); c.artist = n.artist; }
     if (c.quality !== n.quality) { this._quality.setAttribute('d', dotsPath(n.quality, 0, 0, 1.75)); this._qualityW = [...n.quality].length * 10.5; this._qualityT = performance.now(); c.quality = n.quality; }

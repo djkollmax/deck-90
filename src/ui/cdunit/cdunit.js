@@ -121,7 +121,7 @@ function cdUnitFeed(now) {
 // the CD takes the sound: the PC's player waits, the radio goes quiet (whoever paused the PC hands that over).
 // 7.9.15: like two units of a real rack, the tuner stays on (its station on the display, dimmer), only silent.
 function cdUnitTakeSound() {
-  if (tunerPower) {
+  if (tunerPower || radioActive()) {                               // 7.10.13: the stereo's radio, or one being tuned, too
     if (tunerResumePc) { tunerResumePc = false; cdUnitResumePc = true; }
     radioStop(true);
   }

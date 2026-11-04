@@ -56,6 +56,21 @@ test('a station that goes off the air is tuned again by itself (RECONECTANDO), t
   assert.equal(await d.win.evaluate(() => radioPlaying() && !radioTrouble), true, 'back on the air');
 });
 
+test('a station that does not answer: the one before goes quiet at once, its saved address is kept', async () => {
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(3000);
+  assert.equal(await d.win.evaluate(() => radioPlaying()), true);
+  await d.app.evaluate(() => { global.findAnswer = () => []; });
+  await d.win.evaluate(base => { radioMem.FM1[5] = { name: 'Muda', freq: '', q: 'Muda', cc: 'AR', url: base + '/gone', hq: 1 }; tunerKey('m6'); }, station.base);
+  await d.wait(300);
+  assert.equal(await d.win.evaluate(() => radioPlaying() || !radioAudio.paused), false, 'the station before is quiet');
+  for (const t0 = Date.now(); Date.now() - t0 < 20000 && await d.win.evaluate(() => radioTrouble !== 'lost'); await d.wait(300));
+  assert.equal(await d.win.evaluate(() => radioTrouble), 'lost');
+  assert.equal(await d.win.evaluate(() => radioMem.FM1[5].url), station.base + '/gone', 'the address stays saved');
+  await d.app.evaluate(() => { global.findAnswer = null; });
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(3000);
+  assert.equal(await d.win.evaluate(() => radioPlaying()), true);
+});
+
 test('the best stream of a station plays: FLAC over AAC over MP3; a saved one is checked once', async () => {
   await d.app.evaluate(() => { global.findAnswer = (q, base) => [
     { name: q + ' 64k', url: base + '/s?aac64', codec: 'AAC', bitrate: 64 },

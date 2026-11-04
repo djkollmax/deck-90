@@ -2,6 +2,7 @@
 //   /tone.mp3  the tone, as a plain file
 //   /s         an ICY stream of the tone in a loop (its first 4 s at once), a song title every 8 KiB, changing every 3 s, icy-br 128
 //   /nobr      the same stream without icy-br (the program measures the rate itself)
+//   /gone      404: a station that's gone
 // drop() breaks off the streams playing now; down(ms) answers 503 for a while (a station that's off the air).
 import http from 'node:http';
 import fs from 'node:fs';
@@ -17,6 +18,7 @@ export function startStation() {
   let downUntil = 0;
   const server = http.createServer((req, res) => {
     if (Date.now() < downUntil) { res.writeHead(503); res.end(); return; }
+    if (req.url.startsWith('/gone')) { res.writeHead(404); res.end(); return; }   // a station that's gone (7.10.13)
     if (req.url.startsWith('/tone.mp3')) {
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': TONE.length });
       res.end(TONE); return;

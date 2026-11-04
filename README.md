@@ -79,7 +79,7 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 ### Sintonizador de radio en el rack
 
-**VER → RADIO** (o la tecla `9`) muestra el DT-90, un sintonizador hi-fi con display VFD y dial analógico que se suma al rack. Toca la misma radio por internet que el estéreo de auto de abajo: las mismas emisoras, bandas y memorias. Tiene **POWER**, **BAND** y una tecla para cada banda (**FM1 FM2 FM3 FM4 FM5 HI-FI AM**), **◀ ▶** y la perilla, **1–6** (manteniéndolos apretados, **7–12**: doce memorias por banda), **MEMO** (y después el número, para guardar la que suena), **SCAN**, **MODE** y **DISP**. Una radio solo por internet escribe su nombre en grande donde van los números.
+**VER → RADIO** (o la tecla `9`) muestra el DT-90, un sintonizador hi-fi con display VFD y dial analógico que se suma al rack. Toca la misma radio por internet que el estéreo de auto de abajo: las mismas emisoras, bandas y memorias. Tiene **POWER**, **BAND** y una tecla para cada banda (**FM1 FM2 FM3 FM4 FM5 HI-FI AM**), **◀ ▶** y la perilla, **1–6** (manteniéndolos apretados, **7–12**: doce memorias por banda), **MEMO** (y después el número, para guardar la que suena), **SCAN**, **MODE** (qué sigue a la radio en la línea: el tema, de dónde es, la calidad o todo junto; apretado, NIVEL PAREJO) y **DISP** (la línea: la radio, el tema solo, la temperatura o el tiempo al aire; apretado, **SLEEP** de 15 a 90 minutos). Arriba a la derecha, la hora y debajo SLEEP, NIVEL PAREJO o el sonido guardado. Una radio solo por internet escribe su nombre en grande donde van los números.
 
 ### Reproductor de CD en el rack
 

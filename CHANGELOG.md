@@ -1,5 +1,23 @@
 # Changelog
 
+## 7.10.13
+
+### Added
+- **The DT-90's top right** (over L and R, empty until now; vendor patch `corner`/`cornerSub`): the clock, and under it SLEEP's minutes left, else how much EVEN LEVEL turns the station down, else the seconds the player has ahead.
+- **SLEEP** (DISP held on the DT-90): the radio goes off in 15, 30, 60 or 90 minutes; held again, the next, then off.
+- **DISP** goes through the station line, the song alone, the temperature and the time this station has been on the air (the clock moved to the top right); **MODE** adds "all of it" (song, place and dial, quality).
+
+### Changed
+- **The DM-90's TRACK has four digits** (SHUFFLE ALL queues thousands of songs; it stuck at 999), the total in smaller dots.
+
+### Fixed
+- **Tuning another station silenced the one before only when the new address arrived** (seconds of a Radio Browser lookup): it goes quiet at once now. An address that answered after its 12 s didn't start playing behind the display's NO SIGNAL anymore.
+- **A saved station's address was erased when it failed**, even in a reconnect after a short internet cut (FM4, FM5 and HI-FI's chosen streams were lost): it's kept now; the station's other streams are looked up once, and reconnects simply try again later.
+- **The radio being tuned, reconnecting or scanning kept going when the CD or the DM-90 took the sound**, and then took it back (`radioActive`); the CD also stops the car stereo's radio.
+- **The car stereo's radio pause** paused the stream itself (a live stream doesn't wait; the proxy kept filling, the waiting timer re-tuned it): it stops it waiting for ▶, through the radio's source; the proxy feeds a player that stopped reading 8 MB at most.
+- **The DM-90**: a song the list said nothing about that won't play as it is (ALAC, WMA…) is asked again as FLAC, and one that won't play at all is skipped (SHUFFLE ALL went quiet at the first); one read of a list at a time (SEARCH and SHUFFLE ALL together read 15,000 songs twice) and a library chosen meanwhile doesn't get the old one's index; QUEUE and SEARCH aren't covered by a slower list arriving late; Q after a queue that ended goes first instead of replacing it; Q'd songs keep their order once the first starts; a token the server rejects signs out (SETUP said "connected" while every list failed); a failed sign-in keeps the session before.
+- **Radio Browser**: the host that answered last goes first and each gets 7 s (four slow ones were a minute of TUNING…); SIGNAL's stall mark doesn't carry to the next station; the PC's player comes back when the radio is stopped from the stereo or SLEEP; MEMO pressed twice quickly keeps its 6 s; the radio stays the header's source while reconnecting; Last.fm counts a song played again from the start (REPEAT one).
+
 ## 7.10.12
 
 ### Changed

@@ -10,7 +10,7 @@ const radio = () => d.win.evaluate(() => {
   const r = tuner.getState().radio;
   return { power: tunerPower, playing: radioPlaying(), band: radioMem.band, shown: r.band, freq: r.frequency, label: r.label,
     preset: r.preset, name: r.name, text: r.text, stereo: r.stereo, mono: r.mono, scan: r.scan, memo: r.memo, slot: radioMem.slot,
-    quality: r.quality, place: r.place };
+    quality: r.quality, place: r.place, corner: r.corner, cornerSub: r.cornerSub };
 });
 
 before(async () => { station = await startStation(); d = await launch({ station, size: [1300, 1100] }); });
@@ -126,14 +126,32 @@ test('one line with the station and its song, the quality after TUNED, the city 
   await d.click(K('m1'), 2500);
 });
 
-test('MODE picks what follows the station; DISP the clock and the weather', async () => {
+test('MODE picks what follows the station; DISP the line; the clock top right; SLEEP and EVEN LEVEL held', async () => {
   const lines = [];
-  for (let i = 0; i < 3; i++) { await d.click(K('mode'), 300); lines.push((await radio()).name); }
+  for (let i = 0; i < 4; i++) { await d.click(K('mode'), 300); lines.push((await radio()).name); }
   assert.match(lines[0], /^Aspen · BUENOS AIRES, ARGENTINA · FM1 102\.3 MHZ$/); assert.equal(lines[1], 'Aspen · QUALITY MP3 · 128 KBPS');
-  assert.match(lines[2], /^Aspen · .+ - /);
-  await d.click(K('disp'), 300); assert.match((await radio()).name, /^\d\d:\d\d$/);
+  assert.match(lines[2], /^Aspen · .+ - .+ · BUENOS AIRES, ARGENTINA · FM1 102\.3 MHZ · QUALITY MP3 · 128 KBPS$/, 'all of it');
+  assert.match(lines[3], /^Aspen · .+ - /);
+  // the clock top right, and under it EVEN LEVEL's cut or the buffer
+  let r = await radio();
+  assert.match(r.corner, /^\d\d:\d\d$/); assert.match(r.cornerSub, /^(EVEN LEVEL -?\d+ DB|BUFFER \d+\.\d S)$/);
+  await d.click(K('disp'), 300); r = await radio();
+  assert.match(r.name, /^.+ - .+$/, 'the song alone: ' + r.name); assert.ok(!r.name.startsWith('Aspen'));
   await d.click(K('disp'), 300); assert.equal((await radio()).name, 'NO WEATHER');
-  await d.click(K('disp'), 300); assert.notEqual((await radio()).name, 'NO WEATHER');
+  await d.click(K('disp'), 300); assert.match((await radio()).name, /^Aspen · ON THE AIR \d\d:\d\d:\d\d$/);
+  await d.click(K('disp'), 300); assert.match((await radio()).name, /^Aspen · /);
+  // DISP held: SLEEP 15, 30 …; off again after 90
+  await d.hold(K('disp')); await d.wait(400);
+  assert.equal((await radio()).cornerSub, 'SLEEP 15 MIN');
+  await d.hold(K('disp')); await d.wait(400);
+  assert.equal((await radio()).cornerSub, 'SLEEP 30 MIN');
+  await d.win.evaluate(() => tunerSleep(0)); await d.wait(400);
+  assert.ok(!/SLEEP/.test((await radio()).cornerSub));
+  // the time runs out: the radio goes off
+  await d.win.evaluate(() => { tunerSleep(15); clearTimeout(tunerSleepT); tunerSleepT = setTimeout(() => { tunerSleepAt = 0; tunerSleepMin = 0; tunerOn(false); }, 300); });
+  await d.wait(1200);
+  assert.equal(await d.win.evaluate(() => tunerPower || radioPlaying()), false);
+  await d.click(K('power'), 2500);
   assert.equal(await d.win.evaluate(() => tuner.svg.querySelector('[data-key="mode"] rect:last-child').getAttribute('opacity')), '.22', 'MODE has no lamp');
 });
 

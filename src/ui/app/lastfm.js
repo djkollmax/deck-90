@@ -46,6 +46,8 @@ function lfmTick() {
   const src = typeof npSourceNow !== 'undefined' ? npSourceNow : null, now = Date.now();
   let info = null; try { info = src && src.info(); } catch (_) {}
   const song = lfmSong(src, info), key = song ? src.name + '|' + song.artist + '|' + song.title : '';
+  // 7.10.13: the same song from the start again (REPEAT one, or played twice): a new listen
+  if (lfmCur && key === lfmCur.key && info && info.dur > 0 && lfmCur.pos - (info.pos || 0) > 20) { lfmEnd(lfmCur); lfmCur = null; }
   if (lfmCur && key !== lfmCur.key) {
     if (!key && now - lfmCur.seen < 15000) return;               // a moment with nothing (a radio reconnecting): the same song
     lfmEnd(lfmCur); lfmCur = null;
@@ -53,7 +55,7 @@ function lfmTick() {
   if (!song) return;
   if (!lfmCur) lfmCur = Object.assign({ key, at: now / 1000, heard: 0, seen: now, told: false }, song);
   if (info.status === 'Playing') lfmCur.heard += Math.min(2, (now - lfmCur.seen) / 1000);
-  lfmCur.seen = now;
+  lfmCur.seen = now; lfmCur.pos = info.pos || 0;
   if (!lfmCur.told && info.status === 'Playing' && lfmCur.heard >= 5) { lfmCur.told = true; window.lastfm.nowPlaying(song); }
 }
 setInterval(() => { lfmTick(); lfmLed(); }, 1000);
