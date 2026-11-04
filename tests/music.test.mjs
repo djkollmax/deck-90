@@ -219,8 +219,9 @@ test('Last.fm: the DM-90 song as now playing, and a scrobble once heard long eno
   });
   await d.win.evaluate(() => lfmStatus()); await d.wait(300);
   assert.equal(await d.win.textContent('#lfmBtn'), 'DAMIAN');
-  await d.click(K('play'), 800);
-  if (!(await d.win.evaluate(() => musicPlaying()))) { await d.click(K('play'), 800); }
+  // an album from its first song, a minute long (the FLAC fixture), in order: ▶▶ has somewhere to go
+  await d.win.evaluate(async () => { musicModes.shuffle = false; musicModes.repeat = 'off'; musicPlay(await musicTracks('b000000'), 0); });
+  await d.wait(800);
   // the first song told as now playing (a 6 s test tone may already have given way to the next one)
   let now = [];
   for (const t0 = Date.now(); Date.now() - t0 < 12000 && !now.length; await d.wait(300)) now = await d.app.evaluate(() => global.lfm.filter(x => x[0] === 'now'));
