@@ -164,3 +164,23 @@ test('SIGNAL shows how the stream is doing; MODE held turns EVEN LEVEL off and o
   assert.equal(await d.win.evaluate(() => radioMem.even), true);
   assert.deepEqual(d.errors(), []);
 });
+
+test('SCAN held searches any station in the world; one touched plays, a number keeps it', async () => {
+  await d.hold(K('scan'), 1300);
+  assert.equal(await d.win.evaluate(() => document.getElementById('rfFind').classList.contains('show')), true);
+  await d.win.fill('#rfName', 'jazz'); await d.win.selectOption('#rfCountry', 'FR');
+  await d.win.press('#rfName', 'Enter'); await d.wait(800);
+  const items = await d.win.locator('#rfList .rf-item').allTextContents();
+  assert.equal(items.length, 3);
+  assert.match(items[0], /jazz Uno.*Île-de-France.*Francia.*MP3 128/);
+  assert.match(items[1], /HI-FI · FLAC/);
+  assert.deepEqual(await d.app.evaluate(() => global.searches.slice(-1)[0]), ['jazz', 'FR']);
+  await d.win.locator('#rfList .rf-item').nth(1).click(); await d.wait(3000);
+  const r = await d.win.evaluate(() => ({ name: radioNow.name, url: radioNow.url, slot: radioMem.slot, playing: radioPlaying() }));
+  assert.equal(r.name, 'jazz Dos FLAC'); assert.match(r.url, /\?w1$/); assert.equal(r.slot, 0); assert.equal(r.playing, true);
+  await d.win.click('#rfFind .rf-keep button[data-m="5"]'); await d.wait(300);
+  assert.equal(await d.win.evaluate(() => radioMem[radioMem.band][4].name), 'jazz Dos FLAC');
+  await d.win.press('#rfName', 'Escape'); await d.wait(200);
+  assert.equal(await d.win.evaluate(() => document.getElementById('rfFind').classList.contains('show')), false);
+  assert.deepEqual(d.errors(), []);
+});

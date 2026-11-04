@@ -108,7 +108,7 @@ function jbRenderList() {
   if (v.cursor >= v.top + rows) v.top = v.cursor - rows + 1;
   v.top = Math.max(0, Math.min(v.top, Math.max(0, v.items.length - rows)));
   const count = v.items.length, found = v.kind === 'search' ? v.items.filter(i => i.kind !== 'head').length : count, fmt = n => n.toLocaleString('es-AR');
-  let header = v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : ''), right = '';
+  let header = v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : '') + (musicLibraryName() && ['artists', 'albums', 'songs', 'search'].includes(v.kind) ? ' · ' + musicLibraryName().toUpperCase() : ''), right = '';   // 7.10.10
   if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = jbLoading || jbFound(); }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
@@ -246,6 +246,7 @@ function jbSearchType(text) {
 function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   jbKbd(true);
   if (k === 'power') return jbOn(!jbPower);
+  if (k === 'setup' && hold) return jbLibraryNext();               // 7.10.10: SETUP held, the next library (all, then each)
   if (k === 'setup') return jbSetup(true);
   if (k === 'color') {                                            // the rack's displays, all three (held: the one before)
     const i = UNIT_COLORS.findIndex(u => u.id === jbCfg.color), n = UNIT_COLORS.length;
@@ -325,6 +326,31 @@ document.addEventListener('keydown', e => {
 }, true);
 
 // ── SETUP: the Jellyfin server, the user and the password (the password goes to the server, never kept) ──
+// 7.10.10: which of the server's music libraries the lists show: all of them merged, or one (SETUP held goes
+// through them; the SETUP dialog has them in a list); the list on screen reads again from the one chosen
+async function jbLibraryNext() {
+  if (!musicServer.signedIn) return jbSetup(true);
+  let libs; try { libs = await musicLibraries(); } catch (_) { toast('⚠ No pude leer las bibliotecas del servidor', 2200); return; }
+  if (libs.length < 2) { toast('BIBLIOTECA · el servidor tiene <span>una sola</span> de música', 2000); return; }
+  const ids = ['', ...libs.map(l => l.id)], i = ids.indexOf(musicModes.library);
+  jbLibrarySet(ids[(i + 1) % ids.length]);
+}
+function jbLibrarySet(id) {
+  musicLibrarySet(id);
+  toast('BIBLIOTECA · <span>' + (musicLibraryName() || 'todas').replace(/[<>&]/g, '') + '</span>' + (id ? '' : ' (' + (musicLibs || []).map(l => l.name).join(' + ').replace(/[<>&]/g, '') + ')'), 2000);
+  const sel = document.getElementById('jbLibrary'); if (sel) sel.value = id;
+  if (['artists', 'albums', 'songs'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind);
+  else if (jbPower) jbOpen('artists');
+}
+async function jbLibraryList() {
+  const sel = document.getElementById('jbLibrary'), row = document.getElementById('jbLibraryRow');
+  row.style.display = 'none';
+  if (!musicServer.signedIn) return;
+  let libs; try { libs = await musicLibraries(); } catch (_) { return; }
+  if (libs.length < 2) return;
+  sel.replaceChildren(new Option('Todas (' + libs.map(l => l.name).join(' + ') + ')', ''), ...libs.map(l => new Option(l.name, l.id)));
+  sel.value = musicModes.library; row.style.display = '';
+}
 function jbSetup(on) {
   const m = document.getElementById('jbSetup');
   m.classList.toggle('show', on);
@@ -334,6 +360,7 @@ function jbSetup(on) {
   document.getElementById('jbPass').value = '';
   document.getElementById('jbSetupMsg').textContent = musicServer.signedIn ? 'Conectado como ' + musicServer.name + ' en ' + musicServer.server : '';
   document.getElementById('jbSignOut').style.display = musicServer.signedIn ? '' : 'none';
+  jbLibraryList();
   setTimeout(() => document.getElementById(musicServer.signedIn ? 'jbServer' : document.getElementById('jbUser').value ? 'jbPass' : 'jbUser').focus(), 50);
 }
 async function jbSignInNow() {
@@ -350,6 +377,7 @@ async function jbSignInNow() {
 document.getElementById('jbGo').addEventListener('click', jbSignInNow);
 document.getElementById('jbSignOut').addEventListener('click', async () => { await musicSignOut(); jbSetup(false); jbHome(['NO SERVER: PRESS SETUP TO CONNECT']); toast('MÚSICA · <span>desconectado</span>', 1600); });
 document.getElementById('jbClose').addEventListener('click', () => jbSetup(false));
+document.getElementById('jbLibrary').addEventListener('change', e => jbLibrarySet(e.target.value));
 document.getElementById('jbSetup').addEventListener('click', e => { if (e.target.id === 'jbSetup') jbSetup(false); });
 document.getElementById('jbSetup').addEventListener('keydown', e => {
   e.stopPropagation();

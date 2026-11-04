@@ -6,12 +6,17 @@
 /* 7.10.4: the keyboard is the DM-90's (after a click on it): a faint glow of its display's colour round it */
 #jbPanel.kbd #jukebox{ filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)) drop-shadow(0 0 4px color-mix(in srgb, var(--vfd, #80ffe5) 55%, transparent)); }
 #jukebox [data-role="select-knob"]:focus{ outline:none; }
-#jbSetup{ position:fixed; inset:0; z-index:9200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
-#jbSetup.show{ display:flex; }
+#jbSetup, #lfmSetup{ position:fixed; inset:0; z-index:9200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
+#jbSetup.show, #lfmSetup.show{ display:flex; }
+.lfm-state{ color:#cfe9e3; font-size:12px; letter-spacing:.5px; margin-bottom:4px; }
+.lfm-state b{ color:#80ffe5; font-weight:600; }
+#lfmSetup a{ color:#80ffe5; }
 .jb-card{ text-align:left; }
 .jb-card label{ display:block; margin:8px 0 0; color:#8d8a7c; letter-spacing:2px; font-size:9px; }
 .jb-card input{ display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:6px 8px; border-radius:5px; border:1px solid rgba(255,255,255,.12);
   background:#06090c; color:#80ffe5; font-family:Consolas, 'Courier New', monospace; font-size:12px; letter-spacing:.5px; outline:none; }
+.jb-card select{ display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:5px 6px; border-radius:5px; border:1px solid rgba(255,255,255,.12);
+  background:#06090c; color:#80ffe5; font-family:Consolas, 'Courier New', monospace; font-size:12px; outline:none; }   /* 7.10.10 */
 .jb-card input:focus{ border-color:rgba(128,255,229,.5); }
 .jb-msg{ min-height:15px; margin-top:8px; color:#ffd27a; font-size:11px; }
 .jb-go{ margin-top:10px; padding:6px 18px; border-radius:5px; border:1px solid rgba(128,255,229,.35); background:#10221e; color:#80ffe5; cursor:pointer; letter-spacing:3px; font-size:11px; }

@@ -182,6 +182,7 @@ function tunerKey(k, { hold } = {}) {
     toast('MODE · <span>' + { song: 'el tema', station: 'de dónde es', quality: 'la calidad' }[tunerCfg.line] + '</span> después de la radio', 1400);
     return tunerSync();
   }
+  if (k === 'scan' && hold) return rfOpen(true);                     // 7.10.10: SCAN held, any station in the world (finder.js)
   if (k === 'memo') {
     if (!radioNow) { toast('Primero sintonizá una radio y después MEMO y el número', 2600); return; }
     tunerMemo = tunerMemo ? 0 : setTimeout(() => { tunerMemo = 0; tunerSync(); }, 6000);
@@ -193,7 +194,7 @@ function tunerKey(k, { hold } = {}) {
   if (k === 'tune-up' || k === 'tune-down') { radioScanSet(false); radioStep(k === 'tune-up' ? 1 : -1); return tunerSync(); }
   if (k === 'scan') {
     if (radioScan) { radioScanSet(false); toast('SCAN · <span>se queda en esta</span>', 1400); }
-    else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
+    else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte · mantenelo apretado para buscar en el mundo', 2600); }
     return tunerSync();
   }
   if (/^m[1-6]$/.test(k)) {

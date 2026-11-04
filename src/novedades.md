@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.10.10 — 2026-11-03
+
+### Nuevo
+- **Buscar cualquier radio del mundo**: mantené apretado SCAN en el sintonizador. Buscás por nombre y/o país. Cada radio dice de dónde es y su calidad (HI-FI si es FLAC). La tocás y suena; con los números de abajo la guardás en la banda.
+- **Last.fm para la radio, el CD y el DM-90**: anota en tu perfil lo que escuchás (⚙ → EXTRAS → LAST.FM).
+  - Usa una API key propia de Last.fm, que es gratis. El cuadro te dice dónde crearla.
+  - Lo de Spotify no lo manda, porque Spotify ya lo anota solo.
+- **Elegir la biblioteca de Jellyfin**: SETUP apretado un segundo pasa por TODAS, AUDIO y MÚSICA, o como se llamen en tu servidor. También se elige en el cuadro de SETUP, y se acuerda de la última.
+
 ## 7.10.9 — 2026-11-03
 
 ### Cambios

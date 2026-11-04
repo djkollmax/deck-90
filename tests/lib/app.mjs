@@ -47,6 +47,9 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     global.cmds = []; global.finds = [];
     // global.findAnswer(q, base), when a test sets it, says what Radio Browser has (several streams of a station)
     handle('radio-find', (e, q) => { global.finds.push(q); return global.findAnswer ? global.findAnswer(q, base) : [{ name: q, url: base + '/s', codec: 'MP3', bitrate: 128 }]; });
+    // the world's stations (the radio's search): three of the name asked, from the country asked (France by default)
+    handle('radio-search', (e, q, cc) => { global.searches = (global.searches || []).concat([[q, cc]]);
+      return ['Uno', 'Dos FLAC', 'Tres'].map((n, i) => ({ name: (q || 'Radio') + ' ' + n, url: base + '/s?w' + i, codec: i === 1 ? 'FLAC' : 'MP3', bitrate: i === 1 ? 0 : 128, cc: cc || 'FR', place: i ? '' : 'Île-de-France' })); });
     handle('radio-top', () => [
       { name: 'La 100 - 99.9 FM', url: base + '/s' }, { name: 'Radio 10 AM 710', url: base + '/s' }, { name: 'Cadena 3', url: base + '/s' }]);
     handle('weather-find', () => []); handle('weather-now', () => null);

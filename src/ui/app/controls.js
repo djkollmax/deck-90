@@ -142,6 +142,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); else applyModules(); }
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
   if (g === 'phone') phoneButton(v);
+  if (g === 'lastfm') { lfmSetup(true); return; }                   // 7.10.10 (ui/app/lastfm.js)
   if (g === 'chassis') setChassis(v);
   if (g === 'clock') setClockMode(v);
   if (g === 'preset') { presetButton(v, e.shiftKey); return; }

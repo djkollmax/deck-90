@@ -38,7 +38,7 @@ test('signed in, ARTISTS lists the music library only, and the password is not k
   assert.equal(await d.win.evaluate(() => document.getElementById('jbSetup').classList.contains('show')), false);
   const v = await view();
   assert.equal(v.kind, 'artists'); assert.equal(v.count, 31, 'both music libraries'); assert.match(v.list.header, /^ARTISTS · 31$/);
-  assert.ok(!jf.log.some(l => /lib-movies/.test(l)), 'never the movies');
+  assert.ok(!jf.log.some(l => /a1b2c3d4000000000000000000000003/.test(l)), 'never the movies');
   const file = path.join(await d.app.evaluate(({ app }) => app.getPath('userData')), 'jellyfin.json');
   const saved = fs.readFileSync(file, 'utf8');
   assert.match(saved, /tok-123/); assert.doesNotMatch(saved, /secreto/);
@@ -91,7 +91,7 @@ test('REPEAT all, one, off and SHUFFLE, remembered', async () => {
   await d.click(K('repeat'), 200); assert.equal((await modes())[0], 'off');
   await d.click(K('shuffle'), 200); assert.equal((await modes())[1], true);
   await d.click(K('shuffle'), 200);
-  assert.equal((await modes())[2], '{"repeat":"off","shuffle":false}');
+  assert.equal((await modes())[2], '{"repeat":"off","shuffle":false,"library":""}');
 });
 
 test('SEARCH finds as you type, any words in any field; ESC keeps the results, BACK returns to them', async () => {
@@ -189,6 +189,49 @@ test('the header shows what the DM-90 plays; the stereo has it as SERVER, and gi
   assert.ok(!(await d.cmds()).some(c => /^(play|pause|toggle|next|prev)$/.test(c)), 'the PC player is left alone');
   await d.click(K('stop'), 1500);
   assert.notEqual(await d.win.evaluate(() => np && np.app), 'Deck 90 · DM-90', 'stopped, the header lets it go');
+});
+
+test('SETUP held picks the library: one of them, then the other, then all', async () => {
+  const head = () => d.win.evaluate(() => jb.getState().list.header);
+  await d.click(K('artists'), 1500);
+  assert.match(await head(), /^ARTISTS · 31$/);
+  await d.hold(K('setup')); await d.wait(1500);
+  assert.match(await head(), /^ARTISTS · 30 · MÚSICA$/);
+  await d.hold(K('setup')); await d.wait(1500);
+  assert.match(await head(), /^ARTISTS · 1 · MÁS MÚSICA$/);
+  assert.equal(await d.win.evaluate(() => jbView.items[0].name), 'Otra Biblioteca');
+  await d.hold(K('setup')); await d.wait(1500);
+  assert.match(await head(), /^ARTISTS · 31$/);
+  // the SETUP dialog has them in a list
+  await d.click(K('setup'), 800);
+  assert.deepEqual(await d.win.evaluate(() => [...document.querySelectorAll('#jbLibrary option')].map(o => o.textContent)), ['Todas (Música + Más música)', 'Música', 'Más música']);
+  await d.win.press('#jbServer', 'Escape'); await d.wait(300);
+  assert.equal(await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-music')).library), '');
+});
+
+test('Last.fm: the DM-90 song as now playing, and a scrobble once heard long enough', async () => {
+  await d.app.evaluate(({ ipcMain }) => {
+    global.lfm = [];
+    for (const ch of ['lfm-status', 'lfm-now', 'lfm-scrobble']) ipcMain.removeHandler(ch);
+    ipcMain.handle('lfm-status', () => ({ hasKey: true, signedIn: true, user: 'damian', sent: 0, queued: 0 }));
+    ipcMain.handle('lfm-now', (e, t) => { global.lfm.push(['now', t.artist, t.title]); });
+    ipcMain.handle('lfm-scrobble', (e, t) => { global.lfm.push(['scrobble', t.artist, t.title, t.at > 0]); });
+  });
+  await d.win.evaluate(() => lfmStatus()); await d.wait(300);
+  assert.equal(await d.win.textContent('#lfmBtn'), 'DAMIAN');
+  await d.click(K('play'), 800);
+  if (!(await d.win.evaluate(() => musicPlaying()))) { await d.click(K('play'), 800); }
+  // the first song told as now playing (a 6 s test tone may already have given way to the next one)
+  let now = [];
+  for (const t0 = Date.now(); Date.now() - t0 < 12000 && !now.length; await d.wait(300)) now = await d.app.evaluate(() => global.lfm.filter(x => x[0] === 'now'));
+  const song = await d.win.evaluate(() => ({ title: lfmCur.title, artist: lfmCur.artist }));
+  assert.ok(now.some(x => x[1] === song.artist && x[2] === song.title), JSON.stringify(now));
+  await d.win.evaluate(() => { lfmCur.heard = 400; lfmCur.dur = 300; });   // as if a long song heard for minutes
+  await d.click(K('next'), 300);
+  let sent = [];
+  for (const t0 = Date.now(); Date.now() - t0 < 10000 && !sent.length; await d.wait(300)) sent = await d.app.evaluate(() => global.lfm.filter(x => x[0] === 'scrobble'));
+  assert.deepEqual(sent[0], ['scrobble', song.artist, song.title, true]);
+  await d.click(K('stop'), 800);
 });
 
 test('the radio taking the sound pauses the music', async () => {

@@ -67,7 +67,13 @@ function createJellyfin({ net, dir, log, version }) {
     },
     signOut() { delete cfg.token; delete cfg.user; delete cfg.library; delete cfg.libraries; save(); return { ok: true }; },
     async read(kind, id, query) {
+      // 7.10.10: the music libraries by name, for the DM-90's choice of one of them (or all)
+      if (kind === 'libraries' && cfg.token) {
+        try { const libs = await libraries(); cfg.libraries = libs.map(l => l.id); save(); return { Items: libs }; }
+        catch (e) { log('jellyfin: libraries failed: ' + e.message); return { error: e.code === 401 ? 'signed out' : e.message }; }
+      }
       if (!cfg.token || !READS[kind]) return { error: 'signed out' };
+      const only = query && ID.test(String(query.Library || '')) ? String(query.Library) : '';   // 7.10.10: one library
       const [p, keys] = READS[kind];
       if (p.includes('{id}') && !ID.test(String(id || ''))) return { error: 'bad id' };
       const q = {};
@@ -80,7 +86,7 @@ function createJellyfin({ net, dir, log, version }) {
         // a big library (1,400 albums, 15,000 songs) comes whole instead of timing out in one huge answer
         if (!cfg.libraries) { cfg.libraries = (await libraries()).map(l => l.id); save(); }
         const want = Number(q.Limit) || 100000, out = [];
-        for (const lib of cfg.libraries.length ? cfg.libraries : [cfg.library]) {
+        for (const lib of only && cfg.libraries.includes(only) ? [only] : cfg.libraries.length ? cfg.libraries : [cfg.library]) {
           for (let start = 0; out.length < want;) {
             const page = Math.min(2000, want - out.length);
             const r = await call('GET', path_, Object.assign({}, q, { ParentId: lib, StartIndex: start, Limit: page, EnableImages: 'false', EnableUserData: 'false', ImageTypeLimit: 0 }), null, cfg.token, 60000);

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MP3 = fs.readFileSync(path.join(here, '..', 'fixtures', 'tone.mp3'));
 const FLAC = fs.readFileSync(path.join(here, '..', 'fixtures', 'tone-24-96.flac'));
-const TOKEN = 'tok-123', USER = 'u1', LIB = 'lib-music', LIB2 = 'lib-music2', MOVIES = 'lib-movies';
+const TOKEN = 'tok-123', USER = 'u1', LIB = 'a1b2c3d4000000000000000000000001', LIB2 = 'a1b2c3d4000000000000000000000002', MOVIES = 'a1b2c3d4000000000000000000000003';   // ids as Jellyfin's (hex)
 const hex = (k, n) => k + n.toString(16).padStart(6, '0');
 
 export function library() {

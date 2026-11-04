@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.10
+
+### Added
+- **Any radio station in the world**: SCAN held on the DT-90 opens a search by name and/or country (Radio Browser's `stations/search`, the 60 most heard, `radio-search` in main.js), each with where it is and its quality (HI-FI on FLAC). One touched plays as a tuned station; the 1–6 under the list keep the one playing in the band's memories (`ui/tuner/finder.js`).
+- **Last.fm for the radio, the CD and the DM-90** (`electron/lastfm.js`, `ui/app/lastfm.js`): now playing after 5 s, a scrobble once a song was heard half its length or 4 minutes (a radio song, of unknown length, 90 s; only when the station names it "Artist - Song"). The person's own API key and secret (Last.fm wants an API account per application; nothing in the repo), Last.fm's desktop sign-in in the browser, the session kept in userData/lastfm.json; scrobbles that can't go wait there. What the PC's player plays isn't sent (Spotify scrobbles its own). ⚙ → EXTRAS → LAST.FM.
+- **The DM-90's library**: SETUP held goes through all the server's music libraries merged, then each one; the SETUP dialog lists them. The lists, SEARCH and SHUFFLE ALL read only the one chosen (`Library` in `jf-read`), its name after the list's count; remembered. The pretend server's libraries have Jellyfin-like (hex) ids.
+
 ## 7.10.9
 
 ### Changed

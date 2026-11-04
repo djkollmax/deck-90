@@ -10,8 +10,10 @@ const musicAudio = new Audio();
 musicAudio.preload = 'auto';
 let musicServer = { server: '', name: '', signedIn: false };
 let musicQueue = [], musicPos = -1, musicNextAt = -1, musicNowInfo = null, musicError = '';
+// 7.10.10: library, the one music library the lists show ('' = all of them, merged)
 const musicModes = (() => { const m = store.read('deck90-music', {});
-  return { repeat: ['all', 'one'].includes(m.repeat) ? m.repeat : 'off', shuffle: m.shuffle === true }; })();
+  return { repeat: ['all', 'one'].includes(m.repeat) ? m.repeat : 'off', shuffle: m.shuffle === true,
+    library: /^[0-9a-f-]{1,64}$/i.test(m.library || '') ? m.library : '' }; })();
 function musicModesSave() { store.write('deck90-music', musicModes); }
 const musicNow = () => musicQueue[musicPos] || null;
 const musicPlaying = () => !musicAudio.paused && !!musicAudio.getAttribute('src');
@@ -26,10 +28,10 @@ async function musicStatus() {
 }
 async function musicSignIn(server, user, pw) {
   const r = await musicApi().signIn(server, user, pw).catch(e => ({ error: e.message }));
-  if (r && r.ok) { musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; musicIndex = null; await musicStatus(); }
+  if (r && r.ok) { musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; musicIndex = null; musicLibs = null; await musicStatus(); }
   return r || { error: 'sin respuesta' };
 }
-async function musicSignOut() { musicStop(); await musicApi().signOut(); musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; musicIndex = null; await musicStatus(); }
+async function musicSignOut() { musicStop(); await musicApi().signOut(); musicLib = { artists: null, albums: {}, songs: null, tracks: {} }; musicIndex = null; musicLibs = null; await musicStatus(); }
 
 // ── the library (kept once read: a big library is read once per session) ──
 let musicLib = { artists: null, albums: {}, songs: null, tracks: {} };
@@ -48,9 +50,23 @@ function musicSong(i) {
       kbps: Math.round((a.BitRate || src.Bitrate || 0) / 1000), rate: a.SampleRate || 0, bits: a.BitDepth || 0, ch: a.Channels || 0 } : null };
 }
 async function musicRead(kind, id, query) {
+  if (musicModes.library && (kind === 'artists' || kind === 'items')) query = Object.assign({}, query, { Library: musicModes.library });
   const r = await musicApi().read(kind, id, query).catch(e => ({ error: e.message }));
   if (r && r.error) { musicError = r.error; if (r.error === 'signed out') await musicStatus(); throw new Error(r.error); }
   return r;
+}
+// 7.10.10: the server's music libraries ({ id, name }), and the choice of one (or all, '')
+let musicLibs = null;
+async function musicLibraries() {
+  if (!musicLibs) { const r = await musicRead('libraries'); musicLibs = (r.Items || []).map(l => ({ id: String(l.id), name: String(l.name || '?') })); }
+  if (musicModes.library && !musicLibs.some(l => l.id === musicModes.library)) { musicModes.library = ''; musicModesSave(); }   // gone from the server
+  return musicLibs;
+}
+const musicLibraryName = () => { const l = musicModes.library && musicLibs && musicLibs.find(x => x.id === musicModes.library); return l ? l.name : ''; };
+function musicLibrarySet(id) {
+  musicModes.library = id || ''; musicModesSave();
+  musicLib = { artists: null, albums: {}, songs: null, tracks: musicLib.tracks }; musicIndex = null;   // an album's songs stay the same
+  deck.emit('music');
 }
 async function musicArtists() {
   if (!musicLib.artists) {

@@ -65,6 +65,15 @@ contextBridge.exposeInMainWorld('jellyfin', {
   read: (kind, id, query) => ipcRenderer.invoke('jf-read', String(kind), id == null ? '' : String(id), query || {}),
   stream: (id, playable) => ipcRenderer.invoke('jf-stream', String(id), !!playable),
 });
+// 7.10.10: Last.fm for the radio, the CD and the DM-90 (electron/lastfm.js)
+contextBridge.exposeInMainWorld('lastfm', {
+  status: () => ipcRenderer.invoke('lfm-status'),
+  begin: (key, secret) => ipcRenderer.invoke('lfm-begin', String(key || ''), String(secret || '')),
+  finish: () => ipcRenderer.invoke('lfm-finish'),
+  signOut: () => ipcRenderer.invoke('lfm-sign-out'),
+  nowPlaying: t => ipcRenderer.invoke('lfm-now', t),
+  scrobble: t => ipcRenderer.invoke('lfm-scrobble', t),
+});
 contextBridge.exposeInMainWorld('cdrom', {
   cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
   on:  cb => ipcRenderer.on('cd', (e, s) => cb(s)),
@@ -75,6 +84,7 @@ contextBridge.exposeInMainWorld('cdrom', {
 contextBridge.exposeInMainWorld('radio', {
   find: (q, cc) => ipcRenderer.invoke('radio-find', String(q).slice(0, 60), String(cc || '').slice(0, 2)),
   top:  () => ipcRenderer.invoke('radio-top'),
+  search: (q, cc) => ipcRenderer.invoke('radio-search', String(q || '').slice(0, 60), String(cc || '').slice(0, 2)),   // 7.10.10: the world
   // 7.9.3: the stream through Deck 90's local proxy, and what the station says (song, format, bitrate)
   proxy: (u, id) => ipcRenderer.invoke('radio-proxy', String(u).slice(0, 1200), String(id).slice(0, 20)),
   onMeta: cb => ipcRenderer.on('radio-meta', (e, m) => cb(m)),

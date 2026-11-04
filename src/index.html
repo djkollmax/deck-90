@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="ui/app/welcome.css">
 <link rel="stylesheet" href="ui/stereo/stereo.css">
 <link rel="stylesheet" href="ui/tuner/units.css">
+<link rel="stylesheet" href="ui/tuner/finder.css">
 <link rel="stylesheet" href="ui/jukebox/jukebox.css">
 <link rel="stylesheet" href="ui/stereo/stereo-face.css">
 <script src="ui/app/boot.js"></script>
@@ -215,6 +216,10 @@
         <button data-v="on">ON</button>
         <button data-v="qr">QR</button>
       </div>
+      <div class="seg" data-group="lastfm" title="Anotar en tu perfil de Last.fm lo que suena en la radio, el CD y el DM-90">
+        <span class="seg-label">LAST.FM</span>
+        <button data-v="setup" id="lfmBtn">CONECTAR</button>
+      </div>
       <div class="seg" data-group="backup" title="Una copia de tus ajustes (looks, C1–C3, ciudad, marco…) en un archivo, para otra PC o por las dudas">
         <span class="seg-label">AJUSTES</span>
         <button data-v="save">GUARDAR COPIA</button>
@@ -369,9 +374,49 @@
     <label>CONTRASEÑA<input id="jbPass" type="password"></label>
     <div class="phone-help">La contraseña va solo a tu servidor; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
       Solo música: las bibliotecas de música del usuario.</div>
+    <label id="jbLibraryRow" style="display:none">BIBLIOTECA (también: SETUP apretado un segundo)<select id="jbLibrary"></select></label>
     <div class="jb-msg" id="jbSetupMsg"></div>
     <button type="button" id="jbGo" class="jb-go">CONECTAR</button>
     <button type="button" id="jbSignOut" class="phone-off">DESCONECTAR</button>
+  </div>
+</div>
+
+<!-- LAST.FM (7.10.10): scrobbles of the radio, the CD and the DM-90 (ui/app/lastfm.js, electron/lastfm.js) -->
+<div id="lfmSetup" role="dialog" aria-label="Last.fm">
+  <div class="phone-card jb-card">
+    <div class="phone-head">LAST.FM · RADIO, CD Y DM-90 <button type="button" id="lfmClose" title="Cerrar (Esc)">✕</button></div>
+    <div class="lfm-state" id="lfmState"></div>
+    <div id="lfmKeys">
+      <label>API KEY<input id="lfmKey" spellcheck="false" autocomplete="off" maxlength="64"></label>
+      <label>SHARED SECRET<input id="lfmSecret" type="password" autocomplete="off" maxlength="64"></label>
+      <div class="phone-help">Last.fm pide una cuenta de API propia (gratis): creala en
+        <a href="https://www.last.fm/api/account/create" target="_blank" rel="noopener">last.fm/api/account/create</a>
+        (en "Application name" poné Deck 90; la descripción y las direcciones pueden quedar vacías) y copiá acá la API key y el shared secret.
+        Quedan guardados solo en esta PC.</div>
+    </div>
+    <div class="jb-msg" id="lfmMsg"></div>
+    <button type="button" id="lfmGo" class="jb-go">CONECTAR</button>
+    <button type="button" id="lfmDone" class="jb-go" style="display:none">LISTO, YA AUTORICÉ</button>
+    <button type="button" id="lfmOut" class="phone-off">DESCONECTAR</button>
+    <div class="phone-help">Se anota cada tema escuchado más de la mitad (o 4 minutos; en la radio, un minuto y medio).
+      Spotify ya anota lo suyo, así que lo que suena en la PC no se manda.</div>
+  </div>
+</div>
+
+<!-- RADIO SEARCH (7.10.10): any station in the world, by name and country (ui/tuner/finder.js; SCAN held on the DT-90) -->
+<div id="rfFind" role="dialog" aria-label="Buscar radio">
+  <div class="phone-card jb-card rf-card">
+    <div class="phone-head">DT-90 · BUSCAR RADIO EN EL MUNDO <button type="button" id="rfClose" title="Cerrar (Esc)">✕</button></div>
+    <div class="rf-row">
+      <label class="rf-name">NOMBRE<input id="rfName" spellcheck="false" placeholder="jazz, BBC, Radio Paradise…"></label>
+      <label class="rf-country">PAÍS<select id="rfCountry"></select></label>
+      <button type="button" id="rfGo" class="jb-go">BUSCAR</button>
+    </div>
+    <div class="jb-msg" id="rfMsg"></div>
+    <div id="rfList" class="rf-list" role="listbox"></div>
+    <div class="rf-keep">GUARDAR LA QUE SUENA EN <span id="rfBand">FM1</span>:
+      <button type="button" data-m="1">1</button><button type="button" data-m="2">2</button><button type="button" data-m="3">3</button><button type="button" data-m="4">4</button><button type="button" data-m="5">5</button><button type="button" data-m="6">6</button></div>
+    <div class="phone-help">Tocá una radio para escucharla. Las de calidad CD dicen HI-FI. Los datos son de Radio Browser.</div>
   </div>
 </div>
 
@@ -470,6 +515,7 @@
 <script src="vendor/dp940-display.js"></script>
 <script src="ui/app/phone.js"></script>
 <script src="ui/app/history.js"></script>
+<script src="ui/app/lastfm.js"></script>
 <script src="ui/app/presets.js"></script>
 <script src="ui/app/rotate.js"></script>
 <script src="core/radio.js"></script>
@@ -478,6 +524,7 @@
 <script src="ui/stereo/stereo.js"></script>
 <script src="vendor/dt90-tuner.js"></script>
 <script src="ui/tuner/tuner.js"></script>
+<script src="ui/tuner/finder.js"></script>
 <script src="vendor/dc90-cd.js"></script>
 <script src="ui/cdunit/cdunit.js"></script>
 <script src="ui/jukebox/dm90.js"></script>

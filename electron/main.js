@@ -606,7 +606,16 @@ const radioList = list => (Array.isArray(list) ? list : []).map(r => ({
   name: String(r.name || '').trim().slice(0, 80),
   url: String(r.url_resolved || r.url || ''),
   codec: String(r.codec || '').slice(0, 12), bitrate: num(r.bitrate) || 0,
+  cc: /^[A-Z]{2}$/.test(r.countrycode || '') ? r.countrycode : '', place: String(r.state || '').trim().slice(0, 40),   // 7.10.10
 })).filter(r => r.name && /^https?:\/\//i.test(r.url) && r.url.length < 600);
+// 7.10.10: any station in the world, by name and/or country (the radio's search): the most heard first, 60 at most
+ipcMain.handle('radio-search', async (e, q, cc) => {
+  if (!fromWin(e)) return null;
+  const name = String(q || '').trim().slice(0, 60), country = /^[A-Z]{2}$/.test(cc || '') ? cc : '';
+  if (!name && !country) return [];
+  try { return radioList(await radioBrowser((name ? 'name=' + encodeURIComponent(name) + '&' : '') + (country ? 'countrycode=' + country + '&' : '') + 'hidebroken=true&order=clickcount&reverse=true&limit=60')); }
+  catch (err) { mlog('radio search: ' + (err && err.message || err)); return null; }
+});
 ipcMain.handle('radio-find', async (e, q, cc) => {
   if (!fromWin(e)) return null;
   const name = String(q || '').trim().slice(0, 60), country = /^[A-Z]{2}$/.test(cc || '') ? cc : '';
@@ -626,6 +635,17 @@ ipcMain.handle('cd-names', async (e, info) => {
 let jellyfin = null;
 const jf = () => jellyfin || (jellyfin = createJellyfin({ net, dir: app.getPath('userData'), log: mlog, version: app.getVersion() }));
 ipcMain.handle('jf-status', e => fromWin(e) ? jf().status() : null);
+// 7.10.10: Last.fm (lastfm.js): the person's own API key, the sign-in through last.fm in the browser, now playing
+// and scrobbles of Deck 90's own sources (the page says when)
+let lastfm = null;
+const lfm = () => lastfm || (lastfm = require('./lastfm').createLastfm({ net, dir: app.getPath('userData'), log: mlog, open: u => shell.openExternal(u) }));
+const lfmTrack = t => t && typeof t === 'object' ? { artist: String(t.artist || ''), title: String(t.title || ''), album: String(t.album || ''), dur: Number(t.dur) || 0, at: Number(t.at) || 0 } : null;
+ipcMain.handle('lfm-status', e => fromWin(e) ? lfm().status() : null);
+ipcMain.handle('lfm-begin', (e, key, secret) => fromWin(e) ? lfm().begin(String(key || '').slice(0, 64), String(secret || '').slice(0, 64)) : null);
+ipcMain.handle('lfm-finish', e => fromWin(e) ? lfm().finish() : null);
+ipcMain.handle('lfm-sign-out', e => fromWin(e) ? lfm().signOut() : null);
+ipcMain.handle('lfm-now', (e, t) => fromWin(e) ? lfm().nowPlaying(lfmTrack(t)) : null);
+ipcMain.handle('lfm-scrobble', (e, t) => fromWin(e) ? lfm().scrobble(lfmTrack(t)) : null);
 ipcMain.handle('jf-sign-in', (e, server, user, pw) => fromWin(e) ? jf().signIn(String(server || '').slice(0, 300), user, pw) : null);
 ipcMain.handle('jf-sign-out', e => fromWin(e) ? jf().signOut() : null);
 ipcMain.handle('jf-read', (e, kind, id, query) => fromWin(e) ? jf().read(String(kind), id, query && typeof query === 'object' ? query : {}) : null);
