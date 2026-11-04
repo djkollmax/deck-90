@@ -73,6 +73,14 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     ipcMain.on('media-cmd', (e, c) => {
       global.cmds.push(c);
       // Windows' volume: 2 % a key, as the bridge reports it after the stereo's VOL keys
+      // 7.10.11: the DV-90 sets it to a number, mutes it and reads it
+      let mv;
+      if ((mv = /^vol-(get|set (\d{1,3})|mute ([01]))$/.exec(c))) {
+        const V = global.volume = global.volume || { vol: 50, mute: false };
+        if (mv[2]) V.vol = Math.min(100, +mv[2]); if (mv[3]) V.mute = mv[3] === '1';
+        clearTimeout(global.volTimer); global.volTimer = setTimeout(() => BrowserWindow.getAllWindows()[0]?.webContents.send('volume', { ...V }), 60);
+        return;
+      }
       if (/^(volup|voldown|mute)$/.test(c)) {
         const V = global.volume = global.volume || { vol: 50, mute: false };
         if (c === 'mute') V.mute = !V.mute; else { V.vol = Math.max(0, Math.min(100, V.vol + (c === 'volup' ? 2 : -2))); V.mute = false; }
@@ -115,7 +123,8 @@ export async function launch({ station, size, drive, names, welcome = false, toa
   if (station) await win.evaluate(url => { for (const b of RADIO_BANDS) radioMem[b] = radioMem[b].map(s => s && Object.assign({}, s, { url })); }, base + '/s');
   return {
     app, win,
-    cmds: () => app.evaluate(() => { const c = global.cmds; global.cmds = []; return c.filter(x => !/^(volup|voldown)$/.test(x)); }),
+    cmds: () => app.evaluate(() => { const c = global.cmds; global.cmds = []; return c.filter(x => !/^(volup|voldown|vol-.*)$/.test(x)); }),
+    vols: () => app.evaluate(() => global.cmds.filter(x => /^vol-/.test(x))),
     heard: () => app.evaluate(() => { const h = global.drive.heard; global.drive.heard = []; return h.join(' '); }),
     drive: patch => app.evaluate((_, p) => Object.assign(global.drive, p), patch),
     toasts: () => noted.splice(0),

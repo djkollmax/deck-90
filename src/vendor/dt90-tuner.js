@@ -26,6 +26,7 @@
  * Deck 90 7.9.21: setRadio({ quality, place }) writes the stream's quality after TUNED and where the station is
  * under the memory.
  * Deck 90 7.10.7: a sixth band key, HI-FI (band-hifi, band 'HIFI'), between FM4 and AM; the memories narrower.
+ * Deck 90 7.10.11: a seventh band key, FM5 (band-fm5); the band keys and the memories narrower.
  * Deck 90 7.10.9: bigger key letters, fitted to each key (keyFont); accented capitals full height, the accent above.
  */
 (function (global) {
@@ -168,6 +169,7 @@ function validateGlyphs() {
 /** DT-90 material revision matching the DC-90 rack. Native SVG, no external assets. */
 // Deck 90 7.9.11: the BAND key is five direct band keys (FM1 FM2 FM3 FM4 AM, ids band-fm1..band-am); memories narrower
 // Deck 90 7.10.7: six, HI-FI (band-hifi) before AM; the memories narrower again (69 wide, from x 406)
+// Deck 90 7.10.11: seven, FM5 (band-fm5) after FM4; the band keys 36 wide, the memories 68 from x 414
 const LAYOUT=Object.freeze({
   "width": 1200,
   "height": 280,
@@ -215,37 +217,43 @@ const LAYOUT=Object.freeze({
     "band-fm1": {
       "x": 134,
       "y": 235,
-      "width": 40,
+      "width": 36,
       "height": 26
     },
     "band-fm2": {
-      "x": 178,
+      "x": 173,
       "y": 235,
-      "width": 40,
+      "width": 36,
       "height": 26
     },
     "band-fm3": {
-      "x": 222,
+      "x": 212,
       "y": 235,
-      "width": 40,
+      "width": 36,
       "height": 26
     },
     "band-fm4": {
-      "x": 266,
+      "x": 251,
       "y": 235,
-      "width": 40,
+      "width": 36,
+      "height": 26
+    },
+    "band-fm5": {
+      "x": 290,
+      "y": 235,
+      "width": 36,
       "height": 26
     },
     "band-hifi": {
-      "x": 310,
+      "x": 329,
       "y": 235,
-      "width": 40,
+      "width": 36,
       "height": 26
     },
     "band-am": {
-      "x": 354,
+      "x": 368,
       "y": 235,
-      "width": 40,
+      "width": 36,
       "height": 26
     },
     "tune-down": {
@@ -285,39 +293,39 @@ const LAYOUT=Object.freeze({
       "height": 26
     },
     "m1": {
-      "x": 406,
+      "x": 414,
       "y": 235,
-      "width": 69,
+      "width": 68,
       "height": 26
     },
     "m2": {
-      "x": 485,
+      "x": 491.6,
       "y": 235,
-      "width": 69,
+      "width": 68,
       "height": 26
     },
     "m3": {
-      "x": 564,
+      "x": 569.2,
       "y": 235,
-      "width": 69,
+      "width": 68,
       "height": 26
     },
     "m4": {
-      "x": 643,
+      "x": 646.8,
       "y": 235,
-      "width": 69,
+      "width": 68,
       "height": 26
     },
     "m5": {
-      "x": 722,
+      "x": 724.4,
       "y": 235,
-      "width": 69,
+      "width": 68,
       "height": 26
     },
     "m6": {
-      "x": 801,
+      "x": 802,
       "y": 235,
-      "width": 69,
+      "width": 68,
       "height": 26
     }
   }
@@ -537,7 +545,7 @@ class Deck90Tuner {
     if (!update || typeof update !== 'object') return this;
     const radio = this._state.radio;
     // FM4: Deck 90 7.9.2
-    if (['FM1', 'FM2', 'FM3', 'FM4', 'HIFI', 'AM'].includes(String(update.band).toUpperCase())) radio.band = String(update.band).toUpperCase();
+    if (['FM1', 'FM2', 'FM3', 'FM4', 'FM5', 'HIFI', 'AM'].includes(String(update.band).toUpperCase())) radio.band = String(update.band).toUpperCase();
     if ('frequency' in update && (update.frequency === null || update.frequency === '')) radio.frequency = null;   // internet only
     else if ('frequency' in update && finite(update.frequency)) radio.frequency = Number(update.frequency);
     const am = radio.band === 'AM';
@@ -711,7 +719,7 @@ class Deck90Tuner {
 
   _buildControls() {
     this._buttons = {};
-    const words = { power: 'POWER', band: 'BAND', 'band-fm1': 'FM1', 'band-fm2': 'FM2', 'band-fm3': 'FM3', 'band-fm4': 'FM4', 'band-hifi': 'HI-FI', 'band-am': 'AM',   /* Deck 90 7.10.7 */ 'tune-down': '◀', 'tune-up': '▶', scan: 'SCAN', memo: 'MEMO', mode: 'MODE', disp: 'DISP' };
+    const words = { power: 'POWER', band: 'BAND', 'band-fm1': 'FM1', 'band-fm2': 'FM2', 'band-fm3': 'FM3', 'band-fm4': 'FM4', 'band-fm5': 'FM5', 'band-hifi': 'HI-FI', 'band-am': 'AM',   /* Deck 90 7.10.7 */ 'tune-down': '◀', 'tune-up': '▶', scan: 'SCAN', memo: 'MEMO', mode: 'MODE', disp: 'DISP' };
     for (const [key, box] of Object.entries(LAYOUT.buttons)) {
       const group = node('g', { 'data-key': key, role: 'button', tabindex: 0, 'aria-label': key.startsWith('m') && /^m\d$/.test(key) ? `Memoria ${key.slice(1)}. Mantener un segundo para memorizar.` : words[key], 'aria-pressed': 'false' });
       group.style.cursor = 'pointer'; group.style.outline = 'none';

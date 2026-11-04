@@ -76,6 +76,7 @@
     </div>
     <div class="title-right">
       <span id="statusText">STANDBY</span>
+      <div class="led-group lfm-group" id="lfmGroup" title="Last.fm"><div class="led-label">SCROBBLING</div><div class="led" id="ledLfm"></div></div>
       <div class="led-group"><div class="led-label">SIG</div><div class="led" id="ledSig"></div></div>
       <div class="led-group"><div class="led-label">CLIP</div><div class="led" id="ledClip"></div></div>
       <div class="win-ctl">
@@ -118,6 +119,7 @@
         <button data-v="tuner" title="El sintonizador de radio: las mismas radios y memorias que el estéreo (9)">RADIO</button>
         <button data-v="cdunit" title="El reproductor de CD DC-90: la lectora de CD/DVD de la PC, también por USB (0)">CD</button>
         <button data-v="jukebox" title="El DM-90: tu música de Jellyfin (J)">MÚSICA</button>
+        <button data-v="volume" title="El DV-90: el volumen de la PC (U)">VOLUMEN</button>
       </div>
       <span class="row-break"></span>
       <div class="seg preset" data-group="preset" title="5 looks favoritos (F1–F5) y 3 tuyos (C1–C3, F6–F8): GUARDAR y C1–C3 guarda lo que ves">
@@ -332,6 +334,8 @@
   <div class="tuner-panel" id="cdPanel"><div id="cdUnit"></div></div>
   <!-- MUSIC SERVER (7.10.0): the DM-90, a double unit for the person's Jellyfin music (ui/jukebox/) -->
   <div class="tuner-panel" id="jbPanel"><div id="jukebox"></div></div>
+  <!-- MASTER VOLUME (7.10.11): the DV-90, the computer's volume (ui/volume/) -->
+  <div class="tuner-panel" id="volPanel"><div id="volume"></div></div>
 
   <!-- CASSETTE DECK -->
   <div class="panel deck-panel" data-mod="deck">
@@ -434,8 +438,29 @@
     </div>
     <div class="hist-foot">
       <span id="histCount"></span>
+      <button id="histSaved" class="hist-btn" title="Los temas que guardaste con G">★ GUARDADOS</button>
       <button id="histClear" class="hist-btn danger">BORRAR TODO</button>
       <button id="histExport" class="hist-btn">EXPORTAR A EXCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVED SONGS (7.10.11): what G kept (ui/app/saved.js) -->
+<div id="savedModal" role="dialog" aria-label="Temas guardados">
+  <div class="hist-card">
+    <div class="hist-head">★ TEMAS GUARDADOS <button id="savedClose" title="Cerrar (Esc)">✕</button></div>
+    <div class="hist-sub">Los que guardaste con la tecla G (o MEMO apretado en el sintonizador) mientras sonaban, para buscarlos después.</div>
+    <div class="hist-scroll">
+      <table class="hist-table">
+        <thead><tr><th>CUÁNDO</th><th>TEMA</th><th>DÓNDE SONABA</th><th>BUSCAR</th><th></th></tr></thead>
+        <tbody id="savedBody"></tbody>
+      </table>
+      <div class="hist-empty" id="savedEmpty">Todavía no guardaste temas. Cuando suene uno que te guste, apretá G.</div>
+    </div>
+    <div class="hist-foot">
+      <span id="savedCount"></span>
+      <button id="savedClear" class="hist-btn danger">BORRAR TODO</button>
+      <button id="savedExport" class="hist-btn">EXPORTAR A EXCEL</button>
     </div>
   </div>
 </div>
@@ -516,6 +541,7 @@
 <script src="ui/app/phone.js"></script>
 <script src="ui/app/history.js"></script>
 <script src="ui/app/lastfm.js"></script>
+<script src="ui/app/saved.js"></script>
 <script src="ui/app/presets.js"></script>
 <script src="ui/app/rotate.js"></script>
 <script src="core/radio.js"></script>
@@ -529,6 +555,8 @@
 <script src="ui/cdunit/cdunit.js"></script>
 <script src="ui/jukebox/dm90.js"></script>
 <script src="ui/jukebox/jukebox.js"></script>
+<script src="ui/volume/dv90.js"></script>
+<script src="ui/volume/volume.js"></script>
 <script src="ui/app/update.js"></script>
 <script src="ui/app/about.js"></script>
 <script src="ui/app/welcome.js"></script>

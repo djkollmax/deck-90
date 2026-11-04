@@ -53,13 +53,24 @@ const RADIO_HIFI = [
   { name: 'Intense', freq: '', q: 'Intense Radio', cc: 'NL', url: 'http://secure.live-streams.nl/flac.flac' },
   { name: 'Hi On Line', freq: '', q: 'Hi On Line Radio', cc: 'NL', url: 'http://mscp2.live-streams.nl:8100/flac.flac' },
 ];
-const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'HIFI', 'AM'];
+// FM5 (7.10.11): Mother Earth (Hamburg; four channels in FLAC from vinyl and hi-res, up to 24/192), Naim Radio and
+// Jazz24. Addresses that stop answering are looked up again by name
+const RADIO_FM5 = [
+  { name: 'Mother Earth', freq: '', q: 'Mother Earth Radio', cc: 'DE', url: 'https://motherearth.streamserver24.com/listen/motherearth/motherearth' },
+  { name: 'ME Jazz', freq: '', q: 'Mother Earth Jazz', cc: 'DE', url: 'https://motherearth.streamserver24.com/listen/motherearth_jazz/motherearth.jazz' },
+  { name: 'ME Klassik', freq: '', q: 'Mother Earth Klassik', cc: 'DE', url: 'http://server9.streamserver24.com:18910/motherearth.klassik' },
+  { name: 'ME Instrum.', freq: '', q: 'Mother Earth Instrumental', cc: 'DE', url: 'https://motherearth.streamserver24.com:18920/motherearth.instrumental' },
+  { name: 'Naim Radio', freq: '', q: 'Naim Radio', cc: 'GB' },
+  { name: 'Jazz24', freq: '', q: 'Jazz24', cc: 'US' },
+];
+const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'FM5', 'HIFI', 'AM'];
 // where a station is (7.9.21, under the memory on the DT-90; 7.9.23: in English, as the displays): the city of the ones that come with Deck 90, the
 // country of any other (Radio Browser's code). short: as it fits there; long: for MODE's line
 const RADIO_CITY = { Aspen: 'BS AS', Metro: 'BS AS', 'Rock & Pop': 'BS AS', 'La 100': 'BS AS', Vorterix: 'BS AS', 'Con Vos': 'BS AS',
   'Clásica': 'BS AS', Blackie: 'BS AS', Delta: 'BS AS', Blue: 'BS AS', 'Nac Rock': 'BS AS', Mitre: 'BS AS', 'Radio 10': 'BS AS',
   Continental: 'BS AS', Rivadavia: 'BS AS', 'Radio Nacional': 'BS AS', 'La Red': 'BS AS', 'Ibiza Global': 'IBIZA',
-  'Heart 80s': 'LONDON', 'Groove Salad': 'S. FRANCISCO', FIP: 'PARIS', 'FIP Jazz': 'PARIS', KEXP: 'SEATTLE' };
+  'Heart 80s': 'LONDON', 'Groove Salad': 'S. FRANCISCO', FIP: 'PARIS', 'FIP Jazz': 'PARIS', KEXP: 'SEATTLE',
+  'Mother Earth': 'HAMBURG', 'ME Jazz': 'HAMBURG', 'ME Klassik': 'HAMBURG', 'ME Instrum.': 'HAMBURG', 'Jazz24': 'SEATTLE' };
 const RADIO_LONG = { 'BS AS': 'BUENOS AIRES', 'S. FRANCISCO': 'SAN FRANCISCO' };
 const RADIO_COUNTRY = { AR: 'ARGENTINA', UY: 'URUGUAY', CL: 'CHILE', BR: 'BRAZIL', PY: 'PARAGUAY', BO: 'BOLIVIA', PE: 'PERU',
   CO: 'COLOMBIA', VE: 'VENEZUELA', EC: 'ECUADOR', MX: 'MEXICO', CU: 'CUBA', US: 'USA', CA: 'CANADA', ES: 'SPAIN',
@@ -75,7 +86,7 @@ function radioPlace(st, long) {
   return [RADIO_LONG[city] || city, city === 'SCOTLAND' ? 'UK' : country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
 }
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
-let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), HIFI: RADIO_HIFI.slice(), AM: RADIO_AM.slice() };
+let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), FM5: RADIO_FM5.slice(), HIFI: RADIO_HIFI.slice(), AM: RADIO_AM.slice() };
 try {
   const r = store.read(RADIO_KEY);
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {

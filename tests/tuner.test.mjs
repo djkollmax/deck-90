@@ -34,8 +34,8 @@ test('memory keys tune their station', async () => {
   }
 });
 
-test('band keys FM1 FM2 FM3 FM4 HI-FI AM, STEREO on FM, MONO on AM', async () => {
-  for (const b of ['FM2', 'FM3', 'FM4', 'HIFI', 'AM', 'FM1']) {
+test('band keys FM1 FM2 FM3 FM4 FM5 HI-FI AM, STEREO on FM, MONO on AM', async () => {
+  for (const b of ['FM2', 'FM3', 'FM4', 'FM5', 'HIFI', 'AM', 'FM1']) {
     await d.click(K('band-' + b.toLowerCase()), 1500);
     const r = await radio();
     assert.equal(r.band, b, 'band ' + b);

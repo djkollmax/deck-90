@@ -163,6 +163,7 @@ function frame(draw) {
   if (tunerShown() && draw) guard('tuner', () => tunerFeed(now));
   if (cdUnitShown() && draw) guard('cdunit', () => cdUnitFeed(now));
   if (jbShown() && draw) guard('jukebox', () => jbFeed(now));
+  if (volShown() && draw) guard('volume', () => volFeed(now));
 
   // Meters + BPM
   guard('meters', () => updateMasterMeters(now));

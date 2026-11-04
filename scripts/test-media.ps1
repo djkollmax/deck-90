@@ -73,6 +73,8 @@ $out = $p.StandardOutput.ReadToEndAsync(); $err = $p.StandardError.ReadToEndAsyn
 Start-Sleep -Seconds 6
 # the stereo's commands: the volume keys (up, then down: no change in the end) and the CD drive (7.7–7.8)
 if (-not $p.HasExited) { $p.StandardInput.WriteLine('volup'); $p.StandardInput.WriteLine('voldown'); $p.StandardInput.WriteLine('cd-info'); $p.StandardInput.Flush() }
+# 7.10.11: the DV-90's own volume commands answer with the volume too (read only here: CI's machine is left as it was)
+if (-not $p.HasExited) { Start-Sleep -Milliseconds 500; $p.StandardInput.WriteLine('vol-get'); $p.StandardInput.Flush() }
 Start-Sleep -Seconds 6
 $quitEarly = $p.HasExited
 if (-not $quitEarly) { $p.StandardInput.Close() }
@@ -86,7 +88,7 @@ if ($o -match '"ready":\s*true') {
   if ($o -notmatch '"hb":\s*1') { Bad 'no heartbeat in 10 seconds' }
   if ($o -notmatch '"none":\s*true|"app":') { Bad 'no report of what is playing' }
   # 7.9.21: Windows' volume after the volume keys (-1 on a machine whose sound can't be read, as CI's may be)
-  if ($o -notmatch '"vol":-?\d+') { Bad 'no volume after the volume keys' } else { Write-Host "ok   volume after the keys: $([regex]::Match($o, '"vol":-?\d+').Value)" }
+  if (([regex]::Matches($o, '"vol":-?\d+')).Count -lt 2) { Bad 'no volume after the volume keys and vol-get' } else { Write-Host "ok   volume after the keys: $([regex]::Match($o, '"vol":-?\d+').Value)" }
   if ($o -notmatch '"cd":\{') { Bad 'no answer to cd-info' } elseif ($o -match '"cd":\{"error"') { Bad 'cd-info failed' }
 } elseif ($e -match 'no media session manager') {
   Write-Host '::warning::This Windows has no media session service: the bridge loaded its Windows types but could not watch players.'

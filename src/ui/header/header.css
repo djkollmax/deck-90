@@ -94,3 +94,12 @@ html.chassis-ti.hdr-clock .hc{ border-right-color:rgba(var(--hdr-line, 127,246,2
 html.chassis-ti.hdr-wx .hw{ border-left-color:rgba(var(--hdr-line, 127,246,230),.13); }
 html.hdr-dim-low.chassis-ti .np-text, html.hdr-dim-low .hc, html.hdr-dim-low .hw{ filter:brightness(.55); }
 html.hdr-dim-max.chassis-ti .np-text, html.hdr-dim-max .hc, html.hdr-dim-max .hw{ filter:brightness(1.25) saturate(1.1); }
+
+/* 7.10.11 · SCROBBLING by SIG: there while Last.fm is connected; lit (Last.fm's red) while the song playing goes to
+   it, a green flash when one was scrobbled (ui/app/lastfm.js) */
+.lfm-group{ display:none; }
+.lfm-group.show{ display:flex; }
+.lfm-group .led-label{ opacity:.45; transition:opacity .3s; }
+.lfm-group.on .led-label{ opacity:1; }
+#ledLfm.on{ background:#d51007; border-color:#a00d05; box-shadow:0 0 6px #d51007, 0 0 12px rgba(213,16,7,.4); }
+#ledLfm.sent{ background:#00cc44; border-color:#00aa33; box-shadow:0 0 6px #00cc44, 0 0 12px rgba(0,204,68,.4); }

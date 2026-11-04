@@ -28,6 +28,18 @@ function lfmEnd(c) {
   if (!c || !lfmEnough(c)) return;
   window.lastfm.scrobble({ artist: c.artist, title: c.title, album: c.album, dur: c.dur, at: c.at });
   lfmState.sent++;
+  lfmSentAt = Date.now();
+}
+// 7.10.11: SCROBBLING in the header, by SIG: shown while connected, lit while the song playing goes to Last.fm, a
+// green flash when one was scrobbled
+let lfmSentAt = 0;
+function lfmLed() {
+  const g = lfmEl('lfmGroup'), led = lfmEl('ledLfm'); if (!g) return;
+  const on = !!(lfmState.signedIn && lfmCur && lfmCur.told), sent = Date.now() - lfmSentAt < 1500;
+  g.classList.toggle('show', !!lfmState.signedIn); g.classList.toggle('on', on || sent);
+  led.classList.toggle('on', on && !sent); led.classList.toggle('sent', sent);
+  g.title = !lfmState.signedIn ? '' : sent ? 'Last.fm: anotado' : on ? 'Last.fm: ' + lfmCur.artist + ' – ' + lfmCur.title + (lfmEnough(lfmCur) ? ' (se anota al terminar)' : '')
+    : 'Last.fm: conectado como ' + lfmState.user + ' (anota la radio, el CD y el DM-90)';
 }
 function lfmTick() {
   if (!lfmState.signedIn || !window.lastfm) { lfmCur = null; return; }
@@ -44,7 +56,7 @@ function lfmTick() {
   lfmCur.seen = now;
   if (!lfmCur.told && info.status === 'Playing' && lfmCur.heard >= 5) { lfmCur.told = true; window.lastfm.nowPlaying(song); }
 }
-setInterval(lfmTick, 1000);
+setInterval(() => { lfmTick(); lfmLed(); }, 1000);
 window.addEventListener('beforeunload', () => { if (lfmCur) lfmEnd(lfmCur); });
 
 // ── its dialog (⚙ → EXTRAS → LAST.FM) ──

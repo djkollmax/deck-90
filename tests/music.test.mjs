@@ -227,6 +227,8 @@ test('Last.fm: the DM-90 song as now playing, and a scrobble once heard long eno
   for (const t0 = Date.now(); Date.now() - t0 < 12000 && !now.length; await d.wait(300)) now = await d.app.evaluate(() => global.lfm.filter(x => x[0] === 'now'));
   const song = await d.win.evaluate(() => ({ title: lfmCur.title, artist: lfmCur.artist }));
   assert.ok(now.some(x => x[1] === song.artist && x[2] === song.title), JSON.stringify(now));
+  await d.wait(1200);
+  assert.deepEqual(await d.win.evaluate(() => ['show', 'on'].map(c => document.getElementById('lfmGroup').classList.contains(c))), [true, true], 'SCROBBLING lit in the header');
   await d.win.evaluate(() => { lfmCur.heard = 400; lfmCur.dur = 300; });   // as if a long song heard for minutes
   await d.click(K('next'), 300);
   let sent = [];
@@ -258,4 +260,17 @@ test('the keys letters are bigger and fit their keys; accented capitals keep the
   // Í on the tuner's display: the I's full height (7 rows of dots), its accent in a dot above (one more row)
   const rows = t => d.win.evaluate(t => new Set([...tuner._dots(t, 0, 0, 1).children].map(c => c.getAttribute('cy'))).size, t);
   assert.equal(await rows('I'), 7); assert.equal(await rows('Í'), 8);
+});
+
+test('touching the time switches it between the time left and the time played, remembered', async () => {
+  await d.win.evaluate(async () => { musicPlay(await musicTracks('b000000'), 0); }); await d.wait(2500);
+  const shown = () => d.win.evaluate(() => [jbCfg.remain, jb._remain]);
+  const was = await d.win.evaluate(() => jbCfg.remain);
+  await d.click('#jukebox [data-role="time-key"]', 400);
+  assert.deepEqual(await shown(), [!was, !was]);
+  await d.click('#jukebox [data-role="time-key"]', 400);
+  assert.deepEqual(await shown(), [was, was]);
+  await d.click('#jukebox [data-role="time-key"]', 400);
+  assert.equal(await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-prefs')).jukebox.remain), !was);
+  await d.click(K('stop'), 600);
 });

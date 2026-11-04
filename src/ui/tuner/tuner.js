@@ -31,7 +31,7 @@ function tunerTheme() {
   tunerPanel.classList.toggle('gold', c === 'GOLD');
 }
 
-// the bands are keys of the tuner itself (FM1 FM2 FM3 FM4 HI-FI AM, next to POWER); the vendor lights the one in use
+// the bands are keys of the tuner itself (FM1 FM2 FM3 FM4 FM5 HI-FI AM, next to POWER); the vendor lights the one in use
 function tunerBands() {}
 // a band: its memory 1 (or the one it was on), on the air if the tuner is on
 function tunerBand(b) {
@@ -183,6 +183,7 @@ function tunerKey(k, { hold } = {}) {
     return tunerSync();
   }
   if (k === 'scan' && hold) return rfOpen(true);                     // 7.10.10: SCAN held, any station in the world (finder.js)
+  if (k === 'memo' && hold) return songSave();                       // 7.10.11: MEMO held, keep the song playing (saved.js)
   if (k === 'memo') {
     if (!radioNow) { toast('Primero sintonizá una radio y después MEMO y el número', 2600); return; }
     tunerMemo = tunerMemo ? 0 : setTimeout(() => { tunerMemo = 0; tunerSync(); }, 6000);

@@ -1,5 +1,14 @@
 # Novedades
 
+## 7.10.11 — 2026-11-03
+
+### Nuevo
+- **DV-90, el volumen de la PC en el rack** (tecla U, o VER → VOLUMEN). Tiene una perilla grande (la girás arrastrando o con la ruedita), − y +, teclas de 10 a 80 y MUTE. El display muestra el número grande, una barra y el nivel L/R de lo que suena. Si cambiás el volumen desde Windows o el teclado, el DV-90 lo sigue.
+- **G guarda el tema que suena** (o MEMO apretado en el sintonizador): de la radio, el CD, el DM-90 o la PC. En L → ★ GUARDADOS ves la lista: cuándo y dónde sonaba, con links para buscarlo en YouTube y Spotify, y la podés exportar a Excel.
+- **Banda FM5**: Mother Earth (cuatro canales en calidad de estudio, FLAC), Naim Radio y Jazz24.
+- **SCROBBLING arriba**, al lado de SIG, cuando Last.fm está conectado. Se prende en rojo mientras el tema que suena se anota y parpadea en verde cuando se anotó.
+- **Tocando el tiempo del DM-90** pasa de cuenta regresiva a tiempo transcurrido y vuelve, como en la compactera.
+
 ## 7.10.10 — 2026-11-03
 
 ### Nuevo

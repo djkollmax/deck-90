@@ -6,6 +6,7 @@
 //    deck90-radio    the bands' memories (core/radio.js)      deck90-cdmodes   REPEAT and SHUFFLE (core/cd.js)
 //    deck90-music    the DM-90's REPEAT and SHUFFLE (core/music.js; the server's sign-in lives in the main process)
 //    deck90-clock    the header's clock and city (clock.js)   and history, presets, welcome, about (their files)
+//    deck90-saved    the songs kept with G (ui/app/saved.js, 7.10.11)
 //  Reading never fails: a missing or damaged value gives the fallback. backup.js saves and restores them all.
 // ═══════════════════════════════════════════════════════════
 const store = {

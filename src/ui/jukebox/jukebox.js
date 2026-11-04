@@ -32,7 +32,7 @@ let jbCfg = { show: false, remain: true, color: 'aqua', dim: 0 };
   color: UNIT_COLORS.some(u => u.id === c.color) ? c.color : 'aqua', dim: [0, 1, 2].includes(c.dim) ? c.dim : 0 }; }
 function unitColorApply() {
   const u = UNIT_COLORS.find(x => x.id === jbCfg.color) || UNIT_COLORS[0];
-  for (const id of ['tunerPanel', 'cdPanel', 'jbPanel']) {
+  for (const id of ['tunerPanel', 'cdPanel', 'jbPanel', 'volPanel']) {
     const el = document.getElementById(id); if (!el) continue;
     el.style.setProperty('--vfd', u.vfd); el.style.setProperty('--vfd-dim', u.dim);
     // 7.10.6: DIMMER too, on the tuner and the CD as on the DM-90 (brightest / low; the DM-90 draws its own)
@@ -58,7 +58,24 @@ function jbBuild() {
   jb = new Deck90Music(document.getElementById('jukebox'), { theme: 'silver' });
   jbTheme(); jb.setPower(jbPower); jb.setDimmer(jbCfg.dim); jb.setModes(musicModes); jb.setTimeMode(jbCfg.remain ? 'remain' : 'elapsed');
   jb.onKey(jbKey);
+  jbTimeKey();
   jbShownKey = ''; jbSync(); jbRenderList();
+}
+// 7.10.11: a touch on the time switches it between the time left (a minus lights) and the time played, as on the
+// DC-90; remembered
+function jbTimeKey() {
+  const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  for (const [k, v] of Object.entries({ x: 38, y: 48, width: 205, height: 74, fill: 'transparent', role: 'button', tabindex: 0, 'data-role': 'time-key',
+    'aria-label': 'Tiempo: restante o transcurrido' })) hit.setAttribute(k, v);
+  hit.style.cursor = 'pointer'; hit.style.outline = 'none';
+  const flip = () => {
+    jbCfg.remain = !jbCfg.remain; savePrefs();
+    jb.setTimeMode(jbCfg.remain ? 'remain' : 'elapsed');
+    toast('DM-90 · <span>' + (jbCfg.remain ? 'tiempo restante' : 'tiempo transcurrido') + '</span>', 1200);
+  };
+  hit.addEventListener('click', flip);
+  hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); flip(); } });
+  jb.svg.append(hit);
 }
 function jbShow(on, quiet) {
   jbCfg.show = !!on;
@@ -254,7 +271,7 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
     toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack y el reloj', 1400);
     return;
   }
-  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack y el reloj', 1200); return; }
+  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); if (typeof dv !== 'undefined' && dv) dv.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack y el reloj', 1200); return; }
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
   if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked
@@ -321,7 +338,7 @@ document.addEventListener('keydown', e => {
   if (k.toLowerCase() === 'q') { take(); if (!e.repeat) jbQueue(); return; }
   // 7.10.6: E (the stereo), P (the strip) and J (this unit) stay the program's even here; Shift + a letter jumps
   // with any letter (Shift+E: the first name with E)
-  if (!e.shiftKey && /^[epj]$/i.test(k)) return;
+  if (!e.shiftKey && /^[epjg]$/i.test(k)) return;                 // 7.10.11: G too (keep the song)
   if (/^[\p{L}\p{N}]$/u.test(k)) { take(); return jbLetter(k.toLowerCase()); }
 }, true);
 

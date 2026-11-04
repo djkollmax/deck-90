@@ -19,8 +19,12 @@ body:not(.is-app) .phone-seg{ display:none; }
 .phone-off:hover{ color:#ff8a6a; }
 
 /* ── track history ── */
-#histModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
-#histModal.show{ display:flex; }
+#histModal, #savedModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); -webkit-app-region:no-drag; }
+#histModal.show, #savedModal.show{ display:flex; }
+#savedModal{ z-index:9050; }
+.saved-go a{ color:#80ffe5; text-decoration:none; margin-right:10px; letter-spacing:1px; font-size:10px; }
+.saved-go a:hover{ text-decoration:underline; }
+.saved-x{ background:none; border:0; color:#a06a5a; cursor:pointer; font-size:12px; } .saved-x:hover{ color:#ff8a6a; }
 .hist-card{ width:min(880px,94vw); max-height:86vh; display:flex; flex-direction:column; background:linear-gradient(180deg,#151821,#0a0c11);
   border:1px solid rgba(217,189,115,.35); border-radius:10px; padding:14px 16px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
 .hist-head{ display:flex; justify-content:space-between; align-items:center; color:#f2d991; letter-spacing:3px; font-size:11px; }

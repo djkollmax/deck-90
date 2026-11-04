@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.10.11
+
+### Added
+- **DV-90 master volume** (`ui/volume/`, U or VER → VOLUMEN): a rack unit in the tuner's and CD's materials for the computer's volume: big digits, a 50-cell bar, MUTE, the L/R level of what plays, a VOLUME knob (dragged round, or the wheel anywhere on it), − and + (held, they repeat) and 10 … 80. It sets Windows' volume to a number through the bridge (`vol-set`, `vol-mute`, `vol-get`: Core Audio's SetMasterVolumeLevelScalar and SetMute; on Linux pactl) and follows it when it changes elsewhere (read every 3 s while it shows). COLOR, DIMMER and the frames reach it.
+- **G keeps the song playing** (MEMO held on the DT-90 too), from the radio (the song the station names), the CD, the DM-90 or the PC: L → ★ GUARDADOS lists them with when and where they played, a search on YouTube and Spotify, and a CSV (`ui/app/saved.js`, deck90-saved). G passes through the DM-90's keyboard like E, P and J.
+- **FM5**: Mother Earth's four channels (FLAC from vinyl and hi-res), Naim Radio and Jazz24; the DT-90 has a seventh band key (vendor patch: band keys 36 wide, memories 68).
+- **SCROBBLING by SIG** in the header while Last.fm is connected: lit in Last.fm's red while the song playing goes to it, a green flash when one is scrobbled.
+- **The DM-90's time switches on a touch** between the time left and the time played, as the DC-90's does; remembered.
+
 ## 7.10.10
 
 ### Added

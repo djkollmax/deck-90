@@ -5,7 +5,7 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: rotateCfg, stereo: stereoCfg, tuner: tunerCfg, cdunit: cdUnitCfg, jukebox: jbCfg })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: rotateCfg, stereo: stereoCfg, tuner: tunerCfg, cdunit: cdUnitCfg, jukebox: jbCfg, volume: typeof volCfg === 'object' ? volCfg : undefined })); } catch(_){}
 }
 function loadPrefs(){ return store.read(PREFS_KEY, {}); }
 
@@ -22,6 +22,7 @@ function setChassis(v){
   tunerTheme();
   cdUnitTheme();
   jbTheme();
+  volTheme();
   requestAnimationFrame(() => { sizeCanvases(); if (!capture.running) drawIdle(); });
 }
 function setDrawer(open){
@@ -138,7 +139,7 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'cal')  vuCal = v === 'AUTO' ? 'AUTO' : Number(v);
   if (g === 'sens') setFlSensitivity(Number(v));
   if (g === 'mode') setSpectrumMode(Number(v));
-  if (g === 'mods') { if (v === 'tuner') tunerShow(!tunerCfg.show); else if (v === 'cdunit') cdUnitShow(!cdUnitCfg.show); else if (v === 'jukebox') jbShow(!jbCfg.show); else toggleModule(v); }
+  if (g === 'mods') { if (v === 'tuner') tunerShow(!tunerCfg.show); else if (v === 'cdunit') cdUnitShow(!cdUnitCfg.show); else if (v === 'jukebox') jbShow(!jbCfg.show); else if (v === 'volume') volShow(!volCfg.show); else toggleModule(v); }
   if (g === 'deckmode') { deckDouble = v === 'double'; if (!mods.deck) toggleModule('deck'); else applyModules(); }
   if (g === 'tapestyle') { tapeStyle = v; if (!mods.tape) toggleModule('tape'); }
   if (g === 'phone') phoneButton(v);
@@ -204,6 +205,10 @@ document.addEventListener('keydown', e => {
     if (/^f[1-8]$/.test(k)) e.preventDefault();
     return;
   }
+  if (savedModal.classList.contains('show')) {                    // 7.10.11: the saved songs, over the history
+    if (k === 'escape') { e.preventDefault(); showSaved(false); }
+    return;
+  }
   if (histOpen() || document.getElementById('phoneModal').classList.contains('show')) {
     if (k === 'escape' || (k === 'l' && histOpen())) { e.preventDefault(); showHistory(false); showPhoneModal(false); if (presetSaveArmed) { presetSaveArmed = false; syncConsole(); } }
     if (/^f[1-8]$/.test(k)) e.preventDefault();
@@ -236,9 +241,10 @@ document.addEventListener('keydown', e => {
     l: () => { if (!miniMode) showHistory(true); },
     i: () => { if (!miniMode) showAbout(true); },
     e: () => { if (!e.repeat) toggleStereo(); },
+    g: () => { if (!e.repeat) songSave(); },                           // 7.10.11: keep the song playing (saved.js)
     h: () => setControlsHidden(!controlsHidden),
     1: () => toggleModule('vu'), 2: () => toggleModule('bpm'), 3: () => toggleModule('meters'),
-    4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), 9: () => tunerShow(!tunerCfg.show), 0: () => cdUnitShow(!cdUnitCfg.show), j: () => jbShow(!jbCfg.show), z: () => toggleTapeOnly(), p: () => { if (!e.repeat) toggleMini(); },
+    4: () => toggleModule('spectrum'), 5: () => toggleModule('osc'), 6: () => toggleModule('deck'), 7: () => toggleModule('tape'), 8: () => toggleModule('gonio'), 9: () => tunerShow(!tunerCfg.show), 0: () => cdUnitShow(!cdUnitCfg.show), j: () => jbShow(!jbCfg.show), u: () => volShow(!volCfg.show), z: () => toggleTapeOnly(), p: () => { if (!e.repeat) toggleMini(); },
     c: () => { const o = ['AUTO', 18, 14, 10]; vuCal = o[(o.indexOf(vuCal) + 1) % o.length]; savePrefs(); syncConsole(); },
   }[k];
   if (act) { e.preventDefault(); act(); }

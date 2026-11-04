@@ -153,3 +153,24 @@ test('the phone shows the stereo and its keys work the PC', async () => {
   } finally { await br.close(); await d.win.evaluate(() => window.phoneDisplay.set(false)); }
   assert.deepEqual(d.errors(), []);
 });
+
+test('G keeps the song playing on the radio; L, then GUARDADOS, lists it with its searches', async () => {
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(3000);
+  await d.win.keyboard.press('g'); await d.wait(300);
+  const saved = await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-saved')));
+  assert.equal(saved.length, 1);
+  assert.ok(SONGS.includes(saved[0].artist + ' - ' + saved[0].title), JSON.stringify(saved[0]));
+  assert.match(saved[0].where, /^Radio · \S/);
+  await d.win.keyboard.press('g'); await d.wait(300);
+  assert.ok((await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-saved')).length)) <= 2, 'the same song twice is kept once');
+  await d.win.keyboard.press('l'); await d.wait(500);
+  await d.win.click('#histSaved'); await d.wait(400);
+  const rows = await d.win.locator('#savedBody tr').allTextContents();
+  assert.ok(rows.length >= 1);
+  assert.match(rows[rows.length - 1], /YOUTUBE.*SPOTIFY/);
+  assert.match(await d.win.locator('#savedBody a').first().getAttribute('href'), /^https:\/\/www\.youtube\.com\/results\?search_query=/);
+  await d.win.keyboard.press('Escape'); await d.wait(300);
+  assert.equal(await d.win.evaluate(() => savedModal.classList.contains('show')), false);
+  await d.win.keyboard.press('Escape'); await d.wait(300);
+  assert.deepEqual(d.errors(), []);
+});

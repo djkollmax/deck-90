@@ -3,6 +3,7 @@
 # prints one JSON line per change on stdout and takes commands on stdin:
 #   toggle | play | pause | next | prev | stop      (the player)
 #   volup | voldown | mute                          (Windows' own volume, as the keyboard's volume keys)
+#   vol-get | vol-set <0-100> | vol-mute <0|1>      (7.10.11: the DV-90 volume unit: read it, set it, mute it)
 #   cd-info | cd-play <n> | cd-pause | cd-resume | cd-stop | cd-eject   (the stereo's CD: see below)
 # Exits when stdin closes (Deck 90 quit). Says {"hb":1} every 5 s so Deck 90 knows it isn't stuck,
 # and exits (Deck 90 starts it again) when Windows' media service keeps failing, e.g. after Explorer restarts.
@@ -182,12 +183,24 @@ public static class Deck90Volume {
   }
   public static int Level() { float v; Marshal.ThrowExceptionForHR(Get().GetMasterVolumeLevelScalar(out v)); return (int)System.Math.Round(v * 100); }
   public static bool Muted() { bool m; Marshal.ThrowExceptionForHR(Get().GetMute(out m)); return m; }
+  public static void Set(int p) { Marshal.ThrowExceptionForHR(Get().SetMasterVolumeLevelScalar(System.Math.Max(0, System.Math.Min(100, p)) / 100f, System.Guid.Empty)); }
+  public static void Mute(bool m) { Marshal.ThrowExceptionForHR(Get().SetMute(m, System.Guid.Empty)); }
 }
 '@
 function SayVolume {
   try {
     if (-not ('Deck90Volume' -as [type])) { Add-Type -TypeDefinition $volCode }
     Start-Sleep -Milliseconds 60                  # the shell applies the key a moment after it's pressed
+    Say ([ordered]@{ vol = [Deck90Volume]::Level(); mute = [Deck90Volume]::Muted() })
+  } catch { Say ([ordered]@{ vol = -1; mute = $false }) }
+}
+
+# 7.10.11: the DV-90 volume unit sets Windows' volume to a number and mutes it, and reads it now and then
+function VolCommand($c) {
+  try {
+    if (-not ('Deck90Volume' -as [type])) { Add-Type -TypeDefinition $volCode }
+    if ($c -match '^vol-set (\d{1,3})$') { [Deck90Volume]::Set([int]$Matches[1]) }
+    elseif ($c -match '^vol-mute ([01])$') { [Deck90Volume]::Mute($Matches[1] -eq '1') }
     Say ([ordered]@{ vol = [Deck90Volume]::Level(); mute = [Deck90Volume]::Muted() })
   } catch { Say ([ordered]@{ vol = -1; mute = $false }) }
 }
@@ -221,6 +234,7 @@ while ($true) {
       if ($tapped -and $null -ne $cmd) { SayVolume }
       if ($null -eq $cmd) { break }
       if ($c -like 'cd-*') { CdCommand $c }
+      if ($c -like 'vol-*') { VolCommand $c; $c = '' }
       $s = if ($c) { Pick } else { $null }
       if ($s) {
         switch ($c) {

@@ -555,7 +555,12 @@ function sendVolume(v) { if (win && !win.isDestroyed()) win.webContents.send('vo
 // on Linux the volume keys move the default output of PulseAudio / PipeWire with pactl, as GNOME's keys do
 function linuxVolume(cmd) {
   const { execFile } = require('child_process');
-  const arg = { volup: ['set-sink-volume', '@DEFAULT_SINK@', '+2%'], voldown: ['set-sink-volume', '@DEFAULT_SINK@', '-2%'], mute: ['set-sink-mute', '@DEFAULT_SINK@', 'toggle'] }[cmd];
+  let m;
+  const arg = { volup: ['set-sink-volume', '@DEFAULT_SINK@', '+2%'], voldown: ['set-sink-volume', '@DEFAULT_SINK@', '-2%'], mute: ['set-sink-mute', '@DEFAULT_SINK@', 'toggle'],
+    'vol-get': ['get-sink-mute', '@DEFAULT_SINK@'] }[cmd]   // 7.10.11: the DV-90's (vol-get only reads)
+    || ((m = /^vol-set (\d{1,3})$/.exec(cmd)) ? ['set-sink-volume', '@DEFAULT_SINK@', Math.min(100, +m[1]) + '%']
+      : (m = /^vol-mute ([01])$/.exec(cmd)) ? ['set-sink-mute', '@DEFAULT_SINK@', m[1]] : null);
+  if (!arg) return;
   execFile('pactl', arg, { timeout: 3000 }, err => {
     if (err) return sendVolume({ vol: -1 });
     execFile('pactl', ['get-sink-volume', '@DEFAULT_SINK@'], { timeout: 3000 }, (e1, out) => {
@@ -567,7 +572,9 @@ function linuxVolume(cmd) {
   });
 }
 function mediaCommand(cmd) {
-  if (process.platform === 'linux' && ['volup', 'voldown', 'mute'].includes(cmd)) return linuxVolume(cmd);
+  const vol = /^vol-(get|set \d{1,3}|mute [01])$/.test(cmd);   // 7.10.11: the DV-90's
+  if (process.platform === 'linux' && (vol || ['volup', 'voldown', 'mute'].includes(cmd))) return linuxVolume(cmd);
+  if (vol) { if (media && media.stdin.writable) media.stdin.write(cmd + '\n'); return; }
   if (media && media.stdin.writable && (['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)
     || /^cd-(info|pause|resume|stop|eject|close|play \d{1,2})$/.test(cmd))) media.stdin.write(cmd + '\n');
   if (mpris && !/^cd-/.test(cmd)) mpris.command(cmd);

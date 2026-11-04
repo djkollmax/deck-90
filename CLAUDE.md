@@ -36,7 +36,8 @@ wants it done then (see Shared names).
     tape style), `header/` (now playing, clock and weather; `nowplaying.js` also keeps Deck 90's own sources, `npSource`: the DM-90, the DC-90 and the radio register there, and the one playing gets the header, the history, the deck's keys and the media keys), `mini/` (the strip), `stereo/` (the car stereo
     window; `stereo-face.css` is shared with the phone), `tuner/` (the DT-90; `units.css` styles it and the
     DC-90), `cdunit/` (the DC-90), `jukebox/` (the DM-90: `dm90.js` its faceplate, Deck 90's own in the units'
-    style, and `jukebox.js` its lists and keys).
+    style, and `jukebox.js` its lists and keys), `volume/` (the DV-90: `dv90.js` its faceplate, `volume.js` Windows' volume
+    through the bridge's `vol-*` commands). `app/saved.js` keeps the songs saved with G; `app/lastfm.js` scrobbles.
 - `src/index.html` loads every script as a classic script and every stylesheet, in order. The stylesheets are
   one cascade split in files: a later file overrides an earlier one, so moving a rule between files can change
   the look (compare with `scripts/shots.mjs`, below).
@@ -103,7 +104,7 @@ program). Push one release, wait for its run to finish, then the next: two at on
 ## Words
 
 - **rack**: the main window's stack of modules. **DT-90**: the tuner unit. **DC-90**: the CD unit. **DM-90**: the
-  music server unit (Jellyfin).
+  music server unit (Jellyfin). **DV-90**: the volume unit.
 - **stereo**: the car stereo window (E), with its own radio and CD modes. **mini**: the strip (P).
 - **phone**: the phone's page, served by `electron/remote.js`.
 - **look**: a module's skin (VU faces, spectrum looks, the stereo display's SDM looks).
