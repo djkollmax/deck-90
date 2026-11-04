@@ -26,6 +26,7 @@
  * Deck 90 7.9.21: setRadio({ quality, place }) writes the stream's quality after TUNED and where the station is
  * under the memory.
  * Deck 90 7.10.7: a sixth band key, HI-FI (band-hifi, band 'HIFI'), between FM4 and AM; the memories narrower.
+ * Deck 90 7.10.12: presets 7–12 (the keys 1–6 held), shown M7…M12, their key's lamp lit.
  * Deck 90 7.10.11: a seventh band key, FM5 (band-fm5); the band keys and the memories narrower.
  * Deck 90 7.10.9: bigger key letters, fitted to each key (keyFont); accented capitals full height, the accent above.
  */
@@ -553,7 +554,7 @@ class Deck90Tuner {
       radio.frequency = Math.max(am ? 530 : 87.5, Math.min(am ? 1710 : 108, radio.frequency));
       radio.frequency = am ? Math.round(radio.frequency / 10) * 10 : Math.round(radio.frequency * 20) / 20;
     }
-    if ('preset' in update && finite(update.preset)) radio.preset = Math.max(0, Math.min(6, Math.round(Number(update.preset))));   // 0: no memory
+    if ('preset' in update && finite(update.preset)) radio.preset = Math.max(0, Math.min(12, Math.round(Number(update.preset))));   // 0: no memory; Deck 90 7.10.12: 7–12 (1–6 held)
     if ('signal' in update && finite(update.signal)) radio.signal = Math.max(0, Math.min(5, Math.round(Number(update.signal))));
     for (const key of ['name', 'text', 'label', 'quality', 'place']) if (key in update) radio[key] = clean(update[key]);   // quality, place: Deck 90 7.9.21
     for (const key of ['stereo', 'mono', 'tuned', 'auto', 'scan', 'memo']) if (key in update) radio[key] = Boolean(update[key]);
@@ -867,7 +868,7 @@ class Deck90Tuner {
   _updateButtonLeds() {
     const radio = this._state.radio;
     for (const [key, button] of Object.entries(this._buttons)) {
-      const active = this._state.powered && (key === `m${radio.preset}` || key === 'scan' && radio.scan || key === 'memo' && radio.memo || key === `band-${radio.band.toLowerCase()}` || key === 'power');   // Deck 90 7.9.4: MODE has no lamp (it chooses the text line)
+      const active = this._state.powered && (radio.preset && key === `m${(radio.preset - 1) % 6 + 1}` ||   /* Deck 90 7.10.12: 7–12 light 1–6 */ key === 'scan' && radio.scan || key === 'memo' && radio.memo || key === `band-${radio.band.toLowerCase()}` || key === 'power');   // Deck 90 7.9.4: MODE has no lamp (it chooses the text line)
       button.led.setAttribute('fill', active ? VFD : DIM);
       button.led.setAttribute('opacity', active ? '.9' : '.22');
       button.group.setAttribute('aria-pressed', String(active));

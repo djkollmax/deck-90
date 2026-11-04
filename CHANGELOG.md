@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.10.12
+
+### Changed
+- **Twelve radio memories a band**: 1–6 held are 7–12 (1 → 7 … 6 → 12, as the DP940 prints them), on the DT-90, the car stereo and the phone's stereo. Keeping a station is MEMO then the number (held for 7–12) on the DT-90, and BAND held (A.MEM, printed under it) then the number on the stereo; holding a number no longer overwrites a memory. The DT-90 shows M7…M12 with the lamp of the key held (vendor patch); the radio search keeps the station in 1–12; the deck's ◀◀ ▶▶ go through all twelve. Saved memories gain six empty ones.
+
 ## 7.10.11
 
 ### Added

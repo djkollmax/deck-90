@@ -1,5 +1,12 @@
 # Novedades
 
+## 7.10.12 — 2026-11-04
+
+### Cambios
+- **Doce memorias por banda en la radio**: manteniendo apretado el 1 vas a la 7, el 2 a la 8, y así hasta el 6, que va a la 12 (como vienen impresos en el estéreo).
+  - **Para guardar**: en el sintonizador, MEMO y el número; en el estéreo, BAND apretado (A.MEM) y el número. Si es de la 7 a la 12, el número también apretado.
+  - Mantener apretado un número ya no pisa la memoria sin querer.
+
 ## 7.10.11 — 2026-11-03
 
 ### Nuevo

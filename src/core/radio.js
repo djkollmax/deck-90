@@ -86,21 +86,23 @@ function radioPlace(st, long) {
   return [RADIO_LONG[city] || city, city === 'SCOTLAND' ? 'UK' : country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
 }
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
-let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: RADIO_DEFAULTS.slice(), FM2: RADIO_FM2.slice(), FM3: RADIO_FM3.slice(), FM4: RADIO_FM4.slice(), FM5: RADIO_FM5.slice(), HIFI: RADIO_HIFI.slice(), AM: RADIO_AM.slice() };
+// 7.10.12: twelve memories a band (1–6, and 7–12 held), the last six empty to begin with
+const RADIO_SLOTS = 12, radioSlots = a => Array.from({ length: RADIO_SLOTS }, (_, i) => a[i] || null);
+let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: radioSlots(RADIO_DEFAULTS), FM2: radioSlots(RADIO_FM2), FM3: radioSlots(RADIO_FM3), FM4: radioSlots(RADIO_FM4), FM5: radioSlots(RADIO_FM5), HIFI: radioSlots(RADIO_HIFI), AM: radioSlots(RADIO_AM) };
 try {
   const r = store.read(RADIO_KEY);
   if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
-    if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: 6 }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0,
+    if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: RADIO_SLOTS }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0,
       hq: r[b][i].hq === 1 ? 1 : 0, gain: r[b][i].gain > 0 && r[b][i].gain <= 1 ? Math.round(r[b][i].gain * 1000) / 1000 : 0 } : null);   // 7.10.7
     if (RADIO_BANDS.includes(r.band)) radioMem.band = r.band;
-    if (r.slot >= 0 && r.slot <= 6) radioMem.slot = r.slot | 0;
+    if (r.slot >= 0 && r.slot <= RADIO_SLOTS) radioMem.slot = r.slot | 0;
     if (typeof r.even === 'boolean') radioMem.even = r.even;
   }
   // 7.8: FM1-6 is Vorterix 92.1 instead of Los 40 (kept if it was stored there by hand)
   if (radioMem.FM1[5] && radioMem.FM1[5].name === 'Los 40' && radioMem.FM1[5].q === 'Los 40') radioMem.FM1[5] = Object.assign({}, RADIO_DEFAULTS[5]);
   // 7.8.4: FM2 and FM3 come filled; their empty memories take the new stations once (one stored by hand stays)
   if (r && typeof r === 'object' && !(r.v >= 2)) {
-    for (const [b, def] of [['FM2', RADIO_FM2], ['FM3', RADIO_FM3]]) radioMem[b] = radioMem[b].map((st, i) => st || Object.assign({}, def[i]));
+    for (const [b, def] of [['FM2', RADIO_FM2], ['FM3', RADIO_FM3]]) radioMem[b] = radioMem[b].map((st, i) => st || (def[i] ? Object.assign({}, def[i]) : null));
     radioMem.v = 2;
   }
 } catch (_) {}
@@ -309,17 +311,18 @@ async function radioStep(d) {                                  // TUNE: the most
 setInterval(() => { if (radioScan && radioScan++ % 8 === 0) radioStep(1); }, 1000);   // SCAN: 8 s of each (a stop ends it)
 // SCAN on or off (a station chosen by hand also turns it off)
 function radioScanSet(on) { radioScan = on ? 1 : 0; deck.emit('radio'); }
-function radioMemory(n, hold) {
+// n: 1–12 (7.10.12: 7–12 are 1–6 held); store: keep the station playing there (MEMO and the number)
+function radioMemory(n, store) {
   const list = radioMem[radioMem.band];
-  if (hold) {
-    if (!radioNow) { deck.notice('Primero sintonizá una radio (TUNE ◀ ▶) y después mantené apretado el número', 3000); return; }
-    list[n - 1] = { name: radioNow.name, freq: radioNow.freq || '', q: radioNow.q || radioNow.name, cc: radioNow.cc || '', url: radioNow.url || '', codec: radioNow.codec || '', kbps: radioNow.kbps || 0 };
+  if (store) {
+    if (!radioNow) { deck.notice('Primero sintonizá una radio (TUNE ◀ ▶) y después MEMO y el número', 3000); return; }
+    list[n - 1] = { name: radioNow.name, freq: radioNow.freq || '', q: radioNow.q || radioNow.name, cc: radioNow.cc || '', url: radioNow.url || '', codec: radioNow.codec || '', kbps: radioNow.kbps || 0, hq: radioNow.hq ? 1 : 0, gain: radioNow.gain || 0 };
     radioMem.slot = n; saveRadio(); deck.emit('radio');
     deck.notice('Guardada en <span>' + radioMem.band + '-' + n + '</span> · ' + radioNow.name.replace(/[<>&]/g, ''), 2200);
     return;
   }
   const st = list[n - 1];
-  if (!st) { deck.notice(radioMem.band + '-' + n + ' está vacía: sintonizá con <span>TUNE ◀ ▶</span> y mantené apretado el ' + n, 3200); return; }
+  if (!st) { deck.notice(radioMem.band + '-' + n + ' está vacía: sintonizá con <span>TUNE ◀ ▶</span> y guardala con <span>MEMO</span> y el ' + (n > 6 ? (n - 6) + ' apretado' : n), 3200); return; }
   radioMem.slot = n; saveRadio(); radioScan = 0;
   radioTune(st, radioMem.band + '-' + n);
 }

@@ -7,7 +7,7 @@
 //    MODE    PC (what the computer plays), RADIO (stations over the internet), CD, or SERVER (the DM-90's music)
 //    SEL     play / pause: the radio, or the player's song                    DISP  song · time · temp · TIEMPO
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
-//    1–6     the band's memories (hold one to keep the station playing there)  BAND  FM1 · FM2 · FM3 · FM4 · FM5 · HIFI · AM
+//    1–6     the band's memories, held 7–12 (BAND held, A.MEM, then a number keeps the station there)  BAND  FM1 · FM2 · FM3 · FM4 · FM5 · HIFI · AM
 //    HDB     the display's brightness   SDM  its colour (or the whole front)   PWR  back to the rack   ⏏  the tray
 //  CD mode (7.8, Windows): the PC's CD/DVD drive, through the program's bridge (electron/media.ps1). An audio CD
 //  plays from the drive (Windows' own CD audio); a disc of MP3s and the like plays its files here. TRACK ◀▶ and
@@ -325,6 +325,7 @@ function stereoVolume(step) {
   window.nowPlaying.cmd(step > 0 ? 'volup' : 'mute');
   if (!step) toast('ATT · <span>silencio</span> (otra vez para volver)', 1400);
 }
+let stereoMemo = 0;
 function stereoKey(k, hold) {
   if (k === 'volup') return stereoVolume(1);
   if (k === 'voldown') return stereoVolume(-1);
@@ -356,9 +357,16 @@ function stereoKey(k, hold) {
     toast('SDM ' + stereoCfg.color + '/' + STEREO_COLORS + ' · <span>' + (look ? look.name + '</span>: ' + look.say : 'COLOR ' + stereoCfg.color + '</span>'), look ? 2000 : 1200);
     return stereoPaint();
   }
+  // 7.10.12: BAND held is A.MEM (printed under it): the next number keeps the station playing, as the tuner's MEMO
+  if (k === 'band' && hold) {
+    if (!radioNow) { toast('Primero sintonizá una radio (TUNE) y después BAND apretado y el número', 2600); return; }
+    clearTimeout(stereoMemo); stereoMemo = setTimeout(() => { stereoMemo = 0; }, 6000);
+    toast('A.MEM · tocá el <span>1–6</span> donde guardarla (mantenelo apretado para el <span>7–12</span>)', 2600);
+    return;
+  }
   if (k === 'band') {
     radioMem.band = RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]; radioMem.slot = 0; saveRadio();
-    toast('BAND · <span>' + radioMem.band + '</span> · seis memorias (1–6)', 1500);
+    toast('BAND · <span>' + radioMem.band + '</span> · doce memorias (1–6, y 7–12 manteniendo apretado)', 1800);
     return stereoText(true);
   }
   if (/^m[1-6]$/.test(k) && stereoCfg.mode === 'cd') {     // on a CD the numbers are its tracks: 1–6, held 7–12 (printed above them)
@@ -369,9 +377,10 @@ function stereoKey(k, hold) {
     else toast(tr.length ? 'El CD tiene ' + tr.length + ' pistas' : 'No hay un CD de audio', 1600);
     return;
   }
-  if (/^m[1-6]$/.test(k)) {
+  if (/^m[1-6]$/.test(k)) {                                        // 7.10.12: held, 7–12; after A.MEM, kept there
     if (stereoCfg.mode !== 'radio') stereoSwitch('radio');
-    return radioMemory(Number(k[1]), hold);
+    const store = !!stereoMemo; clearTimeout(stereoMemo); stereoMemo = 0;
+    return radioMemory(Number(k[1]) + (hold ? 6 : 0), store);
   }
   const radio = stereoCfg.mode === 'radio';
   if (stereoCfg.mode === 'music' && (k === 'sel' || k === 'prev' || k === 'next')) {   // 7.10.4: the DM-90's queue
@@ -416,7 +425,7 @@ function stereoKey(k, hold) {
       volT = setTimeout(function rep() { stereoKey(b.dataset.st, false); volT = setTimeout(rep, 100); }, 350);
       return;
     }
-    if (/^(m[1-6]|sdm)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
+    if (/^(m[1-6]|sdm|band)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
   const up = e => { clearTimeout(holdT); clearTimeout(volT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);

@@ -80,19 +80,29 @@ test('◀ ▶ and the knob step through the most heard stations', async () => {
   assert.notEqual((await radio()).name, first);
 });
 
-test('holding a memory key stores the station; MEMO then a number does too', async () => {
-  await d.hold(K('m5'));
-  let r = await radio();
-  assert.equal(r.preset, 5);
+test('MEMO then a number keeps the station; held, the numbers are 7–12 (MEMO and held keeps it there)', async () => {
   const name = await d.win.evaluate(() => radioNow.name);
-  assert.ok(r.name.startsWith(name), r.name);
-  assert.equal(await d.win.evaluate(() => radioMem.FM1[4].name), name);
   await d.click(K('memo'), 300);
   assert.equal((await radio()).memo, true);
   await d.click(K('m4'));
-  r = await radio();
+  let r = await radio();
   assert.equal(r.memo, false); assert.equal(r.preset, 4);
   assert.equal(await d.win.evaluate(() => radioMem.FM1[3].name), name);
+  // MEMO, then 2 held: memory 8
+  await d.click(K('memo'), 300); await d.hold(K('m2'));
+  r = await radio();
+  assert.equal(r.preset, 8);
+  assert.equal(await d.win.evaluate(() => radioMem.FM1[7].name), name);
+  // another station, then 2 held tunes memory 8 back, its lamp the 2's
+  await d.click(K('m1'), 1500);
+  assert.equal((await radio()).preset, 1);
+  await d.hold(K('m2')); await d.wait(1500);
+  r = await radio();
+  assert.equal(r.preset, 8); assert.equal(await d.win.evaluate(() => radioNow.name), name);
+  assert.match(await d.win.evaluate(() => document.querySelector('#tuner svg').getAttribute('aria-label')), /Memoria 8/);
+  // an empty one held says how to fill it
+  await d.hold(K('m6'));
+  assert.equal(await d.win.evaluate(() => radioMem.slot), 8, 'memory 12 is empty: nothing changes');
 });
 
 test('SCAN moves on by itself and SCAN again stays', async () => {

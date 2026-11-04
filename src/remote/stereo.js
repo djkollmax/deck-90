@@ -64,7 +64,7 @@ function stKey(k, hold) {
       volT = setTimeout(function rep() { stKey(k); volT = setTimeout(rep, 180); }, 450);
       return;
     }
-    if (/^(m[1-6]|sdm)$/.test(k)) holdT = setTimeout(() => { held = true; stKey(k, true); }, 1000);
+    if (/^(m[1-6]|sdm|band)$/.test(k)) holdT = setTimeout(() => { held = true; stKey(k, true); }, 1000);   // 7.10.12: BAND held, A.MEM
   });
   const up = () => { clearTimeout(holdT); clearTimeout(volT); stFace.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => stFace.addEventListener(ev, up));

@@ -187,7 +187,7 @@ function tunerKey(k, { hold } = {}) {
   if (k === 'memo') {
     if (!radioNow) { toast('Primero sintonizá una radio y después MEMO y el número', 2600); return; }
     tunerMemo = tunerMemo ? 0 : setTimeout(() => { tunerMemo = 0; tunerSync(); }, 6000);
-    if (tunerMemo) toast('MEMO · tocá el <span>1–6</span> donde guardarla', 2400);
+    if (tunerMemo) toast('MEMO · tocá el <span>1–6</span> donde guardarla (mantenelo apretado para el <span>7–12</span>)', 2600);
     return tunerSync();
   }
   if (!tunerPower && k !== 'band') tunerOn(true, k !== 'scan');   // a station key wakes the tuner, as on the real one
@@ -198,10 +198,11 @@ function tunerKey(k, { hold } = {}) {
     else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte · mantenelo apretado para buscar en el mundo', 2600); }
     return tunerSync();
   }
+  // 7.10.12: held, the number above it (1 → 7 … 6 → 12); MEMO first keeps the station there
   if (/^m[1-6]$/.test(k)) {
-    const n = Number(k[1]);
+    const n = Number(k[1]) + (hold ? 6 : 0);
     if (tunerMemo) { clearTimeout(tunerMemo); tunerMemo = 0; radioMemory(n, true); }
-    else radioMemory(n, !!hold);
+    else radioMemory(n, false);
     return tunerSync();
   }
 }
@@ -233,8 +234,8 @@ npSource('radio', () => {
 }, c => {
   if (c === 'prev' || c === 'next') {
     const list = radioMem[radioMem.band], from = (radioMem.slot || 1) - 1;
-    for (let i = 1; i <= 6; i++) {
-      const k = (from + (c === 'next' ? i : -i) + 12) % 6;
+    for (let i = 1; i <= RADIO_SLOTS; i++) {
+      const k = (from + (c === 'next' ? i : -i) + 2 * RADIO_SLOTS) % RADIO_SLOTS;
       if (list[k]) { tunerHeld = null; radioScanSet(false); radioMemory(k + 1); return; }
     }
     return;
