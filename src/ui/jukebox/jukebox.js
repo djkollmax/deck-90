@@ -25,7 +25,13 @@ const UNIT_COLORS = [
   { id: 'orange', name: 'NARANJA', vfd: '#ff8a2a', dim: '#40220c' }, { id: 'yellow', name: 'AMARILLO', vfd: '#ffe14a', dim: '#3d3510' },
   { id: 'cyan', name: 'CIAN', vfd: '#4ae8ff', dim: '#0f3540' }, { id: 'pink', name: 'ROSA', vfd: '#ff7ac8', dim: '#40142e' },
   { id: 'lime', name: 'LIMA', vfd: '#c8ff3a', dim: '#2f3d0e' }, { id: 'ice', name: 'HIELO', vfd: '#c8f0ff', dim: '#203640' },
-  { id: 'gold', name: 'ORO', vfd: '#ffd27a', dim: '#3d3018' }];
+  { id: 'gold', name: 'ORO', vfd: '#ffd27a', dim: '#3d3018' },
+  // 7.10.15: ten more
+  { id: 'mint', name: 'MENTA', vfd: '#a6ffd2', dim: '#1d3d2e' }, { id: 'teal', name: 'TURQUESA', vfd: '#2fe6c4', dim: '#0c3a32' },
+  { id: 'emerald', name: 'ESMERALDA', vfd: '#3dff8c', dim: '#0e3d21' }, { id: 'cobalt', name: 'COBALTO', vfd: '#5c86ff', dim: '#131f4a' },
+  { id: 'indigo', name: 'ÍNDIGO', vfd: '#9a8cff', dim: '#211d4a' }, { id: 'purple', name: 'PÚRPURA', vfd: '#b866ff', dim: '#2b1247' },
+  { id: 'magenta', name: 'MAGENTA', vfd: '#ff4fdc', dim: '#401038' }, { id: 'coral', name: 'CORAL', vfd: '#ff8c78', dim: '#40201b' },
+  { id: 'peach', name: 'DURAZNO', vfd: '#ffc79e', dim: '#3f2d1f' }, { id: 'lavender', name: 'LAVANDA', vfd: '#e2ccff', dim: '#352b45' }];
 const JB_DIM_NAME = ['ALTO', 'MÁXIMO', 'BAJO'];
 let jbCfg = { show: false, remain: true, color: 'aqua', dim: 0 };
 { const c = store.section('jukebox'); if (c) jbCfg = { show: c.show === true, remain: c.remain !== false,
@@ -41,6 +47,31 @@ function unitColorApply() {
   if (typeof hdrApply === 'function') hdrApply();                 // 7.10.9: the header display too (clock.js)
 }
 unitColorApply();
+// 7.10.15: COLOR and DIMMER from any of their places (the DM-90's keys, the DV-90's, ⚙ PANTALLA's swatches)
+function unitColorSet(id, quiet) {
+  if (!UNIT_COLORS.some(u => u.id === id)) return;
+  jbCfg.color = id; unitColorApply(); savePrefs(); syncConsole();
+  if (!quiet) toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === id).name + '</span> en los displays del rack y el reloj', 1400);
+}
+function unitColorStep(back) {
+  const i = UNIT_COLORS.findIndex(u => u.id === jbCfg.color), n = UNIT_COLORS.length;
+  unitColorSet(UNIT_COLORS[(i + (back ? n - 1 : 1) + n) % n].id);
+}
+function unitDimSet(level, quiet) {
+  if (![0, 1, 2].includes(level)) return;
+  jbCfg.dim = level;
+  if (jb) jb.setDimmer(level);
+  if (typeof dv !== 'undefined' && dv) dv.setDimmer(level);
+  if (typeof de !== 'undefined' && de) de.setDimmer(level);
+  unitColorApply(); savePrefs(); syncConsole();
+  if (!quiet) toast('DIMMER · brillo <span>' + JB_DIM_NAME[level] + '</span> en los displays del rack y el reloj', 1200);
+}
+// the swatches in ⚙ PANTALLA → DISPLAYS, one per colour
+{ const seg = document.querySelector('#console .seg[data-group="vfd"]');
+  if (seg) for (const u of UNIT_COLORS) {
+    const b = document.createElement('button'); b.dataset.v = u.id; b.title = u.name; b.setAttribute('aria-label', 'Displays en ' + u.name);
+    b.style.setProperty('--sw', u.vfd); b.style.setProperty('--sw-dim', u.dim); seg.append(b);
+  } }
 let jb = null, jbPower = false, jbActive = false, jbShownKey = '', jbAvg = -24, jbAt = 0, jbLv = { L: 0, R: 0 };
 const jbPanel = document.getElementById('jbPanel');
 const jbShown = () => jbCfg.show && !miniMode;
@@ -266,13 +297,8 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   if (k === 'power') return jbOn(!jbPower);
   if (k === 'setup' && hold) return jbLibraryNext();               // 7.10.10: SETUP held, the next library (all, then each)
   if (k === 'setup') return jbSetup(true);
-  if (k === 'color') {                                            // the rack's displays, all three (held: the one before)
-    const i = UNIT_COLORS.findIndex(u => u.id === jbCfg.color), n = UNIT_COLORS.length;
-    jbCfg.color = UNIT_COLORS[(i + (hold ? n - 1 : 1)) % n].id; unitColorApply(); savePrefs();
-    toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack y el reloj', 1400);
-    return;
-  }
-  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); if (typeof dv !== 'undefined' && dv) dv.setDimmer(jbCfg.dim); if (typeof de !== 'undefined' && de) de.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack y el reloj', 1200); return; }
+  if (k === 'color') return unitColorStep(hold);                   // the rack's displays and the clock (held: the one before)
+  if (k === 'dimmer') return unitDimSet((jbCfg.dim + 1) % 3);
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
   if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked

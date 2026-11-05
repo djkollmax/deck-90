@@ -89,3 +89,14 @@ body.is-app .seg input{ -webkit-app-region:no-drag; }
 .rot-row button.on{ color:#120e05; font-weight:600; background:linear-gradient(180deg,#f3dc95,#c99f45); }
 .rack-unit .panel, .rack-unit .master-strip{ transition:opacity .26s ease; }
 .rack-unit.look-fade .panel, .rack-unit.look-fade .master-strip{ opacity:0; }
+/* 7.10.15: the displays' colours as swatches, each lit in its own colour; the chosen one ringed */
+/* two rows of twelve, the label beside both */
+.drawer-block .seg.vfd-seg{ display:grid; grid-template-columns:74px repeat(12, 1fr); grid-auto-rows:20px; gap:5px 6px; height:auto;
+  align-items:center; padding:5px 10px 5px 0; }
+.drawer-block .seg.vfd-seg .seg-label{ grid-row:span 2; }
+.drawer-block .seg.vfd-seg button{ width:auto; height:20px; padding:0; border-radius:3px; background:var(--sw-dim);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); position:relative; }
+.drawer-block .seg.vfd-seg button::after{ content:''; position:absolute; inset:5px; border-radius:1px; background:var(--sw); box-shadow:0 0 5px var(--sw); }
+.drawer-block .seg.vfd-seg button:hover{ box-shadow:inset 0 0 0 1px rgba(255,255,255,.35); }
+.console .drawer-block .seg.vfd-seg button.on{ background:var(--sw-dim); box-shadow:0 0 0 2px #e2c884, inset 0 0 0 1px rgba(0,0,0,.5); }
+.drawer-block .seg.vfd-seg button.on::after{ inset:3px; }

@@ -7,7 +7,8 @@
 //
 //    const dv = new Deck90VolumeUnit(container, { theme: 'silver' | 'black' });
 //    dv.setVolume({ vol: 0–100 or -1 (unknown), mute });  dv.setLevels(l, r);  dv.setTheme(t);  dv.setDimmer(0–2)
-//    dv.onKey((key, { value }) => …)   keys: mute, down, up, p10 … p80, knob (value: the volume the knob was turned to)
+//    dv.onKey((key, { value, hold }) => …)   keys: mute, down, up, p10 … p80, knob (value: the volume the knob was turned
+//    to), color (hold: held), dimmer
 // ═══════════════════════════════════════
 (function (global) {
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -28,9 +29,11 @@ const DOTS = { V: [17, 17, 17, 17, 17, 10, 4], O: [14, 17, 17, 17, 17, 17, 14], 
   J: [7, 2, 2, 2, 2, 18, 12], K: [17, 18, 20, 24, 20, 18, 17], P: [30, 17, 17, 30, 16, 16, 16], Q: [14, 17, 17, 17, 21, 18, 13], X: [17, 17, 10, 4, 10, 17, 17],
   Z: [31, 1, 2, 4, 8, 16, 31], '+': [0, 4, 4, 31, 4, 4, 0], '.': [0, 0, 0, 0, 0, 12, 12], '/': [1, 1, 2, 4, 8, 16, 16] };
 const KEYS = { mute: { x: 35, y: 196, w: 96, h: 32, label: 'MUTE' }, down: { x: 146, y: 196, w: 64, h: 32, label: '−' }, up: { x: 218, y: 196, w: 64, h: 32, label: '+' } };
-[10, 20, 30, 40, 50, 60, 70, 80].forEach((v, i) => { KEYS['p' + v] = { x: 300 + i * 72, y: 196, w: 64, h: 32, label: String(v) }; });
+[10, 20, 30, 40, 50, 60, 70, 80].forEach((v, i) => { KEYS['p' + v] = { x: 300 + i * 64, y: 196, w: 58, h: 32, label: String(v) }; });
+// 7.10.15: the rack's displays from here too (they were only on the DM-90): COLOR (held, the one before) and DIMMER
+KEYS.color = { x: 826, y: 196, w: 60, h: 32, label: 'COLOR' }; KEYS.dimmer = { x: 892, y: 196, w: 64, h: 32, label: 'DIMMER' };
 const KNOB = { cx: 1062, cy: 206, r: 52 }, SPAN = 135;            // the knob turns from −135° (0) to +135° (100)
-const NAMES = { mute: 'MUTE: silencio', down: 'Bajar el volumen', up: 'Subir el volumen' };
+const NAMES = { mute: 'MUTE: silencio', down: 'Bajar el volumen', up: 'Subir el volumen', color: 'Color de los displays del rack', dimmer: 'Brillo de los displays del rack' };
 let count = 0;
 function node(name, attrs = {}) { const el = document.createElementNS(SVG_NS, name); for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v)); return el; }
 const css = (name, fallback) => `var(--${name},var(--_d90-${name},${fallback}))`;
@@ -88,7 +91,7 @@ function faceplate(p, o = VOLUME_PLATE) {
     <g font-family="Arial,Helvetica,sans-serif" fill="${dim}" font-size="7.1" letter-spacing="1.35">
       <text x="1153" y="23" text-anchor="end">${o.side}</text>
       ${o === VOLUME_PLATE ? `<text x="${KNOB.cx}" y="${H - 9}" text-anchor="middle" font-size="6.6">VOLUME</text>
-      <text x="35" y="185">MUTE</text><text x="146" y="185">− DOWN</text><text x="218" y="185">UP +</text><text x="300" y="185">LEVEL</text>`
+      <text x="35" y="185">MUTE</text><text x="146" y="185">− DOWN</text><text x="218" y="185">UP +</text><text x="300" y="185">LEVEL</text><text x="826" y="185">DISPLAY</text>`
         : o.labels.map(([x, y, t, a]) => `<text x="${x}" y="${y}"${a ? ` text-anchor="${a}"` : ''}${y > 260 ? ' font-size="6.6"' : ''}>${t}</text>`).join('')}
     </g>
     <path d="M35 31H1165" stroke="#050b07" stroke-opacity=".25" stroke-width=".7"/>
@@ -179,7 +182,7 @@ class Deck90VolumeUnit {
       const g = node('g', { 'data-key': key, role: 'button', tabindex: 0, 'aria-label': NAMES[key] || 'Volumen al ' + b.label });
       g.style.cursor = 'pointer'; g.style.outline = 'none';
       const face = node('rect', { x: b.x, y: b.y, width: b.w, height: b.h, rx: 2.5, fill: `url(#${this.prefix}-key)`, stroke: 'var(--edge,var(--_d90-edge))', 'stroke-width': .9 });
-      const size = key === 'down' || key === 'up' ? 20 : 12;
+      const size = key === 'down' || key === 'up' ? 20 : key === 'color' || key === 'dimmer' ? 10.5 : 12;
       const t = node('text', { x: b.x + b.w / 2, y: b.y + b.h / 2 + size * .36, 'text-anchor': 'middle', 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': size, 'font-weight': 700, 'letter-spacing': .7, fill: label, 'pointer-events': 'none' });
       t.textContent = b.label;
       const led = node('rect', { x: b.x + 7, y: b.y + b.h - 3.6, width: b.w - 14, height: 1.2, fill: DIM, opacity: .25 });
@@ -187,17 +190,19 @@ class Deck90VolumeUnit {
         node('path', { d: `M${b.x + 3} ${b.y + 1.3}H${b.x + b.w - 3}`, stroke: '#fff', 'stroke-opacity': .35, 'stroke-width': .7 }), t, led);
       this._buttons[key] = { g, face, led };
       this.svg.append(g);
-      let repeat = 0;
+      let repeat = 0, colorAt = 0;
       const stop = () => { clearTimeout(repeat); clearInterval(repeat); repeat = 0; face.setAttribute('transform', ''); };
+      const up = () => { if (colorAt) { const held = performance.now() - colorAt > 600; colorAt = 0; this._emit('color', { hold: held }); } stop(); };
       // − and + repeat while held, as a volume key does
       this._listen(g, 'pointerdown', e => {
         if (e.button !== undefined && e.button !== 0) return;
         e.preventDefault(); try { g.setPointerCapture(e.pointerId); } catch (_) {}
         face.setAttribute('transform', `translate(0 1)`);
+        if (key === 'color') { colorAt = performance.now(); return; }   // said when let go: held, the colour before
         this._emit(key);
         if (key === 'down' || key === 'up') repeat = setTimeout(() => { repeat = setInterval(() => this._emit(key), 90); }, 400);
       });
-      this._listen(g, 'pointerup', stop); this._listen(g, 'pointercancel', stop); this._listen(g, 'lostpointercapture', stop);
+      this._listen(g, 'pointerup', up); this._listen(g, 'pointercancel', () => { colorAt = 0; stop(); }); this._listen(g, 'lostpointercapture', up);
       this._listen(g, 'keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); this._emit(key); } });
     }
   }

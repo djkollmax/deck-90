@@ -432,6 +432,8 @@ function syncConsole() {
     sens: String(flSensitivity),
     mode: String(spectrumModeIndex),
     chassis: typeof chassis !== 'undefined' ? chassis : 'TI',
+    vfd: typeof jbCfg === 'object' ? jbCfg.color : '',             // 7.10.15: the rack displays' colour and brightness
+    vfddim: typeof jbCfg === 'object' ? String(jbCfg.dim) : '',
   };
   document.querySelectorAll('#console .seg').forEach(seg => {
     const g = seg.dataset.group;

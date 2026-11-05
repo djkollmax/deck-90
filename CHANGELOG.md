@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.10.15
+
+### Added
+- **Ten more display colours** (24 in all): mint, turquoise, emerald, cobalt, indigo, purple, magenta, coral, peach and lavender, for the rack's displays and the header.
+- **COLOR and DIMMER on the DV-90** (held COLOR: the colour before): they were only on the DM-90, so without Jellyfin there was no way to change them. The DV-90's 10 … 80 keys are a little narrower to make room.
+- **⚙ PANTALLA → DISPLAYS and BRILLO**: every colour as a swatch lit in itself (two rows of twelve, the chosen one ringed) and the three brightness levels, in step with the keys (`unitColorSet`, `unitColorStep`, `unitDimSet` in jukebox.js, shared by the three places).
+
+### Changed
+- **The DE-90 sits above the DV-90**, as an equalizer goes between the sources and the amplifier in a rack.
+
 ## 7.10.14
 
 ### Added

@@ -146,6 +146,8 @@ document.getElementById('console').addEventListener('click', e => {
   if (g === 'phone') phoneButton(v);
   if (g === 'lastfm') { lfmSetup(true); return; }                   // 7.10.10 (ui/app/lastfm.js)
   if (g === 'chassis') setChassis(v);
+  if (g === 'vfd') unitColorSet(v);                                // 7.10.15 (ui/jukebox/jukebox.js)
+  if (g === 'vfddim') unitDimSet(Number(v));
   if (g === 'clock') setClockMode(v);
   if (g === 'preset') { presetButton(v, e.shiftKey); return; }
   if (g === 'tools') {

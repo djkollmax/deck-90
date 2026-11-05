@@ -60,6 +60,44 @@ test('a volume changed elsewhere shows; COLOR and DIMMER reach it; remembered', 
   await d.win.evaluate(() => { jbCfg.color = 'amber'; unitColorApply(); });
   assert.equal(await d.win.evaluate(() => getComputedStyle(volPanel).getPropertyValue('--vfd').trim()), '#ffb84a');
   assert.equal(await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-prefs')).volume.show), true);
+});
+
+// 7.10.15: COLOR and DIMMER on the DV-90 too (they were only on the DM-90), and ⚙ PANTALLA's swatches and BRILLO
+test('COLOR and DIMMER on the DV-90 work the whole rack, with no DM-90', async () => {
+  const vfd = () => d.win.evaluate(() => ['tunerPanel', 'cdPanel', 'volPanel'].map(id => getComputedStyle(document.getElementById(id)).getPropertyValue('--vfd').trim()));
+  assert.equal(await d.win.evaluate(() => jb), null, 'the DM-90 was never shown');
+  await d.click(K('color'), 300);                                  // amber → green
+  assert.deepEqual(await vfd(), ['#8cff5a', '#8cff5a', '#8cff5a']);
+  assert.equal(await d.win.evaluate(() => HC_ON), '#8cff5a', 'the clock too');
+  await d.hold(K('color'), 900);
+  assert.equal(await d.win.evaluate(() => jbCfg.color), 'amber', 'held: the one before');
+  await d.click(K('dimmer'), 300);
+  assert.equal(await d.win.evaluate(() => [jbCfg.dim, volPanel.classList.contains('dim-max')].join()), '1,true');
+  await d.click(K('dimmer'), 300); await d.click(K('dimmer'), 300);
+  assert.equal(await d.win.evaluate(() => jbCfg.dim), 0);
+});
+
+test('⚙ PANTALLA: a swatch per colour and BRILLO, lit as the keys leave them', async () => {
+  await d.win.evaluate(() => setDrawer(true)); await d.wait(500);
+  const sw = '#console .seg[data-group="vfd"] button';
+  assert.equal(await d.win.locator(sw).count(), await d.win.evaluate(() => UNIT_COLORS.length));
+  assert.ok(await d.win.evaluate(() => UNIT_COLORS.length) >= 24, 'ten more colours');
+  assert.equal(await d.win.getAttribute(sw + '.on', 'data-v'), 'amber');
+  await d.click(sw + '[data-v="magenta"]', 300);
+  assert.equal(await d.win.evaluate(() => [jbCfg.color, getComputedStyle(eqPanel).getPropertyValue('--vfd').trim()].join()), 'magenta,#ff4fdc');
+  assert.equal(await d.win.getAttribute(sw + '.on', 'data-v'), 'magenta');
+  await d.click('#console .seg[data-group="vfddim"] button[data-v="2"]', 300);
+  assert.equal(await d.win.evaluate(() => [jbCfg.dim, volPanel.classList.contains('dim-low')].join()), '2,true');
+  await d.win.evaluate(() => setDrawer(false)); await d.wait(400);
+  await d.click(K('dimmer'), 300);                                 // the key moves the drawer's light too
+  assert.equal(await d.win.getAttribute('#console .seg[data-group="vfddim"] button.on', 'data-v'), '0');
+  assert.deepEqual(await d.win.evaluate(() => { const p = JSON.parse(localStorage.getItem('deck90-prefs')).jukebox; return [p.color, p.dim]; }), ['magenta', 0]);
+});
+
+test('the DE-90 sits above the DV-90; U hides it, no errors', async () => {
+  await d.win.keyboard.press('w'); await d.wait(600);
+  const [e, v] = await d.win.evaluate(() => [eqPanel.getBoundingClientRect().top, volPanel.getBoundingClientRect().top]);
+  assert.ok(e < v, `equalizer ${e} above volume ${v}`);
   await d.win.keyboard.press('u'); await d.wait(500);
   assert.equal(await d.win.evaluate(() => getComputedStyle(volPanel).display), 'none');
   assert.deepEqual(d.errors(), []);

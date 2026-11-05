@@ -196,6 +196,16 @@
         <button data-v="weather">+ CLIMA</button>
         <input id="cityInput" type="text" maxlength="60" placeholder="TU CIUDAD + ENTER" spellcheck="false" autocomplete="off">
       </div>
+      <!-- 7.10.15: the rack's displays and the clock: their colour (swatches made by ui/jukebox/jukebox.js) and brightness -->
+      <div class="seg vfd-seg" data-group="vfd" title="Color de los displays del rack y del reloj (también COLOR en el DV-90 y el DM-90)">
+        <span class="seg-label">DISPLAYS</span>
+      </div>
+      <div class="seg" data-group="vfddim" title="Brillo de los displays del rack y del reloj (también DIMMER en el DV-90 y el DM-90)">
+        <span class="seg-label">BRILLO</span>
+        <button data-v="2">BAJO</button>
+        <button data-v="0">ALTO</button>
+        <button data-v="1">MÁXIMO</button>
+      </div>
       </div>
       <div class="drawer-block">
         <div class="block-title">CASETERA Y CINTA</div>
@@ -335,10 +345,11 @@
   <div class="tuner-panel" id="cdPanel"><div id="cdUnit"></div></div>
   <!-- MUSIC SERVER (7.10.0): the DM-90, a double unit for the person's Jellyfin music (ui/jukebox/) -->
   <div class="tuner-panel" id="jbPanel"><div id="jukebox"></div></div>
+  <!-- GRAPHIC EQUALIZER (7.10.14): the DE-90, ten bands for what Deck 90 plays (core/eq.js, ui/eq/); 7.10.15 above the
+       volume, as an equalizer sits between the sources and the amplifier -->
+  <div class="tuner-panel" id="eqPanel"><div id="equalizer"></div></div>
   <!-- MASTER VOLUME (7.10.11): the DV-90, the computer's volume (ui/volume/) -->
   <div class="tuner-panel" id="volPanel"><div id="volume"></div></div>
-  <!-- GRAPHIC EQUALIZER (7.10.14): the DE-90, ten bands for what Deck 90 plays (core/eq.js, ui/eq/) -->
-  <div class="tuner-panel" id="eqPanel"><div id="equalizer"></div></div>
 
   <!-- CASSETTE DECK -->
   <div class="panel deck-panel" data-mod="deck">

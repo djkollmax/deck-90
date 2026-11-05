@@ -92,14 +92,14 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 - Arriba, el tema que suena: nombre, artista · álbum, la calidad completa ("FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO"; los displays hablan en inglés, como un equipo de los 90), la cuenta regresiva y el lugar en la cola.
 - Abajo, una lista larga en el display: **ARTISTS → ALBUMS → SONGS**, **SONGS** (todos los temas), **QUEUE** (la cola) y **SEARCH**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ BACK** vuelve.
 - **Q** (o la tecla Q · PLAY NEXT) pone lo marcado para que suene después del tema actual; un álbum o un artista, enteros. **REPEAT**, **SHUFFLE**, **▶ ❚❚ ■ |◀◀ ▶▶|**.
-- **COLOR** cambia el color de los displays de todo el rack (14 colores) y **DIMMER** su brillo. **SHUFFLE ALL** toca toda la biblioteca al azar.
+- **COLOR** cambia el color de los displays de todo el rack (24 colores) y **DIMMER** su brillo; también están en el DV-90 y en ⚙ PANTALLA → DISPLAYS. **SHUFFLE ALL** toca toda la biblioteca al azar.
 - El estéreo (`E`) lo toca en el modo SERVER, y el encabezado muestra lo que suena.
 - Toca el archivo en su calidad original; lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
 - Si el servidor tiene varias bibliotecas de música, **SETUP apretado un segundo** pasa por todas juntas y cada una.
 
 ### Volumen en el rack
 
-**VER → VOLUMEN** (o la tecla `U`) muestra el DV-90, el volumen de la PC con el mismo frente que las otras unidades: una perilla grande (arrastrándola o con la ruedita), **− +**, teclas de 10 a 80 y **MUTE**. El display muestra el número, una barra y el nivel L/R de lo que suena, y sigue al volumen cuando lo cambiás desde Windows o el teclado.
+**VER → VOLUMEN** (o la tecla `U`) muestra el DV-90, el volumen de la PC con el mismo frente que las otras unidades: una perilla grande (arrastrándola o con la ruedita), **− +**, teclas de 10 a 80, **MUTE**, y **COLOR** y **DIMMER** para los displays de todo el rack. El display muestra el número, una barra y el nivel L/R de lo que suena, y sigue al volumen cuando lo cambiás desde Windows o el teclado.
 
 ### Ecualizador
 

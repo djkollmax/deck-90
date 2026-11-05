@@ -1,5 +1,15 @@
 # Novedades
 
+## 7.10.15 — 2026-11-05
+
+### Nuevo
+- **Diez colores más para los displays** (24 en total): menta, turquesa, esmeralda, cobalto, índigo, púrpura, magenta, coral, durazno y lavanda.
+- **COLOR y DIMMER también en el volumen (DV-90).** Antes estaban solo en el DM-90, así que sin Jellyfin no había forma de cambiarlos. COLOR apretado un segundo vuelve al color anterior.
+- **⚙ PANTALLA → DISPLAYS**: todos los colores a la vista para elegir con un clic, y **BRILLO** (bajo, alto, máximo).
+
+### Cambios
+- **El ecualizador va arriba del volumen**, como en un equipo de verdad, donde el amplificador cierra el rack desde abajo.
+
 ## 7.10.14 — 2026-11-05
 
 ### Nuevo

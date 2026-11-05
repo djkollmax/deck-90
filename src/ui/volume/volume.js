@@ -37,7 +37,9 @@ function volSet(v) {
   if (dv) dv.setVolume(volNow);
   if (!volTimer) volTimer = setTimeout(function send() { volTimer = 0; if (volWant >= 0) { volCmd('vol-set ' + volWant); volWant = -1; } }, 80);
 }
-function volKey(k, { value } = {}) {
+function volKey(k, { value, hold } = {}) {
+  if (k === 'color') return unitColorStep(hold);                   // 7.10.15: the rack's displays, from here too
+  if (k === 'dimmer') return unitDimSet((jbCfg.dim + 1) % 3);
   if (!window.nowPlaying) { toast('El volumen se maneja desde el programa (Deck 90.exe).', 3000); return; }
   const base = volNow.vol >= 0 ? volNow.vol : 50;
   if (k === 'mute') { volNow.mute = !volNow.mute; if (dv) dv.setVolume(volNow); volSentAt = performance.now(); volCmd('vol-mute ' + (volNow.mute ? 1 : 0)); return; }
