@@ -94,6 +94,41 @@ test('OPEN/CLOSE: the tray opens, closes and the disc plays again', async () => 
   assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-')), ['cd-stop', 'cd-eject', 'cd-close', 'cd-info', 'cd-play 1']);
 });
 
+test('closing the tray: the disc is read as soon as it has spun up; a disc taken out by hand is noticed', async () => {
+  await d.click(K('eject'), 600);
+  await d.drive({ disc: { drive: 'E:', name: 'USB DVD', present: false, tracks: [], files: [] } });   // still spinning up
+  await d.cmds();
+  await d.click(K('eject'), 2600);
+  assert.equal((await cd()).title, 'CLOSING…', 'not NO DISC while it spins up');
+  await d.drive({ disc: disc(10, 180) });
+  await d.wait(2400);
+  const c = await cd(); assert.equal(c.state, 'playing'); assert.equal(c.track, 1);
+  const sent = (await d.cmds()).filter(x => x.startsWith('cd-'));
+  assert.deepEqual(sent.filter(x => x === 'cd-info').length, 2, sent.join()); assert.equal(sent.at(-1), 'cd-play 1');
+  // the drive's own button opens the tray while it plays
+  await d.driveSays({ state: 'open', track: 0, pos: 0 }); await d.wait(300);
+  assert.equal((await cd()).title, 'NO DISC');
+  await d.click(K('play'), 900);
+  assert.ok((await d.cmds()).includes('cd-info'), 'PLAY reads the drive again');
+  assert.equal((await cd()).state, 'playing');
+});
+
+test('a drive that doesn\'t answer is asked again; a second PLAY while it seeks doesn\'t seek again', async () => {
+  await d.click(K('power'), 600);
+  await d.drive({ deaf: true }); await d.cmds();
+  await d.click(K('power'), 1000);
+  assert.equal((await cd()).title, 'READING DISC…');
+  await d.drive({ deaf: false });
+  await d.wait(9000);
+  const c = await cd(); assert.equal(c.state, 'playing', 'the second ask was answered and it plays');
+  assert.equal((await d.cmds()).filter(x => x === 'cd-info').length, 2);
+  await d.click(K('stop'), 400);
+  await d.drive({ slow: true }); await d.cmds();
+  await d.click(K('play'), 200); await d.click(K('play'), 1200);
+  assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-play')), ['cd-play 1']);
+  await d.drive({ slow: false });
+});
+
 test('a disc whose names don\'t come at first gets them on the next read', async () => {
   const names8 = { album: 'Otro Disco', artist: 'Banda Inventada', year: '1993',
     tracks: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [i + 1, { title: 'Canción ' + (i + 1), artist: 'Banda Inventada' }])) };

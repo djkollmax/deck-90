@@ -8,6 +8,7 @@
    7.9.21, marked "info": setTrack({ number, length, quality }) and setRadio({ quality }): the song's number big on the
    right (where the radio's memory goes) and, with a length, the time left counting down at the bottom; the quality
    ("MP3 128", "CD 16/44", "FLAC") at the bottom; LOCAL in red.
+   7.10.14: the track number up to 9999, smaller from 100.
    7.10.5, marked "disc logo": the real unit's ▽△ and round DISC mark above the R meter; setTrack({ disc }) lights DISC. */
 (function(globalThis){
 'use strict';
@@ -121,7 +122,7 @@ class Deck90Display {
     if ('artist' in track) this.state.track.artist = safeText(track.artist);
     if ('elapsed' in track) this.state.track.elapsed = safeSeconds(track.elapsed);
     if ('title' in track) {   // info: a new title brings its own (none: none)
-      this.state.track.number = Math.max(0, Math.min(99, Math.trunc(Number(track.number) || 0)));
+      this.state.track.number = Math.max(0, Math.min(9999, Math.trunc(Number(track.number) || 0)));   // Deck 90 7.10.14: up to 9999
       this.state.track.length = safeSeconds(track.length);
       this.state.track.quality = safeText(track.quality).slice(0, 12);
       this.state.track.disc = Boolean(track.disc);   // disc logo: a disc is in
@@ -319,7 +320,8 @@ class Deck90Display {
       if (track.quality) this._footer.append(label(track.quality, 712, 180, { fill: '#ffdd50', 'font-size': 22 }));   // info
       else this._footer.append(label('CD', 786, 180, { 'font-size': 22 }));
       this._footer.append(label('PLAY', 865, 180, { fill: '#c8d997', 'font-size': 22 }));
-      if (track.number) this._footer.append(label(String(track.number), 956, 121, { fill: '#ffdf4f', 'font-size': 45 }));   // info
+      // Deck 90 7.10.14: three and four figures (the DM-90's SHUFFLE ALL) smaller, in the same place
+      if (track.number) { const n = track.number, size = n < 100 ? 45 : n < 1000 ? 31 : 24; this._footer.append(label(String(n), 956, 121 - (45 - size) * .15, { fill: '#ffdf4f', 'font-size': size })); }   // info
     } else {
       const quality = this.state.radio.quality;   // info: the quality in place of MTL and B-SKIP
       for (const [text, x] of [['LOUD', 423], ...(quality ? [] : [['MTL', 521], ['B-SKIP', 660]]), ['REP', 783], ['RAND', 866]]) this._footer.append(label(text, x, 180, { 'font-size': 22 }));

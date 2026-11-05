@@ -101,6 +101,10 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 **VER → VOLUMEN** (o la tecla `U`) muestra el DV-90, el volumen de la PC con el mismo frente que las otras unidades: una perilla grande (arrastrándola o con la ruedita), **− +**, teclas de 10 a 80 y **MUTE**. El display muestra el número, una barra y el nivel L/R de lo que suena, y sigue al volumen cuando lo cambiás desde Windows o el teclado.
 
+### Ecualizador
+
+**VER → EQ** (o la tecla `W`) muestra el DE-90, un ecualizador de diez bandas (31 Hz a 16 kHz, ±12 dB) para lo que suena desde Deck 90: la radio, el DM-90 y los archivos de un CD de datos. **EQ** lo prende y lo apaga, **◀ ▶** eligen la banda y **− +**, la perilla o la ruedita le cambian el nivel; también se puede tocar o arrastrar cada columna del display. Trae FLAT, ROCK, POP, JAZZ, CLASSIC, VOCAL, BASS y LOUD, y lo que cambiás a mano queda en **USER**. Lo que suena en la PC (Spotify…) y un CD de audio no pasan por Deck 90, así que no se ecualizan.
+
 ### Temas guardados
 
 **G** (o **MEMO** apretado en el sintonizador) guarda el tema que suena: el de la radio, el CD, el DM-90 o la PC. En el historial (**L**) → **★ GUARDADOS** está la lista con cuándo y dónde sonaba, links para buscarlo en YouTube y Spotify, y para exportarla a Excel.

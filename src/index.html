@@ -120,6 +120,7 @@
         <button data-v="cdunit" title="El reproductor de CD DC-90: la lectora de CD/DVD de la PC, también por USB (0)">CD</button>
         <button data-v="jukebox" title="El DM-90: tu música de Jellyfin (J)">MÚSICA</button>
         <button data-v="volume" title="El DV-90: el volumen de la PC (U)">VOLUMEN</button>
+        <button data-v="eq" title="El DE-90: el ecualizador de la radio, el DM-90 y el CD de datos (W)">EQ</button>
       </div>
       <span class="row-break"></span>
       <div class="seg preset" data-group="preset" title="5 looks favoritos (F1–F5) y 3 tuyos (C1–C3, F6–F8): GUARDAR y C1–C3 guarda lo que ves">
@@ -336,6 +337,8 @@
   <div class="tuner-panel" id="jbPanel"><div id="jukebox"></div></div>
   <!-- MASTER VOLUME (7.10.11): the DV-90, the computer's volume (ui/volume/) -->
   <div class="tuner-panel" id="volPanel"><div id="volume"></div></div>
+  <!-- GRAPHIC EQUALIZER (7.10.14): the DE-90, ten bands for what Deck 90 plays (core/eq.js, ui/eq/) -->
+  <div class="tuner-panel" id="eqPanel"><div id="equalizer"></div></div>
 
   <!-- CASSETTE DECK -->
   <div class="panel deck-panel" data-mod="deck">
@@ -547,6 +550,7 @@
 <script src="core/radio.js"></script>
 <script src="core/cd.js"></script>
 <script src="core/music.js"></script>
+<script src="core/eq.js"></script>
 <script src="ui/stereo/stereo.js"></script>
 <script src="vendor/dt90-tuner.js"></script>
 <script src="ui/tuner/tuner.js"></script>
@@ -557,6 +561,8 @@
 <script src="ui/jukebox/jukebox.js"></script>
 <script src="ui/volume/dv90.js"></script>
 <script src="ui/volume/volume.js"></script>
+<script src="ui/eq/de90.js"></script>
+<script src="ui/eq/eq.js"></script>
 <script src="ui/app/update.js"></script>
 <script src="ui/app/about.js"></script>
 <script src="ui/app/welcome.js"></script>

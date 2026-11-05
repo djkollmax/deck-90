@@ -14,7 +14,7 @@ let cdUnitCfg = { show: true };
   const c = store.section('cdunit');
   if (c) cdUnitCfg = { show: c.show !== false, remain: c.remain === true };
 }
-let cdUnit = null, cdUnitPower = false, cdUnitWants = false, cdUnitResumePc = false, cdUnitShownKey = '', cdUnitClosing = 0;
+let cdUnit = null, cdUnitPower = false, cdUnitWants = false, cdUnitResumePc = false, cdUnitShownKey = '';
 let cdUnitAvg = -24, cdUnitAt = 0, cdUnitLv = { L: 0, R: 0 };
 const cdUnitPanel = document.getElementById('cdPanel');
 const cdUnitShown = () => cdUnitCfg.show && !miniMode;
@@ -67,7 +67,7 @@ const cdUnitPlaying = () => cdPlaying();
 function cdUnitLine() {
   if (!window.cdrom || (cdInfo && cdInfo.none === 'windows')) return { title: 'CD DRIVE ON WINDOWS ONLY', artist: 'DC-90' };
   if (!cdUnitPower) return { title: 'COMPACT DISC', artist: 'PRESS POWER' };
-  if (cdUnitClosing) return { title: 'CLOSING…', artist: '' };
+  if (!cdInfo && cdWaitDisc) return { title: 'CLOSING…', artist: 'READING THE DISC' };   // 7.10.14: until the disc has spun up
   if (!cdInfo) return { title: 'READING DISC…', artist: '' };
   if (!cdInfo.drive) return { title: 'NO CD DRIVE', artist: 'CONNECT ONE BY USB' };
   if (!cdInfo.present) return { title: 'NO DISC', artist: (cdInfo.name || cdInfo.drive) + ' · OPEN / CLOSE' };
@@ -162,7 +162,7 @@ function cdUnitOn(on, keyPlays) {
   if (on && !keyPlays && radioPlaying()) { cdUnitWants = false; cdAsk(); toast('CD · <span>encendido</span> · la radio sigue: PLAY pone el disco', 2200); }
   else if (on) cdUnitRead();
   else {
-    cdUnitWants = false; cdStop();
+    cdUnitWants = false; cdStop(); clearTimeout(cdWaitT); cdWaitDisc = null;
     if (cdUnitResumePc) { cdUnitResumePc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
     toast('CD · <span>apagado</span>', 1200);
   }
@@ -187,20 +187,19 @@ function cdUnitKey(k, { hold } = {}) {
   if (k === 'eject') {
     const open = cdUnit.getState().drawerOpen;
     if (!open) {
-      cdStop(); cdCmd('cd-eject'); cdUnit.setDrawer(true); toast('⏏ · <span>bandeja abierta</span>: poné el disco y OPEN / CLOSE otra vez', 2600);
+      cdEject(); cdUnit.setDrawer(true); toast('⏏ · <span>bandeja abierta</span>: poné el disco y OPEN / CLOSE otra vez', 2600);
     } else {
-      cdUnit.setDrawer(false); cdCmd('cd-close');
-      clearTimeout(cdUnitClosing);
-      cdUnitClosing = setTimeout(() => { cdUnitClosing = 0; cdUnitRead(); }, 3500);   // the disc spins up before it can be read
+      cdUnit.setDrawer(false); cdUnitWants = true; cdClose();   // 7.10.14: read as soon as the disc has spun up (core/cd.js)
       toast('⏏ · <span>cerrando</span> y leyendo el disco…', 2200);
     }
     return cdUnitSync();
   }
-  if (cdUnit.getState().drawerOpen) { cdUnit.setDrawer(false); cdCmd('cd-close'); cdUnitClosing = setTimeout(() => { cdUnitClosing = 0; cdUnitRead(); }, 3500); return cdUnitSync(); }
-  if (!cdInfo || !cdInfo.present) { cdUnitRead(); return; }
+  if (cdUnit.getState().drawerOpen) { cdUnit.setDrawer(false); cdUnitWants = true; cdClose(); return cdUnitSync(); }
+  if (!cdInfo) { cdUnitWants = true; return cdUnitSync(); }      // 7.10.14: being read: it plays when it's read, no second read
+  if (!cdInfo.present) { cdUnitRead(); return; }
   const files = cdFiles();
   if (k === 'play') {
-    if (files.length ? !cdAudio.paused : cdState.state === 'playing') return;
+    if (files.length ? !cdAudio.paused : ['playing', 'seeking', 'not ready'].includes(cdState.state)) return;   // 7.10.14: a second PLAY doesn't seek again
     if (cdState.state === 'paused' || (files.length && cdAudio.getAttribute('src'))) { cdUnitTakeSound(); cdToggle(); }
     else cdUnitStart();
   }

@@ -7,6 +7,7 @@
 //    'music'   something changed: signed in or out, what plays, the queue, a list that arrived
 // ═══════════════════════════════════════════════════════════
 const musicAudio = new Audio();
+musicAudio.crossOrigin = 'anonymous';   // 7.10.14: so the equalizer (core/eq.js) may take its sound (main.js lets media answers allow it)
 musicAudio.preload = 'auto';
 let musicServer = { server: '', name: '', signedIn: false };
 let musicQueue = [], musicPos = -1, musicNextAt = -1, musicNowInfo = null, musicError = '';

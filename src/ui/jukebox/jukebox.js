@@ -32,7 +32,7 @@ let jbCfg = { show: false, remain: true, color: 'aqua', dim: 0 };
   color: UNIT_COLORS.some(u => u.id === c.color) ? c.color : 'aqua', dim: [0, 1, 2].includes(c.dim) ? c.dim : 0 }; }
 function unitColorApply() {
   const u = UNIT_COLORS.find(x => x.id === jbCfg.color) || UNIT_COLORS[0];
-  for (const id of ['tunerPanel', 'cdPanel', 'jbPanel', 'volPanel']) {
+  for (const id of ['tunerPanel', 'cdPanel', 'jbPanel', 'volPanel', 'eqPanel']) {
     const el = document.getElementById(id); if (!el) continue;
     el.style.setProperty('--vfd', u.vfd); el.style.setProperty('--vfd-dim', u.dim);
     // 7.10.6: DIMMER too, on the tuner and the CD as on the DM-90 (brightest / low; the DM-90 draws its own)
@@ -272,7 +272,7 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
     toast('COLOR · <span>' + UNIT_COLORS.find(u => u.id === jbCfg.color).name + '</span> en los displays del rack y el reloj', 1400);
     return;
   }
-  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); if (typeof dv !== 'undefined' && dv) dv.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack y el reloj', 1200); return; }
+  if (k === 'dimmer') { jbCfg.dim = (jbCfg.dim + 1) % 3; jb.setDimmer(jbCfg.dim); if (typeof dv !== 'undefined' && dv) dv.setDimmer(jbCfg.dim); if (typeof de !== 'undefined' && de) de.setDimmer(jbCfg.dim); unitColorApply(); savePrefs(); toast('DIMMER · brillo <span>' + JB_DIM_NAME[jbCfg.dim] + '</span> en los displays del rack y el reloj', 1200); return; }
   if (!jbPower) { jbOn(true); return; }
   if (k === 'wheel') return jbMove(delta);
   if (k === 'seek') {                                             // 7.10.2: the scroll bar, dragged or clicked
@@ -443,7 +443,12 @@ setInterval(() => { if (jb && jbShown()) jbSync(); }, 250);
 deck.on('music', () => { if (!jb) return; jbSync(); if (jbView.kind === 'list') jbView.items = musicQueue.map(s => Object.assign({ kind: 'song' }, s)); jbRenderList(); });
 // the radio or the CD take the sound: the music pauses where it was (PLAY goes on)
 radioAudio.addEventListener('playing', () => musicPauseHere());
-deck.on('cd', () => { if (cdPlaying() && musicPlaying()) musicPauseHere(); });
+deck.on('cd', () => {
+  if (!cdPlaying() || !musicPlaying()) return;
+  musicPauseHere();
+  // 7.10.14: the PC's player the DM-90 had paused is the CD's to resume now (when it goes off)
+  if (musicResumePc && typeof cdUnitResumePc !== 'undefined') { musicResumePc = false; cdUnitResumePc = true; }
+});
 
 // every frame from the loop: the L/R bars on the sound Deck 90 hears
 function jbFeed(now) {

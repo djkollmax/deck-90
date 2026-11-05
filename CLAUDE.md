@@ -23,7 +23,8 @@ wants it done then (see Shared names).
 - `src/core/`: what works with no screen. `events.js` is the hub (`deck.on`, `deck.emit`, `deck.notice` for a
   line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
   (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) and `music.js` (the Jellyfin library, the queue,
-  Q, REPEAT and SHUFFLE, the player) say what changed through it and never touch a screen. The screens call
+  Q, REPEAT and SHUFFLE, the player) and `eq.js` (the equalizer's Web Audio chain for those players) say what
+  changed through it and never touch a screen. The screens call
   their functions and listen. `store.js` reads and writes what's saved (localStorage).
 - `src/ui/<module>/`: the screens, each folder with its scripts and its CSS.
   - `app/`: the program around the modules. `core.js` (shared state), `audio.js` (capture, measurements,
@@ -37,7 +38,8 @@ wants it done then (see Shared names).
     window; `stereo-face.css` is shared with the phone), `tuner/` (the DT-90; `units.css` styles it and the
     DC-90), `cdunit/` (the DC-90), `jukebox/` (the DM-90: `dm90.js` its faceplate, Deck 90's own in the units'
     style, and `jukebox.js` its lists and keys), `volume/` (the DV-90: `dv90.js` its faceplate, `volume.js` Windows' volume
-    through the bridge's `vol-*` commands). `app/saved.js` keeps the songs saved with G; `app/lastfm.js` scrobbles.
+    through the bridge's `vol-*` commands), `eq/` (the DE-90: `de90.js` its faceplate on dv90.js's kit, `eq.js` its
+    keys). `app/saved.js` keeps the songs saved with G; `app/lastfm.js` scrobbles.
 - `src/index.html` loads every script as a classic script and every stylesheet, in order. The stylesheets are
   one cascade split in files: a later file overrides an earlier one, so moving a rule between files can change
   the look (compare with `scripts/shots.mjs`, below).
@@ -104,7 +106,7 @@ program). Push one release, wait for its run to finish, then the next: two at on
 ## Words
 
 - **rack**: the main window's stack of modules. **DT-90**: the tuner unit. **DC-90**: the CD unit. **DM-90**: the
-  music server unit (Jellyfin). **DV-90**: the volume unit.
+  music server unit (Jellyfin). **DV-90**: the volume unit. **DE-90**: the equalizer unit.
 - **stereo**: the car stereo window (E), with its own radio and CD modes. **mini**: the strip (P).
 - **phone**: the phone's page, served by `electron/remote.js`.
 - **look**: a module's skin (VU faces, spectrum looks, the stereo display's SDM looks).

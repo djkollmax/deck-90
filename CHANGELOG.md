@@ -1,5 +1,24 @@
 # Changelog
 
+## 7.10.14
+
+### Added
+- **DE-90 graphic equalizer** (`core/eq.js`, `ui/eq/`, W or VER → EQ): ten bands (31 Hz … 16 kHz, ±12 dB; a low and a high shelf at the ends, peaks between) for what Deck 90 plays itself: the radio, the DM-90 and a data CD's files. A rack unit in the DV-90's plate: the curve as ten columns on the display, EQ on/off, ◀ ▶ the band, − + (held, they repeat; the wheel) and a knob its level, a column touched or dragged sets that band, presets FLAT, ROCK, POP, JAZZ, CLASSIC, VOCAL, BASS, LOUD, and USER (any band changed by hand; kept). One Web Audio chain: half the highest boost taken off before the bands and a limiter after them, so a boost doesn't clip; off, the sound passes by the bands untouched (crossed over smoothly). A player joins the chain only the first time the equalizer is on. The main process lets media answers to the page be read by it (`Access-Control-Allow-Origin` on media responses for our window; the players ask with `crossOrigin`). The PC's players and an audio CD (Windows plays it) don't pass through Deck 90. COLOR, DIMMER and the frames reach it.
+
+### Fixed
+- **The car stereo showed 99 for a DM-90 track past 99** (SHUFFLE ALL): the display's number goes to 9999, smaller from 100 (vendor patch).
+- **The CD** (a review of the DC-90 and the stereo's CD mode):
+  - A quick skip still on its way (0.25 s) played after STOP, POWER off or the radio taking the sound; POWER off while the disc was seeking left it playing.
+  - REPEAT and SHUFFLE at the disc's end: when the drive's "stopped" came before the program's jump, the disc just ended; now it goes on. Without them, a finished disc is back at its first song, so PLAY starts it from there (it replayed the last one).
+  - Closing the tray read the disc once after a fixed 3.5 s (NO DISC on a slow drive): it's read every 2 s until the disc has spun up, up to 15 s (CLOSING… meanwhile).
+  - A disc taken out with the drive's own button is noticed (the drive's `open`); PLAY then reads the drive again.
+  - A read the drive doesn't answer is asked again after 9 s, then said; a key pressed while the disc is being read doesn't start another read; a second PLAY while it seeks doesn't seek again.
+  - While the bridge restarts on Windows, CD commands wait for it (they got WINDOWS ONLY until POWER).
+  - The bridge: the CD's C# compiled a moment after it starts (the first key waited for it); `cd-info` on a drive already open with a disc doesn't ask WMI again; a command waiting behind another goes before the "now playing" refresh (the PC's pause, then the CD's play, waited for a whole refresh); pause and stop wait for the drive; a play is followed for a few seconds even if the drive still says stopped while spinning up; the position carries its frames (REPEAT and SHUFFLE's jumps land closer to the song's end).
+  - MusicBrainz waits 12 s for each try (30 s; three tries took up to 96 s before the numbers' retry).
+  - The car stereo starts a disc as the DC-90 does (through `cdGo`, taking the sound from the PC and the radio), a disc read again while it plays goes on (it restarted at track 1, also with SLOT), its mode switch pauses a seeking disc too, ⏏ again closes the tray, and closing it gives the PC's player back.
+  - The PC's player the DM-90 had paused is the CD's to resume when the CD takes the sound; a second data disc reads its files' quality again; re-reading the same disc keeps SHUFFLE's draw.
+
 ## 7.10.13
 
 ### Added

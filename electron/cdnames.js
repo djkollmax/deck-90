@@ -40,7 +40,7 @@ function createCdNames({ net, dir, agent, log }) {
   const save = () => { try { fs.writeFileSync(file, JSON.stringify(cache)); } catch (_) {} };
 
   async function fetchJson(url) {
-    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 30000);   // MusicBrainz can be slow at busy hours
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 12000);   // MusicBrainz can be slow at busy hours (7.10.14: 12 s, was 30)
     try {
       const r = await net.fetch(url, { signal: ac.signal, headers: { 'User-Agent': agent, Accept: 'application/json' } });
       if (r.status === 404) return null;
@@ -64,7 +64,7 @@ function createCdNames({ net, dir, agent, log }) {
         j = await fetchJson('https://musicbrainz.org/ws/2/discid/' + encodeURIComponent(id) + '?toc=' + tocParam + '&inc=recordings+artist-credits&fmt=json');
         break;
       } catch (err) {
-        const why = err && err.name === 'AbortError' ? 'no answer in 30 s' : (err && err.message || String(err));
+        const why = err && err.name === 'AbortError' ? 'no answer in 12 s' : (err && err.message || String(err));
         log('cd names: ' + id + ' attempt ' + attempt + ': ' + why);
         if (attempt >= 3) return { error: why };
         await new Promise(ok => setTimeout(ok, 2000 * attempt));

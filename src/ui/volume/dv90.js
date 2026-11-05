@@ -22,7 +22,11 @@ const DOTS = { V: [17, 17, 17, 17, 17, 10, 4], O: [14, 17, 17, 17, 17, 17, 14], 
   S: [15, 16, 16, 14, 1, 1, 30], Y: [17, 17, 10, 4, 4, 4, 4], N: [17, 25, 21, 19, 17, 17, 17], A: [14, 17, 17, 31, 17, 17, 17], I: [14, 4, 4, 4, 4, 4, 14],
   W: [17, 17, 17, 21, 21, 21, 10], D: [28, 18, 17, 17, 17, 18, 28], '0': [14, 17, 19, 21, 25, 17, 14], '1': [4, 12, 4, 4, 4, 4, 14], '2': [14, 17, 1, 2, 4, 8, 31],
   '3': [31, 2, 4, 2, 1, 17, 14], '4': [2, 6, 10, 18, 31, 2, 2], '5': [31, 16, 30, 1, 1, 17, 14], '6': [6, 8, 16, 30, 17, 17, 14], '7': [31, 1, 2, 4, 8, 8, 8],
-  '8': [14, 17, 17, 14, 17, 17, 14], '9': [14, 17, 17, 15, 1, 2, 12], '·': [0, 0, 0, 4, 0, 0, 0], ' ': [0, 0, 0, 0, 0, 0, 0], '-': [0, 0, 0, 31, 0, 0, 0] };
+  '8': [14, 17, 17, 14, 17, 17, 14], '9': [14, 17, 17, 15, 1, 2, 12], '·': [0, 0, 0, 4, 0, 0, 0], ' ': [0, 0, 0, 0, 0, 0, 0], '-': [0, 0, 0, 31, 0, 0, 0],
+  // 7.10.14: the rest of the alphabet, for the DE-90
+  B: [30, 17, 17, 30, 17, 17, 30], C: [14, 17, 16, 16, 16, 17, 14], F: [31, 16, 16, 30, 16, 16, 16], G: [14, 17, 16, 23, 17, 17, 15], H: [17, 17, 17, 31, 17, 17, 17],
+  J: [7, 2, 2, 2, 2, 18, 12], K: [17, 18, 20, 24, 20, 18, 17], P: [30, 17, 17, 30, 16, 16, 16], Q: [14, 17, 17, 17, 21, 18, 13], X: [17, 17, 10, 4, 10, 17, 17],
+  Z: [31, 1, 2, 4, 8, 16, 31], '+': [0, 4, 4, 31, 4, 4, 0], '.': [0, 0, 0, 0, 0, 12, 12], '/': [1, 1, 2, 4, 8, 16, 16] };
 const KEYS = { mute: { x: 35, y: 196, w: 96, h: 32, label: 'MUTE' }, down: { x: 146, y: 196, w: 64, h: 32, label: '−' }, up: { x: 218, y: 196, w: 64, h: 32, label: '+' } };
 [10, 20, 30, 40, 50, 60, 70, 80].forEach((v, i) => { KEYS['p' + v] = { x: 300 + i * 72, y: 196, w: 64, h: 32, label: String(v) }; });
 const KNOB = { cx: 1062, cy: 206, r: 52 }, SPAN = 135;            // the knob turns from −135° (0) to +135° (100)
@@ -51,7 +55,9 @@ function grain(label) {
   }
   return paths;
 }
-function faceplate(p) {
+// 7.10.14: the plate is shared with the DE-90 (de90.js): its title, the label at the right and the small labels vary
+const VOLUME_PLATE = { title: 'DV-90 MASTER VOLUME', side: 'SYSTEM OUTPUT', labels: [] };
+function faceplate(p, o = VOLUME_PLATE) {
   const label = css('label', '#313332'), dim = css('label-dim', '#666c68'), edge = css('edge', '#838d86');
   const top = 'var(--face-top,var(--face,var(--_d90-face-top,#deded8)))', face = css('face', '#bfc3bc'), bottom = 'var(--face-bottom,var(--face,var(--_d90-face-bottom,#8e968e)))';
   const H = 280, DY = 36, DH = 104;
@@ -77,12 +83,13 @@ function faceplate(p) {
     <path d="M6 5.4H1194M5.4 6V${H - 6}" fill="none" stroke="#fff" stroke-opacity=".33" stroke-width=".65"/>
     <g font-family="Arial,Helvetica,sans-serif" fill="${label}">
       <text x="39" y="26" font-size="18" font-weight="700" letter-spacing="3.1">DECK 90</text>
-      <text x="652" y="23" text-anchor="middle" font-size="10" font-weight="500" letter-spacing="1.8">DV-90 MASTER VOLUME</text>
+      <text x="652" y="23" text-anchor="middle" font-size="10" font-weight="500" letter-spacing="1.8">${o.title}</text>
     </g>
     <g font-family="Arial,Helvetica,sans-serif" fill="${dim}" font-size="7.1" letter-spacing="1.35">
-      <text x="1153" y="23" text-anchor="end">SYSTEM OUTPUT</text>
-      <text x="${KNOB.cx}" y="${H - 9}" text-anchor="middle" font-size="6.6">VOLUME</text>
-      <text x="35" y="185">MUTE</text><text x="146" y="185">− DOWN</text><text x="218" y="185">UP +</text><text x="300" y="185">LEVEL</text>
+      <text x="1153" y="23" text-anchor="end">${o.side}</text>
+      ${o === VOLUME_PLATE ? `<text x="${KNOB.cx}" y="${H - 9}" text-anchor="middle" font-size="6.6">VOLUME</text>
+      <text x="35" y="185">MUTE</text><text x="146" y="185">− DOWN</text><text x="218" y="185">UP +</text><text x="300" y="185">LEVEL</text>`
+        : o.labels.map(([x, y, t, a]) => `<text x="${x}" y="${y}"${a ? ` text-anchor="${a}"` : ''}${y > 260 ? ' font-size="6.6"' : ''}>${t}</text>`).join('')}
     </g>
     <path d="M35 31H1165" stroke="#050b07" stroke-opacity=".25" stroke-width=".7"/>
     <rect x="33.4" y="${DY - .2}" width="1133.2" height="${DH + 2.2}" rx="4.4" fill="#000" opacity=".5"/>
@@ -258,4 +265,5 @@ class Deck90VolumeUnit {
   }
 }
 global.Deck90VolumeUnit = Deck90VolumeUnit;
+global.Deck90UnitKit = { node, css, dotsPath, faceplate, DOTS, SEVEN, DIGITS, LIT, DIM, SVG_NS };   // 7.10.14: for the DE-90
 })(typeof globalThis !== 'undefined' ? globalThis : window);

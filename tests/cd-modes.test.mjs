@@ -46,6 +46,40 @@ test('SHUFFLE: each song once, then it stops', async () => {
   assert.equal(h.at(-1), songs.at(-1) === 4 ? 'END' : 'STOP');
 });
 
+// 7.10.14: the drive's report of the disc's end can come before the program's jump near the last song's end
+const atTheEnd = () => d.win.evaluate(() => { cdState = { state: 'playing', track: 4, pos: 3.9, at: performance.now() }; cdEndDone = '4'; });
+test('the drive ending the disc first: REPEAT all still goes back to the first song', async () => {
+  await d.win.evaluate(() => Object.assign(cdModes, { repeat: 'all', shuffle: false }));
+  await d.cmds(); await atTheEnd();
+  await d.driveSays({ state: 'stopped', track: 4, pos: 0 }); await d.wait(400);
+  assert.ok((await d.cmds()).includes('cd-play 1'));
+  await d.win.evaluate(() => cdUnitKey('stop')); await d.wait(300);
+});
+
+test('without modes the disc is over: back at the first song, and PLAY starts there', async () => {
+  await d.win.evaluate(() => Object.assign(cdModes, { repeat: 'off', shuffle: false }));
+  await d.cmds(); await atTheEnd();
+  await d.driveSays({ state: 'stopped', track: 4, pos: 0 }); await d.wait(300);
+  assert.deepEqual(await d.win.evaluate(() => [cdState.state, cdState.track]), ['stopped', 1]);
+  assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-')), [], 'nothing sent: it stopped by itself');
+  await d.win.evaluate(() => cdUnitKey('play')); await d.wait(400);
+  assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-')), ['cd-play 1']);
+  await d.win.evaluate(() => cdUnitKey('stop')); await d.wait(300);
+});
+
+test('a skip on its way is dropped by STOP; POWER off while seeking stops the drive', async () => {
+  await d.win.evaluate(() => cdUnitKey('play')); await d.wait(1000); await d.cmds();
+  await d.win.evaluate(() => cdUnitKey('next')); await d.wait(300);   // goes at once; the next one, quick after it, waits
+  await d.win.evaluate(() => { cdUnitKey('next'); cdUnitKey('stop'); }); await d.wait(800);
+  const sent = (await d.cmds()).filter(x => x.startsWith('cd-'));
+  assert.equal(sent.at(-1), 'cd-stop', sent.join());
+  assert.equal(await d.win.evaluate(() => cdState.state), 'stopped');
+  await d.win.evaluate(() => { cdGo(3); cdUnitKey('power'); }); await d.wait(400);
+  assert.equal((await d.cmds()).filter(x => x.startsWith('cd-')).at(-1), 'cd-stop', 'stopped while seeking');
+  await d.win.evaluate(() => cdUnitKey('power')); await d.wait(1500);
+  await d.win.evaluate(() => cdUnitKey('stop')); await d.wait(300);
+});
+
 test('SHUFFLE and REPEAT: a new draw after the four', async () => {
   const got = (await play({ repeat: 'all', shuffle: true }, 2, songs(5))).filter(x => /^\d/.test(x)).map(x => parseInt(x));
   assert.ok(got.length >= 5, got.join());

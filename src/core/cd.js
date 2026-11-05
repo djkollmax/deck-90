@@ -22,15 +22,44 @@ function cdCmd(c) {
   window.cdrom.cmd(c);
 }
 const mmss = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-function cdAsk() {
+// 7.10.14: a read that gets no answer in 9 s is asked once more; then the drive is taken as empty, and said so
+let cdAskT = 0, cdAskTries = 0;
+function cdAsk(again) {
   cdInfo = null; cdAsked = performance.now();
   if (!window.cdrom) { cdInfo = { drive: null, none: 'windows' }; deck.emit('cd'); return; }
+  if (!again) cdAskTries = 0;
+  clearTimeout(cdAskT);
+  cdAskT = setTimeout(() => {
+    cdAskT = 0;
+    if (cdInfo) return;
+    if (++cdAskTries < 2) { radioLog('cd: no answer to cd-info, asking again'); cdAsk(true); return; }
+    cdInfo = { drive: '?', present: false }; cdWaitDisc = null;
+    deck.notice('⚠ CD · <span>la lectora no contesta</span>: probá OPEN / CLOSE', 3200); deck.emit('cd');
+  }, 9000);
   cdCmd('cd-info'); deck.emit('cd');
 }
+// a jump still waiting to go to the drive (quick presses) is dropped: STOP, POWER, a pause mean it
+function cdJumpDrop() { clearTimeout(cdGoT); cdGoT = 0; cdJump = null; }
 function cdStop() {
-  if (cdState.state === 'playing' || cdState.state === 'paused') window.cdrom && cdCmd('cd-stop');
+  // 7.10.14: also a disc seeking or spinning up, and one with a jump on its way
+  if ((cdState.state && cdState.state !== 'stopped' && cdState.state !== 'closed') || cdJump || cdGoT) window.cdrom && cdCmd('cd-stop');
+  cdJumpDrop();
   cdState = { state: '', track: 0, pos: 0, at: 0 };
   cdAudio.pause(); cdAudio.removeAttribute('src'); cdAudio.load();
+}
+// OPEN / CLOSE (7.10.14, for the DC-90 and the car stereo): the tray opened, or closed and the disc read as soon as the
+// drive has it (it spins up first: asked every 2 s, up to 15 s), instead of once after a fixed wait
+let cdWaitDisc = null, cdWaitT = 0;
+function cdEject() {
+  cdStop(); clearTimeout(cdWaitT); cdWaitDisc = null;
+  cdCmd('cd-eject');
+  cdInfo = { drive: cdInfo && cdInfo.drive, present: false }; deck.emit('cd');
+}
+function cdClose() {
+  cdCmd('cd-close'); clearTimeout(cdWaitT);
+  cdWaitDisc = { until: performance.now() + 15000 };
+  cdInfo = null; deck.emit('cd');
+  cdWaitT = setTimeout(() => cdAsk(), 2000);
 }
 function cdPlayFile(i) {
   const f = cdFiles(); if (!f.length) return;
@@ -123,9 +152,21 @@ setInterval(() => {
   if (cdModes.repeat === 'off' && !cdModes.shuffle) return;
   const want = cdAfter(cdState.track, false);
   if (want === natural) return;
-  if (want === null) { cdCmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; deck.emit('cd'); return; }
+  if (want === null) { cdCmd('cd-stop'); cdState = { state: 'stopped', track: tr[0].n, pos: 0, at: performance.now() }; deck.emit('cd'); return; }   // over: back at the first song
   cdGo(want);
 }, 200);
+// 7.10.14: the drive stopped by itself at the end of the disc (its report can beat the jump above): REPEAT and SHUFFLE
+// go on from there ('went'); without them the disc is over ('over': back at the first song, as a CD player does)
+function cdDiscEnded(prev) {
+  const tr = cdAudioTracks(), last = tr[tr.length - 1];
+  if (!last || prev.track !== last.n || !last.len || prev.pos + (performance.now() - prev.at) / 1000 < last.len - 3) return '';
+  const want = cdModes.repeat === 'off' && !cdModes.shuffle ? null : cdAfter(last.n, false);
+  cdEndDone = String(last.n);
+  if (want === null || want === undefined) return 'over';
+  cdGo(want); return 'went';
+}
+// a disc told apart from another: its tracks' starts and its end, or its files
+const cdDiscKey = i => !i || !i.present ? '' : (i.tracks || []).map(t => t.start || t.len || 0).join(',') + '|' + (i.leadout || 0) + '|' + (i.files || []).length + (i.files && i.files[0] || '');
 const cdSongName = n => cdNames && cdNames.tracks && cdNames.tracks[n] ? cdNames.tracks[n] : null;
 let cdJump = null;                                             // the track asked for, until the drive is there
 // A jump shows at once; the drive gets it at once too, unless it's one of quick presses in a row (|◀◀ ▶▶| ▶▶|):
@@ -142,27 +183,30 @@ function cdGo(n) {
 }
 // STOP: the disc stops at the start of the song it was on (cdStop, for POWER and the tray, forgets the song)
 function cdStopHere() {
+  cdJumpDrop();
   if (cdFiles().length) { cdAudio.pause(); cdAudio.currentTime = 0; }
   else if (window.cdrom) { cdCmd('cd-stop'); cdState = { state: 'stopped', track: cdState.track, pos: 0, at: performance.now() }; }
   deck.emit('cd');
 }
 // a pause from outside (the radio took the sound): the disc waits where it was
 function cdPauseHere() {
+  const jumping = cdJump || cdGoT;
+  cdJumpDrop();
   if (cdFiles().length) { if (!cdAudio.paused) cdAudio.pause(); }
-  else if (cdPlaying() && window.cdrom) { cdCmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
+  else if ((cdPlaying() || jumping) && window.cdrom) { cdCmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; }
   deck.emit('cd');
 }
 function cdToggle() {
   if (cdFiles().length) { if (cdAudio.paused) { if (cdAudio.getAttribute('src')) cdAudio.play().catch(() => {}); else cdPlayFile(0); } else cdAudio.pause(); return; }
   const tr = cdAudioTracks(); if (!tr.length || !window.cdrom) return;
   if (cdState.state === 'paused') cdCmd('cd-resume');
-  else if (cdPlaying()) { cdCmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; deck.emit('cd'); }
-  else cdGo(cdState.track || tr[0].n);
+  else if (cdPlaying()) { cdJumpDrop(); cdCmd('cd-pause'); cdState = { state: 'paused', track: cdState.track, pos: cdPosition(), at: performance.now() }; deck.emit('cd'); }
+  else cdGo(cdState.track && tr.some(t => t.n === cdState.track) ? cdState.track : tr[0].n);
 }
 // 7.9.22: the quality of what the disc plays. An audio CD is PCM, 16 bits at 44.1 kHz ("CD 16/44"); a file says its
 // format, with bits and kHz when the file says them (FLAC 24/96, WAV 16/44), or its average kbps (MP3 320), from
 // what the main process reads of it (window.cdrom.fileInfo: its size without tags, and the header's rate and bits)
-const cdFileInfo = {};
+let cdFileInfo = {};                                           // per disc (a new one: read again)
 const cdExt = f => (((String(f || '').match(/\.([a-z0-9]{2,4})$/i) || [])[1] || '').toUpperCase().replace('M4A', 'AAC'));
 function cdQuality() {
   if (!cdInfo || !cdInfo.present) return '';
@@ -186,20 +230,30 @@ if (window.cdrom) window.cdrom.on(m => {
   if (!m || typeof m !== 'object') return;
   if (m.error) { deck.notice('⚠ CD: ' + String(m.error).replace(/[<>&]/g, '').slice(0, 120), 3600); return; }
   if ('drive' in m) {                                          // what's in the drive: the CD starts, as in a car
+    clearTimeout(cdAskT); cdAskT = 0;
+    // 7.10.14: the tray just closed and the disc isn't readable yet: asked again in 2 s (READING meanwhile)
+    if (cdWaitDisc && m.drive && !m.present && performance.now() < cdWaitDisc.until) { clearTimeout(cdWaitT); cdWaitT = setTimeout(() => cdAsk(), 2000); return; }
+    cdWaitDisc = null;
+    const same = cdDiscKey(cdInfo) && cdDiscKey(cdInfo) === cdDiscKey(m);
     cdInfo = m;
     cdNamesAsk(m);
-    cdShuf = { order: [], hist: [] };                          // a new disc: a new draw
-    if (cdModes.shuffle) cdShuffleDeal(cdAudioTracks().length ? cdAudioTracks()[0].n : 0);
+    if (!same) {                                               // a new disc: a new draw, its files' quality read again
+      cdShuf = { order: [], hist: [] }; cdFileInfo = {};
+      if (cdModes.shuffle) cdShuffleDeal(cdAudioTracks().length ? cdAudioTracks()[0].n : 0);
+    }
     deck.emit('cd-disc');                                      // (the stereo in CD mode plays it; the DC-90 may be waiting)
     deck.emit('cd'); return;
   }
   if (m.state) {
-    if (m.state === 'ejected') { cdInfo = { drive: cdInfo && cdInfo.drive, present: false }; cdState = { state: '', track: 0, pos: 0, at: 0 }; }
+    let ended = '';
+    // 7.10.14: 'open' is the tray opened with the drive's own button: the disc is gone as with ⏏
+    if (m.state === 'ejected' || m.state === 'open') { cdJumpDrop(); cdInfo = { drive: cdInfo && cdInfo.drive, present: false }; cdState = { state: '', track: 0, pos: 0, at: 0 }; }
+    else if (m.state === 'stopped' && !cdPauseSent && cdState.state === 'playing' && !cdJump && (ended = cdDiscEnded(cdState)) === 'went') { /* went on (REPEAT, SHUFFLE) */ }
     else if (cdJump && m.track !== cdJump.n && performance.now() < cdJump.until && ['playing', 'seeking', 'not ready'].includes(m.state)) {
       cdState = { state: 'seeking', track: cdJump.n, pos: 0, at: performance.now() };   // still on the way: a report from before the jump
     } else {
       if (cdJump && (m.track === cdJump.n || performance.now() >= cdJump.until)) cdJump = null;
-      cdState = { state: m.state === 'stopped' && cdPauseSent ? 'paused' : m.state, track: m.track | 0, pos: m.pos || 0, at: performance.now() };
+      cdState = { state: m.state === 'stopped' && cdPauseSent ? 'paused' : m.state, track: ended === 'over' ? cdAudioTracks()[0].n : m.track | 0, pos: m.pos || 0, at: performance.now() };
     }
     deck.emit('cd');
   }

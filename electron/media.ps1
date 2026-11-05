@@ -67,11 +67,15 @@ function Pick() {
 # ── The stereo's CD (7.8): the optical drive through Windows' own CD audio (MCI, winmm.dll) ──
 # Answers {"cd":{...}}: the drive, whether a disc is in, its tracks (audio or not) and their lengths, or for a disc
 # of MP3s and the like its music files; while it plays, its track and position about once a second.
-$script:cdOpen = $false; $script:cdDrive = ''; $script:cdPlaying = $false
-function CdSend([string]$c) {
+$script:cdOpen = $false; $script:cdDrive = ''; $script:cdPlaying = $false; $script:cdGrace = 0; $script:cdDriveObj = $null
+# compiled once: 7.10.14 does it a moment after the bridge starts (CdType from the loop), so the first CD key doesn't wait for it
+function CdType() {
   if (-not ('Deck90Cd' -as [type])) {
     Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class Deck90Cd { [DllImport("winmm.dll", CharSet = CharSet.Unicode)] static extern int mciSendStringW(string cmd, StringBuilder ret, int len, IntPtr cb); public static string Send(string cmd) { var sb = new StringBuilder(512); int e = mciSendStringW(cmd, sb, 512, IntPtr.Zero); return e == 0 ? sb.ToString() : "!" + e; } }'
   }
+}
+function CdSend([string]$c) {
+  CdType
   return [Deck90Cd]::Send($c)
 }
 function CdDrive() {
@@ -86,13 +90,15 @@ function CdDrive() {
 # on a drive already open uses it as it is: a track jump goes straight to the drive (7.9.3); cd-info looks again.
 function CdOpen([switch]$Fresh) {
   if (-not $Fresh -and $script:cdOpen -and $script:cdDrive) { return [pscustomobject]@{ Drive = $script:cdDrive } }
+  # 7.10.14: cd-info on a drive already open that has a disc: no need to ask Windows (WMI) which drive it is again
+  if ($script:cdOpen -and $script:cdDriveObj -and (CdSend 'status d90cd media present wait') -eq 'true') { return $script:cdDriveObj }
   $d = CdDrive
   if (-not $d) { return $null }
   if ($script:cdOpen -and $script:cdDrive -eq $d.Drive) { return $d }
   if ($script:cdOpen) { $null = CdSend 'close d90cd' }
   $r = CdSend ('open ' + $d.Drive + ' type cdaudio alias d90cd shareable wait')
   $script:cdOpen = -not $r.StartsWith('!'); $script:cdDrive = $d.Drive
-  if ($script:cdOpen) { $null = CdSend 'set d90cd time format tmsf wait' }
+  if ($script:cdOpen) { $null = CdSend 'set d90cd time format tmsf wait'; $script:cdDriveObj = $d } else { $script:cdDriveObj = $null }
   return $d
 }
 function CdSecs([string]$t) {                     # mm:ss:ff (75 frames a second)
@@ -133,16 +139,18 @@ function CdStatus() {
   $mode = CdSend 'status d90cd mode wait'
   $p = (CdSend 'status d90cd position wait').Split(':')   # tt:mm:ss:ff
   $track = 0; $sec = 0
-  if ($p.Count -ge 4) { $track = [int]$p[0]; $sec = [int]$p[1] * 60 + [int]$p[2] }
+  if ($p.Count -ge 4) { $track = [int]$p[0]; $sec = [math]::Round([int]$p[1] * 60 + [int]$p[2] + [int]$p[3] / 75, 2) }   # 7.10.14: with its frames
   return @{ cd = @{ state = $mode; track = $track; pos = $sec } }
 }
 function CdCommand([string]$c) {
   try {
     if ($c -eq 'cd-info') { Say (CdInfo); return }
-    if ($c -match '^cd-play (\d{1,2})$') { $null = CdOpen; $null = CdSend ('play d90cd from ' + [int]$Matches[1]); $script:cdPlaying = $true }
-    elseif ($c -eq 'cd-pause') { $null = CdSend 'pause d90cd'; $script:cdPlaying = $false }
-    elseif ($c -eq 'cd-resume') { $null = CdSend 'play d90cd'; $script:cdPlaying = $true }
-    elseif ($c -eq 'cd-stop') { $null = CdSend 'stop d90cd'; $script:cdPlaying = $false }
+    # 7.10.14: a play is followed for a few looks even if the drive still says stopped (spinning up); pause and stop
+    # wait for the drive, so the state reported next is the new one
+    if ($c -match '^cd-play (\d{1,2})$') { $null = CdOpen; $null = CdSend ('play d90cd from ' + [int]$Matches[1]); $script:cdPlaying = $true; $script:cdGrace = 6 }
+    elseif ($c -eq 'cd-pause') { $null = CdSend 'pause d90cd wait'; $script:cdPlaying = $false }
+    elseif ($c -eq 'cd-resume') { $null = CdSend 'play d90cd'; $script:cdPlaying = $true; $script:cdGrace = 6 }
+    elseif ($c -eq 'cd-stop') { $null = CdSend 'stop d90cd wait'; $script:cdPlaying = $false }
     elseif ($c -eq 'cd-eject') {
       $null = CdOpen; $null = CdSend 'stop d90cd'; $null = CdSend 'set d90cd door open wait'
       $script:cdPlaying = $false; $null = CdSend 'close d90cd'; $script:cdOpen = $false
@@ -248,6 +256,8 @@ while ($true) {
       }
       if (-not $fresh) { $pending = $stdin.ReadLineAsync() }
       $tick = 99                                   # report the new state right away
+      # 7.10.14: another command already waiting (the PC paused, then the CD plays) goes first, before the refresh
+      if ($pending.Wait(25)) { continue }
     }
 
     $s = Pick
@@ -297,8 +307,13 @@ while ($true) {
   # the CD playing: its track and position, about once a second (and once more when it stops)
   if ($script:cdPlaying -and ($beat % 2) -eq 0) {
     # 'seeking' and 'not ready' come right after a jump to another track: keep following it
-    try { $st = CdStatus; Say $st; if (@('playing', 'seeking', 'not ready') -notcontains $st.cd.state) { $script:cdPlaying = $false } } catch { $script:cdPlaying = $false }
+    try {
+      $st = CdStatus; $on = @('playing', 'seeking', 'not ready') -contains $st.cd.state
+      if ($on -or $script:cdGrace -le 0) { Say $st }
+      if ($on) { $script:cdGrace = 0 } elseif ($script:cdGrace -gt 0) { $script:cdGrace-- } else { $script:cdPlaying = $false }
+    } catch { $script:cdPlaying = $false }
   }
+  if ($beat -eq 3 -and -not ('Deck90Cd' -as [type])) { try { CdType } catch { } }
   $beat++
   if ($beat -ge 12) { Say @{ hb = 1 }; $beat = 0 }
   $tick++

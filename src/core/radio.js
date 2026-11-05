@@ -110,6 +110,7 @@ const saveRadio = () => store.write(RADIO_KEY, radioMem);
 
 // ── the radio itself: one <audio> playing the station's stream (Deck 90 hears it like any other sound) ──
 const radioAudio = new Audio();
+radioAudio.crossOrigin = 'anonymous';   // 7.10.14: so the equalizer (core/eq.js) may take its sound (main.js lets media answers allow it)
 radioAudio.preload = 'none';
 let radioNow = null, radioTop = null, radioTopAt = -1, radioScan = 0, radioTry = 0;
 const radioPlaying = () => !radioAudio.paused && !!radioNow;

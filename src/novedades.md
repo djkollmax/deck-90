@@ -1,5 +1,27 @@
 # Novedades
 
+## 7.10.14 — 2026-11-05
+
+### Nuevo
+- **Ecualizador DE-90** (la tecla **W**, o VER → EQ): diez bandas de 31 Hz a 16 kHz para la radio, el DM-90 y los archivos de un CD de datos.
+  - **EQ** lo prende y lo apaga; apagado, el sonido sale tal cual.
+  - **◀ ▶** eligen la banda; **− +**, la perilla o la ruedita le cambian el nivel. También se puede tocar o arrastrar cada columna del display.
+  - Trae curvas armadas: FLAT, ROCK, POP, JAZZ, CLASSIC, VOCAL, BASS y LOUD. Lo que tocás a mano queda guardado en **USER**.
+  - Un refuerzo fuerte no satura.
+  - Lo que suena en la PC (Spotify…) y un CD de audio no pasan por Deck 90, así que no se ecualizan.
+
+### Arreglos
+- **El estéreo mostraba 99** en el tema del DM-90 con SHUFFLE ALL: ahora llega a 9999.
+- **La compactera**, revisada para que ande bien y rápido:
+  - Un salto de tema apretado justo antes de STOP o POWER ya no arranca el disco de nuevo.
+  - Con REPEAT o SHUFFLE, el final del disco sigue como corresponde. Sin ellos, el disco vuelve al primer tema y PLAY arranca desde ahí.
+  - Al cerrar la bandeja lee el disco apenas está listo, en vez de esperar siempre 3,5 segundos (antes una lectora lenta decía NO DISC).
+  - Si sacás el disco con el botón de la lectora, se da cuenta.
+  - Si la lectora no contesta, vuelve a preguntar y te avisa. Apretar teclas mientras lee no la hace leer de nuevo.
+  - Las teclas del CD responden más rápido.
+  - Los nombres del disco (MusicBrainz) se buscan más rápido cuando el servidor anda lento.
+  - En el estéreo, el CD arranca igual que en el rack: pausa lo que suena en la PC y la radio, y no vuelve al tema 1 cuando relee el disco. ⏏ otra vez cierra la bandeja.
+
 ## 7.10.13 — 2026-11-04
 
 ### Nuevo

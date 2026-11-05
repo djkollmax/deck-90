@@ -90,7 +90,11 @@ function stereoOpen(on) {
   if (!on) {
     // the stereo off: its radio and CD too (the radio goes on in the rack's tuner, when it's there)
     if ((radioPlaying() || radioNow) && !(typeof tunerKeeps === 'function' && tunerKeeps())) radioStop();
-    if (!(typeof cdUnitKeeps === 'function' && cdUnitKeeps())) cdStop();
+    if (!(typeof cdUnitKeeps === 'function' && cdUnitKeeps())) {
+      cdStop();
+      // 7.10.14: the PC's player the CD paused plays again (the DC-90 isn't going on with it)
+      if (typeof cdUnitResumePc !== 'undefined' && cdUnitResumePc && !cdUnitPower) { cdUnitResumePc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
+    }
     if (musicPlaying() && !(typeof jbKeeps === 'function' && jbKeeps())) musicStop();   // 7.10.4: the DM-90's music goes on in the rack
     if (stereoDisplay) { stereoDisplay.destroy(); stereoDisplay = null; }
   }
@@ -298,18 +302,14 @@ function stereoSwitch(next) {
   const from = stereoCfg.mode;
   if (from === 'pc' && npPcPlaying() && window.nowPlaying) { window.nowPlaying.cmd('pause'); stereoResume.pc = true; }
   if (from === 'radio') radioStop();
-  if (from === 'cd') {
-    if (cdState.state === 'playing' && window.cdrom) { cdCmd('cd-pause'); stereoResume.cd = true; }
-    else if (!cdAudio.paused) { cdAudio.pause(); stereoResume.cd = true; }
-  }
+  if (from === 'cd' && cdPlaying() && cdState.state !== 'paused') { cdPauseHere(); stereoResume.cd = true; }   // 7.10.14: seeking too, through the core
   if (from === 'music' && musicPlaying()) { musicPauseHere(); stereoResume.music = true; }
   stereoCfg.mode = next; savePrefs();
   if (next === 'music' && stereoResume.music) { stereoResume.music = false; musicToggle(); toast('MODE · <span>SERVER</span> · sigue donde estaba', 1600); return true; }
   if (next === 'pc' && stereoResume.pc) { stereoResume.pc = false; if (window.nowPlaying) window.nowPlaying.cmd('play'); }
   if (next === 'cd' && stereoResume.cd) {
     stereoResume.cd = false;
-    if (cdFiles().length && cdAudio.getAttribute('src')) cdAudio.play().catch(() => {});
-    else if (cdState.state === 'paused' && window.cdrom) cdCmd('cd-resume');
+    if ((cdFiles().length && cdAudio.getAttribute('src')) || cdState.state === 'paused') { if (typeof cdUnitTakeSound === 'function') cdUnitTakeSound(); cdToggle(); }
     else return false;
     toast('MODE · <span>CD</span> · sigue donde estaba', 1600);
     return true;                                                // picked up again: no need to read the drive
@@ -325,7 +325,7 @@ function stereoVolume(step) {
   window.nowPlaying.cmd(step > 0 ? 'volup' : 'mute');
   if (!step) toast('ATT · <span>silencio</span> (otra vez para volver)', 1400);
 }
-let stereoMemo = 0;
+let stereoMemo = 0, stereoTray = false;
 function stereoKey(k, hold) {
   if (k === 'volup') return stereoVolume(1);
   if (k === 'voldown') return stereoVolume(-1);
@@ -333,11 +333,17 @@ function stereoKey(k, hold) {
   if (k === 'pwr') return toggleStereo();
   if (k === 'eject') {
     if (!window.cdrom) { toast('La bandeja se abre desde el programa en Windows.', 2400); return; }
-    cdStop(); cdCmd('cd-eject'); toast('⏏ · <span>bandeja</span>', 1400); return;
+    // 7.10.14: ⏏ again (or SLOT) closes it, and the disc that comes in plays (core/cd.js reads it once it has spun up)
+    if (stereoTray) { stereoTray = false; cdClose(); toast('⏏ · <span>cerrando</span> y leyendo el disco…', 1800); return stereoText(true); }
+    stereoTray = true; cdEject(); toast('⏏ · <span>bandeja abierta</span> (⏏ otra vez la cierra)', 1800); return stereoText(true);
   }
   if (k === 'mode' || k === 'slot') {
     const next = k === 'slot' ? 'cd' : { pc: 'radio', radio: 'cd', cd: 'music', music: 'pc' }[stereoCfg.mode];
-    if (next === stereoCfg.mode) { cdAsk(); return; }
+    if (next === stereoCfg.mode) {                              // SLOT in CD mode: the tray closed, or the disc read again
+      if (stereoTray) { stereoTray = false; cdClose(); return stereoText(true); }
+      if (!cdPlaying()) cdAsk(); else toast('CD · <span>sonando</span>', 1000);   // 7.10.14: playing, it goes on
+      return;
+    }
     const resumed = stereoSwitch(next);
     if (next === 'pc') toast('MODE · <span>PC</span>: lo que suena en la computadora', 1800);
     else if (next === 'radio') { toast('MODE · <span>RADIO</span> por internet', 1600); if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
@@ -449,8 +455,9 @@ function stereoKey(k, hold) {
 deck.on('radio', () => stereoText(true));
 deck.on('cd', () => stereoText(true));
 deck.on('music', () => { if (stereoCfg.mode === 'music') stereoText(true); });
+// 7.10.14: as the DC-90 starts it (cdUnitStart): taking the sound, through cdGo; a disc read again while it plays goes on
 deck.on('cd-disc', () => {
-  if (stereoCfg.mode !== 'cd' || !stereoMode) return;
-  if (cdAudioTracks().length) cdCmd('cd-play ' + cdAudioTracks()[0].n);
-  else if (cdFiles().length) cdPlayFile(0);
+  if (stereoCfg.mode !== 'cd' || !stereoMode || cdPlaying()) return;
+  stereoTray = false;
+  if (typeof cdUnitStart === 'function') cdUnitStart();
 });

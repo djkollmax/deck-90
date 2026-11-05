@@ -175,6 +175,10 @@ test('the header shows what the DM-90 plays; the stereo has it as SERVER, and gi
   const next = await d.win.evaluate(() => musicNow().name);
   assert.equal(await d.win.evaluate(() => musicPos), pos + 1, 'TRACK ▶▶ on the stereo: the next one');
   assert.equal(await d.win.evaluate(() => stereoDisplay.state.track.title), next);
+  // 7.10.14: past 99 the number is whole (SHUFFLE ALL's queue is long)
+  await d.win.evaluate(() => musicJump(611)); await d.wait(1200);
+  assert.equal(await d.win.evaluate(() => stereoDisplay.state.track.number), 612);
+  assert.ok(await d.win.evaluate(() => [...document.querySelectorAll('#stDisplay text')].some(t => t.textContent === '612')), 'drawn as 612');
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(await d.win.evaluate(() => [musicPlaying(), jbPower]), [true, true], 'the DM-90 goes on');
   // 7.10.7: the cassette decks keys drive the DM-90 while it plays, not the PC

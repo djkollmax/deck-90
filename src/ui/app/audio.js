@@ -437,7 +437,7 @@ function syncConsole() {
     const g = seg.dataset.group;
     seg.querySelectorAll('button').forEach(b => {
       if (g === 'src' && b.dataset.v === 'stop') { b.disabled = !activeSource; return; }
-      if (g === 'mods') { b.classList.toggle('on', b.dataset.v === 'tuner' ? typeof tunerCfg === 'object' && tunerCfg.show : b.dataset.v === 'cdunit' ? typeof cdUnitCfg === 'object' && cdUnitCfg.show : b.dataset.v === 'jukebox' ? typeof jbCfg === 'object' && jbCfg.show : b.dataset.v === 'volume' ? typeof volCfg === 'object' && volCfg.show : !!mods[b.dataset.v]); return; }
+      if (g === 'mods') { b.classList.toggle('on', b.dataset.v === 'tuner' ? typeof tunerCfg === 'object' && tunerCfg.show : b.dataset.v === 'cdunit' ? typeof cdUnitCfg === 'object' && cdUnitCfg.show : b.dataset.v === 'jukebox' ? typeof jbCfg === 'object' && jbCfg.show : b.dataset.v === 'volume' ? typeof volCfg === 'object' && volCfg.show : b.dataset.v === 'eq' ? typeof eqCfg === 'object' && eqCfg.show : !!mods[b.dataset.v]); return; }
       if (g === 'vupick' || g === 'skinpick') return;
       if (g === 'preset') {
         if (b.dataset.v === 'save') b.classList.toggle('on', typeof presetSaveArmed !== 'undefined' && presetSaveArmed);

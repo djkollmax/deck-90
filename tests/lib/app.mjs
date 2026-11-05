@@ -55,7 +55,7 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     handle('weather-find', () => []); handle('weather-now', () => null);
     handle('cd-names', () => names || null);
     // the drive: plays a disc straight through as Windows' CD audio does, reporting every 0.5 s (a pause says stopped)
-    const D = global.drive = { disc: drive || null, tr: 0, st: 'stopped', t0: 0, pos: 0, slow: false, heard: [] };
+    const D = global.drive = { disc: drive || null, tr: 0, st: 'stopped', t0: 0, pos: 0, slow: false, deaf: false, heard: [] };
     const send = m => BrowserWindow.getAllWindows()[0]?.webContents.send('cd', m);
     const at = () => D.st === 'playing' ? (Date.now() - D.t0) / 1000 : D.pos;
     const len = n => ((D.disc && D.disc.tracks || []).find(t => t.n === n) || {}).len || 0;
@@ -89,7 +89,7 @@ export async function launch({ station, size, drive, names, welcome = false, toa
       }
       if (!/^cd-/.test(c)) return;
       let m;
-      if (c === 'cd-info') setTimeout(() => send(D.disc || { drive: null }), 30);
+      if (c === 'cd-info') { if (!D.deaf) setTimeout(() => send(D.disc || { drive: null }), 30); }   // deaf: a drive that doesn't answer
       else if ((m = /^cd-play (\d+)$/.exec(c))) {
         const was = D.tr; D.tr = +m[1]; D.t0 = Date.now(); D.st = 'playing'; D.heard.push(D.tr + 'j');
         if (D.slow) { setTimeout(() => send({ state: 'seeking', track: was || 1, pos: 0 }), 150); setTimeout(() => send({ state: 'playing', track: D.tr, pos: at() }), 700); }
@@ -133,6 +133,8 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     /** clicks the middle of what the selector finds, as a person would */
     click: async (sel, wait = 700) => { const b = await win.locator(sel).boundingBox(); await win.mouse.click(b.x + b.width / 2, b.y + b.height / 2); await win.waitForTimeout(wait); },
     hold: async (sel, ms = 1200) => { const b = await win.locator(sel).boundingBox(); await win.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await win.mouse.down(); await win.waitForTimeout(ms); await win.mouse.up(); await win.waitForTimeout(600); },
+    /** the drive says this, as the bridge would */
+    driveSays: m => app.evaluate(({ BrowserWindow }, m) => BrowserWindow.getAllWindows()[0].webContents.send('cd', m), m),
     close: async () => { await app.close().catch(() => {}); fs.rmSync(profile, { recursive: true, force: true }); },
   };
 }

@@ -57,6 +57,16 @@ app.whenReady().then(() => {
   const ALLOWED = ['media', 'display-capture', 'fullscreen'];
   ses.setPermissionRequestHandler((wc, permission, cb) => cb(ALLOWED.includes(permission) && ours(wc)));
   ses.setPermissionCheckHandler((wc, permission) => ALLOWED.includes(permission) && ours(wc));
+  // 7.10.14: the sound the page plays (the radio through the proxy, the DM-90 from Jellyfin) may go through its
+  // equalizer: Web Audio only takes another site's sound when that site allows it, so the page's media answers
+  // say they do (only media, only for this page; any such header the server sent is replaced, never doubled)
+  ses.webRequest.onHeadersReceived({ urls: ['http://*/*', 'https://*/*'] }, (d, cb) => {
+    if (d.resourceType !== 'media' || !win || win.isDestroyed() || d.webContentsId !== win.webContents.id) return cb({});
+    const h = {};
+    for (const [k, v] of Object.entries(d.responseHeaders || {})) if (!/^access-control-allow-(origin|credentials)$/i.test(k)) h[k] = v;
+    h['Access-Control-Allow-Origin'] = ['*'];
+    cb({ responseHeaders: h });
+  });
 
   // The normal window's size and place are remembered too (only if that place is still on a screen).
   const onScreenAt = b => b && Number.isFinite(b.x) && b.width >= 760 && b.height >= 600 && screen.getAllDisplays().some(d => { const a = d.workArea;
@@ -443,7 +453,7 @@ app.whenReady().then(() => {
 });
 
 // ── "now playing" bridge: a hidden PowerShell process reading Windows' media sessions ──
-let media = null, mediaRestarts = 0, mediaBuf = '', lastStatus = '', mediaSeen = 0, mediaUp = 0;
+let media = null, mediaRestarts = 0, mediaBuf = '', lastStatus = '', mediaSeen = 0, mediaUp = 0, mediaWaiting = [];   // mediaWaiting: CD commands sent while the bridge restarts (7.10.14)
 let LOG = null;   // %APPDATA%\\Deck 90\\media.log once the app is ready
 let lastLog = '', logRepeats = 0, logBytes = 0;
 function mlog(msg) {
@@ -526,7 +536,10 @@ function startMedia() {
         if (info.hb) continue;                                  // heartbeat: the bridge is alive
         if (info.cd) { if (win && !win.isDestroyed()) win.webContents.send('cd', info.cd); continue; }   // the stereo's CD
         if ('vol' in info) { sendVolume(info); continue; }       // 7.9.21: Windows' volume after the stereo's VOL keys
-        if (info.ready) { mlog('bridge ready'); mediaUp = Date.now(); }
+        if (info.ready) {
+          mlog('bridge ready'); mediaUp = Date.now();
+          for (const c of mediaWaiting.splice(0)) if (media && media.stdin.writable) media.stdin.write(c + '\n');   // 7.10.14
+        }
         sendMedia(info);
       } catch (e) { mlog('bad line: ' + line.slice(0, 200)); }
     }
@@ -578,7 +591,11 @@ function mediaCommand(cmd) {
   if (media && media.stdin.writable && (['toggle', 'play', 'pause', 'stop', 'next', 'prev', 'volup', 'voldown', 'mute'].includes(cmd)
     || /^cd-(info|pause|resume|stop|eject|close|play \d{1,2})$/.test(cmd))) media.stdin.write(cmd + '\n');
   if (mpris && !/^cd-/.test(cmd)) mpris.command(cmd);
-  if (/^cd-/.test(cmd) && !media && win && !win.isDestroyed()) win.webContents.send('cd', { drive: null, none: 'windows' });   // the CD: Windows only
+  if (/^cd-/.test(cmd) && !media) {
+    // 7.10.14: on Windows the bridge is starting again: the CD's commands wait for it (the last few); elsewhere, no drive
+    if (process.platform === 'win32') { mediaWaiting = mediaWaiting.filter(c => c !== cmd).slice(-5).concat(cmd); return; }
+    if (win && !win.isDestroyed()) win.webContents.send('cd', { drive: null, none: 'windows' });   // the CD: Windows only
+  }
 }
 ipcMain.on('media-cmd', (e, cmd) => { if (fromWin(e)) mediaCommand(cmd); });
 
