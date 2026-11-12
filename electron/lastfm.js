@@ -14,11 +14,14 @@ const { readJson, writeJson } = require('./jsonfile');
 const API = 'https://ws.audioscrobbler.com/2.0/';
 const HEX32 = /^[0-9a-f]{32}$/i;
 
-function createLastfm({ net, dir, log, open }) {
+function createLastfm({ net, dir, log, open, seal }) {
   const FILE = path.join(dir, 'lastfm.json');
-  const cfg = readJson(FILE, log);                                // 7.10.16: written whole or not at all (jsonfile.js)
+  // 7.10.16: written whole or not at all; 7.10.18: the key, the secret and the session sealed (jsonfile.js, main.js's seal)
+  const lock = { keys: ['key', 'secret', 'session', 'token'], seal };
+  const cfg = readJson(FILE, log, lock);
   if (!Array.isArray(cfg.queue)) cfg.queue = [];
-  const save = () => { try { writeJson(FILE, cfg); } catch (e) { log('lastfm: ' + e.message); } };
+  const save = () => { try { writeJson(FILE, cfg, lock); } catch (e) { log('lastfm: ' + e.message); } };
+  if (cfg.plain) { save(); log('lastfm: its secrets sealed'); }
 
   // a call: the parameters signed with the secret (md5 of name+value in order, then the secret), as Last.fm asks
   async function call(method, params, post) {

@@ -670,14 +670,23 @@ ipcMain.handle('cd-cover', async (e, release) => {
   if (!cdNames) cdNames = createCdNames({ net, dir: app.getPath('userData'), log: mlog, agent: 'Deck90/' + app.getVersion() + ' ( https://github.com/djkollmax/deck-90 )' });
   try { return await cdNames.cover(String(release || '')); } catch (_) { return ''; }
 });
+// 7.10.18: the secrets kept in userData (Jellyfin's token, Last.fm's key, secret and session) sealed with the system's
+// own protection: DPAPI on Windows (only this Windows user can open them), the keyring on Linux. Without it (a Linux
+// with no keyring) Electron falls back to a fixed key; still better than plain text, and said in the log.
+function seal() {
+  const { safeStorage } = require('electron');
+  try { if (!safeStorage.isEncryptionAvailable()) { mlog('seal: not available, secrets kept as they are'); return null; } } catch (_) { return null; }
+  try { if (process.platform === 'linux') mlog('seal: ' + safeStorage.getSelectedStorageBackend()); } catch (_) {}
+  return { close: t => safeStorage.encryptString(t).toString('base64'), open: b => safeStorage.decryptString(Buffer.from(b, 'base64')) };
+}
 // 7.10.0: the DM-90's music from a Jellyfin server (jellyfin.js): sign-in, what the library has, a song's stream
 let jellyfin = null;
-const jf = () => jellyfin || (jellyfin = createJellyfin({ net, dir: app.getPath('userData'), log: mlog, version: app.getVersion() }));
+const jf = () => jellyfin || (jellyfin = createJellyfin({ net, dir: app.getPath('userData'), log: mlog, version: app.getVersion(), seal: seal() }));
 ipcMain.handle('jf-status', e => fromWin(e) ? jf().status() : null);
 // 7.10.10: Last.fm (lastfm.js): the person's own API key, the sign-in through last.fm in the browser, now playing
 // and scrobbles of Deck 90's own sources (the page says when)
 let lastfm = null;
-const lfm = () => lastfm || (lastfm = require('./lastfm').createLastfm({ net, dir: app.getPath('userData'), log: mlog, open: u => shell.openExternal(u) }));
+const lfm = () => lastfm || (lastfm = require('./lastfm').createLastfm({ net, dir: app.getPath('userData'), log: mlog, open: u => shell.openExternal(u), seal: seal() }));
 const lfmTrack = t => t && typeof t === 'object' ? { artist: String(t.artist || ''), title: String(t.title || ''), album: String(t.album || ''), dur: Number(t.dur) || 0, at: Number(t.at) || 0 } : null;
 ipcMain.handle('lfm-status', e => fromWin(e) ? lfm().status() : null);
 ipcMain.handle('lfm-begin', (e, key, secret) => fromWin(e) ? lfm().begin(String(key || '').slice(0, 64), String(secret || '').slice(0, 64)) : null);

@@ -1,6 +1,6 @@
 'use strict';
 // ── RADIO SEARCH (7.10.10): any station in the world, by name and/or country, from Radio Browser (the main
-// process asks it: radio-search). SCAN held on the DT-90 opens it; a station touched plays (a tuned station, not a
+// process asks it: radio-search). SCAN held on the DT-90 (7.10.18: or on the car stereo) opens it; a station touched plays (a tuned station, not a
 // memory) and the numbers below keep the one playing in the band's memories ──
 const RF_COUNTRIES = ['AR', 'UY', 'CL', 'BR', 'PY', 'BO', 'PE', 'CO', 'VE', 'EC', 'MX', 'CU', 'US', 'CA', 'ES', 'PT', 'FR', 'IT',
   'DE', 'AT', 'CH', 'GB', 'IE', 'NL', 'BE', 'DK', 'SE', 'NO', 'FI', 'IS', 'PL', 'CZ', 'HU', 'GR', 'TR', 'RU', 'UA', 'IL', 'ZA',
@@ -18,6 +18,7 @@ function rfOpen(on) {
   m.classList.toggle('show', on);
   if (!on) return;
   rfEl('rfBand').textContent = radioMem.band === 'HIFI' ? 'HI-FI' : radioMem.band;
+  rfEl('rfTitle').textContent = (stereoMode ? '' : 'DT-90 · ') + 'BUSCAR RADIO EN EL MUNDO';   // 7.10.18: the car stereo's too
   rfKeepSync();
   setTimeout(() => rfEl('rfName').focus(), 50);
 }
@@ -54,7 +55,7 @@ function rfPlay(i) {
   if (!r) return;
   radioScanSet(false);
   radioMem.slot = 0;                                             // a tuned station, not a memory
-  if (tunerCfg.show && !tunerPower) tunerOn(true, true);
+  if (tunerCfg.show && !tunerPower && !stereoMode) tunerOn(true, true);   // the stereo plays it by itself
   radioTune({ name: r.name.slice(0, 80), freq: '', q: r.name.slice(0, 60), cc: r.cc || '', url: r.url, codec: String(r.codec || '').toUpperCase().slice(0, 8), kbps: r.bitrate || 0 }, 'del mundo');
   setTimeout(() => { rfRender(); rfKeepSync(); }, 50);
 }

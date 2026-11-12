@@ -290,7 +290,7 @@ function phoneStereoView() {
 }
 const PHONE_STEREO_KEYS = ['volup', 'voldown', 'att', 'sel', 'mode', 'disp', 'band', 'hdb', 'sdm', 'scan', 'prev', 'next', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'slot', 'eject'];
 if (window.phoneDisplay && window.phoneDisplay.onStereoKey) window.phoneDisplay.onStereoKey((k, hold) => {
-  if (PHONE_STEREO_KEYS.includes(k)) stereoKey(k, !!hold);
+  if (PHONE_STEREO_KEYS.includes(k) && !(k === 'scan' && hold)) stereoKey(k, !!hold);   // the search is typed on the PC
 });
 
 // ── the keys ──
@@ -417,10 +417,15 @@ function stereoKey(k, hold) {
     if (window.nowPlaying) window.nowPlaying.cmd(k);
     return;
   }
+  if (k === 'scan' && hold) {                                      // 7.10.18: held, any station in the world (as on the DT-90)
+    if (!radio) stereoSwitch('radio');
+    radioScanSet(false);
+    return rfOpen(true);
+  }
   if (k === 'scan') {
     if (!radio) stereoSwitch('radio');
     if (radioScan) { radioScanSet(false); toast('SCAN · <span>te quedás en esta</span>', 1500); }
-    else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte', 2200); }
+    else { radioScanSet(true); toast('SCAN · <span>8 s de cada radio</span>, SCAN otra vez para quedarte; apretado, buscás cualquier radio', 2400); }
   }
 }
 
@@ -437,7 +442,7 @@ function stereoKey(k, hold) {
       volT = setTimeout(function rep() { stereoKey(b.dataset.st, false); volT = setTimeout(rep, 100); }, 350);
       return;
     }
-    if (/^(m[1-6]|sdm|band)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
+    if (/^(m[1-6]|sdm|band|scan)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
   const up = e => { clearTimeout(holdT); clearTimeout(volT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);

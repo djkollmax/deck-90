@@ -9,11 +9,14 @@ const path = require('path');
 const crypto = require('crypto');
 const { readJson, writeJson } = require('./jsonfile');
 
-function createJellyfin({ net, dir, log, version }) {
+function createJellyfin({ net, dir, log, version, seal }) {
   const FILE = path.join(dir, 'jellyfin.json');
-  const cfg = readJson(FILE, log);                                // 7.10.16: written whole or not at all (jsonfile.js)
+  // 7.10.16: written whole or not at all; 7.10.18: the token sealed (jsonfile.js, main.js's seal)
+  const lock = { keys: ['token'], seal };
+  const cfg = readJson(FILE, log, lock);
   if (!cfg.device) { cfg.device = 'deck90-' + crypto.randomBytes(6).toString('hex'); save(); }
-  function save() { try { writeJson(FILE, cfg); } catch (e) { log('jellyfin: ' + e.message); } }
+  else if (cfg.plain) { save(); log('jellyfin: its token sealed'); }
+  function save() { try { writeJson(FILE, cfg, lock); } catch (e) { log('jellyfin: ' + e.message); } }
 
   const covers = new Map();                                       // 7.10.17: album or song id → data URL ('' none)
   const auth = token => 'MediaBrowser Client="Deck 90", Device="Deck 90", DeviceId="' + cfg.device + '", Version="' + version + '"' + (token ? ', Token="' + token + '"' : '');

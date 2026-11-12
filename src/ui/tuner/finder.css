@@ -23,3 +23,6 @@
 .rf-keep button{ margin-left:4px; width:26px; height:22px; border-radius:4px; border:1px solid rgba(128,255,229,.3); background:#10221e; color:#80ffe5; cursor:pointer; font-size:11px; }
 .rf-keep button:hover{ background:#163029; }
 .rf-keep button:disabled{ opacity:.35; cursor:default; }
+/* 7.10.18: in the car stereo's short window the card scrolls inside it instead of running off the top */
+#rfFind .rf-card{ max-height:calc(100vh - 12px); overflow-y:auto; box-sizing:border-box; }
+body.stereo #rfFind .rf-list{ max-height:min(340px, 34vh); }

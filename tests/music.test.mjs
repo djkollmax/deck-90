@@ -41,7 +41,11 @@ test('signed in, ARTISTS lists the music library only, and the password is not k
   assert.ok(!jf.log.some(l => /a1b2c3d4000000000000000000000003/.test(l)), 'never the movies');
   const file = path.join(await d.app.evaluate(({ app }) => app.getPath('userData')), 'jellyfin.json');
   const saved = fs.readFileSync(file, 'utf8');
-  assert.match(saved, /tok-123/); assert.doesNotMatch(saved, /secreto/);
+  assert.doesNotMatch(saved, /secreto/, 'the password is never kept');
+  // 7.10.18: the token sealed with the system's protection when there is one (DPAPI on Windows, a keyring on Linux)
+  const sealing = await d.app.evaluate(({ safeStorage }) => safeStorage.isEncryptionAvailable());
+  if (sealing) { assert.doesNotMatch(saved, /tok-123/); assert.match(saved, /"sealed":\{"token":/); }
+  else assert.match(saved, /tok-123/);
 });
 
 test('letters jump, ENTER opens an artist and an album; its songs say their length and quality', async () => {

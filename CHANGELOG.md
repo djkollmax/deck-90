@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.10.18
+
+### Added
+- **Searching any station in the world from the car stereo**: SCAN held (1 s) opens the same search as the DT-90's (finder.js), titled without "DT-90", the card scrolling inside the stereo's short window; a station touched plays there (the rack's tuner isn't powered for it). A plain SCAN scans as before; the phone's SCAN held is ignored (the search is typed on the PC).
+
+### Security
+- **Last.fm's key, secret and session and Jellyfin's token are sealed** with the system's protection (Electron's `safeStorage`: DPAPI on Windows, so only this Windows user can open them; the keyring on Linux) instead of sitting in plain text in lastfm.json and jellyfin.json. A file from before is sealed the first time the program reads it; with no protection available (a Linux with no keyring) they're kept as they were, and a value sealed by another user or PC is left unopened and logged (`jsonfile.js`'s `lock`).
+
 ## 7.10.17
 
 ### Added

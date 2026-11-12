@@ -61,3 +61,37 @@ test('the phone server answers the home network and this PC, nobody else', () =>
   for (const a of ['8.8.8.8', '::ffff:181.45.3.2', '172.32.0.1', '100.128.0.1', '2800:810::1', '', undefined])
     assert.equal(localAddress(a), false, String(a));
 });
+
+// 7.10.18: the secrets sealed with the system's protection (main.js gives Electron's safeStorage; here a stand-in)
+const seal = { close: t => Buffer.from('S:' + t).toString('base64'), open: b => { const t = Buffer.from(b, 'base64').toString(); if (!t.startsWith('S:')) throw new Error('not ours'); return t.slice(2); } };
+test('secrets: a file from before is sealed, read back open, and nothing in the open is left in it', () => {
+  const f = path.join(dir, 'secrets.json'), lock = { keys: ['token', 'secret'], seal };
+  fs.writeFileSync(f, JSON.stringify({ server: 'http://x', token: 'tok-123', secret: 'shh' }));   // as 7.10.17 left it
+  const v = readJson(f, null, lock);
+  assert.equal(v.plain, true, 'it says it was in the open');
+  writeJson(f, v, lock);
+  const text = fs.readFileSync(f, 'utf8');
+  assert.ok(!text.includes('tok-123') && !text.includes('shh'), text);
+  assert.match(text, /"sealed":/);
+  const w = readJson(f, null, lock);
+  assert.deepEqual([w.server, w.token, w.secret, w.plain], ['http://x', 'tok-123', 'shh', false]);
+  delete w.token; writeJson(f, w, lock);                          // signed out: the sealed token goes too
+  assert.equal(readJson(f, null, lock).token, undefined);
+  // no seal on this PC (no keyring): the sealed value stays as it is, unread, and is written back untouched
+  const x = readJson(f, null, { keys: lock.keys, seal: null });
+  assert.equal(x.secret, undefined); writeJson(f, x, { keys: lock.keys, seal: null });
+  assert.equal(readJson(f, null, lock).secret, 'shh');
+  // sealed by another user or PC: not opened, said, and the rest still read
+  fs.writeFileSync(f, JSON.stringify({ server: 'http://x', sealed: { token: Buffer.from('X:zzz').toString('base64') } }));
+  const said = [], y = readJson(f, m => said.push(m), lock);
+  assert.deepEqual([y.server, y.token], ['http://x', undefined]); assert.match(said[0], /could not be opened/);
+});
+
+test('Last.fm keeps its key, secret and session sealed', async () => {
+  const d = fs.mkdtempSync(path.join(dir, 'lfm2-'));
+  fs.writeFileSync(path.join(d, 'lastfm.json'), JSON.stringify({ key: 'k'.repeat(32), secret: 's'.repeat(32), session: 'sess-1', user: 'damian', queue: [] }));
+  const lfm = createLastfm({ net: { fetch: async () => ({ ok: true, json: async () => ({}) }) }, dir: d, log: () => {}, open: () => {}, seal });
+  const text = fs.readFileSync(path.join(d, 'lastfm.json'), 'utf8');
+  assert.ok(!/k{32}|s{32}|sess-1/.test(text), 'sealed at once: ' + text);
+  assert.deepEqual([lfm.status().hasKey, lfm.status().signedIn, lfm.status().user], [true, true, 'damian']);
+});

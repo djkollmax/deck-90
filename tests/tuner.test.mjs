@@ -212,3 +212,22 @@ test('SCAN held searches any station in the world; one touched plays, a number k
   assert.equal(await d.win.evaluate(() => document.getElementById('rfFind').classList.contains('show')), false);
   assert.deepEqual(d.errors(), []);
 });
+
+// 7.10.18
+test('the car stereo: SCAN held opens the same search, a station touched plays there', async () => {
+  await d.win.keyboard.press('e'); await d.wait(1500);
+  assert.equal(await d.win.evaluate(() => stereoMode), true);
+  await d.hold('.st-hot[data-st="scan"]', 1300);
+  assert.equal(await d.win.evaluate(() => [document.getElementById('rfFind').classList.contains('show'), stereoCfg.mode, !!radioScan]).then(x => x.join()), 'true,radio,false');
+  const box = await d.win.locator('#rfFind .rf-box, #rfFind > div').first().boundingBox(), vp = d.win.viewportSize() || await d.win.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+  assert.ok(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= vp.width + 1 && box.y + box.height <= vp.height + 1, 'the search fits the stereo window');
+  await d.win.fill('#rfName', 'jazz'); await d.win.press('#rfName', 'Enter'); await d.wait(800);
+  await d.win.locator('#rfList .rf-item').first().click(); await d.wait(3000);
+  assert.deepEqual(await d.win.evaluate(() => [radioNow.name, radioPlaying(), stereoCfg.mode]), ['jazz Uno', true, 'radio']);
+  await d.win.press('#rfName', 'Escape'); await d.wait(200);
+  await d.click('.st-hot[data-st="scan"]', 300);                      // a plain press: SCAN as always
+  assert.equal(await d.win.evaluate(() => !!radioScan), true);
+  await d.click('.st-hot[data-st="scan"]', 300);
+  await d.win.keyboard.press('e'); await d.wait(1200);
+  assert.deepEqual(d.errors(), []);
+});

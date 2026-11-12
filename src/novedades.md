@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.10.18 — 2026-11-12
+
+### Nuevo
+- **Buscar cualquier radio del mundo desde el estéreo:** mantené apretado SCAN un segundo. Es la misma búsqueda del sintonizador: tocás una radio y suena ahí, y con los números la guardás en las memorias. SCAN con un toque sigue recorriendo las radios como siempre.
+
+### Seguridad
+- **Las claves de Last.fm y la sesión de Jellyfin ahora se guardan cifradas** con la protección de Windows: solo tu usuario de Windows en esta PC puede leerlas. Antes estaban en un archivo de texto. No tenés que hacer nada; la primera vez que abras el programa las cifra solo.
+
 ## 7.10.17 — 2026-11-12
 
 ### Nuevo
