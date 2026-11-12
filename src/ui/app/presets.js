@@ -79,6 +79,7 @@ function applySnap(s) {
   if (s.mods && typeof s.mods === 'object') {
     for (const k in mods) mods[k] = !!s.mods[k];
     if (!Object.values(mods).some(Boolean)) mods.vu = true;
+    modsBeforeTape = null;                                         // 7.10.16: the look's modules end TAPE ONLY
   }
   applyModules(); savePrefs(); syncConsole();
   if (typeof showSkinMenu === 'function' && skinMenu.classList.contains('show')) showSkinMenu(false);

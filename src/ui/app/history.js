@@ -156,11 +156,21 @@ async function histRender(reload = true) {
   document.getElementById('histExport').disabled = !n;
   document.getElementById('histClear').disabled = !n;
 }
+// 7.10.16: every second only the "now" line is made again (the whole table was, so a title's tooltip or a selection
+// vanished within a second); a song that ended and went into the file brings the table back from it
+function histLive() {
+  const body = document.getElementById('histBody'), old = body.querySelector('tr.live'), live = historyEntry(50);
+  const key = live ? live.id : '';
+  if (!!old !== !!live || (old && old.dataset.key !== key)) return histRender(true).then(() => { const r = body.querySelector('tr.live'); if (r) r.dataset.key = key; });
+  if (!live) return;
+  const row = histRow(live, true); row.dataset.key = key;
+  body.replaceChild(row, old);
+}
 function showHistory(on) {
   histModal.classList.toggle('show', on);
   clearInterval(histTimer); histClearArmed = 0;
   document.getElementById('histClear').textContent = 'BORRAR TODO';
-  if (on) { histRender(); histTimer = setInterval(() => histRender(false), 1000); }   // the "now" line keeps moving
+  if (on) { histRender(); histTimer = setInterval(histLive, 1000); }   // the "now" line keeps moving
 }
 document.getElementById('histClose').addEventListener('click', () => showHistory(false));
 histModal.addEventListener('click', e => { if (e.target === histModal) showHistory(false); });

@@ -94,6 +94,17 @@ test('⚙ PANTALLA: a swatch per colour and BRILLO, lit as the keys leave them',
   assert.deepEqual(await d.win.evaluate(() => { const p = JSON.parse(localStorage.getItem('deck90-prefs')).jukebox; return [p.color, p.dim]; }), ['magenta', 0]);
 });
 
+test('touching the clock changes the colour; held, the one before', async () => {
+  await d.win.evaluate(() => { clockCfg.mode = 'clock'; saveClock(); layoutClock(); }); await d.wait(400);
+  const before = await d.win.evaluate(() => jbCfg.color);
+  await d.click('#hcBox', 400);
+  const after = await d.win.evaluate(() => [jbCfg.color, HC_ON]);
+  assert.notEqual(after[0], before);
+  assert.equal(after[1], await d.win.evaluate(id => UNIT_COLORS.find(u => u.id === id).vfd, after[0]), 'the clock in it');
+  await d.hold('#hcBox', 900);
+  assert.equal(await d.win.evaluate(() => jbCfg.color), before, 'held: back');
+});
+
 test('the DE-90 sits above the DV-90; U hides it, no errors', async () => {
   await d.win.keyboard.press('w'); await d.wait(600);
   const [e, v] = await d.win.evaluate(() => [eqPanel.getBoundingClientRect().top, volPanel.getBoundingClientRect().top]);

@@ -1,5 +1,29 @@
 # Changelog
 
+## 7.10.16
+
+A review of the parts not reviewed yet (the main process, the page around the units).
+
+### Added
+- **Touching the header's time changes the colour** of the clock and the rack's displays, as COLOR does (held: the colour before). It's out of the window's drag area.
+
+### Fixed
+- **A held key acts once.** F flipped full screen on and off, F1–F5 a slot's two looks, 1–8, 9, 0, J, U, W, Z, H and A a module, at key-repeat speed (and saved the prefs each time). Only T, V, K, N and C go on stepping while held.
+- **TAPE ONLY (Z) ends when a module is changed by hand or a look is applied**: its button stayed lit, a look saved then kept the modules from before Z, ↻ ROTAR stayed frozen and Z threw the change away.
+- **The history window** made its whole table again every second (up to 500 rows), so a title's tooltip or a selection vanished; now only the "now" line is, and the table when a song goes into the file.
+- **GUARDAR COPIA** also carries the saved songs (★), the equalizer, and the CD's and the DM-90's modes.
+- G says so when the song can't be saved (no room left for the settings); ACERCA DE lists J, U, W and G.
+- **Last.fm**: a song ending while the queue was being sent sent the same batch again and dropped the entries after it; one send at a time now, and what was sent is taken out by itself.
+- **lastfm.json, jellyfin.json and cd-names.json** are written to a .tmp and renamed (a crash mid-write left half a file, and Last.fm's key, session and waiting scrobbles, or the Jellyfin sign-in, were lost without a word); one that can't be read is kept as .bad (`electron/jsonfile.js`).
+- **Windows**: a bridge that can't even start (powershell.exe blocked by an antivirus or AppLocker) is started again with the same backoff; it stayed "running" and silent, with no now playing and the CD's keys going nowhere.
+
+### Security
+- **The phone server answers only local devices**: private, link-local, carrier-grade NAT (Tailscale) and loopback addresses; a new phone key is 16 bytes (6 before; a phone already paired keeps its key).
+- **CI**: the workflow's token is read-only except in the job that publishes, the test jobs' checkouts keep no token, and the dependencies are pinned by a `package-lock.json` (`npm ci`).
+
+### Faster
+- The header is told about Deck 90's own sources only when something in it changed (or every 5 s), instead of every second with the clock laid out again; the SPOTIFY readout is written only when it changes; the beat ring restarts without a layout of the page; the cassette's 7-segment digits keep their shapes instead of making them every frame; the phone server makes each frame's text once for all phones; Linux's now playing asks D-Bus every 1.5 s when paused and 2.5 s with no player (600 ms only while playing).
+
 ## 7.10.15
 
 ### Added

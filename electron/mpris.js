@@ -67,8 +67,12 @@ function createMpris(onInfo, log) {
         }
       }
     } catch (e) { log && log('mpris: ' + e.message); }
-    timer = setTimeout(poll, 600);
+    // 7.10.16: three gdbus runs every 600 ms only while something plays; paused or stopped every 1.5 s, and with no
+    // player every 2.5 s (a key pressed looks again at once)
+    const playing = player && /\|Playing$/.test(lastKey);
+    timer = setTimeout(poll, playing ? 600 : player ? 1500 : 2500);
   }
+  const soon = () => { if (stopped) return; clearTimeout(timer); timer = setTimeout(poll, 150); };
 
   const METHODS = { toggle: 'PlayPause', play: 'Play', pause: 'Pause', stop: 'Stop', next: 'Next', prev: 'Previous' };
   return {
@@ -76,7 +80,7 @@ function createMpris(onInfo, log) {
     stop() { stopped = true; clearTimeout(timer); },
     command(cmd) {
       if (!player || !METHODS[cmd]) return;
-      gdbus(['--dest', player, '--object-path', OBJ, '--method', IFACE + '.' + METHODS[cmd]]).then(() => setTimeout(() => { lastKey = ''; }, 50));
+      gdbus(['--dest', player, '--object-path', OBJ, '--method', IFACE + '.' + METHODS[cmd]]).then(() => setTimeout(() => { lastKey = ''; soon(); }, 50));
     },
   };
 }

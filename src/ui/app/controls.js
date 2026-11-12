@@ -47,6 +47,7 @@ function toggleModule(m){
   const on = Object.values(mods).filter(Boolean).length;
   if (mods[m] && on === 1) { toast('Tiene que quedar al menos un módulo prendido.', 2500); return; }
   mods[m] = !mods[m];
+  modsBeforeTape = null;                                           // 7.10.16: a module changed by hand ends TAPE ONLY (Z)
   applyModules(); savePrefs(); syncConsole();
 }
 function cycleSkin(){
@@ -217,6 +218,9 @@ document.addEventListener('keydown', e => {
     if (/^f[1-8]$/.test(k)) e.preventDefault();
     return;
   }
+  // 7.10.16: a held key acts once (it flipped full screen, a look or a module on and off at key-repeat speed); only the
+  // keys that step through a list (T, V, K, N, C) go on stepping while held
+  if (e.repeat && !['t', 'v', 'k', 'n', 'c'].includes(k)) { if (k !== 'escape') e.preventDefault(); return; }
   // F1–F5 the favourite looks, F6–F8 yours (C1–C3); Shift+F6–F8 (or GUARDAR, then F6–F8) saves what's on screen there
   const fk = /^f([1-8])$/.exec(k);
   if (fk) {
@@ -226,8 +230,6 @@ document.addEventListener('keydown', e => {
     (e.shiftKey || presetSaveArmed ? savePreset : applyPreset)(id); return;
   }
   if (k === 'escape' && presetSaveArmed) { presetSaveArmed = false; syncConsole(); return; }
-  // a held S, M, D or Space would start (or stop) the source over and over
-  if (e.repeat && ['s', 'm', 'd', ' '].includes(k)) { e.preventDefault(); return; }
   const act = {
     s: () => { closeSplash(); startAudio('sys'); },
     m: () => { closeSplash(); startAudio('mic'); },

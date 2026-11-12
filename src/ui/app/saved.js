@@ -25,7 +25,8 @@ function songSave() {
   if (!s) { toast('★ · <span>no sé qué tema suena</span>' + (radioPlaying() ? ': esta radio no lo dice' : ''), 2200); return false; }
   const list = savedList(), same = list[0] && list[0].title === s.title && list[0].artist === s.artist && s.at - list[0].at < 30 * 60e3;
   if (same) { toast('★ · <span>ya estaba guardado</span>', 1600); return false; }
-  list.unshift(s); store.write(SAVED_KEY, list.slice(0, 500));
+  list.unshift(s);
+  if (!store.write(SAVED_KEY, list.slice(0, 500))) { toast('⚠ No pude guardar el tema: <span>no queda lugar para los ajustes</span>', 3200); return; }   // 7.10.16
   toast('★ GUARDADO · <span>' + ((s.artist ? s.artist + ' – ' : '') + s.title).replace(/[<>&]/g, '') + '</span><br>L → ★ GUARDADOS para verlos', 2600);
   if (savedModal.classList.contains('show')) savedRender();
   return true;

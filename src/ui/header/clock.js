@@ -244,6 +244,16 @@ hcEl.city.addEventListener('blur', syncClockSeg);
 // clicking the weather (or its hint) opens the drawer at the city
 hcEl.wx.addEventListener('click', () => { if (!drawerOpen) setDrawer(true); if (controlsHidden) setControlsHidden(false); setTimeout(() => hcEl.city.focus(), 50); });
 
+// 7.10.16: touching the time changes the colour of the clock and the rack's displays, as COLOR does (held: the one before)
+{ let at = 0;
+  hcEl.clock.addEventListener('pointerdown', e => { if (e.button === 0) at = performance.now(); });
+  hcEl.clock.addEventListener('pointerup', () => {
+    if (!at) return;
+    const held = performance.now() - at > 600; at = 0;
+    if (typeof unitColorStep === 'function') unitColorStep(held);
+  });
+  hcEl.clock.addEventListener('pointerleave', () => { at = 0; });
+}
 // the second hand: the colon blinks, the minutes turn
 (function tick() {
   if (hcShown() && hcH && winShown) drawClock(new Date());

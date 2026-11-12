@@ -183,7 +183,8 @@ app.whenReady().then(() => {
   function saveState() { try { writeAtomic(STATE, JSON.stringify(saved)); } catch (e) { mlog('window.json: ' + e.message); } }
   saved.remote = Object.assign({ on: false, port: 9090, key: '' }, saved.remote);
   if (!Number.isInteger(saved.remote.port) || saved.remote.port < 1024 || saved.remote.port > 65535) saved.remote.port = 9090;
-  if (!/^[A-Za-z0-9_-]{8,}$/.test(saved.remote.key)) { saved.remote.key = crypto.randomBytes(6).toString('base64url'); saveState(); }
+  // 7.10.16: a new key is 16 bytes (was 6); a phone already paired keeps its key
+  if (!/^[A-Za-z0-9_-]{8,}$/.test(saved.remote.key)) { saved.remote.key = crypto.randomBytes(16).toString('base64url'); saveState(); }
   const remoteState = () => remote ? remote.state() : { on: false, urls: [], clients: 0 };
   const pushRemote = extra => {
     if (win && !win.isDestroyed()) win.webContents.send('remote-state', Object.assign(remoteState(), extra || {}));
@@ -257,7 +258,7 @@ app.whenReady().then(() => {
     } catch (err) { return { error: err.message }; }
   });
 
-  // ── Updates: GitHub, a few seconds after start and every 6 hours ──
+  // ── Updates: GitHub, a few seconds after start and every hour ──
   const updater = createUpdater({ app, net, log: mlog,
     // after an update, come back visible (a start with Windows passes --oculto, which the restart would repeat)
     relaunchArgs: () => process.argv.slice(1).filter(a => a !== '--oculto'),
@@ -520,7 +521,6 @@ function startMedia() {
   mediaSeen = Date.now();
   media = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'media.ps1')],
                 { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
-  media.on('error', e => { mlog('bridge error: ' + e.message); });   // e.g. powershell.exe missing or blocked
   media.stdin.on('error', () => {});                                    // writing to a bridge that is exiting
   mlog('bridge started pid ' + media.pid);
   media.stdout.setEncoding('utf8');
@@ -547,15 +547,21 @@ function startMedia() {
   media.stderr.setEncoding('utf8');
   media.stderr.on('data', d => mlog('ps: ' + String(d).trim().slice(0, 500)));
   const me = media;
-  media.on('exit', code => {
-    mlog('bridge exit ' + code);
+  let over = false;
+  // 7.10.16: a bridge that couldn't even start (powershell.exe blocked by an antivirus or AppLocker) gives 'error' and
+  // no 'exit': it's started again the same way, instead of staying "running" and silent for good
+  const ended = why => {
+    if (over) return; over = true;
+    mlog('bridge ' + why);
     if (media === me) media = null;
     if (app.isQuitting) return;
     // start again, waiting longer after each quick failure (3 s … 5 min); a bridge that ran a good while starts over
     if (mediaUp && Date.now() - mediaUp > 120000) mediaRestarts = 0;
     mediaUp = 0;
     setTimeout(startMedia, Math.min(300000, 3000 * Math.pow(2, mediaRestarts++)));
-  });
+  };
+  media.on('exit', code => ended('exit ' + code));
+  media.on('error', e => { mlog('bridge error: ' + e.message); if (!me.pid || me.exitCode !== null) ended('could not run'); });   // e.g. powershell.exe missing or blocked
 }
 // The bridge says something at least every 5 s; one silent for 30 s is stuck: start it again.
 setInterval(() => {

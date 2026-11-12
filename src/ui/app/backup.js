@@ -5,7 +5,8 @@
 //  file; CARGAR reads one back after a second tap to confirm, and starts the page again with it.
 //  The track history isn't in it: it exports to Excel from its own window.
 // ═══════════════════════════════════════════════════════════
-const BACKUP_KEYS = ['deck90-prefs', 'deck90-presets-v2', 'deck90-clock', 'deck90-radio'];
+// 7.10.16: also the saved songs (★, a list), the equalizer, the CD's and the DM-90's modes
+const BACKUP_KEYS = ['deck90-prefs', 'deck90-presets-v2', 'deck90-clock', 'deck90-radio', 'deck90-saved', 'deck90-eq', 'deck90-cdmodes', 'deck90-music'];
 let backupArmed = 0;
 
 function backupText() {

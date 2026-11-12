@@ -14,8 +14,9 @@ on:
         description: 'Existing tag to (re)publish, e.g. v6.0.1'
         required: true
 
+# 7.10.16: read only, except the job that publishes (a test or a dependency of one can't make a release)
 permissions:
-  contents: write
+  contents: read
 
 # two quick pushes never race to publish the same release
 concurrency:
@@ -36,6 +37,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
+          persist-credentials: false   # 7.10.16: no token left in .git for later steps
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4.4.0
         with:
@@ -43,7 +45,7 @@ jobs:
 
       - name: Electron, Playwright and a sound server (the demo and the meters need an audio device)
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npx playwright-core install --with-deps chromium
           sudo apt-get install -y --no-install-recommends pulseaudio
           pulseaudio --start --exit-idle-time=-1
@@ -62,6 +64,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
+          persist-credentials: false   # 7.10.16: no token left in .git for later steps
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4.4.0
         with:
@@ -141,6 +144,8 @@ jobs:
   release:
     needs: [windows, tests]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       # actions pinned to the commit of their v4.4.0 tag, so a moved tag can't change what runs here
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0

@@ -80,7 +80,7 @@ if (window.nowPlaying) window.nowPlaying.on(info => {
 // nothing), cmd(c) takes 'play', 'pause', 'toggle', 'prev' and 'next'. One playing wins (the first registered if
 // several), else one waiting paused; it gets the header, the history, the deck's keys and the keyboard's media keys
 const npSources = [];
-let npSourceNow = null, npSourceKey = '';
+let npSourceNow = null, npSourceKey = '', npSourceFull = '', npSourceN = 0;
 function npSource(name, info, cmd) { npSources.push({ name, info, cmd }); }
 function npSourcesTick() {
   let pick = null, info = null;
@@ -92,7 +92,10 @@ function npSourcesTick() {
   if (!changed && !pick) return;
   const was = npSourceNow;
   npSourceNow = pick; npSourceKey = key;
-  npOverrideSet(info, changed);
+  // 7.10.16: the header is told again only when something in it changed (or every 5 s, to keep the time in step): every
+  // second it was rewritten whole, and the clock beside it laid out again
+  const full = info ? JSON.stringify(Object.assign({}, info, { pos: 0, at: 0 })) : '';
+  if (changed || full !== npSourceFull || ++npSourceN % 5 === 0) { npSourceFull = full; npOverrideSet(info, changed); }
   if (!('mediaSession' in navigator) || (!changed && was === pick)) return;
   try {
     if (pick) {

@@ -244,17 +244,16 @@ function updateMasterMeters(now){
     setText('mLufsI', isFinite(I) ? 'I ' + I.toFixed(1) : 'I --.-');
     const pg = playerGainFor(np);
     spotGain = isFinite(pg) ? spotifyGain(I - pg, trackPeakMax() - pg) : NaN;
-    const sp = el('mSpot');
+    // 7.10.16: written only when it changes (10 times a second it rewrote the text, the class and the tooltip)
+    const sp = el('mSpot'), put = (t, c, ti) => { if (sp.textContent !== t) sp.textContent = t; if (sp.className !== c) sp.className = c; if (sp.title !== ti) sp.title = ti; };
     if (isNaN(pg) && isFinite(I)) {
-      sp.textContent = 'SPOTIFY ?'; sp.className = 'spot warn';
-      sp.title = playerState && playerState.levelling
+      put('SPOTIFY ?', 'spot warn', playerState && playerState.levelling
         ? 'Spotless tiene la nivelación prendida: ya normaliza el sonido, así que no se puede saber cuánto ajustaría Spotify el master. Apagala en Spotless para medirlo.'
-        : 'El ecualizador de Spotless está prendido: cambia el sonido según la frecuencia, así que no se puede saber cómo es el master. Apagalo (o dejalo plano) para medirlo.';
+        : 'El ecualizador de Spotless está prendido: cambia el sonido según la frecuencia, así que no se puede saber cómo es el master. Apagalo (o dejalo plano) para medirlo.');
     } else {
-      sp.textContent = isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '';
-      sp.className = 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : '');
-      sp.title = 'Cuánto subiría o bajaría Spotify este tema (normalización a −14 LUFS)' +
-        (pg ? '. Compensa el volumen de ' + fmtVol(playerState) + ': el master mide ' + (I - pg).toFixed(1) + ' LUFS' : '');
+      put(isFinite(spotGain) ? 'SPOTIFY ' + fmtGain(spotGain) + ' dB' : '', 'spot' + (spotGain < -6 ? ' hot' : spotGain < -3 ? ' warn' : ''),
+        'Cuánto subiría o bajaría Spotify este tema (normalización a −14 LUFS)' +
+        (pg ? '. Compensa el volumen de ' + fmtVol(playerState) + ': el master mide ' + (I - pg).toFixed(1) + ' LUFS' : ''));
     }
     if (now - lraT >= 1000) { lraT = now; lraValue = loudnessRange(); el('mLra').textContent = isFinite(lraValue) ? 'LRA ' + lraValue.toFixed(1) : 'LRA --'; }
   }

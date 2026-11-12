@@ -182,7 +182,9 @@ function frame(draw) {
   if (flashing && !wasFlashing) beatStep = (beatStep + 1) % 4;
   if (flashing !== wasFlashing) {
     bpmEl.classList.toggle('beat', flashing);
-    if (flashing) { const r = el('beatRing'); r.classList.remove('hit'); void r.offsetWidth; r.classList.add('hit'); }
+    // 7.10.16: the ring's animation started again from its beginning, without forcing a layout of the page each beat
+    if (flashing) { const r = el('beatRing'), a = r.classList.contains('hit') && r.getAnimations ? r.getAnimations() : [];
+      if (a.length) a.forEach(x => { x.currentTime = 0; x.play(); }); else { r.classList.remove('hit'); void r.offsetWidth; r.classList.add('hit'); } }
     bleds.forEach((l, i) => {
       const on = flashing && i === beatStep;
       l.style.background = on ? '#00ff88' : '';

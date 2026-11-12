@@ -9,6 +9,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { readJson, writeJson } = require('./jsonfile');
 
 const hex = (n, w) => (n >>> 0).toString(16).toUpperCase().padStart(w, '0');
 // MusicBrainz disc ID: first and last track, the lead-out and the 99 track offsets, as hex, SHA-1, base64 with . _ -
@@ -35,9 +36,8 @@ const credit = ac => (Array.isArray(ac) ? ac : []).map(a => (a.name || (a.artist
 
 function createCdNames({ net, dir, agent, log }) {
   const file = path.join(dir, 'cd-names.json');
-  let cache = {};
-  try { cache = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch (_) {}
-  const save = () => { try { fs.writeFileSync(file, JSON.stringify(cache)); } catch (_) {} };
+  const cache = readJson(file, log);                              // 7.10.16: written whole or not at all (jsonfile.js)
+  const save = () => { try { writeJson(file, cache); } catch (_) {} };
 
   async function fetchJson(url) {
     const ac = new AbortController(), t = setTimeout(() => ac.abort(), 12000);   // MusicBrainz can be slow at busy hours (7.10.14: 12 s, was 30)

@@ -56,17 +56,31 @@ function lanAddresses() {
 
 // the PC's clock goes with each track message, so the phone can put the play position on its own clock
 const stamp = info => Object.assign({}, info, { now: Date.now() });
+// 7.10.16: only devices on the home or office network (and this PC) may ask: private, link-local and loopback
+// addresses. A PC on a network that routes public addresses to it (a forwarded port, a firewall open on public
+// networks) answers nobody else.
+function localAddress(a) {
+  a = String(a || '').toLowerCase().replace(/^::ffff:/, '');
+  if (a === '::1' || /^127\./.test(a)) return true;
+  if (/^10\./.test(a) || /^192\.168\./.test(a) || /^169\.254\./.test(a)) return true;
+  const m = /^172\.(\d+)\./.exec(a); if (m && +m[1] >= 16 && +m[1] <= 31) return true;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(a)) return true;        // carrier-grade NAT, as Tailscale uses
+  return /^f[cd][0-9a-f]{2}:/.test(a) || /^fe[89ab][0-9a-f]:/.test(a);          // IPv6 unique-local and link-local
+}
 function createRemote({ onCmd, log, getNowPlaying, onClients, onStereoKey }) {
   let server = null, port = 0, key = '';
   const clients = new Set();
   let lastFrame = null;
 
   const MAX_CLIENTS = 8;
-  function send(res, event, data, droppable) {
-    // a phone that stops reading (frozen tab, weak Wi-Fi) must not pile frames up in memory
-    if (res.writableLength > 1 << 20) { try { res.destroy(); } catch (_) {} return; }
+  // 7.10.16: the text made once for every phone (it was made again per phone, 30 times a second)
+  const line = (event, data) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  function send(res, event, data, droppable, text) {
+    // a phone that stops reading (frozen tab, weak Wi-Fi) must not pile frames up in memory; a track's message (it
+    // can carry a large cover) is let through up to 4 MB, so one big cover doesn't drop the phone over and over
+    if (res.writableLength > (droppable ? 1 : 4) << 20) { try { res.destroy(); } catch (_) {} return; }
     if (droppable && res.writableLength > 64 << 10) return;
-    try { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch (_) {}
+    try { res.write(text || line(event, data)); } catch (_) {}
   }
   function keyOk(u) {
     const k = u.searchParams.get('k') || '';
@@ -80,6 +94,7 @@ function createRemote({ onCmd, log, getNowPlaying, onClients, onStereoKey }) {
     catch (e) { log('remote: ' + e.message); try { res.writeHead(500).end(); } catch (_) {} }
   }
   function route(req, res) {
+    if (!localAddress(req.socket.remoteAddress)) { log('remote: refused ' + req.socket.remoteAddress); res.writeHead(403).end(); return; }
     let u;
     try { u = new URL(req.url, 'http://x'); } catch (_) { res.writeHead(400).end(); return; }
     res.setHeader('Cache-Control', 'no-store');
@@ -150,8 +165,8 @@ function createRemote({ onCmd, log, getNowPlaying, onClients, onStereoKey }) {
       if (server) { try { server.close(); } catch (_) {} server = null; }
       lastFrame = null;
     },
-    frame(f) { lastFrame = f; for (const res of clients) send(res, 'f', f, true); },
-    nowPlaying(info) { const s = stamp(info); for (const res of clients) send(res, 'np', s); },
+    frame(f) { lastFrame = f; if (!clients.size) return; const t = line('f', f); for (const res of clients) send(res, 'f', f, true, t); },
+    nowPlaying(info) { if (!clients.size) return; const t = line('np', stamp(info)); for (const res of clients) send(res, 'np', null, false, t); },
     state() {
       const urls = server ? lanAddresses().map(ip => `http://${ip}:${port}/?k=${key}`) : [];
       return { on: !!server, port, urls, clients: clients.size };
@@ -159,4 +174,4 @@ function createRemote({ onCmd, log, getNowPlaying, onClients, onStereoKey }) {
   };
 }
 
-module.exports = { createRemote, lanAddresses };
+module.exports = { createRemote, lanAddresses, localAddress };

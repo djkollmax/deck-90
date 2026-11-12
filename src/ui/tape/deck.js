@@ -49,22 +49,37 @@ function drawReel(ctx, cx, cy, rHub, ang) {
 
 // ── high-end deck parts ──────────────────────────────────────
 const SEG7 = { 0:'abcdef', 1:'bc', 2:'abged', 3:'abgcd', 4:'fgbc', 5:'afgcd', 6:'afgedc', 7:'abc', 8:'abcdefg', 9:'abcfgd' };
-// A fluorescent 7-segment digit: upright, each segment a long hexagon whose pointed ends meet its
-// neighbours at the corners, with a hair of dark between them.
-function draw7(ctx, x, y, w, h, ch, on, off) {
+// 7.10.16: the digit's two shapes made once per size and figure and kept (they were made again for every digit of every
+// frame: two Path2D and some fifty small arrays each), then drawn where the digit goes
+const draw7Cache = new Map();
+function draw7Paths(w, h, ch) {
+  const id = w.toFixed(2) + '|' + h.toFixed(2) + '|' + ch;
+  let p = draw7Cache.get(id);
+  if (p) return p;
   const t = Math.max(1.4, w * 0.19), g = Math.max(0.6, t * 0.16), m = t / 2;
-  const L = x + m, R = x + w - m, T = y + m, M = y + h / 2, B = y + h - m;
+  const L = m, R = w - m, T = m, M = h / 2, B = h - m;
   const hor = (x0, x1, cy) => [[x0 + g, cy], [x0 + g + m, cy - m], [x1 - g - m, cy - m], [x1 - g, cy], [x1 - g - m, cy + m], [x0 + g + m, cy + m]];
   const ver = (cx, y0, y1) => [[cx, y0 + g], [cx + m, y0 + g + m], [cx + m, y1 - g - m], [cx, y1 - g], [cx - m, y1 - g - m], [cx - m, y0 + g + m]];
   const seg = { a: hor(L, R, T), g: hor(L, R, M), d: hor(L, R, B), f: ver(L, T, M), b: ver(R, T, M), e: ver(L, M, B), c: ver(R, M, B) };
   // the dark segments, then the lit ones as one shape: one glow per digit instead of one per segment
   const lit = new Path2D(), dim = new Path2D(), on7 = SEG7[ch] || '';
   for (const k of 'abcdefg') {
-    const p = on7.includes(k) ? lit : dim;
-    seg[k].forEach(([px, py], i) => i ? p.lineTo(px, py) : p.moveTo(px, py)); p.closePath();
+    const q = on7.includes(k) ? lit : dim;
+    seg[k].forEach(([px, py], i) => i ? q.lineTo(px, py) : q.moveTo(px, py)); q.closePath();
   }
-  ctx.fillStyle = off; ctx.fill(dim);
-  if (on7) { ctx.fillStyle = on; ctx.shadowColor = on; ctx.shadowBlur = t * 1.8; ctx.fill(lit); ctx.shadowBlur = 0; }
+  if (draw7Cache.size > 400) draw7Cache.clear();                 // a resize leaves the old sizes behind
+  p = { lit, dim, on: !!on7, t };
+  draw7Cache.set(id, p);
+  return p;
+}
+// A fluorescent 7-segment digit: upright, each segment a long hexagon whose pointed ends meet its
+// neighbours at the corners, with a hair of dark between them.
+function draw7(ctx, x, y, w, h, ch, on, off) {
+  const p = draw7Paths(w, h, ch);
+  ctx.translate(x, y);
+  ctx.fillStyle = off; ctx.fill(p.dim);
+  if (p.on) { ctx.fillStyle = on; ctx.shadowColor = on; ctx.shadowBlur = p.t * 1.8; ctx.fill(p.lit); ctx.shadowBlur = 0; }
+  ctx.translate(-x, -y);
 }
 function brushed(ctx, x, y, w, h, base) {
   const g = ctx.createLinearGradient(0, y, 0, y + h);

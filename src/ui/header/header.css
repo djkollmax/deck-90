@@ -54,7 +54,7 @@ html.chassis-ti.hdr-clock .np{
 html.chassis-ti.hdr-clock .np img.on{ margin:0 10px 0 16px; }
 html.chassis-ti.hdr-clock .np-text{ padding:0 16px; }
 html.chassis-ti.hdr-clock .np:not(.on) .np-text, html.chassis-ti.hdr-clock .np:not(.on) img{ visibility:hidden; }
-html.chassis-ti.hdr-clock .hc{ display:flex; align-items:center; gap:11px; justify-self:start; grid-column:1; padding-right:16px; border-right:1px solid rgba(127,246,230,.13); }
+html.chassis-ti.hdr-clock .hc{ display:flex; align-items:center; gap:11px; justify-self:start; grid-column:1; padding-right:16px; border-right:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }   /* 7.10.16: touched, it changes the colour (clock.js) */
 html.chassis-ti.hdr-wx .hw{ display:flex; align-items:center; gap:9px; justify-self:end; grid-column:4; padding-left:16px; border-left:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }
 html.chassis-ti.hdr-clock .np img{ grid-column:2; }
 html.chassis-ti.hdr-clock .np-text{ grid-column:3; }

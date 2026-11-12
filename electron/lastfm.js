@@ -9,16 +9,16 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { readJson, writeJson } = require('./jsonfile');
 
 const API = 'https://ws.audioscrobbler.com/2.0/';
 const HEX32 = /^[0-9a-f]{32}$/i;
 
 function createLastfm({ net, dir, log, open }) {
   const FILE = path.join(dir, 'lastfm.json');
-  let cfg = {};
-  try { cfg = JSON.parse(fs.readFileSync(FILE, 'utf8')) || {}; } catch (_) {}
+  const cfg = readJson(FILE, log);                                // 7.10.16: written whole or not at all (jsonfile.js)
   if (!Array.isArray(cfg.queue)) cfg.queue = [];
-  const save = () => { try { fs.writeFileSync(FILE, JSON.stringify(cfg)); } catch (e) { log('lastfm: ' + e.message); } };
+  const save = () => { try { writeJson(FILE, cfg); } catch (e) { log('lastfm: ' + e.message); } };
 
   // a call: the parameters signed with the secret (md5 of name+value in order, then the secret), as Last.fm asks
   async function call(method, params, post) {
@@ -43,16 +43,24 @@ function createLastfm({ net, dir, log, open }) {
   const track = t => ({ artist: String(t.artist || '').slice(0, 200), track: String(t.title || '').slice(0, 200), album: String(t.album || '').slice(0, 200) || undefined,
     duration: t.dur > 0 && t.dur < 36000 ? Math.round(t.dur) : undefined });
 
-  async function flush() {
-    if (!cfg.session || !cfg.queue.length) return;
-    const batch = cfg.queue.slice(0, 50), p = { sk: cfg.session };
-    batch.forEach((s, i) => { for (const [k, v] of Object.entries(s)) if (v !== undefined) p[k + '[' + i + ']'] = v; });
-    try {
-      await call('track.scrobble', p, true);
-      cfg.queue.splice(0, batch.length); cfg.sent = (cfg.sent || 0) + batch.length; save();
+  // 7.10.16: one send at a time (a song ending mid-send waits for it instead of sending the same batch again), and
+  // what was sent is taken out of the queue by itself, not as "the first n" (the queue may have moved meanwhile)
+  let flushing = null;
+  function flush() {
+    if (flushing) return flushing.then(() => flush());
+    flushing = flushOnce().finally(() => { flushing = null; });
+    return flushing;
+  }
+  async function flushOnce() {
+    while (cfg.session && cfg.queue.length) {
+      const batch = cfg.queue.slice(0, 50), p = { sk: cfg.session };
+      batch.forEach((s, i) => { for (const [k, v] of Object.entries(s)) if (v !== undefined) p[k + '[' + i + ']'] = v; });
+      try { await call('track.scrobble', p, true); }
+      catch (e) { lost(e); log('lastfm: scrobble failed (' + e.message + '), ' + cfg.queue.length + ' waiting'); return; }
+      const sent = new Set(batch);
+      cfg.queue = cfg.queue.filter(s => !sent.has(s)); cfg.sent = (cfg.sent || 0) + batch.length; save();
       log('lastfm: scrobbled ' + batch.length + (cfg.queue.length ? ', ' + cfg.queue.length + ' waiting' : ''));
-      if (cfg.queue.length) return flush();
-    } catch (e) { lost(e); log('lastfm: scrobble failed (' + e.message + '), ' + cfg.queue.length + ' waiting'); }
+    }
   }
 
   return {

@@ -1,5 +1,26 @@
 # Novedades
 
+## 7.10.16 — 2026-11-11
+
+### Nuevo
+- **Tocá la hora de arriba para cambiar el color** del reloj y de los displays del rack. Si la mantenés apretada, vuelve al color anterior.
+
+### Arreglos
+- **Una tecla mantenida actúa una sola vez.** F prendía y apagaba la pantalla completa, y los números prendían y apagaban los módulos sin parar.
+- **TAPE ONLY (Z)** termina cuando prendés o apagás un módulo a mano o elegís un look. Antes quedaba marcado aunque se vieran otros módulos.
+- **En el historial (L)** ya no se borra la selección ni el cartelito del título a cada segundo.
+- **GUARDAR COPIA** ahora guarda también los temas con ★, el ecualizador y los modos del CD y del DM-90.
+- **Last.fm** ya no manda dos veces los temas que estaban esperando, ni pierde los que venían después.
+- Los ajustes de Last.fm, de Jellyfin y los nombres de los CD ya no se pierden si la PC se apaga justo mientras se guardan.
+- En Windows, si el antivirus no deja arrancar el puente, Deck 90 lo vuelve a intentar.
+- ACERCA DE muestra las teclas J, U, W y G.
+
+### Seguridad
+- **La página del celular** solo contesta a aparatos de tu red (casa, consultorio, Tailscale). Los celulares nuevos usan una clave más larga; el que ya tenías conectado sigue andando igual.
+
+### Más rápido
+- El encabezado, la casetera y la página del celular trabajan menos en cada cuadro; en Linux, menos consultas cuando no suena nada.
+
 ## 7.10.15 — 2026-11-05
 
 ### Nuevo

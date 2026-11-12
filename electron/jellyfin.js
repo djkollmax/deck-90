@@ -7,13 +7,13 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { readJson, writeJson } = require('./jsonfile');
 
 function createJellyfin({ net, dir, log, version }) {
   const FILE = path.join(dir, 'jellyfin.json');
-  let cfg = {};
-  try { cfg = JSON.parse(fs.readFileSync(FILE, 'utf8')) || {}; } catch (_) {}
+  const cfg = readJson(FILE, log);                                // 7.10.16: written whole or not at all (jsonfile.js)
   if (!cfg.device) { cfg.device = 'deck90-' + crypto.randomBytes(6).toString('hex'); save(); }
-  function save() { try { fs.writeFileSync(FILE, JSON.stringify(cfg)); } catch (e) { log('jellyfin: ' + e.message); } }
+  function save() { try { writeJson(FILE, cfg); } catch (e) { log('jellyfin: ' + e.message); } }
 
   const auth = token => 'MediaBrowser Client="Deck 90", Device="Deck 90", DeviceId="' + cfg.device + '", Version="' + version + '"' + (token ? ', Token="' + token + '"' : '');
   async function call(method, p, query, body, token = cfg.token, wait = 20000) {
