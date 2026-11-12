@@ -59,7 +59,7 @@ function wxKind(c) {
 }
 
 let hcH = 0, hcLast = '', wx = null, wxAt = 0, wxTimer = 0, wxBusy = false;
-const hcShown = () => clockCfg.mode !== 'off' && document.documentElement.classList.contains('chassis-ti');
+const hcShown = () => clockCfg.mode !== 'off';                  // 7.10.17: with every frame (CLASSIC had none)
 // a canvas sized in CSS pixels, drawn sharp at the screen's density
 function hcCanvas(c, w, h) {
   const pr = window.devicePixelRatio || 1;

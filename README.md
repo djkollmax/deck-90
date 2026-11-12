@@ -35,7 +35,7 @@ A partir de ahí **se actualiza solo**: cuando sale una versión nueva aparece u
 
 ### El display de arriba: reloj, tema y clima
 
-La hora en dígitos de 7 segmentos con el día y la fecha, el tema que suena en el medio y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → PANTALLA → RELOJ: + CLIMA, y al lado escribís tu ciudad.
+La hora en dígitos de 7 segmentos con el día y la fecha (con cualquier marco), el tema que suena en el medio con la tapa del disco (también la del DM-90 y la de un CD) y el clima de tu ciudad con su ícono, la temperatura, el cielo y la máxima y mínima del día. Se configura en ⚙ → PANTALLA → RELOJ: + CLIMA, y al lado escribís tu ciudad.
 
 ![El encabezado con el reloj y cinco climas distintos](docs/screenshots/header-weather.jpg)
 

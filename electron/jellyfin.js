@@ -15,6 +15,7 @@ function createJellyfin({ net, dir, log, version }) {
   if (!cfg.device) { cfg.device = 'deck90-' + crypto.randomBytes(6).toString('hex'); save(); }
   function save() { try { writeJson(FILE, cfg); } catch (e) { log('jellyfin: ' + e.message); } }
 
+  const covers = new Map();                                       // 7.10.17: album or song id → data URL ('' none)
   const auth = token => 'MediaBrowser Client="Deck 90", Device="Deck 90", DeviceId="' + cfg.device + '", Version="' + version + '"' + (token ? ', Token="' + token + '"' : '');
   async function call(method, p, query, body, token = cfg.token, wait = 20000) {
     const u = new URL(cfg.server.replace(/\/+$/, '') + p);
@@ -102,6 +103,29 @@ function createJellyfin({ net, dir, log, version }) {
         if (e.code === 401) { delete cfg.token; save(); log('jellyfin: the server no longer takes the token: signed out'); }   // 7.10.13: SETUP says so
         return { error: e.code === 401 ? 'signed out' : e.message };
       }
+    },
+    // 7.10.17: a song's cover for the header (and the phone), as a small data URL: the album's picture, or the song's
+    // own; asked with the sign-in in a header (no token in the page), kept for the run
+    async cover(id, albumId) {
+      const key = albumId || id;
+      if (!cfg.token || !key) return '';
+      if (covers.has(key)) return covers.get(key);
+      let out = '';
+      for (const it of [albumId, id]) {
+        if (!it || !ID.test(String(it))) continue;
+        const ac = new AbortController(), t = setTimeout(() => ac.abort(), 8000);
+        try {
+          const r = await net.fetch(cfg.server + '/Items/' + it + '/Images/Primary?maxHeight=128&quality=85', { signal: ac.signal, headers: { Authorization: auth(cfg.token), 'X-Emby-Authorization': auth(cfg.token) } });
+          const type = r.headers.get('content-type') || '';
+          if (r.ok && /^image\/(jpeg|png|webp|gif)/.test(type)) {
+            const b = Buffer.from(await r.arrayBuffer());
+            if (b.length && b.length < 400000) { out = 'data:' + type.split(';')[0] + ';base64,' + b.toString('base64'); break; }
+          }
+        } catch (_) {} finally { clearTimeout(t); }
+      }
+      if (covers.size > 60) covers.delete(covers.keys().next().value);
+      covers.set(key, out);
+      return out;
     },
     // where a song's sound comes from: the file as it is (static) when Chromium plays its codec, or made FLAC
     // by the server when it doesn't (ALAC, WMA, APE, DSD…)

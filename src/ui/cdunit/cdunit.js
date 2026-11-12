@@ -237,7 +237,8 @@ npSource('cd', () => {
   const tr = cdAudioTracks(), n = cdState.track || (tr[0] && tr[0].n) || 0, t = tr.find(x => x.n === n), song = cdSongName(n);
   if (!n) return null;
   return Object.assign(base, { title: song ? song.title : 'Track ' + String(n).padStart(2, '0'), artist: song ? song.artist : '',
-    album: song && cdNames.album ? cdNames.album : 'Audio CD', pos: cdPosition(), dur: t && t.len || 0 });
+    album: song && cdNames.album ? cdNames.album : 'Audio CD', pos: cdPosition(), dur: t && t.len || 0,
+    cover: cdNames && cdNames.cover || '' });                       // 7.10.17
 }, c => {
   if (c === 'prev' || c === 'next') return cdTrack(c === 'next' ? 1 : -1);
   const playing = cdPlaying() && cdState.state !== 'paused';

@@ -436,11 +436,20 @@ function jbKeeps() { if (!jbCfg.show || !musicPlaying()) return false; jbPower =
 // Windows (the media flyout, the keyboard's media keys) through the page's media session
 // 7.10.4: the header, the history and the keyboard's media keys follow the DM-90 while it plays or waits paused;
 // 7.10.7: through nowplaying.js's sources, with the radio and the CD (the deck's keys drive it too)
+// 7.10.17: with the album's cover from the server (asked once per album, kept for the run)
+const jbCovers = new Map();
+function jbCover(s) {
+  const key = s.albumId || s.id;
+  if (jbCovers.has(key)) return jbCovers.get(key) || '';
+  jbCovers.set(key, '');
+  if (window.jellyfin && window.jellyfin.cover) window.jellyfin.cover(s.id, s.albumId).then(url => { if (url) jbCovers.set(key, url); }).catch(() => {});
+  return '';
+}
 npSource('dm90', () => {
   const s = musicNow();
   if (!s || !(musicPlaying() || musicPaused())) return null;
   return { app: 'Deck 90 · DM-90', title: s.name, artist: s.artists || s.artist, album: s.album, status: musicPlaying() ? 'Playing' : 'Paused',
-    pos: musicAudio.currentTime || 0, dur: isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0, at: Date.now() };
+    pos: musicAudio.currentTime || 0, dur: isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0, at: Date.now(), cover: jbCover(s) };
 }, c => {
   if (c === 'prev') return musicPrev();
   if (c === 'next') return musicNext();

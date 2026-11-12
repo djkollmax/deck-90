@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.10.17
+
+### Added
+- **The covers of Deck 90's own sources in the header** (and on the phone): the DM-90's album cover from the Jellyfin server (`jellyfin.cover`, asked with the sign-in in a header, so no token in the page; kept for the run), and an audio CD's front cover from the Cover Art Archive for the release MusicBrainz named (`cdnames.cover`; `release` is now kept with the disc's names). The PC's players already had theirs.
+
+### Changed
+- **The clock and the weather show with every frame**: CLASSIC had none (the header's layout rules no longer need the titanium family; their colours still follow each frame).
+
 ## 7.10.16
 
 A review of the parts not reviewed yet (the main process, the page around the units).

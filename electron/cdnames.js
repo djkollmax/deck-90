@@ -83,14 +83,34 @@ function createCdNames({ net, dir, agent, log }) {
         const by = credit(t['artist-credit']) || albumArtist;
         tracks[n] = { title: String(t.title || (t.recording && t.recording.title) || '').slice(0, 200), artist: by.slice(0, 200) };
       }
-      out = { id, at: Date.now(), album: String(rel.title || '').slice(0, 200), artist: albumArtist.slice(0, 200), year: String(rel.date || '').slice(0, 4), tracks };
+      out = { id, at: Date.now(), album: String(rel.title || '').slice(0, 200), artist: albumArtist.slice(0, 200), year: String(rel.date || '').slice(0, 4), tracks,
+        release: /^[0-9a-f-]{36}$/.test(String(rel.id || '')) ? rel.id : '' };    // 7.10.17: for its cover
       break;
     }
     cache[id] = out; save();
     log('cd names: ' + id + (out.album ? ' → ' + out.artist + ' – ' + out.album : ' not in MusicBrainz'));
     return out.album ? out : null;
   }
-  return { lookup };
+  // 7.10.17: a release's front cover from the Cover Art Archive (MusicBrainz's), 250 px, as a data URL ('' none)
+  const covers = new Map();
+  async function cover(release) {
+    if (!/^[0-9a-f-]{36}$/.test(String(release || ''))) return '';
+    if (covers.has(release)) return covers.get(release);
+    let out = '';
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 12000);
+    try {
+      const r = await net.fetch('https://coverartarchive.org/release/' + release + '/front-250', { signal: ac.signal, headers: { 'User-Agent': agent } });
+      const type = r.headers.get('content-type') || '';
+      if (r.ok && /^image\/(jpeg|png|webp|gif)/.test(type)) {
+        const b = Buffer.from(await r.arrayBuffer());
+        if (b.length && b.length < 600000) out = 'data:' + type.split(';')[0] + ';base64,' + b.toString('base64');
+      }
+    } catch (e) { log('cd cover: ' + (e && e.message || e)); } finally { clearTimeout(t); }
+    if (covers.size > 20) covers.delete(covers.keys().next().value);
+    covers.set(release, out);
+    return out;
+  }
+  return { lookup, cover };
 }
 
 module.exports = { createCdNames, discId, audioToc };

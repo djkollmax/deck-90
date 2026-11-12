@@ -166,6 +166,11 @@ test('the header shows what the DM-90 plays; the stereo has it as SERVER, and gi
   await d.wait(1200);
   assert.equal(await d.win.textContent('#npTitle'), now);
   assert.equal(await d.win.evaluate(() => np && np.app), 'Deck 90 · DM-90');
+  // 7.10.17: the album's cover from the server, beside the song
+  await d.wait(1200);
+  assert.deepEqual(await d.win.evaluate(() => [el('npCover').classList.contains('on'), el('npCover').src.startsWith('data:image/png')]), [true, true]);
+  assert.ok(jf.log.some(l => /\/Items\/[0-9a-z-]+\/Images\/Primary/.test(l)), 'asked the server');
+  assert.ok(!jf.log.some(l => /Images\/Primary.*api_key/.test(l)), 'the sign-in in a header, not in the address');
   assert.equal(await d.win.evaluate(() => jbPanel.classList.contains('kbd')), true, 'the DM-90 has the keyboard, and shows it');
   await d.win.keyboard.press('e'); await d.wait(1500);            // E is still the stereo's (7.10.6)
   assert.equal(await d.win.evaluate(() => stereoCfg.mode), 'music', 'the stereo opens on the music playing');

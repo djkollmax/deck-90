@@ -54,6 +54,7 @@ export async function launch({ station, size, drive, names, welcome = false, toa
       { name: 'La 100 - 99.9 FM', url: base + '/s' }, { name: 'Radio 10 AM 710', url: base + '/s' }, { name: 'Cadena 3', url: base + '/s' }]);
     handle('weather-find', () => []); handle('weather-now', () => null);
     handle('cd-names', () => names || null);
+    handle('cd-cover', (e, rel) => { global.coversAsked = (global.coversAsked || []).concat(rel); return global.cdCover || ''; });   // 7.10.17
     // the drive: plays a disc straight through as Windows' CD audio does, reporting every 0.5 s (a pause says stopped)
     const D = global.drive = { disc: drive || null, tr: 0, st: 'stopped', t0: 0, pos: 0, slow: false, deaf: false, heard: [] };
     const send = m => BrowserWindow.getAllWindows()[0]?.webContents.send('cd', m);

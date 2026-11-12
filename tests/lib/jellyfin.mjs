@@ -95,6 +95,12 @@ export function startJellyfin() {
       if (!/MediaSources/.test(q.get('Fields') || '')) items = items.map(i => { const o = Object.assign({}, i); delete o.MediaSources; return o; });
       return json(200, page(items, q));
     }
+    // 7.10.17: an album's cover (a 1×1 PNG); the songs have none of their own
+    if ((m = /^\/Items\/([0-9a-z-]+)\/Images\/Primary$/.exec(u.pathname))) {
+      if (!lib.albums.concat(lib.two.albums).some(a => a.Id === m[1])) return json(404);
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length }); return res.end(png);
+    }
     if ((m = /^\/Audio\/([0-9a-z-]+)\/stream(\.flac)?$/.exec(u.pathname))) {
       const s = lib.songs.concat(lib.two.songs).find(x => x.Id === m[1]);
       if (!s) return json(404);

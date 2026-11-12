@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('jellyfin', {
   signOut: () => ipcRenderer.invoke('jf-sign-out'),
   read: (kind, id, query) => ipcRenderer.invoke('jf-read', String(kind), id == null ? '' : String(id), query || {}),
   stream: (id, playable) => ipcRenderer.invoke('jf-stream', String(id), !!playable),
+  cover: (id, albumId) => ipcRenderer.invoke('jf-cover', String(id || ''), String(albumId || '')),   // 7.10.17: the header's cover
 });
 // 7.10.10: Last.fm for the radio, the CD and the DM-90 (electron/lastfm.js)
 contextBridge.exposeInMainWorld('lastfm', {
@@ -78,6 +79,7 @@ contextBridge.exposeInMainWorld('cdrom', {
   cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
   on:  cb => ipcRenderer.on('cd', (e, s) => cb(s)),
   names: info => ipcRenderer.invoke('cd-names', info),   // 7.9.5: the disc's album and songs (MusicBrainz)
+  cover: release => ipcRenderer.invoke('cd-cover', String(release || '')),   // 7.10.17: its front cover
   fileInfo: f => ipcRenderer.invoke('cd-file-info', String(f).slice(0, 1024)),   // 7.9.22: a file's size, rate and bits
 });
 // the stereo's internet radio: stations by name, and the most heard in Argentina

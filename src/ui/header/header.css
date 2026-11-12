@@ -44,20 +44,20 @@ html:not(.chassis-ti) #npArtist{ font-size:10px; color:rgba(230,205,140,.8); }
 @media (max-height:820px){ .chassis-ti #npTitle{ font-size:15.5px; } .chassis-ti #npArtist{ font-size:11.5px; } }
 .chassis-ti body.mini #npTitle{ font-size:15px; } .chassis-ti body.mini #npArtist{ font-size:11px; }
 
-/* 7.1.0 · clock and weather in the header display (metal frames): the display spans the whole header,
+/* 7.1.0 · clock and weather in the header display (7.10.17: every frame, CLASSIC too): the display spans the whole header,
    the time in 7-segment digits at its left with the day and date, the weather at its right; the song in the middle */
 .hc, .hw{ display:none; }
-html.chassis-ti.hdr-clock .np{
+html.hdr-clock .np{
   display:grid; grid-template-columns:1fr auto minmax(0, max-content) 1fr; align-items:center; gap:0;
   flex:1 1 auto; min-height:54px; padding:5px 16px;
 }
-html.chassis-ti.hdr-clock .np img.on{ margin:0 10px 0 16px; }
-html.chassis-ti.hdr-clock .np-text{ padding:0 16px; }
-html.chassis-ti.hdr-clock .np:not(.on) .np-text, html.chassis-ti.hdr-clock .np:not(.on) img{ visibility:hidden; }
-html.chassis-ti.hdr-clock .hc{ display:flex; align-items:center; gap:11px; justify-self:start; grid-column:1; padding-right:16px; border-right:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }   /* 7.10.16: touched, it changes the colour (clock.js) */
-html.chassis-ti.hdr-wx .hw{ display:flex; align-items:center; gap:9px; justify-self:end; grid-column:4; padding-left:16px; border-left:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }
-html.chassis-ti.hdr-clock .np img{ grid-column:2; }
-html.chassis-ti.hdr-clock .np-text{ grid-column:3; }
+html.hdr-clock .np img.on{ margin:0 10px 0 16px; }
+html.hdr-clock .np-text{ padding:0 16px; }
+html.hdr-clock .np:not(.on) .np-text, html.hdr-clock .np:not(.on) img{ visibility:hidden; }
+html.hdr-clock .hc{ display:flex; align-items:center; gap:11px; justify-self:start; grid-column:1; padding-right:16px; border-right:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }   /* 7.10.16: touched, it changes the colour (clock.js) */
+html.hdr-wx .hw{ display:flex; align-items:center; gap:9px; justify-self:end; grid-column:4; padding-left:16px; border-left:1px solid rgba(127,246,230,.13); cursor:pointer; -webkit-app-region:no-drag; }
+html.hdr-clock .np img{ grid-column:2; }
+html.hdr-clock .np-text{ grid-column:3; }
 .hc canvas, .hw canvas{ display:block; flex:none; }
 .hc-date, .hw-text{
   display:flex; flex-direction:column; justify-content:center; white-space:nowrap;
@@ -69,19 +69,19 @@ html.chassis-ti.hdr-clock .np-text{ grid-column:3; }
 .hw.hint .hw-text{ opacity:.75; }
 /* a narrow display leaves room for the song: the weather's words go first, then the date, then the weather */
 .np.hc-tight .hw-text, .np.hc-tighter .hc-date, .np.hc-noicon #hwIcon, .np.hc-tightest .hw, .np.hc-gone .hc{ display:none !important; }
-html.chassis-ti.hdr-clock .np.hc-tighter .hc{ padding-right:12px; }
-html.chassis-ti.hdr-wx .np.hc-tighter .hw{ padding-left:12px; }
+html.hdr-clock .np.hc-tighter .hc{ padding-right:12px; }
+html.hdr-wx .np.hc-tighter .hw{ padding-left:12px; }
 @media (max-height:820px){
-  html.chassis-ti.hdr-clock .np{ min-height:42px; padding:3px 14px; }
+  html.hdr-clock .np{ min-height:42px; padding:3px 14px; }
   .hc-date, .hw-text{ font-size:11px; } #hcDay, #hwCond{ font-size:13px; }
 }
 /* the mini strip: the same display, as low as before */
-html.chassis-ti.hdr-clock body.mini .np{ min-height:36px; padding:3px 12px; }
-html.chassis-ti.hdr-clock body.mini .hc{ padding-right:12px; gap:9px; }
-html.chassis-ti.hdr-wx body.mini .hw{ padding-left:12px; gap:7px; }
+html.hdr-clock body.mini .np{ min-height:36px; padding:3px 12px; }
+html.hdr-clock body.mini .hc{ padding-right:12px; gap:9px; }
+html.hdr-wx body.mini .hw{ padding-left:12px; gap:7px; }
 body.mini .hc-date, body.mini .hw-text{ font-size:10.5px; } body.mini #hcDay, body.mini #hwCond{ font-size:12px; }
 /* a narrow strip gives the engraved name's room to the display (the LED stays) */
-@media (max-width:700px){ html.chassis-ti.hdr-clock body.mini .brand-name{ display:none; } }
+@media (max-width:700px){ html.hdr-clock body.mini .brand-name{ display:none; } }
 
 /* 7.10.9 · the header display in the rack's COLOR (the DM-90's COLOR key; clock.js sets these, aqua when unset)
    and its DIMMER: low dims the clock, the song and the weather, brightest lifts them */
@@ -90,8 +90,8 @@ body.mini .hc-date, body.mini .hw-text{ font-size:10.5px; } body.mini #hcDay, bo
 .chassis-ti #npArtist, .hc-date, .hw-text{ color:rgba(var(--hdr-sub, 96,222,212),.92); text-shadow:0 0 4px rgba(var(--hdr-sub-glow, 80,214,204),.22); }
 .chassis-ti .np.paused #npTitle{ color:rgba(var(--hdr-glow, 127,246,230),.45); text-shadow:none; }
 #hcDay, #hwCond{ color:rgb(var(--hdr-lit, 128,255,229)); text-shadow:0 0 1px rgba(var(--hdr-lit, 128,255,229),.8), 0 0 4px rgba(var(--hdr-lit, 128,255,229),.35); }
-html.chassis-ti.hdr-clock .hc{ border-right-color:rgba(var(--hdr-line, 127,246,230),.13); }
-html.chassis-ti.hdr-wx .hw{ border-left-color:rgba(var(--hdr-line, 127,246,230),.13); }
+html.hdr-clock .hc{ border-right-color:rgba(var(--hdr-line, 127,246,230),.13); }
+html.hdr-wx .hw{ border-left-color:rgba(var(--hdr-line, 127,246,230),.13); }
 html.hdr-dim-low.chassis-ti .np-text, html.hdr-dim-low .hc, html.hdr-dim-low .hw{ filter:brightness(.55); }
 html.hdr-dim-max.chassis-ti .np-text, html.hdr-dim-max .hc, html.hdr-dim-max .hw{ filter:brightness(1.25) saturate(1.1); }
 

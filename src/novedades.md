@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.10.17 — 2026-11-12
+
+### Nuevo
+- **La tapa del disco arriba, al lado del tema**, también con el DM-90 y con la compactera. La del DM-90 sale de tu servidor Jellyfin, y la de un CD de audio sale del Cover Art Archive cuando MusicBrainz reconoce el disco.
+
+### Cambios
+- **La hora y el clima se ven con todos los marcos**, también con CLASSIC, que no los tenía.
+
 ## 7.10.16 — 2026-11-11
 
 ### Nuevo

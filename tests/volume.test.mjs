@@ -103,6 +103,11 @@ test('touching the clock changes the colour; held, the one before', async () => 
   assert.equal(after[1], await d.win.evaluate(id => UNIT_COLORS.find(u => u.id === id).vfd, after[0]), 'the clock in it');
   await d.hold('#hcBox', 900);
   assert.equal(await d.win.evaluate(() => jbCfg.color), before, 'held: back');
+
+  // 7.10.17: with every frame, CLASSIC too (it had none)
+  await d.win.evaluate(() => setChassis('CLASSIC')); await d.wait(600);
+  assert.deepEqual(await d.win.evaluate(() => [document.documentElement.classList.contains('hdr-clock'), getComputedStyle(hcEl.clock).display, hcEl.digits.getBoundingClientRect().width > 40]), [true, 'flex', true]);
+  await d.win.evaluate(() => setChassis('TI')); await d.wait(300);
 });
 
 test('the DE-90 sits above the DV-90; U hides it, no errors', async () => {

@@ -107,6 +107,8 @@ function cdNamesAsk(info) {
     }
     if (!r || !r.tracks) return;
     cdNames = r;
+    // 7.10.17: its cover for the header (and the phone), when the Cover Art Archive has one
+    if (r.release && window.cdrom.cover) window.cdrom.cover(r.release).then(url => { if (cdNamesFor === key && cdNames === r && url) { r.cover = url; deck.emit('cd'); } }).catch(() => {});
     radioLog('cd: ' + r.artist + ' – ' + r.album);
     deck.notice('CD · <span>' + String(r.artist).replace(/[<>&]/g, '') + '</span> · ' + String(r.album).replace(/[<>&]/g, ''), 3000);
     deck.emit('cd');

@@ -8,7 +8,7 @@ import { launch, disc } from './lib/app.mjs';
 
 const TONE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'tone.mp3');
 const FLAC = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'tone-24-96.flac');
-const NAMES = { album: 'Canción Animal', artist: 'Soda Stereo', year: '1990',
+const NAMES = { album: 'Canción Animal', artist: 'Soda Stereo', year: '1990', release: '0b9b1a4c-3f0e-4d6a-9a52-6a1f2e3d4c5b',
   tracks: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [i + 1, { title: 'Tema ' + (i + 1), artist: 'Soda Stereo' }])) };
 let d;
 const K = k => `#cdUnit g[data-key="${k}"]`;
@@ -18,7 +18,10 @@ const cd = () => d.win.evaluate(() => {
     playing: t.track.playing, paused: t.track.paused, open: t.drawerOpen, quality: t.track.quality };
 });
 
-before(async () => { d = await launch({ size: [1300, 1100], drive: disc(10, 180), names: NAMES }); });
+before(async () => {
+  d = await launch({ size: [1300, 1100], drive: disc(10, 180), names: NAMES });
+  await d.app.evaluate(() => { global.cdCover = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='; });   // the Cover Art Archive's answer
+});
 after(async () => { await d?.close(); });
 
 test('POWER plays the disc with its names', async () => {
@@ -28,6 +31,10 @@ test('POWER plays the disc with its names', async () => {
   assert.equal(c.power, true); assert.equal(c.state, 'playing'); assert.equal(c.track, 1); assert.equal(c.total, 10);
   assert.equal(c.title, 'Tema 1'); assert.equal(c.artist, 'Soda Stereo · Canción Animal (1990)');
   assert.deepEqual((await d.cmds()).filter(x => x.startsWith('cd-')), ['cd-info', 'cd-play 1']);
+  // 7.10.17: the disc's cover in the header, from the release MusicBrainz named
+  await d.wait(1500);
+  assert.deepEqual(await d.app.evaluate(() => global.coversAsked), [NAMES.release]);
+  assert.deepEqual(await d.win.evaluate(() => [np && np.app, el('npCover').classList.contains('on'), el('npCover').src.startsWith('data:image/png')]), ['Deck 90 · CD', true, true]);
 });
 
 test('▶▶ and |◀◀ change songs; PAUSE, PLAY and STOP', async () => {

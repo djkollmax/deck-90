@@ -664,6 +664,12 @@ ipcMain.handle('cd-names', async (e, info) => {
   const tracks = (Array.isArray(info.tracks) ? info.tracks : []).slice(0, 99).map(t => ({ n: t.n | 0, audio: !!t.audio, start: t.start | 0 }));
   try { return await cdNames.lookup({ tracks, leadout: info.leadout | 0 }); } catch (err) { mlog('cd names: ' + (err && err.message || err)); return null; }
 });
+// 7.10.17: the disc's cover (Cover Art Archive), once MusicBrainz knows the disc
+ipcMain.handle('cd-cover', async (e, release) => {
+  if (!fromWin(e)) return '';
+  if (!cdNames) cdNames = createCdNames({ net, dir: app.getPath('userData'), log: mlog, agent: 'Deck90/' + app.getVersion() + ' ( https://github.com/djkollmax/deck-90 )' });
+  try { return await cdNames.cover(String(release || '')); } catch (_) { return ''; }
+});
 // 7.10.0: the DM-90's music from a Jellyfin server (jellyfin.js): sign-in, what the library has, a song's stream
 let jellyfin = null;
 const jf = () => jellyfin || (jellyfin = createJellyfin({ net, dir: app.getPath('userData'), log: mlog, version: app.getVersion() }));
@@ -683,6 +689,7 @@ ipcMain.handle('jf-sign-in', (e, server, user, pw) => fromWin(e) ? jf().signIn(S
 ipcMain.handle('jf-sign-out', e => fromWin(e) ? jf().signOut() : null);
 ipcMain.handle('jf-read', (e, kind, id, query) => fromWin(e) ? jf().read(String(kind), id, query && typeof query === 'object' ? query : {}) : null);
 ipcMain.handle('jf-stream', (e, id, playable) => fromWin(e) ? jf().stream(String(id || ''), !!playable) : '');
+ipcMain.handle('jf-cover', (e, id, albumId) => fromWin(e) ? jf().cover(String(id || ''), String(albumId || '')) : '');   // 7.10.17
 // 7.9.22: what a file on a data CD is made of (audiofile.js), for its quality on the displays
 ipcMain.handle('cd-file-info', (e, file) => fromWin(e) ? require('./audiofile').audioFileInfo(file) : null);
 // the radio through the local proxy (radioproxy.js): the song a station sends, and its format and bitrate
