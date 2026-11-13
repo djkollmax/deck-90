@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.10.19
+
+### Fixed
+- **The car stereo's meters no longer drop for an instant every few seconds** (on the PC and on the phone's stereo):
+  the stereo calls `setPlayback(false)` before every radio update, and the display cleared its meters each time; the
+  line under the dial changes every 4 s (song, station), so they fell to zero and climbed back. The display
+  (`dp940-display.js`, patch "steady") now leaves them alone when it is already on the radio, and `setRadio` redraws
+  only what changed: a new line only that line, a new quality or memory only the bottom row, the big digits and
+  labels only for a new band, frequency, LIVE or MONO. Found on Deck 90 for Android, which shares the display.
+
 ## 7.10.18
 
 ### Added

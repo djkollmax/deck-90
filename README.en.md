@@ -69,6 +69,11 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![Phone display](docs/screenshots/phone.png)
 
+**Deck 90 for Android:** a separate app, [deck-90-android](https://github.com/djkollmax/deck-90-android), takes the
+radio to the phone, the tablet and the car (Android Auto) with no PC: the same bands and memories, the car stereo's
+face with its keys and looks, VU meters and a spectrum, the world station search and a sleep timer. It installs and
+updates with Obtainium.
+
 **Track history** with the Spotify change for each track, exported to Excel.
 
 ![Track history](docs/screenshots/history.png)

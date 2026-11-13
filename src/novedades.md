@@ -1,5 +1,12 @@
 # Novedades
 
+## 7.10.19 — 2026-11-13
+
+### Arreglos
+- **Los vúmetros del estéreo ya no se cortan cada unos segundos.** Cuando cambiaba la línea de abajo de la sintonía
+  (el tema y la radio se alternan), los vúmetros bajaban a cero un instante y volvían a subir. Pasaba en el estéreo
+  de la PC y en el del celular. Ahora se quedan firmes, y el display redibuja solo lo que cambió.
+
 ## 7.10.18 — 2026-11-12
 
 ### Nuevo

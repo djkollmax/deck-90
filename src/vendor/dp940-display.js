@@ -9,7 +9,10 @@
    right (where the radio's memory goes) and, with a length, the time left counting down at the bottom; the quality
    ("MP3 128", "CD 16/44", "FLAC") at the bottom; LOCAL in red.
    7.10.14: the track number up to 9999, smaller from 100.
-   7.10.5, marked "disc logo": the real unit's ▽△ and round DISC mark above the R meter; setTrack({ disc }) lights DISC. */
+   7.10.5, marked "disc logo": the real unit's ▽△ and round DISC mark above the R meter; setTrack({ disc }) lights DISC.
+   7.10.19, marked "steady": setPlayback(false) on a display already showing the radio changes nothing (it used to clear
+   the meters, and the stereo calls it before every radio update, so they dropped every few seconds), and setRadio
+   redraws only what changed: a new name only its line, a new quality or memory only the bottom row. */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -107,12 +110,20 @@ class Deck90Display {
 
   setRadio(radio = {}) {
     this._assertAlive();
+    const r = this.state.radio, was = [r.band, r.frequency, r.live, r.mono].join('|'), name = r.name, quality = r.quality, preset = r.preset;   // steady
     for (const key of ['band', 'frequency', 'name']) if (key in radio) this.state.radio[key] = safeText(radio[key]);
     if ('mono' in radio) this.state.radio.mono = Boolean(radio.mono);   // mono
     if ('frequency' in radio) this.state.radio.quality = safeText(radio.quality).slice(0, 12);   // info
     if ('live' in radio) { this.state.radio.live = Boolean(radio.live); if (!this.state.radio.live) { this.state.levels = { left: 0, right: 0 }; } }   // radio live
     if ('preset' in radio) this.state.radio.preset = Math.max(1, Math.min(99, Math.trunc(Number(radio.preset) || 1)));
-    if (this.state.mode === 'radio') this._renderText();
+    if (this.state.mode !== 'radio') return this;
+    // steady: the big digits and the labels only for a new band, frequency, LIVE or MONO; a new line or bottom row alone
+    const big = was !== [r.band, r.frequency, r.live, r.mono].join('|');
+    if (big || !this._artist) this._renderText();
+    else {
+      if (r.name !== name) this._renderArtist();
+      if (r.quality !== quality || r.preset !== preset) this._renderFooter();
+    }
     return this;
   }
 
@@ -134,6 +145,7 @@ class Deck90Display {
 
   setPlayback(playing) {
     this._assertAlive();
+    if (!playing && this.state.mode === 'radio' && !this.state.track.playing) return this;   // steady: already the radio
     this.state.track.playing = Boolean(playing);
     this.state.mode = playing ? 'music' : 'radio';
     if (!playing) {
@@ -293,9 +305,15 @@ class Deck90Display {
     this._status.append(label(music ? 'PLAY' : 'STEREO', 158, 60, { fill: mono ? '#809641' : '#ffdd50', 'font-size': 23 }));
     this._status.append(label(music ? 'CD' : 'MONO', 159, 84, { fill: music || mono ? '#ffdd50' : '#809641', 'font-size': 22 }));
     this._status.append(label(music ? 'TRACK' : 'LOCAL', 155, 115, music ? { 'font-size': 21 } : { 'font-size': 21, fill: '#ff1e1e' }));   // info: LOCAL red
-    this._artist.textContent = (music ? this.state.track.artist : this.state.radio.live ? this.state.radio.name : '').toLocaleUpperCase('es').slice(0, 42);   // radio live: the station
+    this._renderArtist();
     this.svg.setAttribute('aria-label', music ? `DECK 90. Reproduciendo: ${title}${this.state.track.artist ? ', ' + this.state.track.artist : ''}` : `DECK 90. Radio ${this.state.radio.band} ${this.state.radio.frequency}`);
     this._renderFooter();
+  }
+
+  // the line under the big digits (steady: on its own when only it changes)
+  _renderArtist() {
+    const music = this.state.mode === 'music';
+    this._artist.textContent = (music ? this.state.track.artist : this.state.radio.live ? this.state.radio.name : '').toLocaleUpperCase('es').slice(0, 42);   // radio live: the station
   }
 
   _renderFooter() {

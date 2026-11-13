@@ -131,6 +131,27 @@ test('the car stereo opens on the radio, on its band and dial', async () => {
   await d.win.evaluate(() => toggleStereo()); await d.wait(1200);
 });
 
+test('the stereo\'s meters stay lit while the line under the dial changes (7.10.19)', async () => {
+  await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
+  // a steady sound on the meters, and the line redrawn every 150 ms (it changes every 4 s between song and station)
+  await d.win.evaluate(() => {
+    window.levelTimer = setInterval(() => stereoDisplay.setLevels(.7, .7), 16);   // (the test has no sound to capture)
+    window.lineTimer = setInterval(() => stereoText(true), 150);
+  });
+  await d.wait(800);
+  const lit = await d.win.evaluate(() => new Promise(res => {
+    const v = [], end = performance.now() + 2000;
+    (function f() { v.push(stereoDisplay._shown.left); if (performance.now() < end) requestAnimationFrame(f); else res(v); })();
+  }));
+  await d.win.evaluate(() => { clearInterval(window.lineTimer); clearInterval(window.levelTimer); });
+  assert.ok(Math.min(...lit) >= Math.max(...lit) - 2, `the cells lit never drop: ${Math.min(...lit)}–${Math.max(...lit)}`);
+  assert.ok(Math.max(...lit) >= 8, 'and they show the sound');
+  // a new line still shows
+  await d.win.evaluate(() => stereoDisplay.setRadio({ ...stereoDisplay.state.radio, name: 'UNA LINEA NUEVA' }));
+  assert.equal(await d.win.evaluate(() => document.querySelector('#stDisplay [data-role], #stDisplay svg') && stereoDisplay._artist.textContent), 'UNA LINEA NUEVA');
+  await d.win.evaluate(() => toggleStereo()); await d.wait(1200);
+});
+
 test('the stereo window keeps its face shape at any size: no black round it', async () => {
   await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
   const ratio = 2001 / 539;

@@ -154,6 +154,15 @@ Activás CELULAR, escaneás el código QR y el celular o la tablet (en el mismo 
 
 ![Deck 90 en el celular](docs/screenshots/phone.png)
 
+### Deck 90 para Android: la radio sin la PC
+
+Una app aparte, [Deck 90 para Android](https://github.com/djkollmax/deck-90-android), lleva la radio al celular, la
+tablet y el auto (Android Auto) sin necesidad de la PC: las mismas bandas y memorias, el frente del estéreo con sus
+teclas y looks, VU y espectro, la búsqueda de radios del mundo y el apagado automático. Se instala y se actualiza
+con Obtainium.
+
+![Deck 90 para Android](https://raw.githubusercontent.com/djkollmax/deck-90-android/main/docs/celular.jpg)
+
 ### Historial de temas y modo mini
 
 Cada tema escuchado más de 30 segundos queda registrado con su loudness, LRA, pico, BPM y cuánto lo cambiaría Spotify; se exporta a Excel. El modo mini es una tira chica que queda arriba de las demás ventanas.
