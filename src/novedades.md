@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.10.21 — 2026-11-14
+
+### Cambios
+- **LOCAL en el display del estéreo se prende solo con una radio local:** en rojo mientras suena una de la lista de LOC; con las demás queda apagado (antes estaba siempre prendido). Además está un poco más a la derecha, debajo del recuadro de STEREO y MONO.
+
 ## 7.10.20 — 2026-11-13
 
 ### Nuevo

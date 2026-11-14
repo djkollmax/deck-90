@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.21
+
+### Changed
+- **LOCAL on the car stereo's display lights only for a local station:** in red while a station from LOC's list plays,
+  dark (MONO's off colour) otherwise; it used to be lit always. It sits a little to the right, centred under the
+  STEREO/MONO box (`dp940-display.js`, patch "local": `setRadio({ local })`). The phone's stereo shows the same.
+
 ## 7.10.20
 
 ### Added

@@ -237,6 +237,8 @@ test('the car stereo: SCAN and LOC are two keys; LOC lists the radios of the wea
   await d.win.keyboard.press('e'); await d.wait(1500);
   const scan = await d.win.locator('.st-hot[data-st="scan"]').boundingBox(), loc = await d.win.locator('.st-hot[data-st="loc"]').boundingBox();
   assert.ok(scan && loc && Math.abs(scan.x + scan.width - loc.x) < 2 && Math.abs(scan.width - loc.width) < 4, 'LOC is the right half of the rocker');
+  const localLit = () => d.win.evaluate(() => [...stereoDisplay.svg.querySelectorAll('text')].find(t => t.textContent === 'LOCAL').getAttribute('fill'));
+  assert.equal(await localLit(), '#809641', 'LOCAL is dark on a station of the bands');
   // no city for the weather: LOC says where to put it
   await d.win.evaluate(() => { clockCfg.place = null; });
   await d.click('.st-hot[data-st="loc"]', 400);
@@ -252,6 +254,7 @@ test('the car stereo: SCAN and LOC are two keys; LOC lists the radios of the wea
   assert.equal(items.length, 2); assert.match(items[0], /Mar del Plata FM/); assert.match(await d.win.locator('#rfMsg').textContent(), /2 radios de Mar del Plata/);
   await d.win.locator('#rfList .rf-item').nth(1).click(); await d.wait(3000);
   assert.deepEqual(await d.win.evaluate(() => [radioNow.name, radioPlaying(), stereoCfg.mode]), ['Mar del Plata Rock', true, 'radio']);
+  assert.equal(await localLit(), '#ff1e1e', 'LOCAL lights for a station of LOC\'s list');   // 7.10.21
   // a search by name is the world's again
   await d.win.fill('#rfName', 'jazz'); await d.win.press('#rfName', 'Enter'); await d.wait(800);
   assert.equal(await d.win.locator('#rfTitle').textContent(), 'BUSCAR RADIO EN EL MUNDO');
@@ -259,6 +262,8 @@ test('the car stereo: SCAN and LOC are two keys; LOC lists the radios of the wea
   await d.win.click('#rfNear'); await d.wait(800);
   assert.equal(await d.win.locator('#rfTitle').textContent(), 'RADIOS DE MAR DEL PLATA');
   await d.win.press('#rfName', 'Escape'); await d.wait(200);
+  await d.click('.st-hot[data-st="m1"]', 2500);                       // a memory: LOCAL goes dark again
+  assert.equal(await localLit(), '#809641');
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(d.errors(), []);
 });

@@ -7,6 +7,7 @@ const RF_COUNTRIES = ['AR', 'UY', 'CL', 'BR', 'PY', 'BO', 'PE', 'CO', 'VE', 'EC'
   'DE', 'AT', 'CH', 'GB', 'IE', 'NL', 'BE', 'DK', 'SE', 'NO', 'FI', 'IS', 'PL', 'CZ', 'HU', 'GR', 'TR', 'RU', 'UA', 'IL', 'ZA',
   'EG', 'MA', 'IN', 'CN', 'JP', 'KR', 'TW', 'HK', 'SG', 'TH', 'ID', 'PH', 'AU', 'NZ', 'JM'];
 let rfResults = [], rfBusy = 0;
+const rfLocal = new Set();                                       // 7.10.21: the addresses of LOC's last list (the stereo's LOCAL)
 const rfEl = id => document.getElementById(id);
 const rfCountryName = (() => { let dn = null; try { dn = new Intl.DisplayNames(['es'], { type: 'region' }); } catch (_) {} return cc => (dn && dn.of(cc)) || cc; })();
 {
@@ -51,6 +52,7 @@ async function rfNear() {
   if (t !== rfBusy) return;
   if (!r) { msg.textContent = '⚠ No pude buscar: ¿hay internet?'; return; }
   rfResults = r;
+  rfLocal.clear(); r.forEach(x => rfLocal.add(x.url));
   msg.textContent = r.length ? r.length + (r.length === 1 ? ' radio' : ' radios') + ' de ' + place.name + ', las más escuchadas primero' : 'No encontré radios de ' + place.name + ': probá buscarlas por nombre';
   rfRender();
 }

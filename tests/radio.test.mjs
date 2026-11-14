@@ -125,9 +125,9 @@ test('the car stereo opens on the radio, on its band and dial', async () => {
   const label = await d.win.evaluate(() => document.querySelector('#stDisplay svg').getAttribute('aria-label'));
   assert.equal(await d.win.evaluate(() => stereoCfg.mode), 'radio');
   assert.match(label, /Radio FM1 99\.1/);
-  // 7.9.21: the quality at the bottom, LOCAL in red
+  // 7.9.21: the quality at the bottom; 7.10.21: LOCAL dark on a station of the bands (red only for LOC's)
   const foot = await d.win.evaluate(() => [...document.querySelectorAll('#stDisplay text')].map(t => t.textContent + '=' + t.getAttribute('fill')));
-  assert.ok(foot.includes('MP3 128=#ffdd50'), foot.join()); assert.ok(foot.includes('LOCAL=#ff1e1e'), foot.join());
+  assert.ok(foot.includes('MP3 128=#ffdd50'), foot.join()); assert.ok(foot.includes('LOCAL=#809641'), foot.join());
   await d.win.evaluate(() => toggleStereo()); await d.wait(1200);
 });
 

@@ -12,7 +12,9 @@
    7.10.5, marked "disc logo": the real unit's ▽△ and round DISC mark above the R meter; setTrack({ disc }) lights DISC.
    7.10.19, marked "steady": setPlayback(false) on a display already showing the radio changes nothing (it used to clear
    the meters, and the stereo calls it before every radio update, so they dropped every few seconds), and setRadio
-   redraws only what changed: a new name only its line, a new quality or memory only the bottom row. */
+   redraws only what changed: a new name only its line, a new quality or memory only the bottom row.
+   7.10.21, marked "local": setRadio({ local }) lights LOCAL in red only for a local station (the stereo's LOC); unlit
+   it takes MONO's off colour. It sits a little to the right, centred under the STEREO/MONO box. */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -53,7 +55,7 @@ class Deck90Display {
     this.id = `d90-${++nextId}`;
     this.state = {
       mode: 'radio',
-      radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, quality: '', ...options.radio },
+      radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, local: false, quality: '', ...options.radio },
       track: { title: '', artist: '', elapsed: 0, playing: false, number: 0, length: 0, quality: '' },
       levels: { left: 0, right: 0 },
     };
@@ -110,15 +112,16 @@ class Deck90Display {
 
   setRadio(radio = {}) {
     this._assertAlive();
-    const r = this.state.radio, was = [r.band, r.frequency, r.live, r.mono].join('|'), name = r.name, quality = r.quality, preset = r.preset;   // steady
+    const r = this.state.radio, was = [r.band, r.frequency, r.live, r.mono, r.local].join('|'), name = r.name, quality = r.quality, preset = r.preset;   // steady
     for (const key of ['band', 'frequency', 'name']) if (key in radio) this.state.radio[key] = safeText(radio[key]);
     if ('mono' in radio) this.state.radio.mono = Boolean(radio.mono);   // mono
+    if ('local' in radio) this.state.radio.local = Boolean(radio.local);   // local
     if ('frequency' in radio) this.state.radio.quality = safeText(radio.quality).slice(0, 12);   // info
     if ('live' in radio) { this.state.radio.live = Boolean(radio.live); if (!this.state.radio.live) { this.state.levels = { left: 0, right: 0 }; } }   // radio live
     if ('preset' in radio) this.state.radio.preset = Math.max(1, Math.min(99, Math.trunc(Number(radio.preset) || 1)));
     if (this.state.mode !== 'radio') return this;
     // steady: the big digits and the labels only for a new band, frequency, LIVE or MONO; a new line or bottom row alone
-    const big = was !== [r.band, r.frequency, r.live, r.mono].join('|');
+    const big = was !== [r.band, r.frequency, r.live, r.mono, r.local].join('|');
     if (big || !this._artist) this._renderText();
     else {
       if (r.name !== name) this._renderArtist();
@@ -304,7 +307,8 @@ class Deck90Display {
     const mono = !music && this.state.radio.mono;   // mono: an AM station lights MONO, STEREO goes dark
     this._status.append(label(music ? 'PLAY' : 'STEREO', 158, 60, { fill: mono ? '#809641' : '#ffdd50', 'font-size': 23 }));
     this._status.append(label(music ? 'CD' : 'MONO', 159, 84, { fill: music || mono ? '#ffdd50' : '#809641', 'font-size': 22 }));
-    this._status.append(label(music ? 'TRACK' : 'LOCAL', 155, 115, music ? { 'font-size': 21 } : { 'font-size': 21, fill: '#ff1e1e' }));   // info: LOCAL red
+    // info: LOCAL red; local: lit only for a local station, centred under the box
+    this._status.append(music ? label('TRACK', 155, 115, { 'font-size': 21 }) : label('LOCAL', 172, 115, { 'font-size': 21, fill: this.state.radio.local ? '#ff1e1e' : '#809641' }));
     this._renderArtist();
     this.svg.setAttribute('aria-label', music ? `DECK 90. Reproduciendo: ${title}${this.state.track.artist ? ', ' + this.state.track.artist : ''}` : `DECK 90. Radio ${this.state.radio.band} ${this.state.radio.frequency}`);
     this._renderFooter();

@@ -100,6 +100,8 @@ function stereoOpen(on) {
   }
   stereoPaint();
 }
+// 7.10.21: LOCAL lights on the display while a station from LOC's list plays (finder.js keeps their addresses)
+const stereoLocal = () => !!(radioNow && typeof rfLocal === 'object' && rfLocal.has(radioNow.url));
 function toggleStereo() {
   if (window.winCtl && window.winCtl.stereo) window.winCtl.stereo();
   else setMini(!stereoMode, 'stereo');
@@ -183,7 +185,7 @@ function stereoText(force) {
       stereoShown = key;
       if (stereoCfg.mode === 'radio') {                        // the radio keeps its own screen, the words in place of the dial
         stereoDisplay.setPlayback(false);
-        stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext(), mono: radioMem.band === 'AM', quality: stereoInfo().quality || '' });
+        stereoDisplay.setRadio({ band: '', frequency: extra, preset: radioMem.slot || 1, live: radioPlaying(), name: stereoContext(), mono: radioMem.band === 'AM', local: stereoLocal(), quality: stereoInfo().quality || '' });
       } else stereoDisplay.setTrack({ title: extra, artist: stereoContext(), playing: true, ...stereoInfo() });
     }
     stereoDisplay.setElapsed(stereoCfg.mode === 'cd' ? cdPosition() : stereoCfg.mode === 'music' ? musicAudio.currentTime || 0 : stereoCfg.mode === 'pc' && np ? npPosition() : 0);
@@ -232,7 +234,7 @@ function stereoText(force) {
     if (key !== stereoShown || force) {
       stereoShown = key;
       stereoDisplay.setPlayback(false);
-      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, mono: radioMem.band === 'AM', quality: q });
+      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, mono: radioMem.band === 'AM', local: stereoLocal(), quality: q });
     }
   } else {
     const playing = stereoPlaying();
