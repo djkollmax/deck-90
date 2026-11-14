@@ -1,5 +1,19 @@
 # Changelog
 
+## 7.10.20
+
+### Added
+- **LOC on the car stereo: the radios of your city.** The SCAN/LOC rocker under the display is two keys now, as
+  printed: SCAN on its left half (as before), LOC on its right. LOC opens the radio search with the stations near the
+  weather's place (Radio Browser within 40 km by coordinates, plus the town as a region and in the name, merged: each
+  station once with its best stream, the most heard first). The search gets the same list as **CERCA**. The weather's
+  place now keeps its country code, used to narrow the town searches. On the phone's stereo page SCAN keeps its half;
+  the list opens on the PC.
+
+### Fixed
+- **The radio search no longer lists stations that can't play:** HLS streams (playlists of segments), video codecs and
+  TV streams are left out.
+
 ## 7.10.19
 
 ### Fixed

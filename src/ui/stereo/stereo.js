@@ -422,6 +422,11 @@ function stereoKey(k, hold) {
     radioScanSet(false);
     return rfOpen(true);
   }
+  if (k === 'loc') {                                               // 7.10.20: LOC, the radios of the weather's place
+    if (!radio) stereoSwitch('radio');
+    radioScanSet(false);
+    return rfNear();
+  }
   if (k === 'scan') {
     if (!radio) stereoSwitch('radio');
     if (radioScan) { radioScanSet(false); toast('SCAN · <span>te quedás en esta</span>', 1500); }

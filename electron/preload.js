@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('radio', {
   find: (q, cc) => ipcRenderer.invoke('radio-find', String(q).slice(0, 60), String(cc || '').slice(0, 2)),
   top:  () => ipcRenderer.invoke('radio-top'),
   search: (q, cc) => ipcRenderer.invoke('radio-search', String(q || '').slice(0, 60), String(cc || '').slice(0, 2)),   // 7.10.10: the world
+  near: (lat, lon, town, cc) => ipcRenderer.invoke('radio-near', Number(lat), Number(lon), String(town || '').slice(0, 40), String(cc || '').slice(0, 2)),   // 7.10.20: LOC
   // 7.9.3: the stream through Deck 90's local proxy, and what the station says (song, format, bitrate)
   proxy: (u, id) => ipcRenderer.invoke('radio-proxy', String(u).slice(0, 1200), String(id).slice(0, 20)),
   onMeta: cb => ipcRenderer.on('radio-meta', (e, m) => cb(m)),

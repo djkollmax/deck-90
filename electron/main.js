@@ -635,11 +635,14 @@ async function radioBrowser(query) {
   }
   throw lastErr || new Error('sin respuesta');
 }
-const radioList = list => (Array.isArray(list) ? list : []).map(r => ({
+// 7.10.20: what the player can't play is left out: playlists of segments (HLS), video, TV
+const radioUnplayable = r => Number(r.hls) === 1 || /H\.?26[45]|VIDEO|MP4V/i.test(String(r.codec || '')) || /\b(720p|1080p|tv)\b/i.test(String(r.name || ''));
+const radioList = list => (Array.isArray(list) ? list : []).filter(r => r && !radioUnplayable(r)).map(r => ({
   name: String(r.name || '').trim().slice(0, 80),
   url: String(r.url_resolved || r.url || ''),
   codec: String(r.codec || '').slice(0, 12), bitrate: num(r.bitrate) || 0,
   cc: /^[A-Z]{2}$/.test(r.countrycode || '') ? r.countrycode : '', place: String(r.state || '').trim().slice(0, 40),   // 7.10.10
+  clicks: num(r.clickcount) || 0,
 })).filter(r => r.name && /^https?:\/\//i.test(r.url) && r.url.length < 600);
 // 7.10.10: any station in the world, by name and/or country (the radio's search): the most heard first, 60 at most
 ipcMain.handle('radio-search', async (e, q, cc) => {
@@ -648,6 +651,33 @@ ipcMain.handle('radio-search', async (e, q, cc) => {
   if (!name && !country) return [];
   try { return radioList(await radioBrowser((name ? 'name=' + encodeURIComponent(name) + '&' : '') + (country ? 'countrycode=' + country + '&' : '') + 'hidebroken=true&order=clickcount&reverse=true&limit=60')); }
   catch (err) { mlog('radio search: ' + (err && err.message || err)); return null; }
+});
+// 7.10.20: the stations near a place (the stereo's LOC): those Radio Browser knows within 40 km, and those whose region
+// or name says the town (most have no coordinates, only a region); together, a station once (its best stream), the
+// most heard first
+const RADIO_WORTH = { FLAC: 20, OPUS: 1.7, 'AAC+': 1.6, AAC: 1.5, OGG: 1.3, MP3: 1 };
+const radioScore = r => (r.bitrate > 0 ? r.bitrate : 64) * (RADIO_WORTH[String(r.codec || '').toUpperCase()] || 1);
+const radioBase = n => String(n).toLowerCase().normalize('NFD').replace(/\p{Mn}+/gu, '')
+  .replace(/\b(\d+\s*k(bps)?|aac\+?|mp3|flac|ogg|opus|hq|hd|hi-?fi|lossless|stream|low|high|quality)\b/g, '').replace(/[^a-z0-9]+/g, '');
+function radioMerge(lists) {
+  const by = new Map();
+  for (const r of lists.flat()) {
+    const k = radioBase(r.name), was = by.get(k);
+    if (!was || radioScore(r) > radioScore(was)) by.set(k, { ...r, clicks: Math.max(r.clicks || 0, was ? was.clicks || 0 : 0) });
+  }
+  return [...by.values()].sort((a, b) => b.clicks - a.clicks).slice(0, 60);
+}
+ipcMain.handle('radio-near', async (e, lat, lon, town, cc) => {
+  if (!fromWin(e)) return null;
+  lat = Number(lat); lon = Number(lon);
+  if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) return [];
+  const t = String(town || '').trim().slice(0, 40), country = /^[A-Z]{2}$/.test(cc || '') ? 'countrycode=' + cc + '&' : '';
+  const tail = 'hidebroken=true&order=clickcount&reverse=true&limit=60';
+  const asks = ['geo_lat=' + lat.toFixed(3) + '&geo_long=' + lon.toFixed(3) + '&geo_distance=40000&' + tail];
+  if (t) asks.push('state=' + encodeURIComponent(t) + '&' + country + tail, 'name=' + encodeURIComponent(t) + '&' + country + tail);
+  const got = await Promise.all(asks.map(q => radioBrowser(q).then(radioList).catch(() => null)));
+  if (got.every(x => x === null)) { mlog('radio near: no answer'); return null; }
+  return radioMerge(got.map(x => x || []));
 });
 ipcMain.handle('radio-find', async (e, q, cc) => {
   if (!fromWin(e)) return null;
@@ -723,7 +753,8 @@ ipcMain.handle('weather-find', async (e, q) => {
   try {
     const j = await getJson('https://geocoding-api.open-meteo.com/v1/search?count=5&language=es&format=json&name=' + encodeURIComponent(name));
     return (Array.isArray(j.results) ? j.results : []).slice(0, 5)
-      .map(p => ({ name: String(p.name || '').slice(0, 60), area: [p.admin1, p.country].filter(x => typeof x === 'string').join(', ').slice(0, 80), lat: num(p.latitude), lon: num(p.longitude) }))
+      .map(p => ({ name: String(p.name || '').slice(0, 60), area: [p.admin1, p.country].filter(x => typeof x === 'string').join(', ').slice(0, 80), lat: num(p.latitude), lon: num(p.longitude),
+        cc: /^[A-Z]{2}$/.test(p.country_code || '') ? p.country_code : '' }))   // 7.10.20: the country, for LOC
       .filter(p => p.name && p.lat !== null && p.lon !== null);
   } catch (err) { weatherFail('find', err); return null; }
 });

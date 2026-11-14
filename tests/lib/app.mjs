@@ -50,6 +50,9 @@ export async function launch({ station, size, drive, names, welcome = false, toa
     // the world's stations (the radio's search): three of the name asked, from the country asked (France by default)
     handle('radio-search', (e, q, cc) => { global.searches = (global.searches || []).concat([[q, cc]]);
       return ['Uno', 'Dos FLAC', 'Tres'].map((n, i) => ({ name: (q || 'Radio') + ' ' + n, url: base + '/s?w' + i, codec: i === 1 ? 'FLAC' : 'MP3', bitrate: i === 1 ? 0 : 128, cc: cc || 'FR', place: i ? '' : 'Île-de-France' })); });
+    // 7.10.20: the stations near a place (LOC): two of the town asked
+    handle('radio-near', (e, lat, lon, town, cc) => { global.nears = (global.nears || []).concat([[lat, lon, town, cc]]);
+      return ['FM', 'Rock'].map((n, i) => ({ name: town + ' ' + n, url: base + '/s?n' + i, codec: 'AAC', bitrate: 128, cc: cc || 'AR', place: town, clicks: 90 - i })); });
     handle('radio-top', () => [
       { name: 'La 100 - 99.9 FM', url: base + '/s' }, { name: 'Radio 10 AM 710', url: base + '/s' }, { name: 'Cadena 3', url: base + '/s' }]);
     handle('weather-find', () => []); handle('weather-now', () => null);

@@ -233,7 +233,7 @@ async function lookupCity(text) {
   if (found === null) { toast('⚠ No pude consultar el clima: ¿hay internet?', 3200); return false; }
   if (!found.length) { toast('⚠ No encontré <span>' + q.replace(/[<>&]/g, '') + '</span>. Probá con otro nombre.', 3200); return false; }
   const p = found[0];
-  clockCfg.place = { name: p.name, area: p.area, lat: p.lat, lon: p.lon };
+  clockCfg.place = { name: p.name, area: p.area, lat: p.lat, lon: p.lon, cc: p.cc || '' };
   if (clockCfg.mode !== 'weather') clockCfg.mode = 'weather';
   wx = null; wxAt = 0; saveClock(); syncClockSeg(); layoutClock();
   toast('CLIMA · <span>' + p.name.replace(/[<>&]/g, '') + (p.area ? ', ' + p.area.replace(/[<>&]/g, '') : '') + '</span>', 3000);

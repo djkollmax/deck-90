@@ -1,6 +1,7 @@
 'use strict';
 // ── RADIO SEARCH (7.10.10): any station in the world, by name and/or country, from Radio Browser (the main
-// process asks it: radio-search). SCAN held on the DT-90 (7.10.18: or on the car stereo) opens it; a station touched plays (a tuned station, not a
+// process asks it: radio-search). SCAN held on the DT-90 (7.10.18: or on the car stereo) opens it, LOC (7.10.20) with the radios near the
+// weather's place; a station touched plays (a tuned station, not a
 // memory) and the numbers below keep the one playing in the band's memories ──
 const RF_COUNTRIES = ['AR', 'UY', 'CL', 'BR', 'PY', 'BO', 'PE', 'CO', 'VE', 'EC', 'MX', 'CU', 'US', 'CA', 'ES', 'PT', 'FR', 'IT',
   'DE', 'AT', 'CH', 'GB', 'IE', 'NL', 'BE', 'DK', 'SE', 'NO', 'FI', 'IS', 'PL', 'CZ', 'HU', 'GR', 'TR', 'RU', 'UA', 'IL', 'ZA',
@@ -27,6 +28,7 @@ async function rfSearch() {
   const q = rfEl('rfName').value.trim(), cc = rfEl('rfCountry').value, msg = rfEl('rfMsg');
   if (!q && !cc) { msg.textContent = 'Escribí un nombre o elegí un país'; return; }
   if (!window.radio || !window.radio.search) { msg.textContent = '⚠ La búsqueda anda en el programa instalado'; return; }
+  rfEl('rfTitle').textContent = (stereoMode ? '' : 'DT-90 · ') + 'BUSCAR RADIO EN EL MUNDO';   // after a LOC list
   const t = ++rfBusy;
   msg.textContent = 'Buscando…';
   const r = await window.radio.search(q, cc).catch(() => null);
@@ -34,6 +36,22 @@ async function rfSearch() {
   if (!r) { msg.textContent = '⚠ No pude buscar: ¿hay internet?'; return; }
   rfResults = r;
   msg.textContent = r.length ? r.length + (r.length === 1 ? ' radio' : ' radios') + (r.length >= 60 ? ' (las 60 más escuchadas)' : '') : 'No encontré radios con ese nombre';
+  rfRender();
+}
+// 7.10.20: the stations near the weather's place (the stereo's LOC, CERCA here), the most heard first
+async function rfNear() {
+  const msg = rfEl('rfMsg'), place = typeof clockCfg === 'object' ? clockCfg.place : null;
+  if (!rfEl('rfFind').classList.contains('show')) rfOpen(true);
+  if (!place) { msg.textContent = 'Poné tu ciudad en el clima (⚙ PANTALLA → RELOJ) y LOC te muestra sus radios'; return; }
+  if (!window.radio || !window.radio.near) { msg.textContent = '⚠ La búsqueda anda en el programa instalado'; return; }
+  rfEl('rfTitle').textContent = 'RADIOS DE ' + place.name.toUpperCase();
+  const t = ++rfBusy;
+  msg.textContent = 'Buscando las radios de ' + place.name + '…';
+  const r = await window.radio.near(place.lat, place.lon, place.name, place.cc || '').catch(() => null);
+  if (t !== rfBusy) return;
+  if (!r) { msg.textContent = '⚠ No pude buscar: ¿hay internet?'; return; }
+  rfResults = r;
+  msg.textContent = r.length ? r.length + (r.length === 1 ? ' radio' : ' radios') + ' de ' + place.name + ', las más escuchadas primero' : 'No encontré radios de ' + place.name + ': probá buscarlas por nombre';
   rfRender();
 }
 function rfRender() {
@@ -60,6 +78,7 @@ function rfPlay(i) {
   setTimeout(() => { rfRender(); rfKeepSync(); }, 50);
 }
 rfEl('rfGo').addEventListener('click', rfSearch);
+rfEl('rfNear').addEventListener('click', rfNear);
 rfEl('rfClose').addEventListener('click', () => rfOpen(false));
 rfEl('rfFind').addEventListener('click', e => { if (e.target.id === 'rfFind') rfOpen(false); });
 rfEl('rfList').addEventListener('click', e => { const b = e.target.closest('.rf-item'); if (b) rfPlay(Number(b.dataset.i)); });

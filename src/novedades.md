@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.10.20 — 2026-11-13
+
+### Nuevo
+- **LOC en el estéreo: las radios de tu ciudad.** SCAN y LOC, abajo del display, ahora son dos teclas, como dicen: SCAN la mitad de la izquierda (como siempre) y LOC la de la derecha. LOC abre la búsqueda con las radios de la ciudad del clima, las más escuchadas primero; tocás una y suena, y con los números la guardás en las memorias. En la búsqueda está también como **CERCA**. Si no pusiste ciudad en el clima, te dice dónde ponerla.
+
+### Arreglos
+- **La búsqueda de radios ya no muestra las que no suenan:** las de video y las listas por segmentos (HLS) quedan afuera.
+
 ## 7.10.19 — 2026-11-13
 
 ### Arreglos

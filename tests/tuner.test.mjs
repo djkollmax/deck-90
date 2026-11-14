@@ -231,3 +231,34 @@ test('the car stereo: SCAN held opens the same search, a station touched plays t
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(d.errors(), []);
 });
+
+// 7.10.20
+test('the car stereo: SCAN and LOC are two keys; LOC lists the radios of the weather\'s city', async () => {
+  await d.win.keyboard.press('e'); await d.wait(1500);
+  const scan = await d.win.locator('.st-hot[data-st="scan"]').boundingBox(), loc = await d.win.locator('.st-hot[data-st="loc"]').boundingBox();
+  assert.ok(scan && loc && Math.abs(scan.x + scan.width - loc.x) < 2 && Math.abs(scan.width - loc.width) < 4, 'LOC is the right half of the rocker');
+  // no city for the weather: LOC says where to put it
+  await d.win.evaluate(() => { clockCfg.place = null; });
+  await d.click('.st-hot[data-st="loc"]', 400);
+  assert.equal(await d.win.evaluate(() => document.getElementById('rfFind').classList.contains('show')), true);
+  assert.match(await d.win.locator('#rfMsg').textContent(), /Poné tu ciudad en el clima/);
+  await d.win.press('#rfName', 'Escape'); await d.wait(200);
+  // with one: its radios, the most heard first; one touched plays
+  await d.win.evaluate(() => { clockCfg.place = { name: 'Mar del Plata', area: 'Buenos Aires, Argentina', lat: -38.0, lon: -57.55, cc: 'AR' }; });
+  await d.click('.st-hot[data-st="loc"]', 800);
+  assert.equal(await d.win.locator('#rfTitle').textContent(), 'RADIOS DE MAR DEL PLATA');
+  assert.deepEqual(await d.app.evaluate(() => global.nears.slice(-1)[0]), [-38, -57.55, 'Mar del Plata', 'AR']);
+  const items = await d.win.locator('#rfList .rf-item').allTextContents();
+  assert.equal(items.length, 2); assert.match(items[0], /Mar del Plata FM/); assert.match(await d.win.locator('#rfMsg').textContent(), /2 radios de Mar del Plata/);
+  await d.win.locator('#rfList .rf-item').nth(1).click(); await d.wait(3000);
+  assert.deepEqual(await d.win.evaluate(() => [radioNow.name, radioPlaying(), stereoCfg.mode]), ['Mar del Plata Rock', true, 'radio']);
+  // a search by name is the world's again
+  await d.win.fill('#rfName', 'jazz'); await d.win.press('#rfName', 'Enter'); await d.wait(800);
+  assert.equal(await d.win.locator('#rfTitle').textContent(), 'BUSCAR RADIO EN EL MUNDO');
+  // CERCA in the search: the same list
+  await d.win.click('#rfNear'); await d.wait(800);
+  assert.equal(await d.win.locator('#rfTitle').textContent(), 'RADIOS DE MAR DEL PLATA');
+  await d.win.press('#rfName', 'Escape'); await d.wait(200);
+  await d.win.keyboard.press('e'); await d.wait(1200);
+  assert.deepEqual(d.errors(), []);
+});
