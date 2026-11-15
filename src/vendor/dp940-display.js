@@ -14,7 +14,9 @@
    the meters, and the stereo calls it before every radio update, so they dropped every few seconds), and setRadio
    redraws only what changed: a new name only its line, a new quality or memory only the bottom row.
    7.10.21, marked "local": setRadio({ local }) lights LOCAL in red only for a local station (the stereo's LOC); unlit
-   it takes MONO's off colour. It sits a little to the right, centred under the STEREO/MONO box. */
+   it takes MONO's off colour. It sits a little to the right, centred under the STEREO/MONO box.
+   7.10.22, marked "source": setTrack({ source }) names what plays under PLAY (CD unless told: USB for Deck 90 for
+   Android's pendrive). */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -56,7 +58,7 @@ class Deck90Display {
     this.state = {
       mode: 'radio',
       radio: { band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, local: false, quality: '', ...options.radio },
-      track: { title: '', artist: '', elapsed: 0, playing: false, number: 0, length: 0, quality: '' },
+      track: { title: '', artist: '', elapsed: 0, playing: false, number: 0, length: 0, quality: '', source: 'CD' },
       levels: { left: 0, right: 0 },
     };
     this._visual = { left: 0, right: 0 };
@@ -140,6 +142,7 @@ class Deck90Display {
       this.state.track.length = safeSeconds(track.length);
       this.state.track.quality = safeText(track.quality).slice(0, 12);
       this.state.track.disc = Boolean(track.disc);   // disc logo: a disc is in
+      this.state.track.source = safeText(track.source || 'CD').slice(0, 4).toUpperCase();   // source
     }
     if ('playing' in track) return this.setPlayback(Boolean(track.playing));
     this._renderText();
@@ -306,7 +309,7 @@ class Deck90Display {
     this._status.append(svgNode('rect', { x: 151, y: 37, width: 111, height: 53, rx: 2, fill: 'none', stroke: '#dfc73e', 'stroke-width': 2 }));
     const mono = !music && this.state.radio.mono;   // mono: an AM station lights MONO, STEREO goes dark
     this._status.append(label(music ? 'PLAY' : 'STEREO', 158, 60, { fill: mono ? '#809641' : '#ffdd50', 'font-size': 23 }));
-    this._status.append(label(music ? 'CD' : 'MONO', 159, 84, { fill: music || mono ? '#ffdd50' : '#809641', 'font-size': 22 }));
+    this._status.append(label(music ? this.state.track.source || 'CD' : 'MONO', 159, 84, { fill: music || mono ? '#ffdd50' : '#809641', 'font-size': 22 }));   // source
     // info: LOCAL red; local: lit only for a local station, centred under the box
     this._status.append(music ? label('TRACK', 155, 115, { 'font-size': 21 }) : label('LOCAL', 172, 115, { 'font-size': 21, fill: this.state.radio.local ? '#ff1e1e' : '#809641' }));
     this._renderArtist();
@@ -340,7 +343,7 @@ class Deck90Display {
       this._footer.append(label('STEREO', 423, 180, { 'font-size': 23 }));
       this._footer.append(label(time, left ? 566 : 581, 180, { fill: '#ffdd50', 'font-size': 24, 'letter-spacing': 2 }));
       if (track.quality) this._footer.append(label(track.quality, 712, 180, { fill: '#ffdd50', 'font-size': 22 }));   // info
-      else this._footer.append(label('CD', 786, 180, { 'font-size': 22 }));
+      else this._footer.append(label(track.source || 'CD', 786, 180, { 'font-size': 22 }));   // source
       this._footer.append(label('PLAY', 865, 180, { fill: '#c8d997', 'font-size': 22 }));
       // Deck 90 7.10.14: three and four figures (the DM-90's SHUFFLE ALL) smaller, in the same place
       if (track.number) { const n = track.number, size = n < 100 ? 45 : n < 1000 ? 31 : 24; this._footer.append(label(String(n), 956, 121 - (45 - size) * .15, { fill: '#ffdf4f', 'font-size': size })); }   // info

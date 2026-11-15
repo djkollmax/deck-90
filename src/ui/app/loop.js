@@ -115,6 +115,16 @@ setInterval(() => {
   if (!capture.running || performance.now() - lastRafAt < 120) return;
   try { frame(false); } catch (e) { report('frame', e); }
 }, 33);
+// 7.10.22: a fixed calibration that keeps the needles at the stop (8 s out of the last stretch of music) says so,
+// once a run: AUTO follows the music
+const vuPin = { ms: 0, said: false };
+function vuPinCheck(dt) {
+  if (vuCal === 'AUTO') { vuPin.ms = 0; return; }
+  if (!mods.vu || vuPin.said) return;
+  const top = Math.max(vu.L.lvl, vu.R.lvl);
+  vuPin.ms = Math.max(0, vuPin.ms + (top >= 2.5 ? dt : top < 0 ? -dt / 2 : 0));
+  if (vuPin.ms > 8000) { vuPin.said = true; toast('VU · la aguja se clava: en −' + vuCal + ' dBFS esta música llega al tope. <span>C</span> pasa a AUTO, que sigue a la música', 5000); }
+}
 function frame(draw) {
   const now = performance.now();
   pace.dtMs = pace.lastFrame ? Math.min(100, now - pace.lastFrame) : 16.7;
@@ -132,6 +142,7 @@ function frame(draw) {
   }
   tickVU(vu.L, inL);
   tickVU(vu.R, inR);
+  vuPinCheck(pace.dtMs);
   if (!draw) {
     guard('meters', () => updateMasterMeters(now));
     guard('bpm', () => tickBPM(now));

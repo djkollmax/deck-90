@@ -1,5 +1,16 @@
 # Changelog
 
+## 7.10.22
+
+### Changed
+- **The VU's calibration comes back to AUTO once:** a fixed one saved from before (−18, −14 or −10 dBFS) pinned the
+  needles with loud radios; it is read as AUTO, with a toast saying why. C fixes it again, and then it stays (the
+  prefs keep `calAuto`).
+- **A fixed calibration that pins the needles says so:** 8 seconds at the stop (`vuPinCheck`, loop.js) and a toast,
+  once a run, tells that C goes to AUTO.
+- The car stereo's display (`dp940-display.js`, patch "source") can name what plays under PLAY: `setTrack({ source })`,
+  CD unless told. The PC shows CD as before; Deck 90 for Android says USB for a pendrive.
+
 ## 7.10.21
 
 ### Changed

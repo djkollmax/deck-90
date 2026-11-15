@@ -5,7 +5,7 @@
 // Look preferences survive a reload (per browser; never required to work).
 const PREFS_KEY = 'deck90-prefs';
 function savePrefs(){
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: rotateCfg, stereo: stereoCfg, tuner: tunerCfg, cdunit: cdUnitCfg, jukebox: jbCfg, volume: typeof volCfg === 'object' ? volCfg : undefined, eq: typeof eqCfg === 'object' ? eqCfg : undefined })); } catch(_){}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ spectrumSkin, flSensitivity, vuSkin, mode: spectrumModeIndex, cal: vuCal, calAuto: true, mods, modsBeforeTape, drawerOpen, controlsHidden, deckDouble, tapeStyle, chassis, rotate: rotateCfg, stereo: stereoCfg, tuner: tunerCfg, cdunit: cdUnitCfg, jukebox: jbCfg, volume: typeof volCfg === 'object' ? volCfg : undefined, eq: typeof eqCfg === 'object' ? eqCfg : undefined })); } catch(_){}
 }
 function loadPrefs(){ return store.read(PREFS_KEY, {}); }
 
@@ -267,7 +267,10 @@ setSpectrumMode(Number.isInteger(prefs.mode) ? prefs.mode : 0);
 setFlSensitivity(Number.isInteger(prefs.flSensitivity) ? prefs.flSensitivity : 1);
 setVUSkin(VU_SKINS.includes(prefs.vuSkin) ? prefs.vuSkin : 'MODERN');
 setSpectrumSkin(SPECTRUM_SKINS.some(s => s[0] === prefs.spectrumSkin) ? prefs.spectrumSkin : 'MODERN');
-if ([18, 14, 10].includes(prefs.cal)) vuCal = prefs.cal;
+// 7.10.22: a fixed calibration from before goes back to AUTO once (18 pinned the needles with loud radios); C still
+// fixes it again, and then it stays (calAuto marks the change as done)
+if ([18, 14, 10].includes(prefs.cal) && prefs.calAuto) vuCal = prefs.cal;
+else if ([18, 14, 10].includes(prefs.cal)) setTimeout(() => { savePrefs(); toast('VU · la calibración volvió a <span>AUTO</span>: en −' + prefs.cal + ' dBFS las radios fuertes clavaban la aguja. C la cambia', 5000); }, 2500);
 if (prefs.mods && typeof prefs.mods === 'object') {
   for (const k in mods) if (typeof prefs.mods[k] === 'boolean') mods[k] = prefs.mods[k];
   if (typeof prefs.mods.gonio !== 'boolean') mods.gonio = false;   // settings from before 6.1: the goniometer starts off

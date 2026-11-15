@@ -83,3 +83,30 @@ test('the history window: its rows stay put while it is open (a tooltip or a sel
   await d.win.evaluate(() => showHistory(false));
   assert.deepEqual(d.errors(), []);
 });
+
+// 7.10.22
+test('a VU fixed at 18 from before comes back as AUTO once, saying why; fixed again with C, it stays', async () => {
+  await d.win.evaluate(() => { const p = JSON.parse(localStorage.getItem('deck90-prefs') || '{}'); p.cal = 18; delete p.calAuto; localStorage.setItem('deck90-prefs', JSON.stringify(p)); });
+  await reload(); await d.wait(2500);
+  assert.equal(await d.win.evaluate(() => vuCal), 'AUTO');
+  assert.match(await d.win.evaluate(() => document.getElementById('toast').textContent), /volvió a AUTO.*−18 dBFS/);
+  assert.equal(await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-prefs')).cal), 'AUTO');
+  await d.win.keyboard.press('c'); await d.wait(300);                 // C: AUTO → 18
+  assert.equal(await d.win.evaluate(() => vuCal), 18);
+  await reload();
+  assert.equal(await d.win.evaluate(() => vuCal), 18, 'chosen after the change, it stays');
+  // fixed and the needles at the stop for 8 s: it says C goes to AUTO
+  const said = await d.win.evaluate(() => {                            // (no sound is captured here: the frames by hand)
+    const out = []; const o = toast; toast = (h, ms) => { out.push(String(h)); return o(h, ms); };
+    mods.vu = true; vu.L.lvl = vu.R.lvl = 3;
+    for (let i = 0; i < 400; i++) vuPinCheck(16.7);                  // ~7 s at the stop: not yet
+    const early = out.length;
+    for (let i = 0; i < 100; i++) vuPinCheck(16.7);                  // past 8 s: said once
+    for (let i = 0; i < 600; i++) vuPinCheck(16.7);
+    toast = o; return [early, out.filter(s => /se clava/.test(s)).length];
+  });
+  assert.deepEqual(said, [0, 1]);
+  await d.win.keyboard.press('c'); await d.wait(200); await d.win.keyboard.press('c'); await d.wait(200); await d.win.keyboard.press('c'); await d.wait(200);
+  assert.equal(await d.win.evaluate(() => vuCal), 'AUTO');
+  assert.deepEqual(d.errors(), []);
+});

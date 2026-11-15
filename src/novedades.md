@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.22 — 2026-11-14
+
+### Cambios
+- **El VU vuelve a AUTO:** si lo tenías fijo (en −18, −14 o −10), con las radios fuertes la aguja se clavaba. Ahora arranca en AUTO, que sigue a la música, y te lo avisa una vez. Con C lo volvés a fijar, y entonces queda.
+- **Si la aguja se clava con el VU fijo,** el programa te avisa que C lo pasa a AUTO.
+
 ## 7.10.21 — 2026-11-14
 
 ### Cambios
