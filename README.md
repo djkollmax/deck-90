@@ -154,12 +154,13 @@ Activás CELULAR, escaneás el código QR y el celular o la tablet (en el mismo 
 
 ![Deck 90 en el celular](docs/screenshots/phone.png)
 
-### Deck 90 para Android: la radio sin la PC
+### Deck 90 para Android: la radio, el pendrive y el CD sin la PC
 
-Una app aparte, [Deck 90 para Android](https://github.com/djkollmax/deck-90-android), lleva la radio al celular, la
-tablet y el auto (Android Auto) sin necesidad de la PC: las mismas bandas y memorias, el frente del estéreo con sus
-teclas y looks, VU y espectro, la búsqueda de radios del mundo y el apagado automático. Se instala y se actualiza
-con Obtainium.
+Una app aparte, [Deck 90 para Android](https://github.com/djkollmax/deck-90-android), lleva el estéreo al celular, la
+tablet y el auto (Android Auto) sin necesidad de la PC: la radio con las mismas bandas y memorias, más LOCAL (las
+radios de donde estés); la música de un pendrive (USB) y los CD de una lectora por USB, con los nombres de los temas;
+el frente del estéreo con sus teclas y looks, VU y espectro, la búsqueda de radios del mundo y el apagado automático.
+Se instala y se actualiza con Obtainium.
 
 ![Deck 90 para Android](https://raw.githubusercontent.com/djkollmax/deck-90-android/main/docs/celular.jpg)
 
