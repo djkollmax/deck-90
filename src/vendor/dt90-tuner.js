@@ -29,6 +29,7 @@
  * Deck 90 7.10.13: setRadio({ corner, cornerSub }) writes the top right of the display, over L and R.
  * Deck 90 7.10.12: presets 7–12 (the keys 1–6 held), shown M7…M12, their key's lamp lit.
  * Deck 90 7.10.11: a seventh band key, FM5 (band-fm5); the band keys and the memories narrower.
+ * Deck 90 7.10.23: band 'LOCAL' (the car stereo's LOC), shown as the others, no band key lit.
  * Deck 90 7.10.9: bigger key letters, fitted to each key (keyFont); accented capitals full height, the accent above.
  */
 (function (global) {
@@ -547,7 +548,7 @@ class Deck90Tuner {
     if (!update || typeof update !== 'object') return this;
     const radio = this._state.radio;
     // FM4: Deck 90 7.9.2
-    if (['FM1', 'FM2', 'FM3', 'FM4', 'FM5', 'HIFI', 'AM'].includes(String(update.band).toUpperCase())) radio.band = String(update.band).toUpperCase();
+    if (['FM1', 'FM2', 'FM3', 'FM4', 'FM5', 'HIFI', 'AM', 'LOCAL'].includes(String(update.band).toUpperCase())) radio.band = String(update.band).toUpperCase();   // Deck 90 7.10.23: LOCAL
     if ('frequency' in update && (update.frequency === null || update.frequency === '')) radio.frequency = null;   // internet only
     else if ('frequency' in update && finite(update.frequency)) radio.frequency = Number(update.frequency);
     const am = radio.band === 'AM';

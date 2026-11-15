@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.10.23
+
+### Changed
+- **LOC on the car stereo is the LOCAL band, as on Deck 90 for Android:** tapped, it goes to LOCAL, the 12 most heard
+  stations of the weather's city (radio-near; found again for another city or after three days), its first playing;
+  LOC again goes back to the band and memory before (`radioLocalGo`, `radioLocalBack`, core/radio.js). Held, the
+  city's whole list in the search, as LOC did before. BAND from LOCAL goes back too; MEMO there keeps the station in
+  the band before. The DT-90 shows LOCAL (`dt90-tuner.js`, patch 7.10.23) and the stereo's LOCAL lights.
+
 ## 7.10.22
 
 ### Changed

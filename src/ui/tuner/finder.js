@@ -19,7 +19,7 @@ function rfOpen(on) {
   const m = rfEl('rfFind');
   m.classList.toggle('show', on);
   if (!on) return;
-  rfEl('rfBand').textContent = radioMem.band === 'HIFI' ? 'HI-FI' : radioMem.band;
+  const kb = radioKeepBand(); rfEl('rfBand').textContent = kb === 'HIFI' ? 'HI-FI' : kb;   // 7.10.23: from LOCAL, the band before
   rfEl('rfTitle').textContent = (stereoMode ? '' : 'DT-90 · ') + 'BUSCAR RADIO EN EL MUNDO';   // 7.10.18: the car stereo's too
   rfKeepSync();
   setTimeout(() => rfEl('rfName').focus(), 50);

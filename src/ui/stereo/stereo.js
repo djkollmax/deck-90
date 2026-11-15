@@ -100,8 +100,29 @@ function stereoOpen(on) {
   }
   stereoPaint();
 }
-// 7.10.21: LOCAL lights on the display while a station from LOC's list plays (finder.js keeps their addresses)
-const stereoLocal = () => !!(radioNow && typeof rfLocal === 'object' && rfLocal.has(radioNow.url));
+// 7.10.21: LOCAL lights on the display while a station from LOC's list plays (finder.js keeps their addresses);
+// 7.10.23: and in the LOCAL band
+const stereoLocal = () => radioMem.band === RADIO_LOCAL && radioMem.slot > 0 || !!(radioNow && typeof rfLocal === 'object' && rfLocal.has(radioNow.url));
+// LOC: the LOCAL band, the 12 most heard of the weather's city (found again for another city or after a few days);
+// on it already, back to the band before
+let stereoLocBusy = false;
+async function stereoLoc() {
+  if (radioMem.band === RADIO_LOCAL) { radioLocalBack(); toast('LOC · de vuelta a <span>' + radioMem.band + '</span>', 1500); return stereoText(true); }
+  const place = typeof clockCfg === 'object' ? clockCfg.place : null;
+  if (!place) { toast('LOC · poné tu ciudad en el clima (<span>⚙ PANTALLA → RELOJ</span>) y LOC te trae sus radios', 3500); return; }
+  if (stereoLocBusy) return;
+  if (radioLocalStale(place)) {
+    stereoLocBusy = true;
+    toast('LOC · buscando las radios de <span>' + place.name.replace(/[<>&]/g, '') + '</span>…', 2500);
+    const r = await radioLocalFind(place);
+    stereoLocBusy = false;
+    if (!r) { toast('LOC · ⚠ no pude buscar: ¿hay internet?', 2500); return; }
+    if (!r.length) { toast('LOC · no encontré radios de ' + place.name.replace(/[<>&]/g, '') + ': probá SCAN apretado', 3000); return; }
+  }
+  radioLocalGo();
+  toast('LOCAL · las radios de <span>' + place.name.replace(/[<>&]/g, '') + '</span> · LOC otra vez para volver; apretado, la lista entera', 3000);
+  stereoText(true);
+}
 function toggleStereo() {
   if (window.winCtl && window.winCtl.stereo) window.winCtl.stereo();
   else setMini(!stereoMode, 'stereo');
@@ -373,7 +394,7 @@ function stereoKey(k, hold) {
     return;
   }
   if (k === 'band') {
-    radioMem.band = RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]; radioMem.slot = 0; saveRadio();
+    radioMem.band = radioMem.band === RADIO_LOCAL ? radioMem.lastBand : RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]; radioMem.slot = 0; saveRadio();   // 7.10.23: LOCAL goes back
     toast('BAND · <span>' + radioMem.band + '</span> · doce memorias (1–6, y 7–12 manteniendo apretado)', 1800);
     return stereoText(true);
   }
@@ -427,7 +448,8 @@ function stereoKey(k, hold) {
   if (k === 'loc') {                                               // 7.10.20: LOC, the radios of the weather's place
     if (!radio) stereoSwitch('radio');
     radioScanSet(false);
-    return rfNear();
+    if (hold) return rfNear();                                     // held: the whole list, in the search
+    return stereoLoc();                                            // 7.10.23: LOCAL, as on Deck 90 for Android
   }
   if (k === 'scan') {
     if (!radio) stereoSwitch('radio');
@@ -449,7 +471,7 @@ function stereoKey(k, hold) {
       volT = setTimeout(function rep() { stereoKey(b.dataset.st, false); volT = setTimeout(rep, 100); }, 350);
       return;
     }
-    if (/^(m[1-6]|sdm|band|scan)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
+    if (/^(m[1-6]|sdm|band|scan|loc)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
   const up = e => { clearTimeout(holdT); clearTimeout(volT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);

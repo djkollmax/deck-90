@@ -233,7 +233,7 @@ function tunerKey(k, { hold } = {}) {
     return tunerSync();
   }
   if (!tunerPower && k !== 'band') tunerOn(true, k !== 'scan');   // a station key wakes the tuner, as on the real one
-  if (k === 'band') return tunerBand(RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]);
+  if (k === 'band') return tunerBand(radioMem.band === RADIO_LOCAL ? radioMem.lastBand : RADIO_BANDS[(RADIO_BANDS.indexOf(radioMem.band) + 1) % RADIO_BANDS.length]);
   if (k === 'tune-up' || k === 'tune-down') { radioScanSet(false); radioStep(k === 'tune-up' ? 1 : -1); return tunerSync(); }
   if (k === 'scan') {
     if (radioScan) { radioScanSet(false); toast('SCAN · <span>se queda en esta</span>', 1400); }

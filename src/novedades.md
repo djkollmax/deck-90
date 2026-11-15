@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.10.23 — 2026-11-14
+
+### Cambios
+- **LOC en el estéreo ahora es la banda LOCAL, como en el celular:** tocado, pasa a las doce radios más escuchadas de la ciudad del clima y suena la primera; LOC otra vez vuelve a la banda de antes. Mantenido, abre la lista entera de la ciudad en la búsqueda. Si cambiás de ciudad, LOCAL se pone al día solo.
+
 ## 7.10.22 — 2026-11-14
 
 ### Cambios

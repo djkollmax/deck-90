@@ -233,36 +233,54 @@ test('the car stereo: SCAN held opens the same search, a station touched plays t
 });
 
 // 7.10.20
-test('the car stereo: SCAN and LOC are two keys; LOC lists the radios of the weather\'s city', async () => {
+test('the car stereo: SCAN and LOC are two keys; LOC is the LOCAL band of the weather\'s city, held its whole list', async () => {
   await d.win.keyboard.press('e'); await d.wait(1500);
   const scan = await d.win.locator('.st-hot[data-st="scan"]').boundingBox(), loc = await d.win.locator('.st-hot[data-st="loc"]').boundingBox();
   assert.ok(scan && loc && Math.abs(scan.x + scan.width - loc.x) < 2 && Math.abs(scan.width - loc.width) < 4, 'LOC is the right half of the rocker');
   const localLit = () => d.win.evaluate(() => [...stereoDisplay.svg.querySelectorAll('text')].find(t => t.textContent === 'LOCAL').getAttribute('fill'));
+  const hold = async () => { await d.win.mouse.move(loc.x + loc.width / 2, loc.y + loc.height / 2); await d.win.mouse.down(); await d.wait(1300); await d.win.mouse.up(); await d.wait(900); };
   assert.equal(await localLit(), '#809641', 'LOCAL is dark on a station of the bands');
+  const before = await d.win.evaluate(() => [radioMem.band, radioMem.slot]);
   // no city for the weather: LOC says where to put it
   await d.win.evaluate(() => { clockCfg.place = null; });
-  await d.click('.st-hot[data-st="loc"]', 400);
-  assert.equal(await d.win.evaluate(() => document.getElementById('rfFind').classList.contains('show')), true);
-  assert.match(await d.win.locator('#rfMsg').textContent(), /Poné tu ciudad en el clima/);
-  await d.win.press('#rfName', 'Escape'); await d.wait(200);
-  // with one: its radios, the most heard first; one touched plays
+  d.toasts(); await d.click('.st-hot[data-st="loc"]', 400);
+  assert.ok(d.toasts().some(t => /poné tu ciudad en el clima/.test(t)));
+  // with one (7.10.23): LOC goes to the LOCAL band, its stations the most heard of the city, the first playing
   await d.win.evaluate(() => { clockCfg.place = { name: 'Mar del Plata', area: 'Buenos Aires, Argentina', lat: -38.0, lon: -57.55, cc: 'AR' }; });
-  await d.click('.st-hot[data-st="loc"]', 800);
-  assert.equal(await d.win.locator('#rfTitle').textContent(), 'RADIOS DE MAR DEL PLATA');
+  await d.click('.st-hot[data-st="loc"]', 3000);
   assert.deepEqual(await d.app.evaluate(() => global.nears.slice(-1)[0]), [-38, -57.55, 'Mar del Plata', 'AR']);
-  const items = await d.win.locator('#rfList .rf-item').allTextContents();
-  assert.equal(items.length, 2); assert.match(items[0], /Mar del Plata FM/); assert.match(await d.win.locator('#rfMsg').textContent(), /2 radios de Mar del Plata/);
-  await d.win.locator('#rfList .rf-item').nth(1).click(); await d.wait(3000);
-  assert.deepEqual(await d.win.evaluate(() => [radioNow.name, radioPlaying(), stereoCfg.mode]), ['Mar del Plata Rock', true, 'radio']);
-  assert.equal(await localLit(), '#ff1e1e', 'LOCAL lights for a station of LOC\'s list');   // 7.10.21
-  // a search by name is the world's again
+  assert.deepEqual(await d.win.evaluate(() => [radioMem.band, radioMem.slot, radioMem.LOCAL.filter(Boolean).map(s => s.name), radioNow && radioNow.name, radioPlaying()]),
+    ['LOCAL', 1, ['Mar del Plata FM', 'Mar del Plata Rock'], 'Mar del Plata FM', true]);
+  assert.equal(await localLit(), '#ff1e1e', 'LOCAL lights in the LOCAL band');
+  assert.equal(await d.win.evaluate(() => stereoDisplay.state.radio.band), 'LOCAL');
+  await d.click('.st-hot[data-st="m2"]', 2500);                       // its memories as any band's
+  assert.equal(await d.win.evaluate(() => radioNow.name), 'Mar del Plata Rock');
+  // LOC again: back to the band and memory before; LOC once more: LOCAL without asking again (same city, fresh)
+  await d.click('.st-hot[data-st="loc"]', 2500);
+  assert.deepEqual(await d.win.evaluate(() => [radioMem.band, radioMem.slot]), [before[0], before[1] || 1]);   // (a station tuned by hand: its band's 1)
+  assert.equal(await localLit(), '#809641');
+  const asked = await d.app.evaluate(() => global.nears.length);
+  await d.click('.st-hot[data-st="loc"]', 2500);
+  assert.equal(await d.win.evaluate(() => radioMem.band), 'LOCAL');
+  assert.equal(await d.app.evaluate(() => global.nears.length), asked, 'the list kept is used');
+  // held: the whole list of the city in the search; one touched plays
+  await hold();
+  assert.equal(await d.win.evaluate(() => document.getElementById('rfFind').classList.contains('show')), true);
+  assert.equal(await d.win.locator('#rfTitle').textContent(), 'RADIOS DE MAR DEL PLATA');
+  assert.match(await d.win.locator('#rfMsg').textContent(), /2 radios de Mar del Plata/);
+  assert.match(await d.win.locator('#rfBand').textContent(), /^FM/, 'from LOCAL, the numbers keep in the band before');
+  await d.win.locator('#rfList .rf-item').nth(1).click(); await d.wait(2500);
+  assert.equal(await d.win.evaluate(() => radioNow.name), 'Mar del Plata Rock');
+  // a search by name is the world's again; CERCA the city's list
   await d.win.fill('#rfName', 'jazz'); await d.win.press('#rfName', 'Enter'); await d.wait(800);
   assert.equal(await d.win.locator('#rfTitle').textContent(), 'BUSCAR RADIO EN EL MUNDO');
-  // CERCA in the search: the same list
   await d.win.click('#rfNear'); await d.wait(800);
   assert.equal(await d.win.locator('#rfTitle').textContent(), 'RADIOS DE MAR DEL PLATA');
   await d.win.press('#rfName', 'Escape'); await d.wait(200);
-  await d.click('.st-hot[data-st="m1"]', 2500);                       // a memory: LOCAL goes dark again
+  // BAND from LOCAL: the band before
+  await d.click('.st-hot[data-st="band"]', 600);
+  assert.equal(await d.win.evaluate(() => radioMem.band), before[0]);
+  await d.click('.st-hot[data-st="m1"]', 2500);
   assert.equal(await localLit(), '#809641');
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(d.errors(), []);

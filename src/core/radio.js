@@ -1,7 +1,7 @@
 'use strict';
 // ═══════════════════════════════════════════════════════════
 //  THE RADIO (core: no screen). The bands' memories (FM1 FM2 FM3 FM4 AM, six each, saved), the stations they
-//  come with, and one <audio> that plays a station through the program's proxy (electron/radioproxy.js), which
+//  come with (7.10.23: and LOCAL, the stereo's LOC), and one <audio> that plays a station through the program's proxy (electron/radioproxy.js), which
 //  reads its song and bitrate. The screens (the car stereo, the rack's DT-90, the phone) drive it with
 //  radioTune / radioMemory / radioStep / radioStop and hear back through the hub (core/events.js):
 //    'radio'          something changed: the station, playing or not, its song or quality
@@ -88,13 +88,23 @@ function radioPlace(st, long) {
 // the memories: { FM1: [6 × station|null], FM2, FM3 }, the band and slot in use
 // 7.10.12: twelve memories a band (1–6, and 7–12 held), the last six empty to begin with
 const RADIO_SLOTS = 12, radioSlots = a => Array.from({ length: RADIO_SLOTS }, (_, i) => a[i] || null);
-let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: radioSlots(RADIO_DEFAULTS), FM2: radioSlots(RADIO_FM2), FM3: radioSlots(RADIO_FM3), FM4: radioSlots(RADIO_FM4), FM5: radioSlots(RADIO_FM5), HIFI: radioSlots(RADIO_HIFI), AM: radioSlots(RADIO_AM) };
+let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: radioSlots(RADIO_DEFAULTS), FM2: radioSlots(RADIO_FM2), FM3: radioSlots(RADIO_FM3), FM4: radioSlots(RADIO_FM4), FM5: radioSlots(RADIO_FM5), HIFI: radioSlots(RADIO_HIFI), AM: radioSlots(RADIO_AM),
+  LOCAL: radioSlots([]), localAt: null, lastBand: 'FM1', lastSlot: 1 };
+// 7.10.23: LOCAL, the stereo's LOC: the most heard stations of the weather's city, found again when the city changes or
+// they are a few days old. Not one of BAND's bands: LOC goes to it and back to the band before (lastBand, lastSlot),
+// and MEMO there keeps a station in that band
+const RADIO_LOCAL = 'LOCAL';
+const radioKeepBand = () => radioMem.band === RADIO_LOCAL ? radioMem.lastBand : radioMem.band;
 try {
   const r = store.read(RADIO_KEY);
-  if (r && typeof r === 'object') for (const b of RADIO_BANDS) {
+  if (r && typeof r === 'object') for (const b of [...RADIO_BANDS, RADIO_LOCAL]) {
     if (Array.isArray(r[b])) radioMem[b] = Array.from({ length: RADIO_SLOTS }, (_, i) => r[b][i] && r[b][i].name ? { name: String(r[b][i].name).slice(0, 80), freq: String(r[b][i].freq || '').slice(0, 8), q: String(r[b][i].q || r[b][i].name).slice(0, 60), cc: /^[A-Z]{2}$/.test(r[b][i].cc || '') ? r[b][i].cc : '', url: /^https?:\/\//.test(r[b][i].url || '') ? r[b][i].url : '', codec: /^[A-Z0-9+]{2,8}$/.test(r[b][i].codec || '') ? r[b][i].codec : '', kbps: r[b][i].kbps > 0 && r[b][i].kbps <= 1500 ? r[b][i].kbps | 0 : 0,
       hq: r[b][i].hq === 1 ? 1 : 0, gain: r[b][i].gain > 0 && r[b][i].gain <= 1 ? Math.round(r[b][i].gain * 1000) / 1000 : 0 } : null);   // 7.10.7
-    if (RADIO_BANDS.includes(r.band)) radioMem.band = r.band;
+    if (RADIO_BANDS.includes(r.band) || r.band === RADIO_LOCAL) radioMem.band = r.band;
+    if (RADIO_BANDS.includes(r.lastBand)) radioMem.lastBand = r.lastBand;
+    if (r.lastSlot >= 1 && r.lastSlot <= RADIO_SLOTS) radioMem.lastSlot = r.lastSlot | 0;
+    if (r.localAt && typeof r.localAt === 'object' && Number.isFinite(r.localAt.lat) && Number.isFinite(r.localAt.lon))
+      radioMem.localAt = { lat: r.localAt.lat, lon: r.localAt.lon, town: String(r.localAt.town || '').slice(0, 40), t: Number(r.localAt.t) || 0 };
     if (r.slot >= 0 && r.slot <= RADIO_SLOTS) radioMem.slot = r.slot | 0;
     if (typeof r.even === 'boolean') radioMem.even = r.even;
   }
@@ -331,7 +341,30 @@ async function radioStep(d) {                                  // TUNE: the most
   radioMem.slot = 0;                                           // a tuned station, not a memory
   radioTune({ name: r.name, freq: '', q: r.name, cc: 'AR', url: r.url }, (radioTopAt + 1) + '/' + radioTop.length);
 }
-setInterval(() => { if (radioScan && radioScan++ % 8 === 0) radioStep(1); }, 1000);   // SCAN: 8 s of each (a stop ends it)
+setInterval(() => { if (radioScan && radioScan++ % 8 === 0) radioStep(1); }, 1000);
+// 7.10.23: LOCAL's stations for a place ({ name, lat, lon, cc }): the 12 most heard near it (main.js radio-near),
+// kept with where and when; null when Radio Browser didn't answer
+async function radioLocalFind(place) {
+  if (!place || !window.radio || !window.radio.near) return null;
+  const r = await window.radio.near(place.lat, place.lon, place.name, place.cc || '').catch(() => null);
+  if (!r) return null;
+  radioMem.LOCAL = radioSlots(r.slice(0, RADIO_SLOTS).map(x => ({ name: String(x.name).slice(0, 80), freq: '', q: String(x.name).slice(0, 60), cc: x.cc || '', url: x.url || '', codec: x.codec || '', kbps: x.bitrate > 0 && x.bitrate <= 1500 ? x.bitrate | 0 : 0, hq: 1, gain: 0 })));
+  radioMem.localAt = { lat: place.lat, lon: place.lon, town: String(place.name || '').slice(0, 40), t: Date.now() };
+  saveRadio();
+  return r;
+}
+// LOCAL needs finding again: none yet, another city, or three days old
+const radioLocalStale = place => { const a = radioMem.localAt; return !a || !radioMem.LOCAL.some(Boolean) || !place || Math.abs(a.lat - place.lat) > .05 || Math.abs(a.lon - place.lon) > .05 || Date.now() - a.t > 3 * 864e5; };
+// to LOCAL (its first station), remembering the band and memory to go back to; and back
+function radioLocalGo() {
+  if (radioMem.band !== RADIO_LOCAL) { radioMem.lastBand = radioMem.band; radioMem.lastSlot = radioMem.slot || 1; }
+  radioMem.band = RADIO_LOCAL; radioMem.slot = 1; saveRadio(); radioScan = 0;
+  radioMemory(1);
+}
+function radioLocalBack() {
+  radioMem.band = radioMem.lastBand; radioMem.slot = radioMem.lastSlot || 1; saveRadio(); radioScan = 0;
+  radioMemory(radioMem.slot);
+}   // SCAN: 8 s of each (a stop ends it)
 // SCAN on or off (a station chosen by hand also turns it off)
 function radioScanSet(on) { radioScan = on ? 1 : 0; deck.emit('radio'); }
 // n: 1–12 (7.10.12: 7–12 are 1–6 held); store: keep the station playing there (MEMO and the number)
@@ -339,6 +372,10 @@ function radioMemory(n, store) {
   const list = radioMem[radioMem.band];
   if (store) {
     if (!radioNow) { deck.notice('Primero sintonizá una radio (TUNE ◀ ▶) y después MEMO y el número', 3000); return; }
+    if (radioMem.band === RADIO_LOCAL) {                           // 7.10.23: from LOCAL it goes to the band before
+      radioMem.band = radioMem.lastBand;
+      return radioMemory(n, true);
+    }
     list[n - 1] = { name: radioNow.name, freq: radioNow.freq || '', q: radioNow.q || radioNow.name, cc: radioNow.cc || '', url: radioNow.url || '', codec: radioNow.codec || '', kbps: radioNow.kbps || 0, hq: radioNow.hq ? 1 : 0, gain: radioNow.gain || 0 };
     radioMem.slot = n; saveRadio(); deck.emit('radio');
     deck.notice('Guardada en <span>' + radioMem.band + '-' + n + '</span> · ' + radioNow.name.replace(/[<>&]/g, ''), 2200);
