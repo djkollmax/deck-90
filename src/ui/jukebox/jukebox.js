@@ -3,7 +3,8 @@
 //  DM-90 DIGITAL MUSIC SERVER (7.10.0): the rack's double unit for the person's Jellyfin music (VER → MÚSICA, or J).
 //  The faceplate is ui/jukebox/dm90.js; the library, the queue and the player are core/music.js. Its display and
 //  keys speak English, as a 90s unit would (7.9.23); the toasts and SETUP, Spanish.
-//    POWER     on and off (off: the music stops, the PC's player goes on)     SETUP   the server and the user
+//    POWER     on and off (off: the music stops, the PC's player goes on)     SETUP   the server, the PC's folders, the pendrive
+//    SOURCE    (7.10.24) SERVER (Jellyfin) → PC (the folders chosen in SETUP) → USB (the pendrive plugged in)
 //    ARTISTS · ALBUMS · SONGS · QUEUE · SEARCH   what the list shows         ◀ BACK   the list before
 //    SELECT (the knob, the wheel, ↑ ↓)  moves through the list   ENTER (or a double click)  opens it or plays from it
 //    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
@@ -123,8 +124,8 @@ async function jbOn(on) {
   jbPower = on; jb && jb.setPower(on);
   if (on) {
     await musicStatus();
-    if (musicServer.none) toast('MÚSICA · <span>Jellyfin</span> se usa desde el programa instalado', 2400);
-    else if (!musicServer.signedIn) jbSetup(true);
+    if (musicModes.source === 'server' && musicServer.none) toast('MÚSICA · <span>Jellyfin</span> se usa desde el programa instalado', 2400);
+    else if (!musicSourceReady()) jbNotReady();
     else if (jbView.kind === 'home') jbOpen('artists');
   } else {
     musicStop(); jbSearchText = null;
@@ -156,10 +157,11 @@ function jbRenderList() {
   if (v.cursor >= v.top + rows) v.top = v.cursor - rows + 1;
   v.top = Math.max(0, Math.min(v.top, Math.max(0, v.items.length - rows)));
   const count = v.items.length, found = v.kind === 'search' ? v.items.filter(i => i.kind !== 'head').length : count, fmt = n => n.toLocaleString('es-AR');
-  let header = v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : '') + (musicLibraryName() && ['artists', 'albums', 'songs', 'search'].includes(v.kind) ? ' · ' + musicLibraryName().toUpperCase() : ''), right = '';   // 7.10.10
+  let header = (musicIsLocal() && v.kind !== 'list' && v.kind !== 'home' ? musicSourceName() + ' · ' : '') + v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : '') + (musicLibraryName() && ['artists', 'albums', 'songs', 'search'].includes(v.kind) ? ' · ' + musicLibraryName().toUpperCase() : ''), right = '';   // 7.10.10; 7.10.24: PC · ARTISTS · 120
   if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = jbLoading || jbFound(); }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
+  else if (musicIsLocal() && musicLocal && musicLocal[musicModes.source].scanning) { const L = musicLocal[musicModes.source]; right = 'READING ' + (L.found ? fmt(L.read) + '/' + fmt(L.found) : '…'); }
   else right = musicQueue.length ? 'QUEUE ' + (musicPos >= 0 ? musicPos + 1 + '/' : '') + musicQueue.length : '';
   jb.setList({ header, right, rows: v.items.slice(v.top, v.top + rows).map((it, k) => jbRow(it, v.top + k)), cursor: v.cursor, top: v.top, count });
   jb.setView(jbSearchText !== null || v.kind === 'search' ? 'search' : { artists: 'artists', albums: 'albums', songs: 'songs', list: 'list' }[v.kind] || '');
@@ -177,7 +179,7 @@ async function jbLoad(view, load, push) {
     jbView = Object.assign({ cursor: 0, top: 0 }, view, { items });
   } catch (e) {
     if (t !== jbAsk) return;
-    toast('MÚSICA · <span>' + (e.message === 'signed out' ? 'sin sesión: SETUP' : 'el servidor no contestó') + '</span>', 2400);
+    toast('MÚSICA · <span>' + (e.message === 'signed out' ? 'sin sesión: SETUP' : jbNoAnswer()) + '</span>', 2400);
   } finally { if (t === jbAsk) { jbLoading = ''; jbRenderList(); } }
 }
 function jbOpen(kind) {
@@ -191,9 +193,46 @@ function jbOpen(kind) {
 }
 function jbReady() {
   if (!jbPower) { jbOn(true); return false; }
-  if (!musicServer.signedIn) { jbSetup(true); return false; }
+  if (!musicSourceReady()) { jbNotReady(); return false; }
   return true;
 }
+// 7.10.24: a source with nothing to show yet: what's missing, said where it's done
+function jbNotReady() {
+  const src = musicModes.source, L = musicLocal && musicLocal[src];
+  if (src === 'server') return jbSetup(true);
+  if (L && L.scanning) return toast(musicSourceName(src) + ' · <span>leyendo la música</span>' + (L.found ? ' · ' + L.read.toLocaleString('es-AR') + ' de ' + L.found.toLocaleString('es-AR') : '') + '…', 1600);
+  if (src === 'pc') return jbSetup(true);
+  toast(L && L.roots.length ? 'USB · <span>' + jbEsc(L.roots.map(r => r.name).join(', ')) + '</span> no tiene música que se pueda tocar'
+    : 'USB · <span>enchufá un pendrive</span> o una tarjeta con música: aparece solo', 2400);
+}
+const jbEsc = t => String(t || '').replace(/[<>&]/g, '');
+// SOURCE (7.10.24): SERVER → PC → USB; the lists show the new one's (the queue playing goes on)
+function jbSourceNext() {
+  const next = MUSIC_SOURCES[(MUSIC_SOURCES.indexOf(musicModes.source) + 1) % MUSIC_SOURCES.length];
+  jbSourceSet(next);
+}
+function jbSourceSet(src, quiet) {
+  musicSourceSet(src);
+  jbSearchText = null; ++jbAsk; jbLoading = ''; jbStack = [];
+  const L = musicLocal && musicLocal[src];
+  if (!quiet) toast('SOURCE · <span>' + musicSourceName(src) + '</span> · ' + (src === 'server' ? (musicServer.signedIn ? 'tu Jellyfin' : 'conectalo con SETUP')
+    : src === 'pc' ? (L && L.songs ? L.songs.toLocaleString('es-AR') + ' temas de tus carpetas' : L && L.scanning ? 'leyendo tus carpetas…' : 'elegí tus carpetas con SETUP')
+    : L && L.songs ? L.songs.toLocaleString('es-AR') + ' temas en ' + jbEsc(L.roots.map(r => r.name).join(', ')) : L && L.scanning ? 'leyendo el pendrive…' : 'enchufá un pendrive'), 2000);
+  jbHome([jbHomeText()]);
+  jb && jb.setSource(src, jbHave());
+  if (musicSourceReady()) jbOpen('artists');
+  else if (src !== 'usb' && !(L && L.scanning)) jbSetup(true);
+  jbShownKey = ''; jbSync();
+}
+const jbHave = () => ({ server: !!musicServer.signedIn, pc: musicSourceReady('pc'), usb: musicSourceReady('usb') });
+function jbHomeText() {
+  const src = musicModes.source, L = musicLocal && musicLocal[src];
+  if (src === 'server') return musicServer.none ? 'JELLYFIN WORKS IN THE INSTALLED PROGRAM' : musicServer.signedIn ? 'ARTISTS, ALBUMS, SONGS OR SEARCH' : 'NO SERVER: PRESS SETUP TO CONNECT';
+  if (L && L.scanning) return 'READING THE MUSIC…';
+  if (musicSourceReady(src)) return 'ARTISTS, ALBUMS, SONGS OR SEARCH';
+  return src === 'pc' ? 'NO FOLDERS: PRESS SETUP TO ADD YOURS' : 'NO USB: PLUG IN A PENDRIVE OR A MEMORY CARD';
+}
+const jbNoAnswer = () => musicIsLocal() ? 'no pude leer la música de ' + musicSourceName() : 'el servidor no contestó';
 const jbSongs = () => jbView.items.filter(it => it.kind === 'song');
 // ENTER: an artist opens its albums, an album its songs; a song plays, with the rest of the list after it
 async function jbEnter() {
@@ -214,7 +253,7 @@ async function jbQueue() {
     if (it.kind === 'song') songs = [it];
     else if (it.kind === 'album') songs = await musicTracks(it.id);
     else if (it.kind === 'artist') songs = await musicArtistSongs(it.id);
-  } catch (_) { toast('MÚSICA · <span>el servidor no contestó</span>', 2000); return; }
+  } catch (_) { toast('MÚSICA · <span>' + jbNoAnswer() + '</span>', 2000); return; }
   if (!songs.length) return;
   const wasIdle = musicPos < 0 && !musicPlaying();
   musicQueueNext(songs.map(s => Object.assign({}, s, { kind: 'song' })));
@@ -232,7 +271,7 @@ async function jbShuffleAll() {
     jb.setModes(musicModes);
     toast('SHUFFLE ALL · <span>' + n.toLocaleString('es-AR') + ' temas</span> al azar', 2000);
     jbLoading = ''; jbOpen('list');
-  } catch (_) { jbLoading = ''; jbRenderList(); toast('MÚSICA · <span>el servidor no contestó</span>', 2000); }
+  } catch (_) { jbLoading = ''; jbRenderList(); toast('MÚSICA · <span>' + jbNoAnswer() + '</span>', 2000); }
 }
 function jbMove(d) {
   const it = jbView.items; if (!it.length) return;
@@ -269,7 +308,7 @@ async function jbSearchStart() {
   jbSearchText = jbView.q || '';
   if (!musicIndex) {
     jbLoading = 'READING LIBRARY…'; jbRenderList();
-    try { await musicSearchReady(); } catch (_) { toast('MÚSICA · <span>el servidor no contestó</span>', 2000); }
+    try { await musicSearchReady(); } catch (_) { toast('MÚSICA · <span>' + jbNoAnswer() + '</span>', 2000); }
     jbLoading = '';
   }
   jbSearchLive();
@@ -297,6 +336,7 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
   if (k === 'power') return jbOn(!jbPower);
   if (k === 'setup' && hold) return jbLibraryNext();               // 7.10.10: SETUP held, the next library (all, then each)
   if (k === 'setup') return jbSetup(true);
+  if (k === 'source') { if (!jbPower) { jbPower = true; jb && jb.setPower(true); } return jbSourceNext(); }
   if (k === 'color') return unitColorStep(hold);                   // the rack's displays and the clock (held: the one before)
   if (k === 'dimmer') return unitDimSet((jbCfg.dim + 1) % 3);
   if (!jbPower) { jbOn(true); return; }
@@ -373,40 +413,97 @@ document.addEventListener('keydown', e => {
 // 7.10.10: which of the server's music libraries the lists show: all of them merged, or one (SETUP held goes
 // through them; the SETUP dialog has them in a list); the list on screen reads again from the one chosen
 async function jbLibraryNext() {
-  if (!musicServer.signedIn) return jbSetup(true);
-  let libs; try { libs = await musicLibraries(); } catch (_) { toast('⚠ No pude leer las bibliotecas del servidor', 2200); return; }
-  if (libs.length < 2) { toast('BIBLIOTECA · el servidor tiene <span>una sola</span> de música', 2000); return; }
+  if (!musicSourceReady()) return jbNotReady();
+  let libs; try { libs = await musicLibraries(); } catch (_) { toast('⚠ No pude leer las bibliotecas', 2200); return; }
+  if (libs.length < 2) { toast(jbLibWord() + ' · ' + (musicModes.source === 'server' ? 'el servidor tiene <span>una sola</span> de música' : musicModes.source === 'pc' ? 'hay <span>una sola</span> carpeta (SETUP agrega más)' : 'hay <span>un solo</span> pendrive'), 2000); return; }
   const ids = ['', ...libs.map(l => l.id)], i = ids.indexOf(musicModes.library);
   jbLibrarySet(ids[(i + 1) % ids.length]);
 }
 function jbLibrarySet(id) {
   musicLibrarySet(id);
-  toast('BIBLIOTECA · <span>' + (musicLibraryName() || 'todas').replace(/[<>&]/g, '') + '</span>' + (id ? '' : ' (' + (musicLibs || []).map(l => l.name).join(' + ').replace(/[<>&]/g, '') + ')'), 2000);
+  toast(jbLibWord() + ' · <span>' + (musicLibraryName() || 'todas').replace(/[<>&]/g, '') + '</span>' + (id ? '' : ' (' + (musicLibs || []).map(l => l.name).join(' + ').replace(/[<>&]/g, '') + ')'), 2000);
   const sel = document.getElementById('jbLibrary'); if (sel) sel.value = id;
   if (['artists', 'albums', 'songs'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind);
   else if (jbPower) jbOpen('artists');
 }
+const jbLibWord = () => ({ server: 'BIBLIOTECA', pc: 'CARPETA', usb: 'PENDRIVE' })[musicModes.source];
 async function jbLibraryList() {
   const sel = document.getElementById('jbLibrary'), row = document.getElementById('jbLibraryRow');
   row.style.display = 'none';
-  if (!musicServer.signedIn) return;
+  if (!musicServer.signedIn || musicModes.source !== 'server') return;
   let libs; try { libs = await musicLibraries(); } catch (_) { return; }
   if (libs.length < 2) return;
   sel.replaceChildren(new Option('Todas (' + libs.map(l => l.name).join(' + ') + ')', ''), ...libs.map(l => new Option(l.name, l.id)));
-  sel.value = musicModes.library; row.style.display = '';
+  sel.value = musicModes.source === 'server' ? musicModes.library : musicModes.libraries.server; row.style.display = '';
 }
-function jbSetup(on) {
+// 7.10.24: SETUP has a tab for each source, and opens on the one SOURCE has
+let jbTab = 'server';
+function jbSetup(on, tab) {
   const m = document.getElementById('jbSetup');
   m.classList.toggle('show', on);
   if (!on) return;
+  jbTabShow(tab || musicModes.source);
   document.getElementById('jbServer').value = musicServer.server || 'http://localhost:8096';
   document.getElementById('jbUser').value = musicServer.name || '';
   document.getElementById('jbPass').value = '';
   document.getElementById('jbSetupMsg').textContent = musicServer.signedIn ? 'Conectado como ' + musicServer.name + ' en ' + musicServer.server : '';
   document.getElementById('jbSignOut').style.display = musicServer.signedIn ? '' : 'none';
   jbLibraryList();
-  setTimeout(() => document.getElementById(musicServer.signedIn ? 'jbServer' : document.getElementById('jbUser').value ? 'jbPass' : 'jbUser').focus(), 50);
+  if (jbTab === 'server') setTimeout(() => document.getElementById(musicServer.signedIn ? 'jbServer' : document.getElementById('jbUser').value ? 'jbPass' : 'jbUser').focus(), 50);
 }
+function jbTabShow(tab) {
+  jbTab = MUSIC_SOURCES.includes(tab) ? tab : 'server';
+  for (const el of document.querySelectorAll('#jbSetup [data-tab]')) el.classList.toggle('on', el.dataset.tab === jbTab);
+  jbLocalPaint();
+}
+for (const b of document.querySelectorAll('#jbSetup .jb-tabs button')) b.addEventListener('click', () => jbTabShow(b.dataset.tab));
+// the PC's folders and the drives plugged in, with their songs, and what was read
+const jbN = n => Number(n || 0).toLocaleString('es-AR');
+function jbLocalPaint() {
+  const st = musicLocal, none = !window.localMusic;
+  const rows = (id, list, empty, remove) => {
+    const box = document.getElementById(id); box.replaceChildren();
+    if (!list.length) { const e = document.createElement('div'); e.className = 'jb-empty'; e.textContent = empty; box.append(e); return; }
+    for (const r of list) {
+      const row = document.createElement('div'); row.className = 'jb-folder';
+      const name = document.createElement('div'); name.className = 'jb-fname';
+      const b = document.createElement('b'); b.textContent = r.name; const sm = document.createElement('small'); sm.textContent = r.path; name.append(b, sm);
+      const c = document.createElement('span'); c.className = 'jb-count'; c.textContent = jbN(r.count) + (r.count === 1 ? ' tema' : ' temas');
+      row.append(name, c);
+      if (remove) { const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.title = 'Sacar de la lista (no borra nada)'; x.setAttribute('aria-label', 'Sacar ' + r.name); x.addEventListener('click', () => remove(r)); row.append(x); }
+      box.append(row);
+    }
+  };
+  const stats = (L, what) => {
+    if (!L) return none ? 'La música de la PC y del pendrive se usa desde el programa instalado.' : '';
+    if (L.scanning) return 'Leyendo ' + what + '… ' + (L.found ? jbN(L.read) + ' de ' + jbN(L.found) + ' archivos' : '');
+    if (!L.roots.length) return '';
+    const odd = L.unplayable ? ' · <em>' + jbN(L.unplayable) + ' en formatos que no se pueden tocar acá (ALAC, WMA, APE, AIFF: pasalos a FLAC)</em>' : '';
+    const n = (k, one, many) => jbN(k) + ' ' + (k === 1 ? one : many);
+    return n(L.songs, 'tema', 'temas') + ' · ' + n(L.albums, 'álbum', 'álbumes') + ' · ' + n(L.artists, 'artista', 'artistas') + odd;
+  };
+  const pc = st && st.pc, usb = st && st.usb;
+  rows('jbFolders', pc ? pc.roots : [], 'Todavía no hay carpetas: agregá las que tienen tu música.', r => jbFoldersSet(pc.roots.map(x => x.path).filter(x => x !== r.path)));
+  rows('jbDrives', usb ? usb.roots : [], 'No hay ningún pendrive ni tarjeta enchufados.');
+  document.getElementById('jbPcStats').innerHTML = stats(pc, 'tus carpetas');
+  document.getElementById('jbUsbStats').innerHTML = stats(usb, 'el pendrive');
+  document.getElementById('jbAddFolder').disabled = none;
+  document.getElementById('jbRescan').style.display = pc && pc.roots.length ? '' : 'none';
+}
+async function jbFoldersSet(list) {
+  if (!window.localMusic) return;
+  musicLocal = await window.localMusic.folders(list).catch(() => musicLocal);
+  jbLocalPaint();
+}
+document.getElementById('jbAddFolder').addEventListener('click', async () => {
+  const picked = await window.localMusic.pick().catch(() => []);
+  if (!picked || !picked.length) return;
+  const had = musicLocal && musicLocal.pc ? musicLocal.pc.roots.map(r => r.path) : [];
+  await jbFoldersSet([...had, ...picked]);
+  if (musicModes.source !== 'pc') { jbTabShow('pc'); jbSourceSet('pc', true); }   // the folders chosen: the PC is what the person wants to hear
+  toast('PC · <span>' + jbEsc(picked.map(p => p.split(/[\\/]/).filter(Boolean).pop()).join(', ')) + '</span> agregada' + (picked.length > 1 ? 's' : '') + ': leyendo los temas…', 2200);
+});
+document.getElementById('jbRescan').addEventListener('click', async () => { musicLocal = await window.localMusic.rescan('pc').catch(() => musicLocal); jbLocalPaint(); });
 async function jbSignInNow() {
   const msg = document.getElementById('jbSetupMsg'), go = document.getElementById('jbGo');
   msg.textContent = 'Conectando…'; go.disabled = true;
@@ -416,16 +513,17 @@ async function jbSignInNow() {
   if (!r.library) { msg.textContent = '⚠ Conectado, pero ese usuario no tiene una biblioteca de música'; return; }
   jbSetup(false);
   toast('MÚSICA · <span>conectado</span> como ' + String(r.name).replace(/[<>&]/g, ''), 2000);
+  if (musicModes.source !== 'server') jbSourceSet('server', true);
   if (!jbPower) jbOn(true); else jbOpen('artists');
 }
 document.getElementById('jbGo').addEventListener('click', jbSignInNow);
-document.getElementById('jbSignOut').addEventListener('click', async () => { await musicSignOut(); jbSetup(false); jbHome(['NO SERVER: PRESS SETUP TO CONNECT']); toast('MÚSICA · <span>desconectado</span>', 1600); });
+document.getElementById('jbSignOut').addEventListener('click', async () => { await musicSignOut(); jbSetup(false); if (musicModes.source === 'server') jbHome(['NO SERVER: PRESS SETUP TO CONNECT']); toast('MÚSICA · <span>desconectado</span>', 1600); });
 document.getElementById('jbClose').addEventListener('click', () => jbSetup(false));
 document.getElementById('jbLibrary').addEventListener('change', e => jbLibrarySet(e.target.value));
 document.getElementById('jbSetup').addEventListener('click', e => { if (e.target.id === 'jbSetup') jbSetup(false); });
 document.getElementById('jbSetup').addEventListener('keydown', e => {
   e.stopPropagation();
-  if (e.key === 'Enter') { e.preventDefault(); jbSignInNow(); }
+  if (e.key === 'Enter' && jbTab === 'server' && e.target.closest('input')) { e.preventDefault(); jbSignInNow(); }
   if (e.key === 'Escape') { e.preventDefault(); jbSetup(false); }
 });
 
@@ -439,10 +537,10 @@ function jbKeeps() { if (!jbCfg.show || !musicPlaying()) return false; jbPower =
 // 7.10.17: with the album's cover from the server (asked once per album, kept for the run)
 const jbCovers = new Map();
 function jbCover(s) {
-  const key = s.albumId || s.id;
+  const key = (s.src || 'server') + ':' + (s.albumId || s.id), api = musicApiOf(s.src);   // 7.10.24: the PC's and USB's too (in the file, or its folder)
   if (jbCovers.has(key)) return jbCovers.get(key) || '';
   jbCovers.set(key, '');
-  if (window.jellyfin && window.jellyfin.cover) window.jellyfin.cover(s.id, s.albumId).then(url => { if (url) jbCovers.set(key, url); }).catch(() => {});
+  if (api && api.cover) api.cover(s.id, s.albumId).then(url => { if (url) jbCovers.set(key, url); }).catch(() => {});
   return '';
 }
 npSource('dm90', () => {
@@ -458,17 +556,30 @@ npSource('dm90', () => {
 });
 
 // ── the display: what plays, from the player ──
+// 7.10.24: with nothing playing, what the source has (or what it's missing)
+function jbIdleText() {
+  const src = musicModes.source, L = musicLocal && musicLocal[src], fmt = n => Number(n || 0).toLocaleString('es-AR');
+  if (src === 'server') return musicServer.signedIn ? ['SELECT A SONG', (musicServer.name + ' · ' + musicServer.server.replace(/^https?:\/\//, '')).toUpperCase()]
+    : [musicServer.none ? 'JELLYFIN IN THE INSTALLED PROGRAM' : 'NO SERVER · SETUP', ''];
+  if (!window.localMusic) return ['PC AND USB IN THE INSTALLED PROGRAM', ''];
+  const where = L ? L.roots.map(r => r.name).join(' · ') : '';
+  if (L && L.scanning) return [src === 'pc' ? 'READING YOUR FOLDERS…' : 'READING USB…', (L.found ? fmt(L.read) + ' OF ' + fmt(L.found) + ' FILES · ' : '') + where];
+  if (musicSourceReady(src)) return ['SELECT A SONG', fmt(L.songs) + ' SONGS · ' + fmt(L.albums) + ' ALBUMS · ' + where];
+  if (src === 'pc') return ['NO FOLDERS · SETUP', 'PRESS SETUP TO ADD THE FOLDERS WITH YOUR MUSIC'];
+  return L && L.roots.length ? ['NO MUSIC ON ' + where, 'MP3 · FLAC · AAC · OGG · OPUS · WAV'] : ['NO USB', 'PLUG IN A PENDRIVE OR A MEMORY CARD'];
+}
 function jbSync() {
   if (!jb) return;
-  const s = musicNow(), on = jbPower;
+  const s = musicNow(), on = jbPower, idle = jbIdleText();
   const r = {
-    title: !on ? '' : s ? s.name : musicServer.signedIn ? 'SELECT A SONG' : musicServer.none ? 'JELLYFIN IN THE INSTALLED PROGRAM' : 'NO SERVER · SETUP',
-    artist: !on ? '' : s ? [s.artists || s.artist, s.album + (s.year ? ' (' + s.year + ')' : '')].filter(Boolean).join(' · ') : musicServer.signedIn ? (musicServer.name + ' · ' + musicServer.server.replace(/^https?:\/\//, '')).toUpperCase() : '',
+    title: !on ? '' : s ? s.name : idle[0],
+    artist: !on ? '' : s ? [s.artists || s.artist, s.album + (s.year ? ' (' + s.year + ')' : '')].filter(Boolean).join(' · ') : idle[1],
     quality: on && s ? musicQualityLong(s.media) || 'QUALITY: READING…' : '',
     index: s ? musicPos + 1 : 0, total: musicQueue.length, elapsed: on && s ? Math.floor(musicAudio.currentTime || 0) : 0,
     duration: on && s ? Math.round(isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0) : 0,
     playing: on && musicPlaying(), paused: on && musicPaused(), online: on && !!musicServer.signedIn,
   };
+  jb.setSource(musicModes.source, jbHave());
   jbPanel.classList.toggle('idle', jbPower && !musicPlaying() && (radioPlaying() || cdPlaying()));
   const key = JSON.stringify(r);
   if (key === jbShownKey) return;
@@ -500,4 +611,23 @@ function jbFeed(now) {
 
 jbPanel.classList.toggle('mod-off', !jbCfg.show);
 if (jbCfg.show) jbBuild();
-musicStatus().then(() => { if (!musicServer.signedIn) jbHome([musicServer.none ? 'JELLYFIN WORKS IN THE INSTALLED PROGRAM' : 'NO SERVER: PRESS SETUP TO CONNECT']); else jbHome(['ARTISTS, ALBUMS, SONGS OR SEARCH']); });
+musicStatus().then(() => jbHome([jbHomeText()]));
+// 7.10.24: the PC's and USB's libraries as they're read; a pendrive plugged in (or out) says so, and with the DM-90 on
+// and quiet it goes to USB by itself, as a car stereo does
+let jbUsbWaiting = '';
+musicLocalHeard.push(st => {
+  if (document.getElementById('jbSetup').classList.contains('show')) jbLocalPaint();
+  const mine = st.kind === musicModes.source;
+  if (st.kind === 'usb' && st.plug === 'in') { jbUsbWaiting = st.name; toast('USB · <span>' + jbEsc(st.name) + '</span> enchufado: leyendo la música…', 2000); }
+  if (st.kind === 'usb' && st.plug === 'out') toast('USB · <span>' + jbEsc(st.name) + '</span> afuera', 1600);
+  if (st.changed && st.kind === 'usb' && jbUsbWaiting && !st.usb.scanning && !st.plug) {
+    const name = jbUsbWaiting; jbUsbWaiting = '';
+    if (st.usb.songs && musicModes.source !== 'usb' && jbCfg.show && jbPower && !musicPlaying()) { jbSourceSet('usb', true); toast('USB · <span>' + jbEsc(name) + '</span>: ' + jbN(st.usb.songs) + ' temas', 2200); return; }
+    if (st.usb.songs && musicModes.source !== 'usb') toast('USB · <span>' + jbEsc(name) + '</span>: ' + jbN(st.usb.songs) + ' temas · SOURCE en el DM-90 para escucharlo', 2600);
+  }
+  if (!mine || !st.changed) { if (mine && jb) jbRenderList(); return; }
+  // the lists on screen read again (what was open stays, if it's still there)
+  if (jbView.kind === 'home' || !musicSourceReady()) jbHome([jbHomeText()]);
+  if (jbPower && musicSourceReady() && ['home', 'artists', 'albums', 'songs'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind === 'home' ? 'artists' : jbView.kind);
+  jbShownKey = ''; jbSync();
+});

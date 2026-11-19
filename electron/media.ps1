@@ -5,6 +5,7 @@
 #   volup | voldown | mute                          (Windows' own volume, as the keyboard's volume keys)
 #   vol-get | vol-set <0-100> | vol-mute <0|1>      (7.10.11: the DV-90 volume unit: read it, set it, mute it)
 #   cd-info | cd-play <n> | cd-pause | cd-resume | cd-stop | cd-eject   (the stereo's CD: see below)
+# and says {"usb":{"drives":[{path,name}]}} when the pendrives plugged in change (7.10.24, the DM-90's USB source).
 # Exits when stdin closes (Deck 90 quit). Says {"hb":1} every 5 s so Deck 90 knows it isn't stuck,
 # and exits (Deck 90 starts it again) when Windows' media service keeps failing, e.g. after Explorer restarts.
 
@@ -213,6 +214,16 @@ function VolCommand($c) {
   } catch { Say ([ordered]@{ vol = -1; mute = $false }) }
 }
 
+# 7.10.24: the pendrives and memory cards plugged in (Windows' removable drives, with something in them), for the
+# DM-90's USB source: said once at the start and again whenever they change
+$script:usbKey = $null
+function UsbDrives {
+  $list = @([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq [System.IO.DriveType]::Removable -and $_.IsReady } |
+    ForEach-Object { [ordered]@{ path = $_.RootDirectory.FullName; name = [string]$_.VolumeLabel } })
+  $key = ($list | ForEach-Object { $_.path + '|' + $_.name }) -join ';'
+  if ($key -ne $script:usbKey) { $script:usbKey = $key; Say ([ordered]@{ usb = [ordered]@{ drives = $list } }) }
+}
+
 $stdin = New-Object System.IO.StreamReader([Console]::OpenStandardInput())
 $pending = $stdin.ReadLineAsync()
 $volKeys = @{ 'volup' = 0xAF; 'voldown' = 0xAE; 'mute' = 0xAD }
@@ -221,6 +232,7 @@ $coverKey = ''
 $tick = 0
 $beat = 0
 $fails = 0
+$usbBeat = 6
 
 while ($true) {
   try {
@@ -314,6 +326,7 @@ while ($true) {
     } catch { $script:cdPlaying = $false }
   }
   if ($beat -eq 3 -and -not ('Deck90Cd' -as [type])) { try { CdType } catch { } }
+  if (++$usbBeat -ge 7) { $usbBeat = 0; try { UsbDrives } catch { [Console]::Error.WriteLine('usb: ' + $_.Exception.Message) } }   # about every 3 s
   $beat++
   if ($beat -ge 12) { Say @{ hb = 1 }; $beat = 0 }
   $tick++

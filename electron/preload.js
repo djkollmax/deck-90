@@ -66,6 +66,17 @@ contextBridge.exposeInMainWorld('jellyfin', {
   stream: (id, playable) => ipcRenderer.invoke('jf-stream', String(id), !!playable),
   cover: (id, albumId) => ipcRenderer.invoke('jf-cover', String(id || ''), String(albumId || '')),   // 7.10.17: the header's cover
 });
+// 7.10.24: the DM-90's PC and USB sources (electron/localmusic.js): kind is 'pc' or 'usb'
+contextBridge.exposeInMainWorld('localMusic', {
+  status: () => ipcRenderer.invoke('lm-status'),
+  read: (kind, what, id, query) => ipcRenderer.invoke('lm-read', String(kind), String(what), id == null ? '' : String(id), query || {}),
+  stream: (kind, id) => ipcRenderer.invoke('lm-stream', String(kind), String(id)),
+  cover: (kind, id, albumId) => ipcRenderer.invoke('lm-cover', String(kind), String(id || ''), String(albumId || '')),
+  pick: () => ipcRenderer.invoke('lm-pick'),
+  folders: list => ipcRenderer.invoke('lm-folders', Array.isArray(list) ? list.map(String) : []),
+  rescan: kind => ipcRenderer.invoke('lm-rescan', String(kind)),
+  on: cb => ipcRenderer.on('lm', (e, s) => cb(s)),
+});
 // 7.10.10: Last.fm for the radio, the CD and the DM-90 (electron/lastfm.js)
 contextBridge.exposeInMainWorld('lastfm', {
   status: () => ipcRenderer.invoke('lfm-status'),

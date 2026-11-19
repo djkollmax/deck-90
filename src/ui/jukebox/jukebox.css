@@ -23,3 +23,22 @@
 .jb-go:hover{ background:#163029; }
 .jb-go:disabled{ opacity:.5; cursor:default; }
 .jb-card .phone-off{ margin-left:8px; }
+/* 7.10.24: SETUP's three tabs (SERVIDOR · PC · USB), the folders and drives with their songs, and what was read */
+.jb-tabs{ display:flex; gap:0; margin:2px 0 6px; border:1px solid rgba(128,255,229,.25); border-radius:6px; overflow:hidden; }
+.jb-tabs button{ flex:1; padding:7px 0; border:0; background:#06090c; color:#7f9c95; cursor:pointer; letter-spacing:3px; font-size:11px; font-weight:600; }
+.jb-tabs button + button{ border-left:1px solid rgba(128,255,229,.18); }
+.jb-tabs button:hover{ color:#bdf5e9; }
+.jb-tabs button.on{ background:#10221e; color:#80ffe5; box-shadow:inset 0 -2px 0 #80ffe5; }
+.jb-tab{ display:none; }
+.jb-tab.on{ display:block; }
+.jb-folders{ margin:10px 0 2px; display:flex; flex-direction:column; gap:5px; }
+.jb-folder{ display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:5px; background:#06090c; border:1px solid rgba(255,255,255,.08); }
+.jb-folder .jb-fname{ flex:1; min-width:0; }
+.jb-folder b{ display:block; color:#80ffe5; font-weight:600; font-size:12px; letter-spacing:.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.jb-folder small{ display:block; color:#7c7a70; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:Consolas, 'Courier New', monospace; }
+.jb-folder .jb-count{ color:#cfe9e3; font-size:11px; white-space:nowrap; }
+.jb-folder button{ border:0; background:none; color:#8d8a7c; cursor:pointer; font-size:13px; padding:2px 4px; }
+.jb-folder button:hover{ color:#ff8c78; }
+.jb-empty{ color:#7c7a70; font-size:11px; padding:8px 2px; font-style:italic; }
+.jb-stats{ min-height:15px; margin-top:9px; color:#cfe9e3; font-size:11px; letter-spacing:.3px; }
+.jb-stats em{ color:#ffd27a; font-style:normal; }

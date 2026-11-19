@@ -6,6 +6,8 @@
 //    const dm = new Deck90Music(container, { theme: 'silver' | 'black' });
 //    dm.setNow({ title, artist, quality, index, total, elapsed, duration, playing, paused, online })
 //    dm.setList({ header, right, rows: [{ text, sub, end, playing }], cursor, top, count })   // rows: the visible ones
+//    dm.setSource(active, have)   7.10.24: SERVER, PC or USB lit on the display (active: 'server' | 'pc' | 'usb'; have:
+//      { server, pc, usb } the ones there are, a little brighter than the rest)
 //    dm.setModes({ repeat, shuffle }); dm.setView(key); dm.setLevels(l, r); dm.setPower(on); dm.setTheme(t); dm.setDimmer(0–2)
 //    dm.onKey((key, { hold, index, double, delta, fraction }) => …)   keys: the ids in LAYOUT.keys, 'row' (a list
 //      row clicked: index is its place among the visible rows), 'wheel' (the knob or the list: delta in rows),
@@ -165,8 +167,10 @@ const ROWS = 10, ROW_Y = 174, ROW_H = 23.4, PITCH = 2.2;
 const COLS = { main: { x: 70, max: 42 }, sub: { x: 640, max: 21 }, end: { right: 1132, max: 15 } };
 const LAYOUT = Object.freeze({
   keys: {   // 7.10.3: narrower keys, and DIMMER and COLOR
-    power: { x: 35, y: 445, w: 80, h: 32, label: 'POWER' },
-    setup: { x: 35, y: 492, w: 80, h: 30, label: 'SETUP' },
+    // 7.10.24: SOURCE between POWER and SETUP
+    power: { x: 35, y: 444, w: 80, h: 25, label: 'POWER' },
+    source: { x: 35, y: 474, w: 80, h: 21, label: 'SOURCE' },
+    setup: { x: 35, y: 500, w: 80, h: 21, label: 'SETUP' },
     prev: { x: 145, y: 446, w: 100, h: 29, icon: 'prev' }, play: { x: 253, y: 446, w: 120, h: 29, icon: 'play' },
     pause: { x: 381, y: 446, w: 100, h: 29, icon: 'pause' }, stop: { x: 489, y: 446, w: 100, h: 29, icon: 'stop' },
     next: { x: 597, y: 446, w: 100, h: 29, icon: 'next' }, repeat: { x: 705, y: 446, w: 74, h: 29, label: 'REPEAT' },
@@ -180,7 +184,7 @@ const LAYOUT = Object.freeze({
   },
   knob: { cx: 1100, cy: 484, r: 40 },
 });
-const NAMES = { power: 'POWER', setup: 'SETUP: el servidor Jellyfin', prev: 'Tema anterior', play: 'PLAY', pause: 'PAUSA', stop: 'STOP', next: 'Tema siguiente',
+const NAMES = { power: 'POWER', source: 'SOURCE: servidor, PC o USB', setup: 'SETUP: el servidor, las carpetas de la PC y el pendrive', prev: 'Tema anterior', play: 'PLAY', pause: 'PAUSA', stop: 'STOP', next: 'Tema siguiente',
   repeat: 'REPEAT: toda la cola, un tema o apagado', shuffle: 'SHUFFLE: al azar', queue: 'Q: lo marcado suena después de este',
   artists: 'Artistas', albums: 'Álbumes', songs: 'Todos los temas', list: 'La cola', search: 'Buscar', back: 'Atrás', enter: 'ENTER: abrir o tocar lo marcado',
   dimmer: 'DIMMER: el brillo del display', all: 'SHUFFLE ALL: toda la biblioteca al azar', color: 'COLOR: el color de los displays del rack' };
@@ -261,7 +265,7 @@ function buildFaceplate(p) {
       <text x="652" y="23" text-anchor="middle" font-size="10" font-weight="500" letter-spacing="1.8">DM-90 DIGITAL MUSIC SERVER</text>
     </g>
     <g font-family="Arial,Helvetica,sans-serif" fill="${dim}" font-size="7.1" letter-spacing="1.35">
-      <text x="1153" y="23" text-anchor="end">NETWORK AUDIO · JELLYFIN</text>
+      <text x="1153" y="23" text-anchor="end">JELLYFIN · PC · USB</text>
       <text x="75" y="${H - 9}" text-anchor="middle" font-size="6.1">STANDBY</text>
       <text x="1100" y="540" text-anchor="middle" font-size="6.1">SELECT</text>
     </g>
@@ -316,6 +320,14 @@ class Deck90Music {
     this._renderList(); return this;
   }
   setModes({ repeat = 'off', shuffle = false } = {}) { this._modes = { repeat: ['all', 'one'].includes(repeat) ? repeat : 'off', shuffle: !!shuffle }; this._paintModes(); this._updateLeds(); return this; }
+  setSource(active, have = {}) {
+    this._source = { active: ['server', 'pc', 'usb'].includes(active) ? active : 'server', have: { server: !!have.server, pc: !!have.pc, usb: !!have.usb } };
+    this._state.source = this._source.active; this._paintSource(); return this;
+  }
+  _paintSource() {
+    if (!this._sources) return;
+    for (const [k, el] of Object.entries(this._sources)) { const on = this._source.active === k; el.setAttribute('fill', on ? LIT : DIM); el.setAttribute('opacity', on || this._source.have[k] ? 1 : .55); }
+  }
   setView(key) { this._state.view = VIEW_KEYS.includes(key) ? key : ''; this._updateLeds(); return this; }
   setTimeMode(mode) { this._remain = mode !== 'elapsed'; this._cache.time = null; this._renderNow(); return this; }
   setLevels(left, right) { this._state.levels = { left: clamp(left), right: clamp(right) }; this._paintLevels(); return this; }
@@ -359,7 +371,10 @@ class Deck90Music {
     D.append(this._text('TRACK', 278, 53, 1.4));
     this._trackDigits = this._digits(276, 80, 4, .55, false);      // 7.10.13: four digits (SHUFFLE ALL queues thousands)
     this._total = node('path', { fill: LIT }); D.append(this._total);
-    this._net = node('path', { fill: DIM, d: dotsPath('JELLYFIN', 278, 121, 1.05) }); D.append(this._net);
+    // 7.10.24: the source, as a 90s unit's input lamps
+    this._sources = {};
+    for (const [key, word, x] of [['server', 'SERVER', 278], ['pc', 'PC', 324], ['usb', 'USB', 345]]) { this._sources[key] = this._text(word, x, 121, 1.05, DIM); D.append(this._sources[key]); }
+    this._source = { active: 'server', have: { server: false, pc: false, usb: false } };
     const clip = (id, el) => { const g = node('g', { 'clip-path': `url(#${p}-${id}-clip)` }); g.append(el); D.append(g); return el; };
     this._title = clip('title', node('path', { fill: LIT }));
     this._artist = clip('artist', node('path', { fill: LIT }));
@@ -464,7 +479,7 @@ class Deck90Music {
       this._listen(g, 'keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) start(e, 'keyboard'); } });
       this._listen(g, 'keyup', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); finish(e); } });
     }
-    this._powerLed = node('circle', { cx: 125, cy: 461, r: 2.2, fill: LIT }); this.svg.append(this._powerLed);
+    this._powerLed = node('circle', { cx: 125, cy: 456.5, r: 2.2, fill: LIT }); this.svg.append(this._powerLed);
   }
   // the SELECT knob: turning it (the wheel, or dragging up and down) moves through the list
   _buildKnob() {
@@ -533,7 +548,7 @@ class Deck90Music {
     this._progress.setAttribute('width', String(n.duration > 0 ? 503 * clamp(n.elapsed / n.duration) : 0));
     const lit = { play: n.playing, pause: n.paused, net: n.online };
     for (const [k, el] of Object.entries(this._indicators)) el.setAttribute('fill', lit[k] ? LIT : DIM);
-    this._net.setAttribute('fill', n.online ? LIT : DIM);
+    this._paintSource();
     this._updateLeds();
   }
   // a line too long for the window goes there and back, as the DC-90's (and even with Windows' animations off)

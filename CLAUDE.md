@@ -19,11 +19,13 @@ wants it done then (see Shared names).
   Windows bridge: now playing, volume keys, the CD drive through MCI), `mpris.js` (the same on Linux),
   `radioproxy.js` (the radio through a local proxy that reads the song and bitrate), `cdnames.js`
   (MusicBrainz), `jellyfin.js` (the DM-90's Jellyfin server: sign-in, the music library, a song's stream),
+  `localmusic.js` (the DM-90's PC and USB sources: folders, drives plugged in, answering as Jellyfin does) with `tags.js`
+  (a music file's tags from its headers),
   `audiofile.js` (a data CD file's rate and bits), `remote.js` (the phone), `updater.js`, `tracklog.js`,
   `jsonfile.js` (its settings files, written whole).
 - `src/core/`: what works with no screen. `events.js` is the hub (`deck.on`, `deck.emit`, `deck.notice` for a
   line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
-  (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) and `music.js` (the Jellyfin library, the queue,
+  (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) and `music.js` (the library of SOURCE's server, PC or USB, the queue,
   Q, REPEAT and SHUFFLE, the player) and `eq.js` (the equalizer's Web Audio chain for those players) say what
   changed through it and never touch a screen. The screens call
   their functions and listen. `store.js` reads and writes what's saved (localStorage).

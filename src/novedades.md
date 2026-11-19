@@ -1,5 +1,16 @@
 # Novedades
 
+## 7.10.24 — 2026-11-19
+
+### Nuevo
+- **El DM-90 toca la música de tu PC y de un pendrive.** La tecla nueva **SOURCE** pasa por **SERVER** (Jellyfin), **PC** y **USB**, y el display muestra cuál está prendida. En **SETUP → PC** tocás **+ AGREGAR CARPETA** y elegís dónde tenés la música (F:\Música, D:\Audio…). Deck 90 lee los datos de cada tema (artista, álbum, número, año, tapa y calidad) y te arma ARTISTS, ALBUMS y SONGS como con Jellyfin, con SEARCH, Q y SHUFFLE ALL. La segunda vez abre al toque y, si agregás temas, aparecen solos.
+- **Un pendrive o una tarjeta de memoria:** lo enchufás y aparece solo en **USB**; si el DM-90 está prendido sin sonar, pasa a USB. Cuando lo sacás, desaparece.
+- Toca MP3, FLAC (también 24 bit), AAC y M4A, OGG, Opus y WAV en su calidad original. Lo que no se puede tocar en la PC (ALAC, WMA, APE, AIFF) se cuenta en SETUP, para pasarlo a FLAC.
+- **La cola queda guardada:** cerrás Deck 90, lo abrís y está en el mismo tema; ▶ sigue desde donde quedó.
+
+### Arreglos
+- El estéreo, en el modo del DM-90, decía CD abajo de PLAY: ahora dice SRV, PC o USB. Y BAND ahí cambiaba la banda de la radio; ahora pasa por servidor, PC y USB.
+
 ## 7.10.23 — 2026-11-14
 
 ### Cambios

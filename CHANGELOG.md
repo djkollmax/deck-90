@@ -1,5 +1,27 @@
 # Changelog
 
+## 7.10.24
+
+### Added
+- **The DM-90 plays the PC's music and a pendrive's: SOURCE SERVER → PC → USB.** `electron/localmusic.js` keeps two
+  libraries, the folders added in SETUP → PC (`localmusic.json`) and the removable drives plugged in (Windows: the
+  bridge reports them, `media.ps1` `{usb:{drives}}` every ~3 s; Linux: what's mounted under /media and /run/media),
+  and answers `read` / `stream` / `cover` in Jellyfin's shapes, so core/music.js and the screens use one code for the
+  three. Every file's tags come from its headers only (`electron/tags.js`: ID3v2/v1 with the MPEG frame and Xing/Info/
+  VBRI, FLAC blocks, MP4 boxes and iTunes tags, Ogg Vorbis/Opus comments, WAV fmt/LIST/id3, ADTS), kept in
+  `localmusic-index.json` by path, size and date; untagged files take their folders' names (Artist/Album/01 - Song,
+  CD1/CD2 one album). Covers: the file's, the album's, or a picture in its folder. The sound streams from a server on
+  127.0.0.1 with a secret in each address, ranges and CORS (the EQ takes it). The PC's folders are watched.
+- The DM-90's faceplate: SOURCE between POWER and SETUP, and SERVER · PC · USB lamps on the display
+  (`dm.setSource`). SETUP has a tab per source: the server's sign-in, the PC's folders (add, remove, read again, what
+  was found and what can't be played) and the drives plugged in. A pendrive plugged in with the DM-90 on and quiet
+  switches to USB; taken out, its songs leave the queue.
+- **The queue is kept** (`deck90-music-queue`): opened again, the same song is ready and PLAY goes on from its second.
+
+### Fixed
+- The car stereo said CD under PLAY in the DM-90's mode; it says SRV, PC or USB. BAND there changed the radio's band;
+  now it is the DM-90's SOURCE.
+
 ## 7.10.23
 
 ### Changed

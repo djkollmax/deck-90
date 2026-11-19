@@ -385,18 +385,38 @@
 </div>
 
 <!-- THE DM-90'S SERVER (7.10.0): Jellyfin's address, user and password; the password goes to the server only -->
-<div id="jbSetup" role="dialog" aria-label="Servidor de música">
+<div id="jbSetup" role="dialog" aria-label="DM-90 · SETUP">
   <div class="phone-card jb-card">
-    <div class="phone-head">DM-90 · SERVIDOR JELLYFIN <button type="button" id="jbClose" title="Cerrar (Esc)">✕</button></div>
-    <label>SERVIDOR<input id="jbServer" spellcheck="false" placeholder="http://localhost:8096"></label>
-    <label>USUARIO<input id="jbUser" spellcheck="false"></label>
-    <label>CONTRASEÑA<input id="jbPass" type="password"></label>
-    <div class="phone-help">La contraseña va solo a tu servidor; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
-      Solo música: las bibliotecas de música del usuario.</div>
-    <label id="jbLibraryRow" style="display:none">BIBLIOTECA (también: SETUP apretado un segundo)<select id="jbLibrary"></select></label>
-    <div class="jb-msg" id="jbSetupMsg"></div>
-    <button type="button" id="jbGo" class="jb-go">CONECTAR</button>
-    <button type="button" id="jbSignOut" class="phone-off">DESCONECTAR</button>
+    <div class="phone-head">DM-90 · SETUP <button type="button" id="jbClose" title="Cerrar (Esc)">✕</button></div>
+    <!-- 7.10.24: the three sources, one tab each (SETUP opens the one SOURCE has) -->
+    <div class="jb-tabs" role="tablist">
+      <button type="button" role="tab" data-tab="server">SERVIDOR</button><button type="button" role="tab" data-tab="pc">PC</button><button type="button" role="tab" data-tab="usb">USB</button>
+    </div>
+    <div class="jb-tab" data-tab="server">
+      <label>SERVIDOR JELLYFIN<input id="jbServer" spellcheck="false" placeholder="http://localhost:8096"></label>
+      <label>USUARIO<input id="jbUser" spellcheck="false"></label>
+      <label>CONTRASEÑA<input id="jbPass" type="password"></label>
+      <div class="phone-help">La contraseña va solo a tu servidor; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
+        Solo música: las bibliotecas de música del usuario.</div>
+      <label id="jbLibraryRow" style="display:none">BIBLIOTECA (también: SETUP apretado un segundo)<select id="jbLibrary"></select></label>
+      <div class="jb-msg" id="jbSetupMsg"></div>
+      <button type="button" id="jbGo" class="jb-go">CONECTAR</button>
+      <button type="button" id="jbSignOut" class="phone-off">DESCONECTAR</button>
+    </div>
+    <div class="jb-tab" data-tab="pc">
+      <div class="phone-help">Las carpetas de esta PC donde tenés música (por ejemplo F:\Música). Se leen los datos de cada
+        tema (artista, álbum, número, tapa) y la lista se mantiene sola cuando agregás o cambiás temas.</div>
+      <div class="jb-folders" id="jbFolders"></div>
+      <button type="button" id="jbAddFolder" class="jb-go">+ AGREGAR CARPETA</button>
+      <button type="button" id="jbRescan" class="phone-off">LEER DE NUEVO</button>
+      <div class="jb-stats" id="jbPcStats"></div>
+    </div>
+    <div class="jb-tab" data-tab="usb">
+      <div class="phone-help">Enchufá un pendrive o una tarjeta de memoria con música: aparece solo, se lee entero y, si el DM-90
+        está prendido sin sonar, pasa a USB. Cuando lo sacás, desaparece de la lista.</div>
+      <div class="jb-folders" id="jbDrives"></div>
+      <div class="jb-stats" id="jbUsbStats"></div>
+    </div>
   </div>
 </div>
 

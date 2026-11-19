@@ -85,17 +85,24 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 **VER → CD** (o la tecla `0`) muestra el DC-90, una unidad de CD con cajón ancho y display VFD, debajo del sintonizador. Toca la lectora de CD/DVD de la PC (también una externa por USB): **POWER** lee el disco y lo arranca, **▶ ❚❚ ■** y **|◀◀ ▶▶|**, y **OPEN / CLOSE** abre y cierra la bandeja de verdad. Un CD de audio suena desde la lectora; un disco con MP3 reproduce sus archivos. El CD y la radio se turnan.
 
-### Tu música de Jellyfin en el rack
+### Tu música en el rack: Jellyfin, la PC y el pendrive
 
-**VER → MÚSICA** (o la tecla `J`) muestra el DM-90, una unidad doble con el mismo frente que el sintonizador y la compactera, para escuchar la música de tu servidor [Jellyfin](https://jellyfin.org) (solo música, no películas). **SETUP** pide la dirección del servidor, el usuario y la contraseña; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
+**VER → MÚSICA** (o la tecla `J`) muestra el DM-90, una unidad doble con el mismo frente que el sintonizador y la compactera. **SOURCE** elige de dónde sale la música, y el display muestra cuál está prendida:
+
+- **SERVER:** tu servidor [Jellyfin](https://jellyfin.org) (solo música, no películas). **SETUP** pide la dirección del servidor, el usuario y la contraseña; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
+- **PC:** las carpetas de la PC donde tenés música (F:\Música, D:\Audio…). En **SETUP → PC** tocás **+ AGREGAR CARPETA** y elegís una o varias. Deck 90 lee los datos de cada tema (artista, álbum, número, año, tapa, calidad) y arma la biblioteca igual que la de Jellyfin. La segunda vez abre al toque y, si agregás o cambiás temas, se pone al día solo. Los temas sin datos toman los nombres de sus carpetas (Artista\Álbum\01 - Tema).
+- **USB:** un pendrive o una tarjeta de memoria con música. Lo enchufás y aparece solo; si el DM-90 está prendido sin sonar, pasa a USB. Cuando lo sacás, desaparece.
+
+Toca MP3, FLAC (hasta 24 bit / 192 kHz), AAC y M4A, OGG, Opus y WAV en su calidad original. ALAC, WMA, APE y AIFF no se pueden tocar en la PC: se cuentan en SETUP y se pueden pasar a FLAC.
 
 - Arriba, el tema que suena: nombre, artista · álbum, la calidad completa ("FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO"; los displays hablan en inglés, como un equipo de los 90), la cuenta regresiva y el lugar en la cola.
 - Abajo, una lista larga en el display: **ARTISTS → ALBUMS → SONGS**, **SONGS** (todos los temas), **QUEUE** (la cola) y **SEARCH**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ BACK** vuelve.
 - **Q** (o la tecla Q · PLAY NEXT) pone lo marcado para que suene después del tema actual; un álbum o un artista, enteros. **REPEAT**, **SHUFFLE**, **▶ ❚❚ ■ |◀◀ ▶▶|**.
 - **COLOR** cambia el color de los displays de todo el rack (24 colores) y **DIMMER** su brillo; también están en el DV-90 y en ⚙ PANTALLA → DISPLAYS, y tocando la hora de arriba se pasa al color siguiente. **SHUFFLE ALL** toca toda la biblioteca al azar.
-- El estéreo (`E`) lo toca en el modo SERVER, y el encabezado muestra lo que suena.
-- Toca el archivo en su calidad original; lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
-- Si el servidor tiene varias bibliotecas de música, **SETUP apretado un segundo** pasa por todas juntas y cada una.
+- El estéreo (`E`) lo toca en el modo SERVER (BAND pasa por servidor, PC y USB, y abajo del display dice SRV, PC o USB), y el encabezado muestra lo que suena con su tapa.
+- La cola queda guardada: cerrás Deck 90, lo abrís y está en el mismo tema; ▶ sigue desde el segundo donde quedó.
+- Toca el archivo en su calidad original; del servidor, lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
+- Si el servidor tiene varias bibliotecas de música (o la PC varias carpetas, o hay dos pendrives), **SETUP apretado un segundo** pasa por todas juntas y cada una.
 
 ### Volumen en el rack
 

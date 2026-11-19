@@ -95,7 +95,8 @@ test('REPEAT all, one, off and SHUFFLE, remembered', async () => {
   await d.click(K('repeat'), 200); assert.equal((await modes())[0], 'off');
   await d.click(K('shuffle'), 200); assert.equal((await modes())[1], true);
   await d.click(K('shuffle'), 200);
-  assert.equal((await modes())[2], '{"repeat":"off","shuffle":false,"library":""}');
+  // 7.10.24: with the source and each source's library
+  assert.equal((await modes())[2], '{"repeat":"off","shuffle":false,"source":"server","library":"","libraries":{"pc":"","usb":""}}');
 });
 
 test('SEARCH finds as you type, any words in any field; ESC keeps the results, BACK returns to them', async () => {

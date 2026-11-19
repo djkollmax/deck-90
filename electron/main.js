@@ -536,6 +536,7 @@ function startMedia() {
         if (info.hb) continue;                                  // heartbeat: the bridge is alive
         if (info.cd) { if (win && !win.isDestroyed()) win.webContents.send('cd', info.cd); continue; }   // the stereo's CD
         if ('vol' in info) { sendVolume(info); continue; }       // 7.9.21: Windows' volume after the stereo's VOL keys
+        if (info.usb) { lm().setDrives(Array.isArray(info.usb.drives) ? info.usb.drives : []); continue; }   // 7.10.24: the pendrives plugged in
         if (info.ready) {
           mlog('bridge ready'); mediaUp = Date.now();
           for (const c of mediaWaiting.splice(0)) if (media && media.stdin.writable) media.stdin.write(c + '\n');   // 7.10.14
@@ -729,6 +730,23 @@ ipcMain.handle('jf-sign-out', e => fromWin(e) ? jf().signOut() : null);
 ipcMain.handle('jf-read', (e, kind, id, query) => fromWin(e) ? jf().read(String(kind), id, query && typeof query === 'object' ? query : {}) : null);
 ipcMain.handle('jf-stream', (e, id, playable) => fromWin(e) ? jf().stream(String(id || ''), !!playable) : '');
 ipcMain.handle('jf-cover', (e, id, albumId) => fromWin(e) ? jf().cover(String(id || ''), String(albumId || '')) : '');   // 7.10.17
+// 7.10.24: the DM-90's PC and USB sources (localmusic.js): the person's folders and the pendrives plugged in
+let localMusic = null;
+const lm = () => localMusic || (localMusic = global.localMusic = require('./localmusic').createLocalMusic({ dir: app.getPath('userData'), log: mlog,
+  send: s => { if (win && !win.isDestroyed()) win.webContents.send('lm', s); } }));
+const lmKind = k => k === 'usb' ? 'usb' : 'pc';
+ipcMain.handle('lm-status', e => fromWin(e) ? lm().status() : null);
+ipcMain.handle('lm-read', (e, kind, what, id, query) => fromWin(e) ? lm().read(lmKind(kind), String(what), String(id || ''), query && typeof query === 'object' ? query : {}) : null);
+ipcMain.handle('lm-stream', (e, kind, id) => fromWin(e) ? lm().stream(lmKind(kind), String(id || '')) : '');
+ipcMain.handle('lm-cover', (e, kind, id, albumId) => fromWin(e) ? lm().cover(lmKind(kind), String(id || ''), String(albumId || '')) : '');
+ipcMain.handle('lm-folders', (e, list) => fromWin(e) ? lm().setFolders(Array.isArray(list) ? list.slice(0, 40).map(String) : []) : null);
+ipcMain.handle('lm-rescan', (e, kind) => fromWin(e) ? lm().rescan(lmKind(kind)) : null);
+// the folder chooser (several at once); the page adds what was chosen
+ipcMain.handle('lm-pick', async e => {
+  if (!fromWin(e)) return [];
+  const r = await dialog.showOpenDialog(win, { title: 'Carpetas con música', buttonLabel: 'Agregar', properties: ['openDirectory', 'multiSelections'] });
+  return r.canceled ? [] : r.filePaths.slice(0, 40);
+});
 // 7.9.22: what a file on a data CD is made of (audiofile.js), for its quality on the displays
 ipcMain.handle('cd-file-info', (e, file) => fromWin(e) ? require('./audiofile').audioFileInfo(file) : null);
 // the radio through the local proxy (radioproxy.js): the song a station sends, and its format and bitrate
@@ -805,6 +823,6 @@ app.whenReady().then(() => {
   setInterval(spotlessState, 3000);                          // the user may move the slider while it plays
   if (win) win.webContents.on('did-finish-load', () => { spotlessLast = ''; spotlessState(); });
 });
-app.on('before-quit', () => { app.isQuitting = true; if (remote) remote.stop(); if (mpris) mpris.stop(); if (media) { try { media.stdin.end(); media.kill(); } catch (_) {} } });
+app.on('before-quit', () => { app.isQuitting = true; if (localMusic) localMusic.close(); if (remote) remote.stop(); if (mpris) mpris.stop(); if (media) { try { media.stdin.end(); media.kill(); } catch (_) {} } });
 
 app.on('window-all-closed', () => app.quit());

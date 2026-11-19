@@ -172,7 +172,8 @@ function stereoInfo() {
   if (stereoCfg.mode === 'radio') return { quality: radioPlaying() && !radioTrouble ? radioQuality(radioNow) : '' };
   if (stereoCfg.mode === 'music') {
     const m = musicNow();
-    return m ? { number: musicPos + 1, length: isFinite(musicAudio.duration) ? musicAudio.duration : m.len || 0, quality: musicQualityShort(m.media) } : {};
+    const source = { server: 'SRV', pc: 'PC', usb: 'USB' }[m && m.src || musicModes.source];   // 7.10.24: what plays, under PLAY (it said CD)
+    return m ? { number: musicPos + 1, length: isFinite(musicAudio.duration) ? musicAudio.duration : m.len || 0, quality: musicQualityShort(m.media), source } : { source };
   }
   if (stereoCfg.mode !== 'cd' || !cdInfo || !cdInfo.present) return {};
   const files = cdFiles();
@@ -215,9 +216,10 @@ function stereoText(force) {
   }
   if (stereoCfg.mode === 'music') {                            // 7.10.4: the DM-90's song, as the CD's
     const m = musicNow(), info = stereoInfo();
-    const title = m ? m.name : musicServer.signedIn ? 'SERVER' : 'NO SERVER';
+    const ready = musicSourceReady(), src = musicModes.source;
+    const title = m ? m.name : ready ? musicSourceName() : { server: 'NO SERVER', pc: 'NO FOLDERS', usb: 'NO USB' }[src];
     const artist = m ? [m.artists || m.artist, m.album].filter(Boolean).join(' · ') + (musicPaused() ? ' · PAUSE' : '')
-      : musicServer.signedIn ? 'DM-90 · SEL PLAYS IT ALL AT RANDOM' : 'DM-90 · SETUP IN THE RACK';
+      : ready ? 'DM-90 · SEL PLAYS IT ALL AT RANDOM · BAND: SERVER, PC, USB' : src === 'usb' ? 'PLUG IN A PENDRIVE · BAND: SERVER, PC, USB' : 'DM-90 · SETUP IN THE RACK · BAND: SERVER, PC, USB';
     key = 'music|' + title + '|' + artist + '|' + JSON.stringify(info);
     if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing: true, ...info }); }
     stereoDisplay.setElapsed(musicAudio.currentTime || 0);
@@ -370,7 +372,7 @@ function stereoKey(k, hold) {
     const resumed = stereoSwitch(next);
     if (next === 'pc') toast('MODE · <span>PC</span>: lo que suena en la computadora', 1800);
     else if (next === 'radio') { toast('MODE · <span>RADIO</span> por internet', 1600); if (radioNow) radioTune(radioNow); else radioMemory(radioMem.slot || 1); }
-    else if (next === 'music') { if (!resumed) toast('MODE · <span>SERVER</span>: la música del DM-90' + (musicServer.signedIn ? ' (SEL la pone)' : ' · conectalo con SETUP en el rack'), 2200); }
+    else if (next === 'music') { if (!resumed) toast('MODE · <span>' + musicSourceName() + '</span>: la música del DM-90' + (musicSourceReady() ? ' (SEL la pone; BAND: servidor, PC o USB)' : musicModes.source === 'usb' ? ' · enchufá un pendrive (BAND: servidor o PC)' : ' · elegila con SETUP en el rack (BAND: servidor, PC o USB)'), 2600); }
     else if (!resumed) { toast('MODE · <span>CD</span> · leyendo la lectora…', 1600); cdAsk(); }
     return stereoText(true);
   }
@@ -386,6 +388,8 @@ function stereoKey(k, hold) {
     toast('SDM ' + stereoCfg.color + '/' + STEREO_COLORS + ' · <span>' + (look ? look.name + '</span>: ' + look.say : 'COLOR ' + stereoCfg.color + '</span>'), look ? 2000 : 1200);
     return stereoPaint();
   }
+  // 7.10.24: BAND in the DM-90's mode is its SOURCE: SERVER → PC → USB
+  if (k === 'band' && !hold && stereoCfg.mode === 'music') { jbSourceNext(); return stereoText(true); }
   // 7.10.12: BAND held is A.MEM (printed under it): the next number keeps the station playing, as the tuner's MEMO
   if (k === 'band' && hold) {
     if (!radioNow) { toast('Primero sintonizá una radio (TUNE) y después BAND apretado y el número', 2600); return; }
@@ -415,8 +419,8 @@ function stereoKey(k, hold) {
   if (stereoCfg.mode === 'music' && (k === 'sel' || k === 'prev' || k === 'next')) {   // 7.10.4: the DM-90's queue
     if (k === 'sel') {
       if (musicQueue.length || musicAudio.getAttribute('src')) musicToggle();
-      else if (musicServer.signedIn) musicShuffleAll().then(n => n && toast('SHUFFLE ALL · <span>' + n.toLocaleString('es-AR') + ' temas</span> al azar', 2000)).catch(() => {});
-      else toast('MÚSICA · <span>conectá Jellyfin</span> con SETUP en el DM-90 del rack', 2400);
+      else if (musicSourceReady()) musicShuffleAll().then(n => n && toast('SHUFFLE ALL · <span>' + n.toLocaleString('es-AR') + ' temas</span> al azar', 2000)).catch(() => {});
+      else toast('MÚSICA · <span>' + (musicModes.source === 'usb' ? 'enchufá un pendrive' : musicModes.source === 'pc' ? 'elegí tus carpetas' : 'conectá Jellyfin') + '</span> con SETUP en el DM-90 del rack', 2400);
     } else if (k === 'next') musicNext(); else musicPrev();
     return;
   }
