@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.10.25
+
+### Changed
+- The header's cover is as tall as its display (44 px, was a 32 px thumbnail). With the mouse on it (or touched) it
+  shows big under the header, 280 px, with the song, the artist, the album and year and the quality
+  (`npBig`, header/nowplaying.js; moved to the body's end so no rack unit's stacking covers it).
+- The DM-90 shows the album's cover in its display's own dots, left of the title: 24 × 24 dots in three brightnesses
+  with error diffusion, in the display's colour (`dm.setCover`); the title, artist, quality and time bar move right of it.
+
 ## 7.10.24
 
 ### Added

@@ -27,6 +27,7 @@ before(async () => {
   for (let i = 1; i <= 3; i++) flac(path.join(pc, 'Zona Inventada', 'Primer Viaje (1991)', '0' + i + '.flac'), { title: 'Tramo ' + i, artist: 'Zona Inventada', album: 'Primer Viaje', track: i, year: 1991 });
   mp3(path.join(pc, 'Banda de Prueba', 'Lado B', 'a.mp3'), { title: 'Canción del Lado B', artist: 'Banda de Prueba', albumArtist: 'Banda de Prueba', album: 'Lado B', track: '1/2', year: 2003 });
   mp3(path.join(pc, 'Banda de Prueba', 'Lado B', 'b.mp3'), { title: 'Con Invitada', artist: 'Banda de Prueba feat. Otra', albumArtist: 'Banda de Prueba', album: 'Lado B', track: '2/2', year: 2003 });
+  fs.copyFileSync(fixture('cover.jpg'), path.join(pc, 'Zona Inventada', 'Primer Viaje (1991)', 'cover.jpg'));   // a made-up cover, in the folder
   plain(path.join(pc, 'Sin Tags', 'Disco Casero', 'CD1', '01 - Arranque.mp3'));
   plain(path.join(pc, 'Sin Tags', 'Disco Casero', 'CD2', '01 - Final.mp3'));
   fs.copyFileSync(fixture('alac.m4a'), path.join(pc, 'Sin Tags', 'alac.m4a'));            // Chromium can't play ALAC: counted, not listed
@@ -103,6 +104,24 @@ test('a song from the PC plays at its own quality, from the program itself; the 
   // another address in the program's server answers nothing
   const bad = await d.app.evaluate((_, u) => fetch(u.replace(/\/pc\/[0-9a-f]{32}/, '/pc/' + '0'.repeat(32))).then(r => r.status), s.src);
   assert.equal(bad, 404);
+});
+
+test('the cover: as tall as the header display, big with the mouse on it, and in dots on the DM-90 beside the title', async () => {
+  const c = await until(() => d.win.evaluate(() => el('npCover').classList.contains('on') && el('npCover').getBoundingClientRect().height));
+  assert.equal(c, 44, 'it was a 32 px thumbnail');
+  await d.win.hover('#npCover'); await d.wait(500);
+  const big = await d.win.evaluate(() => ({ on: el('npBig').classList.contains('on'), w: el('npBigImg').getBoundingClientRect().width,
+    t: [el('npBigTitle').textContent, el('npBigArtist').textContent, el('npBigAlbum').textContent, el('npBigQuality').textContent] }));
+  assert.deepEqual(big, { on: true, w: 280, t: ['Tramo 2', 'Zona Inventada', 'Primer Viaje · 1991', 'FLAC LOSSLESS · 24 BIT / 96 KHZ · 2 KBPS · STEREO'] });
+  await d.win.mouse.move(600, 900); await d.wait(300);
+  assert.equal(await d.win.evaluate(() => el('npBig').classList.contains('on')), false, 'the mouse away, it goes');
+  await d.win.click('#npCover'); await d.wait(300);
+  assert.equal(await d.win.evaluate(() => el('npBig').classList.contains('pinned')), true, 'touched, it stays');
+  await d.win.keyboard.press('Escape'); await d.wait(200);
+  assert.equal(await d.win.evaluate(() => el('npBig').classList.contains('on')), false);
+  const dots = await until(() => d.win.evaluate(() => jb._coverDots.map(p => (p.getAttribute('d') || '').split('M').length - 1).reduce((a, b) => a + b, 0) > 100 && { x: jb._tx, clip: +jb.svg.querySelector('#' + jb.prefix + '-title-clip rect').getAttribute('x') }));
+  assert.deepEqual(dots, { x: 487, clip: 486 }, 'the title moves right of the cover');
+  await use();
 });
 
 test('a pendrive plugged in with the DM-90 quiet: it goes to USB by itself; taken out while playing, the music stops', async () => {

@@ -8,6 +8,7 @@
 //    dm.setList({ header, right, rows: [{ text, sub, end, playing }], cursor, top, count })   // rows: the visible ones
 //    dm.setSource(active, have)   7.10.24: SERVER, PC or USB lit on the display (active: 'server' | 'pc' | 'usb'; have:
 //      { server, pc, usb } the ones there are, a little brighter than the rest)
+//    dm.setCover(url)   7.10.25: the album's cover in the display's own dots, at the left of the title ('' none)
 //    dm.setModes({ repeat, shuffle }); dm.setView(key); dm.setLevels(l, r); dm.setPower(on); dm.setTheme(t); dm.setDimmer(0–2)
 //    dm.onKey((key, { hold, index, double, delta, fraction }) => …)   keys: the ids in LAYOUT.keys, 'row' (a list
 //      row clicked: index is its place among the visible rows), 'wheel' (the knob or the list: delta in rows),
@@ -328,6 +329,47 @@ class Deck90Music {
     if (!this._sources) return;
     for (const [k, el] of Object.entries(this._sources)) { const on = this._source.active === k; el.setAttribute('fill', on ? LIT : DIM); el.setAttribute('opacity', on || this._source.have[k] ? 1 : .55); }
   }
+  // the cover: 24 × 24 dots of 3.5 (84 px) where the title began; the title, the artist, the quality and the time bar move
+  // to its right. Its light, from dark to bright, in three steps (with error diffusion, so faces and letters read)
+  setCover(url) {
+    url = url || '';
+    if (url === this._coverUrl) return this;
+    this._coverUrl = url;
+    const lay = on => {
+      this._tx = on ? 487 : 391; this._tw = on ? 406 : 502;
+      for (const id of ['title', 'artist', 'quality']) { const r = this.svg.querySelector(`#${this.prefix}-${id}-clip rect`); if (r) { r.setAttribute('x', this._tx - 1); r.setAttribute('width', this._tw + 3); } }
+      this._rail.setAttribute('x', this._tx); this._rail.setAttribute('width', this._tw + 1); this._progress.setAttribute('x', this._tx);
+      if (!on) for (const d of this._coverDots) d.setAttribute('d', '');
+      this._titleT = this._artistT = this._qualityT = performance.now();
+      this._renderNow && this._renderNow();
+    };
+    if (!url) { lay(false); return this; }
+    const img = new Image();
+    img.onload = () => {
+      if (this._coverUrl !== url) return;
+      const N = 24, c = document.createElement('canvas'); c.width = c.height = N;
+      const g = c.getContext('2d'), side = Math.min(img.naturalWidth, img.naturalHeight);
+      g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, N, N);
+      let px; try { px = g.getImageData(0, 0, N, N).data; } catch (_) { lay(false); return; }
+      // its light, stretched to the whole range (a dark cover still shows), then three steps with the error carried on
+      const L = new Float32Array(N * N);
+      let lo = 1, hi = 0;
+      for (let i = 0; i < N * N; i++) { const v = (.2126 * px[i * 4] + .7152 * px[i * 4 + 1] + .0722 * px[i * 4 + 2]) / 255; L[i] = v; lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      const span = Math.max(.15, hi - lo), paths = ['', '', ''], P = 3.5, X = 391, Y = 44, S = 2.7;
+      for (let i = 0; i < N * N; i++) L[i] = Math.pow((L[i] - lo) / span, 1.35);   // a little more contrast: the shapes, not a grey square
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const i = y * N + x, v = L[i], q = v < .16 ? -1 : v < .5 ? 0 : v < .8 ? 1 : 2, back = q < 0 ? 0 : [.33, .66, 1][q], err = v - back;
+        if (x + 1 < N) L[i + 1] += err * 7 / 16;
+        if (y + 1 < N) { if (x > 0) L[i + N - 1] += err * 3 / 16; L[i + N] += err * 5 / 16; if (x + 1 < N) L[i + N + 1] += err / 16; }
+        if (q >= 0) paths[q] += `M${(X + x * P).toFixed(1)} ${(Y + y * P).toFixed(1)}h${S}v${S}h-${S}z`;
+      }
+      paths.forEach((d, k) => this._coverDots[k].setAttribute('d', d));
+      lay(true);
+    };
+    img.onerror = () => { if (this._coverUrl === url) lay(false); };
+    img.src = url;
+    return this;
+  }
   setView(key) { this._state.view = VIEW_KEYS.includes(key) ? key : ''; this._updateLeds(); return this; }
   setTimeMode(mode) { this._remain = mode !== 'elapsed'; this._cache.time = null; this._renderNow(); return this; }
   setLevels(left, right) { this._state.levels = { left: clamp(left), right: clamp(right) }; this._paintLevels(); return this; }
@@ -379,8 +421,12 @@ class Deck90Music {
     this._title = clip('title', node('path', { fill: LIT }));
     this._artist = clip('artist', node('path', { fill: LIT }));
     this._quality = clip('quality', node('path', { fill: LIT }));
-    D.append(node('rect', { x: 391, y: 133, width: 503, height: 2, fill: DIM }));
+    this._rail = node('rect', { x: 391, y: 133, width: 503, height: 2, fill: DIM }); D.append(this._rail);
     this._progress = node('rect', { x: 391, y: 133, width: 0, height: 2, fill: LIT }); D.append(this._progress);
+    // 7.10.25: the cover, in dots of the display's colour (three brightnesses, as a VFD's matrix), the text beside it
+    this._coverDots = [node('path', { fill: LIT, opacity: .22 }), node('path', { fill: LIT, opacity: .55 }), node('path', { fill: LIT })];
+    for (const d of this._coverDots) D.append(d);
+    this._tx = 391; this._tw = 502; this._coverUrl = '';
     this._indicators = {};
     for (const [word, x] of [['PLAY', 925], ['PAUSE', 996], ['NET', 1077]]) { this._indicators[word.toLowerCase()] = this._text(word, x, 55, 1.5, DIM); D.append(this._indicators[word.toLowerCase()]); }
     this._modeLamps = {};
@@ -545,7 +591,7 @@ class Deck90Music {
     this._place(this._title, 53, this._titleW, this._titleT, performance.now());
     this._place(this._artist, 92, this._artistW, this._artistT, performance.now());
     this._place(this._quality, 116, this._qualityW, this._qualityT, performance.now());
-    this._progress.setAttribute('width', String(n.duration > 0 ? 503 * clamp(n.elapsed / n.duration) : 0));
+    this._progress.setAttribute('width', String(n.duration > 0 ? (this._tw + 1) * clamp(n.elapsed / n.duration) : 0));
     const lit = { play: n.playing, pause: n.paused, net: n.online };
     for (const [k, el] of Object.entries(this._indicators)) el.setAttribute('fill', lit[k] ? LIT : DIM);
     this._paintSource();
@@ -553,13 +599,13 @@ class Deck90Music {
   }
   // a line too long for the window goes there and back, as the DC-90's (and even with Windows' animations off)
   _place(el, y, width, since, time) {
-    const far = Math.max(0, (width || 0) - 502);
+    const far = Math.max(0, (width || 0) - this._tw);
     let off = 0;
     if (far > 0 && this._state.powered) {
       const travel = far / 30 * 1000, delay = 1500, ph = Math.max(0, time - since) % (2 * travel + 2 * delay);
       off = ph > delay && ph < delay + travel ? (ph - delay) * .03 : ph >= delay + travel && ph < 2 * delay + travel ? far : ph >= 2 * delay + travel ? far - (ph - 2 * delay - travel) * .03 : 0;
     }
-    el.setAttribute('transform', `translate(${(391 - off).toFixed(2)} ${y})`);
+    el.setAttribute('transform', `translate(${(this._tx - off).toFixed(2)} ${y})`);
     return far > 0;
   }
   _renderList() {

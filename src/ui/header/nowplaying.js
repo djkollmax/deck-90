@@ -50,6 +50,7 @@ function onNowPlaying(info){
     const prev = trackHistory[0];
     decks[1].title = prev ? short('antes: ' + (prev.artist ? prev.artist + ' – ' : '') + prev.title, 34) : short(info.album || 'LATE NIGHT DUB', 34);
     el('npCover').classList.remove('on');              // the new track's cover (if any) comes in this same message
+    if (!info.cover) npBigShow(false);
   }
   if (info.cover) { el('npCover').src = info.cover; el('npCover').classList.add('on'); }
   np = Object.assign({}, np && sameTrack ? np : {}, info);
@@ -58,6 +59,37 @@ function onNowPlaying(info){
   box.classList.add('on');
   box.classList.toggle('paused', info.status !== 'Playing' && !audible());
   document.title = info.title ? (info.artist ? info.artist + ' – ' : '') + info.title + ' · Deck 90' : 'Deck 90';
+  if (el('npBig').classList.contains('on')) npBigFill();
+}
+// 7.10.25: the cover big, under the header: while the mouse is on it, or touched (touched again, or anywhere, it goes)
+function npBigFill() {
+  if (!np || !np.cover) return npBigShow(false);
+  if (el('npBigImg').getAttribute('src') !== np.cover) el('npBigImg').src = np.cover;
+  el('npBigTitle').textContent = np.title || '';
+  el('npBigArtist').textContent = np.artist || '';
+  el('npBigAlbum').textContent = [np.album, np.year].filter(Boolean).join(' · ');
+  el('npBigQuality').textContent = np.quality || '';
+}
+function npBigShow(on, pinned) {
+  const b = el('npBig');
+  if (on && !(np && np.cover && el('npCover').classList.contains('on'))) on = false;
+  if (on) {
+    npBigFill();
+    const r = el('npCover').getBoundingClientRect(), w = b.offsetWidth || 540;
+    b.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left - 12)) + 'px';
+    b.style.top = (r.bottom + 10) + 'px';
+  }
+  b.classList.toggle('on', !!on); b.classList.toggle('pinned', !!(on && pinned));
+}
+{ const c = el('npCover');
+  document.body.append(el('npBig'));                                // over everything (the rack's units have stacking of their own)
+  let t = 0;
+  c.addEventListener('mouseenter', () => { clearTimeout(t); t = setTimeout(() => npBigShow(true, el('npBig').classList.contains('pinned')), 120); });
+  c.addEventListener('mouseleave', () => { clearTimeout(t); if (!el('npBig').classList.contains('pinned')) npBigShow(false); });
+  c.addEventListener('click', e => { e.stopPropagation(); clearTimeout(t); const b = el('npBig'); npBigShow(!b.classList.contains('pinned'), true); });
+  el('npBig').addEventListener('click', () => npBigShow(false));
+  document.addEventListener('pointerdown', e => { if (el('npBig').classList.contains('pinned') && !e.target.closest('#npCover, #npBig')) npBigShow(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && el('npBig').classList.contains('on')) npBigShow(false); }, true);
 }
 // The player can speak before the page has finished loading its scripts (guard lives in loop.js, further
 // down): what comes that early waits for the page's load and is handled then.

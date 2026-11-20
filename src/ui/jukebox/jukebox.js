@@ -546,7 +546,7 @@ function jbCover(s) {
 npSource('dm90', () => {
   const s = musicNow();
   if (!s || !(musicPlaying() || musicPaused())) return null;
-  return { app: 'Deck 90 · DM-90', title: s.name, artist: s.artists || s.artist, album: s.album, status: musicPlaying() ? 'Playing' : 'Paused',
+  return { app: 'Deck 90 · DM-90', title: s.name, artist: s.artists || s.artist, album: s.album, year: s.year || '', quality: musicQualityLong(s.media), status: musicPlaying() ? 'Playing' : 'Paused',
     pos: musicAudio.currentTime || 0, dur: isFinite(musicAudio.duration) ? musicAudio.duration : s.len || 0, at: Date.now(), cover: jbCover(s) };
 }, c => {
   if (c === 'prev') return musicPrev();
@@ -580,6 +580,7 @@ function jbSync() {
     playing: on && musicPlaying(), paused: on && musicPaused(), online: on && !!musicServer.signedIn,
   };
   jb.setSource(musicModes.source, jbHave());
+  jb.setCover(on && s ? jbCover(s) : '');                         // 7.10.25: the album's cover, in the display's dots
   jbPanel.classList.toggle('idle', jbPower && !musicPlaying() && (radioPlaying() || cdPlaying()));
   const key = JSON.stringify(r);
   if (key === jbShownKey) return;

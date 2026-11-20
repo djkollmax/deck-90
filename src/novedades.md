@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.25 — 2026-11-19
+
+### Nuevo
+- **La tapa del disco, más grande.** En el encabezado ahora ocupa todo el alto del display. **Pasá el mouse por arriba (o tocala) y aparece grande**, con el tema, el artista, el álbum con su año y la calidad. Se va al sacar el mouse; tocada, queda hasta que tocás de nuevo o apretás Esc.
+- **La tapa en el display del DM-90**, dibujada con los mismos puntitos del display y en su color, al lado del título, como un equipo de los 90 con pantalla de matriz.
+
 ## 7.10.24 — 2026-11-19
 
 ### Nuevo

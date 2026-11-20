@@ -63,6 +63,8 @@
   <div class="screw s-br"></div>
 
   <!-- TITLE BAR -->
+  <!-- 7.10.25: the header's cover, big (the mouse over it, or touched) -->
+  <div id="npBig" aria-hidden="true"><img id="npBigImg" alt=""><div class="npb-text"><b id="npBigTitle"></b><span id="npBigArtist"></span><span id="npBigAlbum"></span><small id="npBigQuality"></small></div></div>
   <div class="title-bar">
     <div class="brand">
       <div class="led amber" id="ledPower"></div>
@@ -70,7 +72,7 @@
     </div>
     <div class="np" id="np">
       <div class="hc" id="hcBox" title="Hora y fecha. Tocala para cambiar el color (apretada, el anterior); ⚙ → PANTALLA → RELOJ"><canvas id="hcDigits"></canvas><div class="hc-date"><span id="hcDay"></span><span id="hcDate"></span></div></div>
-      <img id="npCover" alt="">
+      <img id="npCover" alt="" title="La tapa: pasá el mouse o tocala para verla grande">
       <div class="np-text" title="Lo que está sonando (según Windows)"><span id="npTitle"></span><span id="npArtist"></span></div>
       <div class="hw" id="hwBox" title="Clima (⚙ → PANTALLA → RELOJ, tu ciudad y Enter) · datos de Open-Meteo.com"><canvas id="hwIcon"></canvas><canvas id="hwTemp"></canvas><div class="hw-text"><span id="hwCond"></span><span id="hwRange"></span></div></div>
     </div>
