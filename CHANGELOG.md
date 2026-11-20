@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.10.27
+
+### Changed
+- The DM-90's dotted cover has more definition: 40 × 40 dots of 2.1 (was 24 × 24 of 3.5) in the same 84 px, four
+  brightnesses (was three), the picture shrunk in two steps with high-quality smoothing, a gentler contrast curve.
+
 ## 7.10.26
 
 ### Fixed

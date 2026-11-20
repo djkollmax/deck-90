@@ -129,7 +129,7 @@ test('the cover: as tall as the header display, big with the mouse on it, and in
     jb.setCover(c.toDataURL('image/png'));
     setTimeout(() => { const n = jb._coverDots.map(p => (p.getAttribute('d') || '').split('M').length - 1); window.jbSync = keep; done(n); }, 600);
   }));
-  assert.ok(lit[2] < 120 && lit[2] > 20, 'only the bright square is bright: ' + lit);
+  assert.ok(lit[3] < 400 && lit[3] > 80, 'only the bright square is bright: ' + lit);
   await use();
 });
 

@@ -8,7 +8,7 @@
 //    dm.setList({ header, right, rows: [{ text, sub, end, playing }], cursor, top, count })   // rows: the visible ones
 //    dm.setSource(active, have)   7.10.24: SERVER, PC or USB lit on the display (active: 'server' | 'pc' | 'usb'; have:
 //      { server, pc, usb } the ones there are, a little brighter than the rest)
-//    dm.setCover(url)   7.10.25: the album's cover in the display's own dots, at the left of the title ('' none)
+//    dm.setCover(url)   7.10.25: the album's cover in the display's own dots (7.10.27: 40 × 40, four brightnesses), at the left of the title ('' none)
 //    dm.setModes({ repeat, shuffle }); dm.setView(key); dm.setLevels(l, r); dm.setPower(on); dm.setTheme(t); dm.setDimmer(0–2)
 //    dm.onKey((key, { hold, index, double, delta, fraction }) => …)   keys: the ids in LAYOUT.keys, 'row' (a list
 //      row clicked: index is its place among the visible rows), 'wheel' (the knob or the list: delta in rows),
@@ -329,8 +329,8 @@ class Deck90Music {
     if (!this._sources) return;
     for (const [k, el] of Object.entries(this._sources)) { const on = this._source.active === k; el.setAttribute('fill', on ? LIT : DIM); el.setAttribute('opacity', on || this._source.have[k] ? 1 : .55); }
   }
-  // the cover: 24 × 24 dots of 3.5 (84 px) where the title began; the title, the artist, the quality and the time bar move
-  // to its right. Its light, from dark to bright, in three steps (with error diffusion, so faces and letters read)
+  // the cover: 40 × 40 dots of 2.1 (84 px) where the title began; the title, the artist, the quality and the time bar move
+  // to its right. Its light, from dark to bright, in four steps (with error diffusion, so faces and letters read)
   setCover(url) {
     url = url || '';
     if (url === this._coverUrl) return this;
@@ -347,18 +347,21 @@ class Deck90Music {
     const img = new Image();
     img.onload = () => {
       if (this._coverUrl !== url) return;
-      const N = 24, c = document.createElement('canvas'); c.width = c.height = N;
-      const g = c.getContext('2d'), side = Math.min(img.naturalWidth, img.naturalHeight);
-      g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, N, N);
+      // 7.10.27: 40 × 40 dots of 2.1 (was 24 of 3.5): the same 84 px, nearly three times the dots; shrunk in two steps
+      const N = 40, M = 160, big = document.createElement('canvas'), c = document.createElement('canvas'); big.width = big.height = M; c.width = c.height = N;
+      const side = Math.min(img.naturalWidth, img.naturalHeight), gb = big.getContext('2d'), g = c.getContext('2d');
+      gb.imageSmoothingQuality = 'high'; g.imageSmoothingQuality = 'high';
+      gb.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, M, M);
+      g.drawImage(big, 0, 0, M, M, 0, 0, N, N);
       let px; try { px = g.getImageData(0, 0, N, N).data; } catch (_) { lay(false); return; }
-      // its light, stretched to the whole range (a dark cover still shows), then three steps with the error carried on
+      // its light, stretched to the whole range (a dark cover still shows), then four steps with the error carried on
       const L = new Float64Array(N * N);                       // 7.10.26: doubles (float32 against lo made -0.0000001, and pow of it NaN)
       let lo = 1, hi = 0;
       for (let i = 0; i < N * N; i++) { const v = (.2126 * px[i * 4] + .7152 * px[i * 4 + 1] + .0722 * px[i * 4 + 2]) / 255; L[i] = v; lo = Math.min(lo, v); hi = Math.max(hi, v); }
-      const span = Math.max(.15, hi - lo), paths = ['', '', ''], P = 3.5, X = 391, Y = 44, S = 2.7;
-      for (let i = 0; i < N * N; i++) L[i] = Math.pow(Math.min(1, Math.max(0, (L[i] - lo) / span)), 1.35);   // a little more contrast: the shapes, not a grey square
+      const span = Math.max(.15, hi - lo), paths = ['', '', '', ''], P = 2.1, X = 391, Y = 44, S = 1.75;
+      for (let i = 0; i < N * N; i++) L[i] = Math.pow(Math.min(1, Math.max(0, (L[i] - lo) / span)), 1.2);   // a little more contrast: the shapes, not a grey square
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-        const i = y * N + x, v = Math.min(1.5, Math.max(-.5, L[i] || 0)), q = v < .16 ? -1 : v < .5 ? 0 : v < .8 ? 1 : 2, back = q < 0 ? 0 : [.33, .66, 1][q], err = v - back;
+        const i = y * N + x, v = Math.min(1.5, Math.max(-.5, L[i] || 0)), q = v < .1 ? -1 : v < .31 ? 0 : v < .56 ? 1 : v < .85 ? 2 : 3, back = q < 0 ? 0 : [.2, .42, .7, 1][q], err = v - back;
         if (x + 1 < N) L[i + 1] += err * 7 / 16;
         if (y + 1 < N) { if (x > 0) L[i + N - 1] += err * 3 / 16; L[i + N] += err * 5 / 16; if (x + 1 < N) L[i + N + 1] += err / 16; }
         if (q >= 0) paths[q] += `M${(X + x * P).toFixed(1)} ${(Y + y * P).toFixed(1)}h${S}v${S}h-${S}z`;
@@ -424,7 +427,7 @@ class Deck90Music {
     this._rail = node('rect', { x: 391, y: 133, width: 503, height: 2, fill: DIM }); D.append(this._rail);
     this._progress = node('rect', { x: 391, y: 133, width: 0, height: 2, fill: LIT }); D.append(this._progress);
     // 7.10.25: the cover, in dots of the display's colour (three brightnesses, as a VFD's matrix), the text beside it
-    this._coverDots = [node('path', { fill: LIT, opacity: .22 }), node('path', { fill: LIT, opacity: .55 }), node('path', { fill: LIT })];
+    this._coverDots = [.2, .42, .7, 1].map(o => node('path', { fill: LIT, opacity: o }));   // 7.10.27: four brightnesses
     for (const d of this._coverDots) D.append(d);
     this._tx = 391; this._tw = 502; this._coverUrl = '';
     this._indicators = {};

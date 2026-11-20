@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.10.27 — 2026-11-20
+
+### Mejor
+- **La tapa del DM-90 con más definición:** casi el triple de puntitos en el mismo lugar y cuatro brillos en vez de tres. Se leen las letras grandes de la tapa y se ven las formas.
+
 ## 7.10.26 — 2026-11-20
 
 ### Arreglos
