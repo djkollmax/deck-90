@@ -50,7 +50,7 @@ function onNowPlaying(info){
     const prev = trackHistory[0];
     decks[1].title = prev ? short('antes: ' + (prev.artist ? prev.artist + ' – ' : '') + prev.title, 34) : short(info.album || 'LATE NIGHT DUB', 34);
     el('npCover').classList.remove('on');              // the new track's cover (if any) comes in this same message
-    if (!info.cover) npBigShow(false);
+    if (!info.cover && el('npBig')) npBigShow(false);
   }
   if (info.cover) { el('npCover').src = info.cover; el('npCover').classList.add('on'); }
   np = Object.assign({}, np && sameTrack ? np : {}, info);
@@ -59,7 +59,7 @@ function onNowPlaying(info){
   box.classList.add('on');
   box.classList.toggle('paused', info.status !== 'Playing' && !audible());
   document.title = info.title ? (info.artist ? info.artist + ' – ' : '') + info.title + ' · Deck 90' : 'Deck 90';
-  if (el('npBig').classList.contains('on')) npBigFill();
+  if (el('npBig') && el('npBig').classList.contains('on')) npBigFill();
 }
 // 7.10.25: the cover big, under the header: while the mouse is on it, or touched (touched again, or anywhere, it goes)
 function npBigFill() {
@@ -81,7 +81,8 @@ function npBigShow(on, pinned) {
   }
   b.classList.toggle('on', !!on); b.classList.toggle('pinned', !!(on && pinned));
 }
-{ const c = el('npCover');
+if (document.getElementById('npBig')) {                            // the phone's page shares this file, without them
+  const c = el('npCover');
   document.body.append(el('npBig'));                                // over everything (the rack's units have stacking of their own)
   let t = 0;
   c.addEventListener('mouseenter', () => { clearTimeout(t); t = setTimeout(() => npBigShow(true, el('npBig').classList.contains('pinned')), 120); });
