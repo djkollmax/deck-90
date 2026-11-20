@@ -101,6 +101,12 @@ DOT_GLYPHS['‘'] = DOT_GLYPHS["'"];
 DOT_GLYPHS['’'] = DOT_GLYPHS["'"];
 DOT_GLYPHS['“'] = DOT_GLYPHS['"'];
 DOT_GLYPHS['”'] = DOT_GLYPHS['"'];
+DOT_GLYPHS['›'] = DOT_GLYPHS['>'];                                   // 7.10.28: an artist's albums, a folder's place (it showed '?')
+DOT_GLYPHS['‹'] = DOT_GLYPHS['<'];
+DOT_GLYPHS['─'] = [0, 0, 0, 31, 0, 0, 0];                             // 7.10.28: a search's group titles (they showed '?')
+DOT_GLYPHS['→'] = [0, 4, 2, 31, 2, 4, 0];                             // the letters typed to jump
+DOT_GLYPHS['←'] = [0, 4, 8, 31, 8, 4, 0];
+DOT_GLYPHS['▣'] = [0, 28, 31, 17, 17, 31, 0];                       // 7.10.28: a folder (FOLDERS' lists)
 for (const character of 'abcdefghijklmnopqrstuvwxyzáéíóúüñç') {
   DOT_GLYPHS[character] = DOT_GLYPHS[character.toUpperCase()];
 }
@@ -174,22 +180,26 @@ const LAYOUT = Object.freeze({
     setup: { x: 35, y: 500, w: 80, h: 21, label: 'SETUP' },
     prev: { x: 145, y: 446, w: 100, h: 29, icon: 'prev' }, play: { x: 253, y: 446, w: 120, h: 29, icon: 'play' },
     pause: { x: 381, y: 446, w: 100, h: 29, icon: 'pause' }, stop: { x: 489, y: 446, w: 100, h: 29, icon: 'stop' },
-    next: { x: 597, y: 446, w: 100, h: 29, icon: 'next' }, repeat: { x: 705, y: 446, w: 74, h: 29, label: 'REPEAT' },
-    shuffle: { x: 787, y: 446, w: 74, h: 29, label: 'SHUFFLE' }, queue: { x: 869, y: 446, w: 92, h: 29, label: 'Q · PLAY NEXT' },
+    next: { x: 597, y: 446, w: 100, h: 29, icon: 'next' },
+    // 7.10.28: the play modes beside the transport (REPEAT, SHUFFLE, SHUFFLE ALL) and what's done with the list beside
+    // the lists and the knob (BACK, ENTER, Q); FOLDERS among the lists
+    repeat: { x: 705, y: 446, w: 74, h: 29, label: 'REPEAT' }, shuffle: { x: 787, y: 446, w: 74, h: 29, label: 'SHUFFLE' },
+    all: { x: 869, y: 446, w: 92, h: 29, label: 'SHUFFLE ALL' },
     dimmer: { x: 969, y: 446, w: 60, h: 29, label: 'DIMMER' },
-    artists: { x: 145, y: 493, w: 100, h: 29, label: 'ARTISTS' }, albums: { x: 253, y: 493, w: 120, h: 29, label: 'ALBUMS' },
-    songs: { x: 381, y: 493, w: 100, h: 29, label: 'SONGS' }, list: { x: 489, y: 493, w: 100, h: 29, label: 'QUEUE' },
-    search: { x: 597, y: 493, w: 100, h: 29, label: 'SEARCH' }, back: { x: 705, y: 493, w: 74, h: 29, label: '◀ BACK' },
-    enter: { x: 787, y: 493, w: 82, h: 29, label: 'ENTER ▶' }, all: { x: 877, y: 493, w: 84, h: 29, label: 'SHUFFLE ALL' },   // 7.10.4
+    artists: { x: 145, y: 493, w: 85, h: 29, label: 'ARTISTS' }, albums: { x: 238, y: 493, w: 86, h: 29, label: 'ALBUMS' },
+    songs: { x: 332, y: 493, w: 85, h: 29, label: 'SONGS' }, folders: { x: 425, y: 493, w: 86, h: 29, label: 'FOLDERS' },
+    list: { x: 519, y: 493, w: 85, h: 29, label: 'QUEUE' }, search: { x: 612, y: 493, w: 85, h: 29, label: 'SEARCH' },
+    back: { x: 705, y: 493, w: 74, h: 29, label: '◀ BACK' }, enter: { x: 787, y: 493, w: 74, h: 29, label: 'ENTER ▶' },
+    queue: { x: 869, y: 493, w: 92, h: 29, label: 'Q · PLAY NEXT' },
     color: { x: 969, y: 493, w: 60, h: 29, label: 'COLOR' },
   },
   knob: { cx: 1100, cy: 484, r: 40 },
 });
 const NAMES = { power: 'POWER', source: 'SOURCE: servidor, PC o USB', setup: 'SETUP: el servidor, las carpetas de la PC y el pendrive', prev: 'Tema anterior', play: 'PLAY', pause: 'PAUSA', stop: 'STOP', next: 'Tema siguiente',
-  repeat: 'REPEAT: toda la cola, un tema o apagado', shuffle: 'SHUFFLE: al azar', queue: 'Q: lo marcado suena después de este',
-  artists: 'Artistas', albums: 'Álbumes', songs: 'Todos los temas', list: 'La cola', search: 'Buscar', back: 'Atrás', enter: 'ENTER: abrir o tocar lo marcado',
+  repeat: 'REPEAT: toda la cola, un tema o apagado', shuffle: 'SHUFFLE: al azar', queue: 'Q: lo marcado suena después de este (en la cola: sostenido lo saca)',
+  artists: 'Artistas', albums: 'Álbumes', songs: 'Todos los temas', folders: 'Carpetas (PC y USB)', list: 'La cola', search: 'Buscar', back: 'Atrás', enter: 'ENTER: abrir o tocar lo marcado',
   dimmer: 'DIMMER: el brillo del display', all: 'SHUFFLE ALL: toda la biblioteca al azar', color: 'COLOR: el color de los displays del rack' };
-const VIEW_KEYS = ['artists', 'albums', 'songs', 'list', 'search'];
+const VIEW_KEYS = ['artists', 'albums', 'songs', 'folders', 'list', 'search'];
 
 function grainMarkup(label) {
   let seed = 904031, paths = '';

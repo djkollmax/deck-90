@@ -24,6 +24,7 @@ const MAX_SONGS = 300000, MAX_DEPTH = 24, MAX_COVER = 8 * 1024 * 1024;
 const TICKS = 1e7;
 const hash = s => crypto.createHash('sha1').update(s).digest('hex').slice(0, 32);
 const fold = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const natural = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 const same = (a, b) => a.replace(/[\\/]+$/, '').toLowerCase() === b.replace(/[\\/]+$/, '').toLowerCase();
 const DISC_DIR =/^(cd|disc|disco|disk|dvd)\s*[-_.]?\s*\d{1,2}$/i;
 const MIME = { mp3: 'audio/mpeg', flac: 'audio/flac', m4a: 'audio/mp4', mp4: 'audio/mp4', m4b: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', wav: 'audio/wav' };
@@ -52,7 +53,7 @@ function createLocalMusic({ dir, log = () => {}, send = () => {} }) {
 
   // the two libraries: their roots ({ id, path, name }), their songs and what's made of them
   const libs = { pc: lib(), usb: lib() };
-  function lib() { return { roots: [], songs: [], byId: new Map(), albums: new Map(), artists: new Map(), scanning: 0, read: 0, found: 0, other: 0, unplayable: 0, at: 0, gen: 0 }; }
+  function lib() { return { roots: [], songs: [], byId: new Map(), albums: new Map(), artists: new Map(), dirs: new Map(), scanning: 0, read: 0, found: 0, other: 0, unplayable: 0, at: 0, gen: 0 }; }
   const rootOf = (kind, p, name) => ({ id: hash(kind + ':' + p), path: p, name: name || path.basename(p.replace(/[\\/]+$/, '')) || p });
 
   // ── reading a folder ──
@@ -110,7 +111,7 @@ function createLocalMusic({ dir, log = () => {}, send = () => {} }) {
   // the songs, their albums and their artists, from the files' tags (and, without tags, from the folders)
   function build(kind, found, counts) {
     const L = libs[kind];
-    L.songs = []; L.byId = new Map(); L.albums = new Map(); L.artists = new Map(); L.other = counts.other; L.unplayable = 0;
+    L.songs = []; L.byId = new Map(); L.albums = new Map(); L.artists = new Map(); L.dirs = new Map(); L.other = counts.other; L.unplayable = 0;
     const rootFor = f => L.roots.find(r => f === r.path || f.startsWith(r.path.replace(/[\\/]+$/, '') + path.sep)) || L.roots[0];
     for (const [f, t] of found) {
       if (!t.playable) { L.unplayable++; continue; }
@@ -135,6 +136,16 @@ function createLocalMusic({ dir, log = () => {}, send = () => {} }) {
       if (!a.cover && (s.pic || s.picLater)) a.cover = s;
       s.albumId = a.id;
       L.songs.push(s); L.byId.set(s.id, s);
+      // 7.10.28: its folder and the ones above it, up to the library's (FOLDERS), each counting the songs under it
+      const top = root.path.replace(/[\\/]+$/, '') || root.path;
+      for (let p = s.dir, below = null; ;) {
+        const fid = hash('dir:' + kind + ':' + p.toLowerCase());
+        let D = L.dirs.get(fid);
+        if (!D) { D = { id: fid, path: p, root: root.id, name: path.basename(p) || p, count: 0, parent: '' }; L.dirs.set(fid, D); }
+        D.count++; if (below) below.parent = fid;
+        if (same(p, top) || path.dirname(p) === p) { D.top = true; D.name = root.name; break; }
+        below = D; p = path.dirname(p);
+      }
     }
     for (const a of L.albums.values()) {
       if (!a.artist) a.artist = a.artists.size === 1 ? a.songs[0].artist || 'Unknown Artist' : a.songs.some(s => s.comp) || a.artists.size > 1 ? 'Various Artists' : 'Unknown Artist';
@@ -165,6 +176,23 @@ function createLocalMusic({ dir, log = () => {}, send = () => {} }) {
       return { Items: items, TotalRecordCount: items.length };
     }
     if (what === 'item') { const s = L.byId.get(String(id)); return s ? songItem(s) : { error: 'not found' }; }
+    // 7.10.28: FOLDERS: a folder's folders and songs, as they are on the disk (no id: the libraries' own folders, or
+    // the one library's when there's one); Recursive: every song under it, in the folders' order
+    if (what === 'folder') {
+      const tops = [...L.dirs.values()].filter(D => D.top && inLib(q, D.root)).sort((a, b) => natural(a.name, b.name));
+      const D = id ? L.dirs.get(String(id)) : tops.length === 1 ? tops[0] : null;
+      if (id && !D) return { error: 'not found' };
+      const fileOf = s => path.basename(s.path);
+      if (q.Recursive) {
+        const base = D.path.replace(/[\\/]+$/, '') + path.sep;
+        const songs = L.songs.filter(s => s.dir === D.path || s.dir.startsWith(base)).sort((a, b) => natural(a.path, b.path));
+        return { Items: songs.map(songItem), TotalRecordCount: songs.length };
+      }
+      const folders = D ? [...L.dirs.values()].filter(x => x.parent === D.id).sort((a, b) => natural(a.name, b.name)) : tops;
+      const songs = D ? L.songs.filter(s => s.dir === D.path).sort((a, b) => natural(fileOf(a), fileOf(b))) : [];
+      return { Name: D ? D.name : '', Items: [...folders.map(f => ({ Id: f.id, Name: f.name, Type: 'Folder', ChildCount: f.count })),
+        ...songs.map(s => Object.assign(songItem(s), { Type: 'Audio' }))], TotalRecordCount: folders.length + songs.length };
+    }
     if (what !== 'items') return { error: 'not allowed' };
     const type = String(q.IncludeItemTypes || ''), byAlbumArtist = q.AlbumArtistIds && String(q.AlbumArtistIds), byArtist = q.ArtistIds && String(q.ArtistIds);
     if (type === 'MusicAlbum') {

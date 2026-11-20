@@ -3,6 +3,8 @@
 //   /s         an ICY stream of the tone in a loop (its first 4 s at once), a song title every 8 KiB, changing every 3 s, icy-br 128
 //   /nobr      the same stream without icy-br (the program measures the rate itself)
 //   /gone      404: a station that's gone
+//   /ogg       an Ogg FLAC stream with no ICY titles, each song a new stream in it whose comments name it (7.10.28)
+//   /flac      an Ogg FLAC stream that names nothing, as Radio Paradise's; /rp?chan=n says its song, as RP's page does
 // drop() breaks off the streams playing now; down(ms) answers 503 for a while (a station that's off the air).
 import http from 'node:http';
 import fs from 'node:fs';
@@ -12,6 +14,10 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const TONE = fs.readFileSync(path.join(here, '..', 'fixtures', 'tone.mp3'));
 export const SONGS = ['Los Pericos - Párrafo', 'Soda Stereo - De Música Ligera', 'Charly García - Demoliendo Hoteles'];
+export const OGG = fs.readFileSync(path.join(here, '..', 'fixtures', 'chained-flac.ogg'));   // "Banda Inventada - Tema 1", then "Tema 2"
+export const PLAIN_OGG = fs.readFileSync(path.join(here, '..', 'fixtures', 'plain-flac.ogg'));
+export const RP_SONG = { artist: 'Grupo Imaginario', title: 'Canción del Paraíso' };
+
 
 export function startStation() {
   const live = new Set();
@@ -22,6 +28,20 @@ export function startStation() {
     if (req.url.startsWith('/tone.mp3')) {
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': TONE.length });
       res.end(TONE); return;
+    }
+    if (req.url.startsWith('/rp?')) {                        // 7.10.28: Radio Paradise's page
+      const chan = new URL(req.url, 'http://x').searchParams.get('chan');
+      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(Object.assign({ time: 120, chan }, RP_SONG))); return;
+    }
+    if (req.url.startsWith('/ogg') || /^\/(\w+-)?flac/.test(req.url)) {   // 7.10.28: Ogg FLAC, about in real time (a burst first)
+      const file = req.url.startsWith('/ogg') ? OGG : PLAIN_OGG;
+      res.writeHead(200, { 'Content-Type': 'application/ogg' });
+      let at = 0, first = true, gone = false; const t = setInterval(() => {
+        if (gone) return clearInterval(t);
+        const n = first ? 9000 : 600; first = false; res.write(file.subarray(at, at + n)); at += n; if (at >= file.length) at = 0;
+      }, 125);
+      live.add(res); req.on('close', () => { gone = true; live.delete(res); clearInterval(t); });
+      return;
     }
     const icy = req.headers['icy-metadata'] === '1', metaint = 8192;
     const head = { 'Content-Type': 'audio/mpeg', 'icy-name': 'Test FM' };

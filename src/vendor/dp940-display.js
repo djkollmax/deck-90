@@ -16,7 +16,8 @@
    7.10.21, marked "local": setRadio({ local }) lights LOCAL in red only for a local station (the stereo's LOC); unlit
    it takes MONO's off colour. It sits a little to the right, centred under the STEREO/MONO box.
    7.10.22, marked "source": setTrack({ source }) names what plays under PLAY (CD unless told: USB for Deck 90 for
-   Android's pendrive). */
+   Android's pendrive).
+   7.10.28, marked "blank cells": a space between words shows its cell's unlit segments, as every other cell does. */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -278,7 +279,7 @@ class Deck90Display {
       const glyph = font.glyphs[char] || font.glyphs['?'] || [];
       const active = new Set(Array.isArray(glyph) ? glyph : glyph.segments);
       const character = svgNode('g', { transform: `translate(${offset} 0) scale(${scale})` });
-      if (ghost && char !== ' ') for (const [name, points] of Object.entries(font.segments)) {
+      if (ghost) for (const [name, points] of Object.entries(font.segments)) {   // Deck 90 7.10.28, "blank cells": a space's cell too
         if (!/^(a1|a2|b|c|d1|d2|e|f|g1|g2|h|i|j|k|l|m)$/.test(name)) continue;
         character.append(svgNode('polygon', { points: points.map(p => p.join(',')).join(' '), fill: '#62751e', opacity: .47 }));
       }

@@ -6,6 +6,7 @@
 //  Deck 90's own page only) asks the station for the stream with "Icy-MetaData: 1", passes the audio on untouched
 //  and takes out what the station sends between it: the song playing ("StreamTitle"), and from the headers the
 //  format and bitrate (icy-br; measured from the stream when the station doesn't say). One connection, as before.
+//  7.10.28: an Ogg stream's songs from its comments, and Radio Paradise's FLAC ones from its page.
 //  A stream that can't come through here (HLS playlists, a refused request) the page plays directly.
 // ═══════════════════════════════════════════════════════════
 const http = require('http');
@@ -34,6 +35,72 @@ function decodeTitle(buf) {
   if (s.includes('�')) s = buf.toString('latin1');
   const m = /StreamTitle='([\s\S]*?)';/.exec(s);
   return m ? m[1].replace(/\s+/g, ' ').trim().slice(0, 200) : null;
+}
+
+// 7.10.28: the song in an Ogg stream (Radio Paradise's FLAC, Vorbis and Opus stations): no ICY titles there, each song
+// starts a new stream in the stream ("chained") whose comment header names it (ARTIST=, TITLE=). Fed the audio as it
+// passes, it reads the pages' headers and puts together only the first packets after each start; it answers
+// "Artist - Song" when a new one comes
+function oggTitles() {
+  let buf = Buffer.alloc(0), pkt = [], pkts = 99, last = '', flac = false;
+  const comments = (b, at) => {
+    const tags = {};
+    try {
+      let i = at + 4 + b.readUInt32LE(at); const n = Math.min(b.readUInt32LE(i), 200); i += 4;
+      for (let k = 0; k < n && i + 4 <= b.length; k++) {
+        const len = b.readUInt32LE(i); i += 4; if (len > 4096 || i + len > b.length) break;
+        const e = b.toString('utf8', i, i + len), eq = e.indexOf('='); i += len;
+        if (eq > 0) { const key = e.slice(0, eq).toUpperCase(); if (!tags[key]) tags[key] = e.slice(eq + 1).replace(/\s+/g, ' ').trim(); }
+      }
+    } catch (_) {}
+    return tags;
+  };
+  // a comment packet: Vorbis's ("\x03vorbis"), Opus's ("OpusTags") or FLAC's metadata block 4 (VORBIS_COMMENT)
+  const packet = b => {
+    let tags = null;
+    if (b.length > 7 && b[0] === 3 && b.toString('latin1', 1, 7) === 'vorbis') tags = comments(b, 7);
+    else if (b.length > 8 && b.toString('latin1', 0, 8) === 'OpusTags') tags = comments(b, 8);
+    else if (b.length > 4 && b[0] === 0x7f && b.toString('latin1', 1, 5) === 'FLAC') flac = true;
+    else if (flac && b.length > 4 && (b[0] & 0x7f) === 4) tags = comments(b, 4);
+    if (!tags) return null;
+    const t = [tags.ARTIST, tags.TITLE].filter(Boolean).join(' - ').slice(0, 200);
+    if (!t || t === last) return null;
+    last = t; return t;
+  };
+  return chunk => {
+    let found = null;
+    buf = buf.length ? Buffer.concat([buf, chunk]) : chunk;
+    for (;;) {
+      if (buf.length < 27) break;
+      if (buf.toString('latin1', 0, 4) !== 'OggS') { const at = buf.indexOf('OggS', 1, 'latin1'); buf = at < 0 ? buf.subarray(Math.max(0, buf.length - 3)) : buf.subarray(at); continue; }
+      const segs = buf[26], head = 27 + segs; if (buf.length < head) break;
+      let body = 0; for (let k = 0; k < segs; k++) body += buf[27 + k];
+      if (buf.length < head + body) break;
+      if (buf[5] & 2) { pkt = []; pkts = 0; flac = false; }                         // a new stream begins: a new song
+      if (pkts < 4) {
+        let at = head;
+        for (let k = 0; k < segs && pkts < 4; k++) {
+          const n = buf[27 + k]; pkt.push(buf.subarray(at, at + n)); at += n;
+          if (n < 255) { const p = Buffer.concat(pkt); pkt = []; pkts++; const t = p.length < 65536 ? packet(p) : null; if (t) found = t; }
+        }
+        if (pkt.reduce((a, x) => a + x.length, 0) > 65536) { pkt = []; pkts = 99; }   // a picture in the tags: not waited for
+      }
+      buf = buf.subarray(head + body);
+    }
+    if (buf.length > 1 << 20) buf = Buffer.alloc(0);
+    return found;
+  };
+}
+
+// 7.10.28: Radio Paradise's FLAC streams name no songs at all (one Ogg stream, no comments); its own page says what
+// plays on each mix (0 main, 1 mellow, 2 rock, 3 global), asked every 15 s while one plays. -1: not one of them
+const RP_API = process.env.DECK90_RP_API || 'https://api.radioparadise.com/api/now_playing?chan=';   // (the tests' pretend one)
+function rpChannel(target) {
+  let u; try { u = new URL(target); } catch (_) { return -1; }
+  const pretend = process.env.DECK90_RP_API && u.origin === new URL(process.env.DECK90_RP_API).origin;
+  if (!/(^|\.)radioparadise\.com$/i.test(u.hostname) && !pretend) return -1;
+  const m = /^\/(?:(mellow|rock|global|world)-)?flac(?:$|[/?.-])/i.exec(u.pathname);
+  return m ? { mellow: 1, rock: 2, global: 3, world: 3 }[(m[1] || '').toLowerCase()] || 0 : -1;
 }
 
 function createRadioProxy({ net, log, onMeta, agent }) {
@@ -83,7 +150,19 @@ function createRadioProxy({ net, log, onMeta, agent }) {
       held = []; heldBytes = 0;
       aheadTimer = setInterval(() => { const a = ahead(); if (a !== null && !closed) onMeta({ id, ahead: a }); }, 1000);
     };
-    const stop = () => { if (closed) return; closed = true; clearInterval(aheadTimer); try { up && up.abort(); } catch (_) {} try { res.end(); } catch (_) {} };
+    let rpTimer = 0, rpLast = '';
+    const rp = rpChannel(target);
+    const rpAsk = async () => {
+      if (closed) return;
+      try {
+        const r = await net.fetch(RP_API + rp, { headers: { 'User-Agent': agent } });
+        const j = r.ok ? await r.json() : null;
+        const t = j && [j.artist, j.title].filter(x => typeof x === 'string' && x.trim()).map(x => x.replace(/\s+/g, ' ').trim()).join(' - ').slice(0, 200);
+        if (t && t.includes(' - ') && t !== rpLast && !closed) { rpLast = t; onMeta({ id, title: t }); }
+      } catch (_) {}
+      if (!closed) rpTimer = setTimeout(rpAsk, 15000);
+    };
+    const stop = () => { if (closed) return; closed = true; clearInterval(aheadTimer); clearTimeout(rpTimer); try { up && up.abort(); } catch (_) {} try { res.end(); } catch (_) {} };
     req.on('close', stop);
     const again = why => {
       if (closed) return;
@@ -119,13 +198,14 @@ function createRadioProxy({ net, log, onMeta, agent }) {
           res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
           onMeta({ id, codec: codecOf(type), kbps: said > 0 && said <= 1500 ? said : 0 });
           rate = said > 0 && said <= 1500 ? said : 0;
+          if (rp >= 0 && !metaint) rpAsk();                            // 7.10.28: Radio Paradise's FLAC: its page says the song
           const most = setTimeout(flow, HOLD * 1000);                  // a slow station: what came in 3 s
           res.on('close', () => clearTimeout(most));
         } else { bridged++; log('radio proxy: back (' + bridged + ') · ' + target.slice(0, 100)); onMeta({ id, bridged }); }
         // the bitrate, when the station doesn't say it: the audio that arrives between 4 s and 12 s (the first
         // seconds come in a burst, to fill the player)
         const t0 = Date.now(); let b4 = -1, measured = said > 0 || bridged > 0, audioBytes = 0, sniffed = bridged > 0;
-        let left = metaint, metaLeft = -1, meta = [], lastTitle = null;
+        let left = metaint, metaLeft = -1, meta = [], lastTitle = null, ogg = null;
         r.on('data', chunk => {
           if (closed || mine !== up) return;
           tries = 0;                                                 // sound again: a later break gets its tries anew
@@ -143,7 +223,12 @@ function createRadioProxy({ net, log, onMeta, agent }) {
             }
           }
           // 7.10.7: Ogg says what it carries in its first page: FLAC or Opus (both sent as "application/ogg")
-          if (!sniffed && out.length) { sniffed = true; const c = sniff(Buffer.concat(out).subarray(0, 512)); if (c && c !== codecOf(type)) onMeta({ id, codec: c }); }
+          if (!sniffed && out.length) {
+            sniffed = true; const first = Buffer.concat(out).subarray(0, 512), c = sniff(first);
+            if (c && c !== codecOf(type)) onMeta({ id, codec: c });
+            if (!metaint && first.toString('latin1', 0, 4) === 'OggS') ogg = oggTitles();   // 7.10.28: its songs, from its comments
+          }
+          if (ogg) for (const a of out) { const t = ogg(a); if (t && t !== lastTitle) { lastTitle = t; onMeta({ id, title: t }); } }
           for (const a of out) {
             audioBytes += a.length;
             if (flowing) hand(a);
@@ -184,4 +269,4 @@ function createRadioProxy({ net, log, onMeta, agent }) {
   };
 }
 
-module.exports = { createRadioProxy, codecOf, decodeTitle, sniff };
+module.exports = { createRadioProxy, codecOf, decodeTitle, sniff, oggTitles, rpChannel };

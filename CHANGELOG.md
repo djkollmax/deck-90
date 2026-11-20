@@ -1,5 +1,35 @@
 # Changelog
 
+## 7.10.28
+
+### Added
+- **FOLDERS on the DM-90** (PC and USB): the folders as they are on the disk, each with the songs under it
+  (`localmusic.js` keeps every folder of a library, `read('folder')`; `musicFolder`, `musicFolderSongs`). ENTER opens a
+  folder or plays its songs from the one marked, Q on a folder queues everything under it, BACK goes up. On SERVER the
+  key says the folders are the PC's and USB's.
+- **The QUEUE can be edited:** Q there moves the marked song to play next (it used to add a copy), Q held or Delete
+  takes it out (`musicQueueRemove`, `musicQueueMoveNext`); the song playing stays.
+- **Radio Paradise's FLAC streams name their songs:** they send no titles at all (one Ogg stream, no comments), so
+  the proxy asks RP's now-playing page for the mix every 15 s. Other Ogg stations (FLAC, Vorbis, Opus) have their
+  songs read from the comment header of each chained stream (`oggTitles`).
+
+### Changed
+- The DM-90's keys regrouped: REPEAT, SHUFFLE and SHUFFLE ALL beside the transport; BACK, ENTER and Q beside the
+  lists and the knob; FOLDERS among the lists (six narrower keys under the transport).
+- A list key pressed from inside one of its lists (an artist's album, a folder's folder) goes back to that list where
+  it was; any list key starts afresh, so BACK no longer walks into an old path.
+- SOURCE skips USB when no pendrive or card is plugged in (one plugged in still switches by itself).
+- Radio scrobbles go the right way round: Last.fm is asked how many listeners it has for "A - B" each way
+  (`lastfm.order`, track.getInfo unsigned); a station that sends "Song - Artist" (Absolute Radio) is turned, and each
+  station's answers are kept (`deck90-lfm-stations`) for the songs Last.fm doesn't know. A line naming the station
+  itself isn't scrobbled.
+
+### Fixed
+- The car stereo's display left a space blank: it now shows that cell's unlit segments, as every other cell
+  (dp940-display.js, "blank cells").
+- The DM-90's display showed '?' for ›, ─ and → (an artist's albums, a search's group titles, the letters typed to
+  jump): they have glyphs now.
+
 ## 7.10.27
 
 ### Changed

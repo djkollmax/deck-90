@@ -1,5 +1,22 @@
 # Novedades
 
+## 7.10.28 — 2026-11-20
+
+### Nuevo
+- **FOLDERS en el DM-90:** la música de la PC y del pendrive como está en las carpetas, con cuántos temas tiene cada una. ENTER entra a una carpeta o toca sus temas desde el marcado, ◀ BACK sube, y Q en una carpeta pone todo lo que tiene para que suene después.
+- **La cola se puede arreglar:** en QUEUE, Q pasa el tema marcado a que suene después de este (antes lo agregaba otra vez), y **Q sostenido** (o la tecla Supr) lo saca de la cola.
+- **Radio Paradise en FLAC dice qué tema suena.** Esas radios no mandan el nombre del tema; ahora Deck 90 lo pregunta a la página de Radio Paradise. Las otras radios en OGG, FLAC u Opus también dicen el tema.
+
+### Mejor
+- **Las teclas del DM-90, más ordenadas:** arriba, al lado de ▶ ❚❚ ■, las que deciden cómo suena (REPEAT, SHUFFLE, SHUFFLE ALL); abajo, al lado de las listas y la perilla, las que las recorren (◀ BACK, ENTER, Q · PLAY NEXT).
+- Si estás adentro de un artista o de una carpeta y tocás su tecla (ARTISTS, FOLDERS…), volvés a la lista donde estabas, y ◀ BACK ya no te lleva a un camino viejo.
+- **SOURCE saltea USB** cuando no hay ningún pendrive enchufado, como el estéreo de un auto. Si enchufás uno, el DM-90 pasa solo.
+- **Last.fm, al derecho:** algunas radios mandan "Tema - Artista" (Absolute Radio) y se anotaban al revés. Ahora Deck 90 le pregunta a Last.fm cuál es el artista, y se acuerda de cómo escribe cada radio. Lo que es el nombre de la radio y no un tema no se anota.
+
+### Arreglos
+- El display del estéreo dejaba vacío el espacio entre palabras (entre HI-FI y PARADISE): ahora muestra los segmentos apagados, como las demás letras.
+- El display del DM-90 mostraba "?" en vez de ›, de las rayas de SEARCH y de la flecha al saltar con letras.
+
 ## 7.10.27 — 2026-11-20
 
 ### Mejor

@@ -2,6 +2,7 @@
 // SERVER → PC → USB; SETUP's PC tab adding a folder; the library made of its tags (and of its folders when there are
 // none); a song played from the PC at its own quality; a pendrive plugged in taking over the quiet DM-90, and taken
 // out while it plays; a song added to a folder showing up by itself; the queue kept when the program opens again.
+// 7.10.28: FOLDERS, the list keys going back to where they were, the QUEUE edited, SOURCE skipping an empty USB.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -156,6 +157,57 @@ test('a song added to a folder shows up by itself', async () => {
   mp3(path.join(pc, 'Banda Nueva', 'Recién', '01.mp3'), { title: 'Recién Llegada', artist: 'Banda Nueva', album: 'Recién' });
   const n = await until(() => d.win.evaluate(() => musicLocal.pc.songs === 8 && jbView.kind === 'artists' && jbView.items.length), 20000);
   assert.equal(n, 4, 'its artist in the list');
+});
+
+// 7.10.28
+test('FOLDERS: the folders of the PC as they are on the disk; a list key goes back to where it was; the QUEUE edited; SOURCE skips USB with nothing plugged in', async () => {
+  await use(); await d.click(K('folders'), 800);
+  let v = await view();
+  assert.equal(v.kind, 'folders'); assert.match(v.list.header, /^PC · FOLDERS › Música · 4$/);
+  assert.deepEqual(v.list.rows.map(r => [r.text, r.end]), [['▣ Banda de Prueba', '2 SONGS'], ['▣ Banda Nueva', '1 SONG'], ['▣ Sin Tags', '2 SONGS'], ['▣ Zona Inventada', '3 SONGS']]);
+  assert.equal(await d.win.evaluate(() => jb.getState().view), 'folders', 'its key lit');
+  await press('z'); await press('Enter', 800);
+  v = await view();
+  assert.equal(v.kind, 'folder'); assert.deepEqual(v.list.rows.map(r => r.text), ['▣ Primer Viaje (1991)']);
+  await press('Enter', 800);
+  v = await view();
+  assert.match(v.list.header, /^PC · Primer Viaje \(1991\) · 3$/);
+  assert.deepEqual(v.list.rows.map(r => r.text), ['Tramo 1', 'Tramo 2', 'Tramo 3']);
+  await press('Backspace'); await press('Backspace');
+  v = await view();
+  assert.deepEqual([v.kind, v.marked], ['folders', 'Zona Inventada'], 'BACK, folder by folder, to where it was');
+  await press('s'); await press('q', 800);                        // Q on a folder: all of it
+  assert.deepEqual(await d.win.evaluate(() => musicQueue.map(s => s.name)), ['Arranque', 'Final']);
+  // ARTISTS from inside an artist's album: the artists again, at that artist, and BACK has nowhere older to go
+  await d.click(K('artists'), 800); await press('z'); await press('Enter', 800); await press('Enter', 800);
+  assert.equal((await view()).kind, 'album');
+  await d.click(K('artists'), 500);
+  v = await view();
+  assert.deepEqual([v.kind, v.marked], ['artists', 'Zona Inventada']);
+  await press('Backspace');
+  assert.equal((await view()).kind, 'artists', 'it used to go back into the album');
+  // the QUEUE: Q moves the marked song to play next, Delete or Q held takes it out, the one playing stays
+  await press('Enter', 800); await press('Enter', 800); await press('Enter', 2000);   // Tramo 1, 2, 3 from the first
+  await d.click(K('list'), 500);
+  const names = () => d.win.evaluate(() => musicQueue.map(s => s.name));
+  await press('ArrowDown'); await press('ArrowDown'); await press('q', 500);
+  assert.deepEqual(await names(), ['Tramo 1', 'Tramo 3', 'Tramo 2']);
+  await press('End'); await press('Delete', 500);
+  assert.deepEqual(await names(), ['Tramo 1', 'Tramo 3']);
+  const box = await d.win.locator(K('queue')).boundingBox();
+  await press('Home'); await press('ArrowDown');
+  await d.win.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await d.win.mouse.down(); await d.wait(1300); await d.win.mouse.up(); await d.wait(400);
+  assert.deepEqual(await names(), ['Tramo 1']);
+  await press('Delete', 400);
+  assert.deepEqual(await names(), ['Tramo 1'], 'the one playing stays');
+  assert.equal(await d.win.evaluate(() => musicPlaying() && musicNow().name), 'Tramo 1');
+  await d.click(K('stop'), 300);
+  // no pendrive: SOURCE goes PC → SERVER, as a car stereo skips USB
+  await d.click(K('source'), 800);
+  assert.equal((await view()).mode, 'server');
+  await d.win.click('#jbClose'); await d.wait(200);
+  await d.click(K('source'), 1000);
+  assert.equal((await view()).mode, 'pc');
 });
 
 test('closed and opened again, the queue is there, at the same song', async () => {

@@ -9,7 +9,9 @@ let station, d;
 const tunerShows = () => d.win.evaluate(() => { const r = tuner.getState().radio; return { name: r.name, text: r.text, quality: r.quality }; });
 
 before(async () => {
-  station = await startStation(); d = await launch({ station });
+  station = await startStation();
+  process.env.DECK90_RP_API = station.base + '/rp?chan=';         // 7.10.28: Radio Paradise's page, pretended
+  d = await launch({ station });
   await d.win.evaluate(base => {
     radioMem.FM1[0] = { name: 'Test FM', freq: '99.1', q: 'Test FM', cc: 'AR', url: base + '/s' };
     radioMem.FM1[1] = { name: 'Sin BR', freq: '', q: 'Sin BR', cc: 'AR', url: base + '/nobr' };
@@ -111,6 +113,53 @@ test('radio songs go to the header and the history; the deck keys go through the
   assert.ok(!(await d.cmds()).some(c => /^(play|pause|toggle|next|prev)$/.test(c)), 'the PC player is left alone');
 });
 
+// 7.10.28
+test('an Ogg FLAC station names its songs in the stream, Radio Paradise\'s FLAC on its page: the tuner has them', async () => {
+  await d.win.evaluate(base => { radioMem.FM1[4] = { name: 'Ogg FM', freq: '', q: 'Ogg FM', cc: 'AR', url: base + '/ogg' }; tunerKey('m5'); }, station.base);
+  const seen = new Set();
+  for (const t0 = Date.now(); Date.now() - t0 < 12000 && seen.size < 2;) { const t = await d.win.evaluate(() => radioMeta.title); if (t) seen.add(t); await d.wait(200); }
+  assert.deepEqual([...seen].sort(), ['Banda Inventada - Tema 1', 'Banda Inventada - Tema 2']);
+  assert.equal(await d.win.evaluate(() => radioMeta.codec), 'FLAC');
+  // Radio Paradise's FLAC names nothing in the stream: its page says the song
+  await d.win.evaluate(base => { radioMem.FM1[5] = { name: 'RP Mellow', freq: '', q: 'RP Mellow', cc: 'US', url: base + '/mellow-flac' }; tunerKey('m6'); }, station.base);
+  let t = ''; for (const t0 = Date.now(); Date.now() - t0 < 8000 && !t;) { t = await d.win.evaluate(() => radioMeta.title); await d.wait(200); }
+  assert.equal(t, 'Grupo Imaginario - Canción del Paraíso');
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
+});
+
+test('Last.fm gets a radio song the right way round: "Song - Artist" stations are turned, and remembered', async () => {
+  await d.app.evaluate(({ ipcMain }) => {
+    global.order = { as: 0, flip: 900 };
+    for (const ch of ['lfm-status', 'lfm-now', 'lfm-scrobble', 'lfm-order']) ipcMain.removeHandler(ch);
+    ipcMain.handle('lfm-status', () => ({ hasKey: true, signedIn: true, user: 'damian', sent: 0, queued: 0 }));
+    ipcMain.handle('lfm-now', () => {}); ipcMain.handle('lfm-scrobble', () => {});
+    ipcMain.handle('lfm-order', () => global.order);
+  });
+  await d.win.evaluate(() => lfmStatus());
+  // the next song's check (a new one: the station changes song every 3 s)
+  const turned = () => d.win.evaluate(() => new Promise(done => {
+    const t0 = Date.now(), was = lfmCur, iv = setInterval(() => {
+      const raw = radioSong();
+      if (lfmCur && lfmCur !== was && lfmCur.order === 'done' && raw === lfmCur.key.replace(/^radio\|(.*?)\|(.*)$/, '$1 - $2')) { clearInterval(iv); done({ raw, artist: lfmCur.artist, title: lfmCur.title }); }
+      else if (Date.now() - t0 > 4500) { clearInterval(iv); done(null); }
+    }, 100);
+  }));
+  let r = null; for (let i = 0; i < 6 && !r; i++) r = await turned();
+  assert.ok(r, 'a song checked');
+  assert.equal(r.title + ' - ' + r.artist, r.raw, 'Last.fm knows it the other way round: turned');
+  assert.ok(await d.win.evaluate(() => lfmStations['test fm'].flip >= 1), 'the station noted');
+  // a song Last.fm doesn't know goes the station's usual way
+  await d.win.evaluate(() => { lfmStations['test fm'] = { as: 0, flip: 3 }; });
+  await d.app.evaluate(() => { global.order = { as: 0, flip: 0 }; });
+  r = null; for (let i = 0; i < 6 && !r; i++) r = await turned();
+  assert.ok(r); assert.equal(r.title + ' - ' + r.artist, r.raw);
+  await d.app.evaluate(() => { global.order = { as: 4000, flip: 0 }; });
+  r = null; for (let i = 0; i < 6 && !r; i++) r = await turned();
+  assert.ok(r); assert.equal(r.artist + ' - ' + r.title, r.raw, 'known as sent: as sent');
+  await d.app.evaluate(({ ipcMain }) => { ipcMain.removeHandler('lfm-status'); ipcMain.handle('lfm-status', () => ({ hasKey: false, signedIn: false, user: '', sent: 0, queued: 0 })); });
+  await d.win.evaluate(() => lfmStatus());
+});
+
 test('a station that can\'t be found says NO SIGNAL', async () => {
   await d.app.evaluate(({ ipcMain }) => { ipcMain.removeHandler('radio-find'); ipcMain.handle('radio-find', () => []); });
   await d.win.evaluate(() => { radioMem.FM1[2] = { name: 'Muda', freq: '', q: 'Muda', cc: 'AR', url: '' }; tunerKey('m3'); });
@@ -128,6 +177,9 @@ test('the car stereo opens on the radio, on its band and dial', async () => {
   // 7.9.21: the quality at the bottom; 7.10.21: LOCAL dark on a station of the bands (red only for LOC's)
   const foot = await d.win.evaluate(() => [...document.querySelectorAll('#stDisplay text')].map(t => t.textContent + '=' + t.getAttribute('fill')));
   assert.ok(foot.includes('MP3 128=#ffdd50'), foot.join()); assert.ok(foot.includes('LOCAL=#809641'), foot.join());
+  // 7.10.28: every cell of the dial's line has its unlit segments, the space between FM1 and 99.1 too
+  const ghosts = await d.win.evaluate(() => document.querySelectorAll('#stDisplay polygon[fill="#62751e"]').length);
+  assert.equal(ghosts, 16 * 'FM1 99.1'.length);
   await d.win.evaluate(() => toggleStereo()); await d.wait(1200);
 });
 

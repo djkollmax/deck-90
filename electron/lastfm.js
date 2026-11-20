@@ -100,6 +100,25 @@ function createLastfm({ net, dir, log, open, seal }) {
       try { await call('track.updateNowPlaying', Object.assign({ sk: cfg.session }, track(t)), true); }
       catch (e) { lost(e); log('lastfm: now playing failed: ' + e.message); }
     },
+    // 7.10.28: which way round a radio's "A - B" goes: how many listeners Last.fm has for A as the artist and B the
+    // song, and the other way (some stations send "Song - Artist"); a read, unsigned, with the person's key
+    async order(a, b) {
+      a = String(a || '').slice(0, 200); b = String(b || '').slice(0, 200);
+      if (!cfg.key || !a || !b) return null;
+      const listeners = async (artist, track) => {
+        const q = new URLSearchParams({ method: 'track.getInfo', api_key: cfg.key, artist, track, autocorrect: '1', format: 'json' });
+        const ac = new AbortController(), t = setTimeout(() => ac.abort(), 10000);
+        try {
+          const r = await net.fetch(API + '?' + q.toString(), { signal: ac.signal });
+          const j = await r.json().catch(() => ({}));
+          if (j.error === 6) return 0;                                 // not a song Last.fm knows
+          if (j.error || !r.ok || !j.track) throw new Error(j.message || 'HTTP ' + r.status);
+          return Number(j.track.listeners) || 0;
+        } finally { clearTimeout(t); }
+      };
+      try { const [as, flip] = await Promise.all([listeners(a, b), listeners(b, a)]); return { as, flip }; }
+      catch (e) { log('lastfm: order unknown (' + e.message + ')'); return null; }
+    },
     async scrobble(t) {
       if (!cfg.session || !t || !t.artist || !t.title || !(t.at > 0)) return;
       cfg.queue.push(Object.assign(track(t), { timestamp: Math.round(t.at) }));

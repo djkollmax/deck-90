@@ -91,14 +91,14 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 - **SERVER:** tu servidor [Jellyfin](https://jellyfin.org) (solo música, no películas). **SETUP** pide la dirección del servidor, el usuario y la contraseña; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
 - **PC:** las carpetas de la PC donde tenés música (F:\Música, D:\Audio…). En **SETUP → PC** tocás **+ AGREGAR CARPETA** y elegís una o varias. Deck 90 lee los datos de cada tema (artista, álbum, número, año, tapa, calidad) y arma la biblioteca igual que la de Jellyfin. La segunda vez abre al toque y, si agregás o cambiás temas, se pone al día solo. Los temas sin datos toman los nombres de sus carpetas (Artista\Álbum\01 - Tema).
-- **USB:** un pendrive o una tarjeta de memoria con música. Lo enchufás y aparece solo; si el DM-90 está prendido sin sonar, pasa a USB. Cuando lo sacás, desaparece.
+- **USB:** un pendrive o una tarjeta de memoria con música. Lo enchufás y aparece solo; si el DM-90 está prendido sin sonar, pasa a USB. Cuando lo sacás, desaparece (y SOURCE lo saltea hasta que enchufás otro).
 
 Toca MP3, FLAC (hasta 24 bit / 192 kHz), AAC y M4A, OGG, Opus y WAV en su calidad original. ALAC, WMA, APE y AIFF no se pueden tocar en la PC: se cuentan en SETUP y se pueden pasar a FLAC.
 
 - Arriba, el tema que suena: nombre, artista · álbum, la calidad completa ("FLAC LOSSLESS · 24 BIT / 96 KHZ · 4608 KBPS · STEREO"; los displays hablan en inglés, como un equipo de los 90), la cuenta regresiva y el lugar en la cola.
-- Abajo, una lista larga en el display: **ARTISTS → ALBUMS → SONGS**, **SONGS** (todos los temas), **QUEUE** (la cola) y **SEARCH**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ BACK** vuelve.
-- **Q** (o la tecla Q · PLAY NEXT) pone lo marcado para que suene después del tema actual; un álbum o un artista, enteros. **REPEAT**, **SHUFFLE**, **▶ ❚❚ ■ |◀◀ ▶▶|**.
-- **COLOR** cambia el color de los displays de todo el rack (24 colores) y **DIMMER** su brillo; también están en el DV-90 y en ⚙ PANTALLA → DISPLAYS, y tocando la hora de arriba se pasa al color siguiente. **SHUFFLE ALL** toca toda la biblioteca al azar.
+- Abajo, una lista larga en el display: **ARTISTS → ALBUMS → SONGS**, **SONGS** (todos los temas), **FOLDERS** (en PC y USB, las carpetas como están en el disco), **QUEUE** (la cola) y **SEARCH**. La perilla SELECT (o la rueda, o ↑ ↓) la recorre, las letras saltan al primer nombre que empieza así, **ENTER** abre o toca desde ahí y **◀ BACK** vuelve.
+- **Q** (o la tecla Q · PLAY NEXT) pone lo marcado para que suene después del tema actual; un álbum, un artista o una carpeta, enteros. En QUEUE, Q pasa el tema marcado a que suene después, y Q sostenido (o Supr) lo saca de la cola. Al lado de ▶ ❚❚ ■ |◀◀ ▶▶| están **REPEAT**, **SHUFFLE** y **SHUFFLE ALL** (toda la biblioteca al azar).
+- **COLOR** cambia el color de los displays de todo el rack (24 colores) y **DIMMER** su brillo; también están en el DV-90 y en ⚙ PANTALLA → DISPLAYS, y tocando la hora de arriba se pasa al color siguiente.
 - El estéreo (`E`) lo toca en el modo SERVER (BAND pasa por servidor, PC y USB, y abajo del display dice SRV, PC o USB), y el encabezado muestra lo que suena con su tapa (el mouse sobre la tapa la muestra grande). El display del DM-90 también dibuja la tapa, con sus puntitos.
 - La cola queda guardada: cerrás Deck 90, lo abrís y está en el mismo tema; ▶ sigue desde el segundo donde quedó.
 - Toca el archivo en su calidad original; del servidor, lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
@@ -118,7 +118,7 @@ Toca MP3, FLAC (hasta 24 bit / 192 kHz), AAC y M4A, OGG, Opus y WAV en su calida
 
 ### Last.fm
 
-**⚙ → EXTRAS → LAST.FM** (arriba, al lado de SIG, dice SCROBBLING cuando está conectado) anota en tu perfil de [Last.fm](https://www.last.fm) lo que escuchás en la radio, el CD y el DM-90. Primero lo que está sonando; el tema queda anotado cuando lo escuchaste más de la mitad o 4 minutos, y en la radio un minuto y medio. Necesita una cuenta de API propia (gratis, en last.fm/api/account/create): pegás la API key y el secret, y autorizás a Deck 90 en la página de Last.fm. Lo que suena en la PC no se manda, porque Spotify y los demás reproductores ya lo anotan solos.
+**⚙ → EXTRAS → LAST.FM** (arriba, al lado de SIG, dice SCROBBLING cuando está conectado) anota en tu perfil de [Last.fm](https://www.last.fm) lo que escuchás en la radio, el CD y el DM-90. Primero lo que está sonando; el tema queda anotado cuando lo escuchaste más de la mitad o 4 minutos, y en la radio un minuto y medio (si una radio manda "Tema - Artista", Deck 90 le pregunta a Last.fm cuál es el artista y lo anota al derecho). Necesita una cuenta de API propia (gratis, en last.fm/api/account/create): pegás la API key y el secret, y autorizás a Deck 90 en la página de Last.fm. Lo que suena en la PC no se manda, porque Spotify y los demás reproductores ya lo anotan solos.
 
 ### Estéreo de auto, con radio por internet
 

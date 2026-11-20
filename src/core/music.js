@@ -92,7 +92,7 @@ function musicSong(i, from = musicModes.source) {
       kbps: Math.round((a.BitRate || src.Bitrate || 0) / 1000), rate: a.SampleRate || 0, bits: a.BitDepth || 0, ch: a.Channels || 0 } : null };
 }
 async function musicRead(kind, id, query, from = musicModes.source) {
-  if (from === musicModes.source && musicModes.library && (kind === 'artists' || kind === 'items')) query = Object.assign({}, query, { Library: musicModes.library });
+  if (from === musicModes.source && musicModes.library && (kind === 'artists' || kind === 'items' || kind === 'folder')) query = Object.assign({}, query, { Library: musicModes.library });
   const api = musicApiOf(from); if (!api) throw new Error('no source');
   const r = await api.read(kind, id, query).catch(e => ({ error: e.message }));
   if (r && r.error) { musicError = r.error; if (r.error === 'signed out') await musicStatus(); throw new Error(r.error); }
@@ -151,6 +151,14 @@ async function musicArtistSongs(artistId) {
   if (!(r.Items || []).length) { delete q.AlbumArtistIds; q.ArtistIds = artistId; r = await musicRead('items', '', q); }
   return (r.Items || []).map(i => musicSong(i));
 }
+// 7.10.28: FOLDERS (the PC and USB): a folder's folders and songs as they are on the disk ('' = the library's own
+// folders); and every song under a folder (Q on it)
+async function musicFolder(id) {
+  const r = await musicRead('folder', id || '');
+  return { name: r.Name || '', items: (r.Items || []).map(i => i.Type === 'Folder' ? { kind: 'folder', id: i.Id, name: i.Name || '?', count: i.ChildCount || 0 }
+    : Object.assign({ kind: 'song' }, musicSong(i))) };
+}
+async function musicFolderSongs(id) { return ((await musicRead('folder', id, { Recursive: true })).Items || []).map(i => musicSong(i)); }
 // 7.10.4: SHUFFLE ALL: every song of the library, in a random order
 async function musicShuffleAll() {
   const all = await musicSongs();
@@ -249,6 +257,24 @@ function musicQueueNext(songs) {
   musicNextAt = at + songs.length;
   deck.emit('music');
   return songs.length;
+}
+// 7.10.28: the queue edited from its list: a song out of it (not the one playing), or moved to play next
+function musicQueueRemove(i) {
+  if (!(i >= 0 && i < musicQueue.length) || i === musicPos) return false;
+  musicQueue.splice(i, 1);
+  if (i < musicPos) musicPos--;
+  if (musicNextAt > i) musicNextAt--;
+  if (musicNextAt <= musicPos + 1) musicNextAt = -1;
+  musicShuf = musicShuf.filter(k => k !== i).map(k => k > i ? k - 1 : k);
+  deck.emit('music');
+  return true;
+}
+function musicQueueMoveNext(i) {
+  const s = musicQueue[i];
+  if (!s || i === musicPos) return false;
+  musicQueueRemove(i);
+  musicQueueNext([s]);
+  return true;
 }
 async function musicStart() {
   const s = musicNow(); if (!s) { deck.emit('music'); return; }

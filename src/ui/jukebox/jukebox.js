@@ -5,9 +5,11 @@
 //  keys speak English, as a 90s unit would (7.9.23); the toasts and SETUP, Spanish.
 //    POWER     on and off (off: the music stops, the PC's player goes on)     SETUP   the server, the PC's folders, the pendrive
 //    SOURCE    (7.10.24) SERVER (Jellyfin) → PC (the folders chosen in SETUP) → USB (the pendrive plugged in)
-//    ARTISTS · ALBUMS · SONGS · QUEUE · SEARCH   what the list shows         ◀ BACK   the list before
+//    ARTISTS · ALBUMS · SONGS · FOLDERS · QUEUE · SEARCH   what the list shows (FOLDERS, 7.10.28: the PC's and USB's as
+//              they are on the disk)                                         ◀ BACK   the list before
 //    SELECT (the knob, the wheel, ↑ ↓)  moves through the list   ENTER (or a double click)  opens it or plays from it
-//    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album or an artist: all of it)
+//    Q · PLAY NEXT (or Q)   what's marked plays next, after the song playing (an album, an artist or a folder: all of
+//              it); in the QUEUE (7.10.28) it moves the marked song there, held (or Delete) takes it out
 //    ▶ ❚❚ ■ |◀◀ ▶▶  REPEAT (all, one, off) · SHUFFLE · SHUFFLE ALL (the whole library at random)
 //    COLOR  the rack's displays' colour   DIMMER  this display's brightness   letters: jump to the first name
 //  After a click on it the keyboard is the unit's (a click elsewhere, or Esc, gives it back): ↑ ↓ PgUp PgDn Home End, Enter,
@@ -142,6 +144,7 @@ function jbRow(it, i) {
   if (it.kind === 'artist') return { text: it.name, sub: jbView.kind === 'search' ? 'ARTIST' : '', end: '' };
   if (it.kind === 'album') return { text: it.name, sub: jbView.kind === 'artist' ? '' : it.artist,
     end: jbView.kind === 'search' ? ['ALBUM', it.year || ''].filter(Boolean).join(' · ') : [it.year || '', it.count ? it.count + ' SONGS' : ''].filter(Boolean).join(' · ') };
+  if (it.kind === 'folder') return { text: '▣ ' + it.name, sub: '', end: it.count ? jbPlural(it.count, 'SONG', 'SONGS') : '' };   // 7.10.28
   if (it.kind === 'more') return { text: it.name, sub: '', end: '', dim: true };
   if (it.kind === 'head') return { text: '── ' + it.name + ' ──', sub: '', end: '', dim: true };   // a search's groups
   const n = jbView.kind === 'album' && it.n ? String(it.n).padStart(2, '0') + ' ' : '';
@@ -157,14 +160,14 @@ function jbRenderList() {
   if (v.cursor >= v.top + rows) v.top = v.cursor - rows + 1;
   v.top = Math.max(0, Math.min(v.top, Math.max(0, v.items.length - rows)));
   const count = v.items.length, found = v.kind === 'search' ? v.items.filter(i => i.kind !== 'head').length : count, fmt = n => n.toLocaleString('es-AR');
-  let header = (musicIsLocal() && v.kind !== 'list' && v.kind !== 'home' ? musicSourceName() + ' · ' : '') + v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : '') + (musicLibraryName() && ['artists', 'albums', 'songs', 'search'].includes(v.kind) ? ' · ' + musicLibraryName().toUpperCase() : ''), right = '';   // 7.10.10; 7.10.24: PC · ARTISTS · 120
+  let header = (musicIsLocal() && v.kind !== 'list' && v.kind !== 'home' ? musicSourceName() + ' · ' : '') + v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : '') + (musicLibraryName() && ['artists', 'albums', 'songs', 'folders', 'search'].includes(v.kind) ? ' · ' + musicLibraryName().toUpperCase() : ''), right = '';   // 7.10.10; 7.10.24: PC · ARTISTS · 120
   if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = jbLoading || jbFound(); }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
   else if (musicIsLocal() && musicLocal && musicLocal[musicModes.source].scanning) { const L = musicLocal[musicModes.source]; right = 'READING ' + (L.found ? fmt(L.read) + '/' + fmt(L.found) : '…'); }
   else right = musicQueue.length ? 'QUEUE ' + (musicPos >= 0 ? musicPos + 1 + '/' : '') + musicQueue.length : '';
   jb.setList({ header, right, rows: v.items.slice(v.top, v.top + rows).map((it, k) => jbRow(it, v.top + k)), cursor: v.cursor, top: v.top, count });
-  jb.setView(jbSearchText !== null || v.kind === 'search' ? 'search' : { artists: 'artists', albums: 'albums', songs: 'songs', list: 'list' }[v.kind] || '');
+  jb.setView(jbSearchText !== null || v.kind === 'search' ? 'search' : { artists: 'artists', albums: 'albums', songs: 'songs', folders: 'folders', folder: 'folders', list: 'list' }[v.kind] || '');
 }
 function jbHome(text) { jbView = { kind: 'home', items: (text || []).map(name => ({ kind: 'more', name })), cursor: 0, top: 0, title: 'DM-90' }; jbStack = []; jbRenderList(); }
 // load a list: what the server says goes on screen when it arrives (a slower answer for an older ask is dropped)
@@ -176,6 +179,7 @@ async function jbLoad(view, load, push) {
     const items = await load();
     if (t !== jbAsk) return;
     if (push && jbView.kind !== 'home') jbStack.push(jbView);
+    else if (!push) jbStack = [];                                  // 7.10.28: a list key starts afresh: BACK doesn't go into an old path
     jbView = Object.assign({ cursor: 0, top: 0 }, view, { items });
   } catch (e) {
     if (t !== jbAsk) return;
@@ -185,6 +189,13 @@ async function jbLoad(view, load, push) {
 function jbOpen(kind) {
   if (!jbReady()) return;
   if (kind !== 'search') jbSearchText = null;
+  // 7.10.28: from inside one of its lists (an artist's album, a folder's folder), the key goes back to where it was
+  if (jbStack.length && jbStack[0].kind === kind && kind !== 'list') { ++jbAsk; jbLoading = ''; jbView = jbStack[0]; jbStack = []; return jbRenderList(); }
+  if (kind === 'folders') {
+    if (!musicIsLocal()) return toast('FOLDERS · <span>las carpetas son de PC y USB</span> (SOURCE): el servidor ordena por artista y álbum', 2600);
+    const view = { kind: 'folders', title: 'FOLDERS', folderId: '' };
+    return jbLoad(view, async () => { const r = await musicFolder(''); if (r.name) view.title = 'FOLDERS › ' + r.name; return r.items; });
+  }
   if (kind === 'artists') return jbLoad({ kind: 'artists', title: 'ARTISTS' }, async () => (await musicArtists()).map(a => Object.assign({ kind: 'artist' }, a)));
   if (kind === 'albums') return jbLoad({ kind: 'albums', title: 'ALBUMS' }, async () => (await musicAlbums()).map(a => Object.assign({ kind: 'album' }, a)));
   if (kind === 'songs') return jbLoad({ kind: 'songs', title: 'SONGS' }, async () => (await musicSongs()).map(s => Object.assign({ kind: 'song' }, s)));
@@ -207,8 +218,10 @@ function jbNotReady() {
 }
 const jbEsc = t => String(t || '').replace(/[<>&]/g, '');
 // SOURCE (7.10.24): SERVER → PC → USB; the lists show the new one's (the queue playing goes on)
+// 7.10.28: USB only with a pendrive or a card plugged in, as a car stereo skips it (one plugged in comes by itself)
 function jbSourceNext() {
-  const next = MUSIC_SOURCES[(MUSIC_SOURCES.indexOf(musicModes.source) + 1) % MUSIC_SOURCES.length];
+  const usb = musicLocal && musicLocal.usb, list = MUSIC_SOURCES.filter(s => s !== 'usb' || musicModes.source === 'usb' || (usb && usb.roots.length));
+  const next = list[(list.indexOf(musicModes.source) + 1) % list.length];
   jbSourceSet(next);
 }
 function jbSourceSet(src, quiet) {
@@ -239,6 +252,7 @@ async function jbEnter() {
   const it = jbView.items[jbView.cursor]; if (!it || !jbReady()) return;
   if (it.kind === 'artist') return jbLoad({ kind: 'artist', title: it.name + ' › ALBUMS', artistId: it.id }, async () => (await musicAlbums(it.id)).map(a => Object.assign({ kind: 'album' }, a)), true);
   if (it.kind === 'album') return jbLoad({ kind: 'album', title: it.name + (it.year ? ' (' + it.year + ')' : ''), artist: it.artist, albumId: it.id }, async () => (await musicTracks(it.id)).map(s => Object.assign({ kind: 'song' }, s)), true);
+  if (it.kind === 'folder') return jbLoad({ kind: 'folder', title: it.name, folderId: it.id }, async () => (await musicFolder(it.id)).items, true);
   if (it.kind !== 'song') return;
   if (jbView.kind === 'list') { musicJump(jbView.cursor); return; }
   const songs = jbSongs();
@@ -246,13 +260,23 @@ async function jbEnter() {
   toast('▶ · <span>' + it.name.replace(/[<>&]/g, '') + '</span>' + (songs.length > 1 ? ' · ' + songs.length + ' en la cola' : ''), 1600);
 }
 // Q: the marked song (or all of an album or an artist) plays next
-async function jbQueue() {
+async function jbQueue(hold) {
   const it = jbView.items[jbView.cursor]; if (!it || !jbReady()) return;
+  // 7.10.28: in the QUEUE, Q moves the marked song to play next (no copy of it), held takes it out
+  if (jbView.kind === 'list') {
+    const name = jbEsc(it.name), i = jbView.cursor;
+    if (i === musicPos) { toast('QUEUE · <span>' + name + '</span> está sonando' + (hold ? ': ▶▶ pasa al próximo' : ''), 1600); return; }
+    if (hold) { musicQueueRemove(i); toast('QUEUE · <span>' + name + '</span> fuera de la cola', 1600); }
+    else { musicQueueMoveNext(i); toast('Q · <span>' + name + '</span> suena después de este · sostenido (o Supr) lo saca de la cola', 2200); }
+    jbOpen('list'); jbView.cursor = Math.min(i, jbView.items.length - 1); jbRenderList();
+    return;
+  }
   let songs = [];
   try {
     if (it.kind === 'song') songs = [it];
     else if (it.kind === 'album') songs = await musicTracks(it.id);
     else if (it.kind === 'artist') songs = await musicArtistSongs(it.id);
+    else if (it.kind === 'folder') songs = await musicFolderSongs(it.id);
   } catch (_) { toast('MÚSICA · <span>' + jbNoAnswer() + '</span>', 2000); return; }
   if (!songs.length) return;
   const wasIdle = musicPos < 0 && !musicPlaying();
@@ -347,10 +371,10 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
     jbView.top = top; jbView.cursor = top + off; jbRenderList(); return;
   }
   if (k === 'row') { jbView.cursor = jbView.top + index; jbRenderList(); if (double) jbEnter(); return; }
-  if (['artists', 'albums', 'songs', 'list', 'search'].includes(k)) return jbOpen(k);
+  if (['artists', 'albums', 'songs', 'folders', 'list', 'search'].includes(k)) return jbOpen(k);
   if (k === 'back') return jbBack();
   if (k === 'enter') return jbEnter();
-  if (k === 'queue') return jbQueue();
+  if (k === 'queue') return jbQueue(hold);
   if (k === 'all') return jbShuffleAll();
   if (k === 'repeat' || k === 'shuffle') {
     if (k === 'repeat') musicModes.repeat = { off: 'all', all: 'one', one: 'off' }[musicModes.repeat];
@@ -403,6 +427,7 @@ document.addEventListener('keydown', e => {
   if (k === ' ') { take(); if (!e.repeat) jbKey(musicPlaying() ? 'pause' : 'play'); return; }
   if (k === '/') { take(); return jbOpen('search'); }
   if (k.toLowerCase() === 'q') { take(); if (!e.repeat) jbQueue(); return; }
+  if (k === 'Delete' && jbView.kind === 'list') { take(); if (!e.repeat) jbQueue(true); return; }   // 7.10.28: out of the queue
   // 7.10.6: E (the stereo), P (the strip) and J (this unit) stay the program's even here; Shift + a letter jumps
   // with any letter (Shift+E: the first name with E)
   if (!e.shiftKey && /^[epjg]$/i.test(k)) return;                 // 7.10.11: G too (keep the song)
@@ -423,7 +448,7 @@ function jbLibrarySet(id) {
   musicLibrarySet(id);
   toast(jbLibWord() + ' · <span>' + (musicLibraryName() || 'todas').replace(/[<>&]/g, '') + '</span>' + (id ? '' : ' (' + (musicLibs || []).map(l => l.name).join(' + ').replace(/[<>&]/g, '') + ')'), 2000);
   const sel = document.getElementById('jbLibrary'); if (sel) sel.value = id;
-  if (['artists', 'albums', 'songs'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind);
+  if (['artists', 'albums', 'songs', 'folders'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind);
   else if (jbPower) jbOpen('artists');
 }
 const jbLibWord = () => ({ server: 'BIBLIOTECA', pc: 'CARPETA', usb: 'PENDRIVE' })[musicModes.source];
@@ -629,6 +654,6 @@ musicLocalHeard.push(st => {
   if (!mine || !st.changed) { if (mine && jb) jbRenderList(); return; }
   // the lists on screen read again (what was open stays, if it's still there)
   if (jbView.kind === 'home' || !musicSourceReady()) jbHome([jbHomeText()]);
-  if (jbPower && musicSourceReady() && ['home', 'artists', 'albums', 'songs'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind === 'home' ? 'artists' : jbView.kind);
+  if (jbPower && musicSourceReady() && ['home', 'artists', 'albums', 'songs', 'folders'].includes(jbView.kind) && !jbStack.length) jbOpen(jbView.kind === 'home' ? 'artists' : jbView.kind);
   jbShownKey = ''; jbSync();
 });

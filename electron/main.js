@@ -725,6 +725,7 @@ ipcMain.handle('lfm-finish', e => fromWin(e) ? lfm().finish() : null);
 ipcMain.handle('lfm-sign-out', e => fromWin(e) ? lfm().signOut() : null);
 ipcMain.handle('lfm-now', (e, t) => fromWin(e) ? lfm().nowPlaying(lfmTrack(t)) : null);
 ipcMain.handle('lfm-scrobble', (e, t) => fromWin(e) ? lfm().scrobble(lfmTrack(t)) : null);
+ipcMain.handle('lfm-order', (e, a, b) => fromWin(e) ? lfm().order(String(a || '').slice(0, 200), String(b || '').slice(0, 200)) : null);   // 7.10.28
 ipcMain.handle('jf-sign-in', (e, server, user, pw) => fromWin(e) ? jf().signIn(String(server || '').slice(0, 300), user, pw) : null);
 ipcMain.handle('jf-sign-out', e => fromWin(e) ? jf().signOut() : null);
 ipcMain.handle('jf-read', (e, kind, id, query) => fromWin(e) ? jf().read(String(kind), id, query && typeof query === 'object' ? query : {}) : null);

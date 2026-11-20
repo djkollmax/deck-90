@@ -1,6 +1,6 @@
 'use strict';
 // ── LAST.FM (7.10.10): what Deck 90's own sources play goes to the person's Last.fm profile ──
-// The radio (a song the station names as "Artist - Song"), the CD (a disc MusicBrainz knows) and the DM-90: "now
+// The radio (a song the station names as "Artist - Song", or "Song - Artist": 7.10.28 asks Last.fm which), the CD (a disc MusicBrainz knows) and the DM-90: "now
 // playing" once a song has played 5 s, and a scrobble when it ends having been heard more than half (or 4 minutes;
 // a radio song, whose length isn't known, 90 s). What the PC plays isn't sent: Spotify and the other players
 // scrobble their own. The main process (electron/lastfm.js) keeps the key and the session and talks to Last.fm.
@@ -18,14 +18,43 @@ function lfmSong(src, info) {
   if (!src || !info) return null;
   if (src.name === 'radio') {
     const m = /^(.+?)\s+-\s+(.+)$/.exec(typeof radioSong === 'function' ? radioSong() : '');
-    return m ? { artist: m[1].trim(), title: m[2].trim(), album: '', dur: 0 } : null;
+    if (!m) return null;
+    const station = typeof radioNow !== 'undefined' && radioNow ? radioNow.name : '', fold = lfmFold;
+    // 7.10.28: the station talking about itself ("Absolute Radio - The Home of Classic Rock"): not a song
+    if (station && [m[1], m[2]].some(p => fold(p) === fold(station) || (fold(station).length > 5 && fold(p).includes(fold(station))))) return null;
+    return { artist: m[1].trim(), title: m[2].trim(), album: '', dur: 0, station };
   }
   if (!info.artist || !info.title) return null;
   return { artist: String(info.artist).split(/,\s*/)[0], title: info.title, album: info.album === 'Audio CD' ? '' : info.album || '', dur: info.dur || 0 };
 }
+const lfmFold = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// 7.10.28: a radio's song, the right way round. Most stations send "Artist - Song", some "Song - Artist" (Absolute
+// Radio): Last.fm says which of the two it knows (how many listeners each way), and each station's answers are
+// kept, so a song Last.fm doesn't know goes the way its station usually sends them
+let lfmStations = store.read('deck90-lfm-stations', {});
+if (!lfmStations || typeof lfmStations !== 'object' || Array.isArray(lfmStations)) lfmStations = {};
+function lfmStationWay(name) { const t = lfmStations[lfmFold(name)]; return t && t.flip >= 2 && t.flip > t.as * 2 ? 'flip' : 'as'; }
+async function lfmOrder(c) {
+  let r = null;
+  try { r = window.lastfm.order ? await window.lastfm.order(c.artist, c.title) : null; } catch (_) {}
+  if (lfmCur !== c) return;
+  let flip;
+  if (r && (r.as > 0 || r.flip > 0)) {
+    flip = r.flip > Math.max(r.as * 3, 10);
+    if (c.station) {
+      const k = lfmFold(c.station), t = lfmStations[k] || { as: 0, flip: 0 };
+      if (flip) t.flip++; else if (r.as > Math.max(r.flip * 3, 10)) t.as++;
+      t.as = Math.min(t.as, 50); t.flip = Math.min(t.flip, 50); lfmStations[k] = t;
+      const keys = Object.keys(lfmStations); if (keys.length > 300) delete lfmStations[keys[0]];
+      store.write('deck90-lfm-stations', lfmStations);
+    }
+  } else flip = c.station ? lfmStationWay(c.station) === 'flip' : false;
+  if (flip) [c.artist, c.title] = [c.title, c.artist];
+  c.order = 'done';
+}
 const lfmEnough = c => c.dur > 30 ? c.heard >= Math.min(c.dur / 2, 240) : c.dur === 0 && c.heard >= 90;
 function lfmEnd(c) {
-  if (!c || !lfmEnough(c)) return;
+  if (!c || !lfmEnough(c) || c.order === 'asking') return;
   window.lastfm.scrobble({ artist: c.artist, title: c.title, album: c.album, dur: c.dur, at: c.at });
   lfmState.sent++;
   lfmSentAt = Date.now();
@@ -53,10 +82,14 @@ function lfmTick() {
     lfmEnd(lfmCur); lfmCur = null;
   }
   if (!song) return;
-  if (!lfmCur) lfmCur = Object.assign({ key, at: now / 1000, heard: 0, seen: now, told: false }, song);
+  if (!lfmCur) {
+    lfmCur = Object.assign({ key, at: now / 1000, heard: 0, seen: now, told: false }, song);
+    if (src.name === 'radio') { lfmCur.order = 'asking'; lfmOrder(lfmCur); }   // 7.10.28: which way round
+  }
   if (info.status === 'Playing') lfmCur.heard += Math.min(2, (now - lfmCur.seen) / 1000);
   lfmCur.seen = now; lfmCur.pos = info.pos || 0;
-  if (!lfmCur.told && info.status === 'Playing' && lfmCur.heard >= 5) { lfmCur.told = true; window.lastfm.nowPlaying(song); }
+  if (lfmCur.order === 'asking' && lfmCur.heard >= 20) { lfmCur.order = 'done'; if (lfmCur.station && lfmStationWay(lfmCur.station) === 'flip') [lfmCur.artist, lfmCur.title] = [lfmCur.title, lfmCur.artist]; }   // no answer: the station's way
+  if (!lfmCur.told && lfmCur.order !== 'asking' && info.status === 'Playing' && lfmCur.heard >= 5) { lfmCur.told = true; window.lastfm.nowPlaying({ artist: lfmCur.artist, title: lfmCur.title, album: lfmCur.album, dur: lfmCur.dur }); }
 }
 setInterval(() => { lfmTick(); lfmLed(); }, 1000);
 window.addEventListener('beforeunload', () => { if (lfmCur) lfmEnd(lfmCur); });

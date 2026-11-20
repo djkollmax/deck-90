@@ -85,6 +85,7 @@ contextBridge.exposeInMainWorld('lastfm', {
   signOut: () => ipcRenderer.invoke('lfm-sign-out'),
   nowPlaying: t => ipcRenderer.invoke('lfm-now', t),
   scrobble: t => ipcRenderer.invoke('lfm-scrobble', t),
+  order: (a, b) => ipcRenderer.invoke('lfm-order', String(a || ''), String(b || '')),
 });
 contextBridge.exposeInMainWorld('cdrom', {
   cmd: c => ipcRenderer.send('media-cmd', String(c).slice(0, 20)),
