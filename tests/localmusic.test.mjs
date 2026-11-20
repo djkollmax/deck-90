@@ -121,6 +121,15 @@ test('the cover: as tall as the header display, big with the mouse on it, and in
   assert.equal(await d.win.evaluate(() => el('npBig').classList.contains('on')), false);
   const dots = await until(() => d.win.evaluate(() => jb._coverDots.map(p => (p.getAttribute('d') || '').split('M').length - 1).reduce((a, b) => a + b, 0) > 100 && { x: jb._tx, clip: +jb.svg.querySelector('#' + jb.prefix + '-title-clip rect').getAttribute('x') }));
   assert.deepEqual(dots, { x: 487, clip: 486 }, 'the title moves right of the cover');
+  // 7.10.26: a dark cover (its darkest dot just below zero after rounding) drew a solid bright triangle
+  const lit = await d.win.evaluate(() => new Promise(done => {
+    const c = document.createElement('canvas'); c.width = c.height = 240; const g = c.getContext('2d');
+    g.fillStyle = 'rgb(7,7,13)'; g.fillRect(0, 0, 240, 240); g.fillStyle = 'rgb(240,200,40)'; g.fillRect(90, 70, 60, 110);
+    const keep = window.jbSync; window.jbSync = () => {};
+    jb.setCover(c.toDataURL('image/png'));
+    setTimeout(() => { const n = jb._coverDots.map(p => (p.getAttribute('d') || '').split('M').length - 1); window.jbSync = keep; done(n); }, 600);
+  }));
+  assert.ok(lit[2] < 120 && lit[2] > 20, 'only the bright square is bright: ' + lit);
   await use();
 });
 

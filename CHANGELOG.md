@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.10.26
+
+### Fixed
+- The DM-90's dotted cover drew a solid bright triangle for some covers (a dark one, such as a black band at the top):
+  its light was kept in float32 and compared with the darkest pixel's double, so that pixel came out a hair below zero,
+  `Math.pow` of it was NaN, and the error diffusion carried the NaN right and down. Now doubles, clamped before the
+  curve, and every dot's value bounded before it is quantised.
+
 ## 7.10.25
 
 ### Changed

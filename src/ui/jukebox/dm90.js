@@ -352,13 +352,13 @@ class Deck90Music {
       g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, N, N);
       let px; try { px = g.getImageData(0, 0, N, N).data; } catch (_) { lay(false); return; }
       // its light, stretched to the whole range (a dark cover still shows), then three steps with the error carried on
-      const L = new Float32Array(N * N);
+      const L = new Float64Array(N * N);                       // 7.10.26: doubles (float32 against lo made -0.0000001, and pow of it NaN)
       let lo = 1, hi = 0;
       for (let i = 0; i < N * N; i++) { const v = (.2126 * px[i * 4] + .7152 * px[i * 4 + 1] + .0722 * px[i * 4 + 2]) / 255; L[i] = v; lo = Math.min(lo, v); hi = Math.max(hi, v); }
       const span = Math.max(.15, hi - lo), paths = ['', '', ''], P = 3.5, X = 391, Y = 44, S = 2.7;
-      for (let i = 0; i < N * N; i++) L[i] = Math.pow((L[i] - lo) / span, 1.35);   // a little more contrast: the shapes, not a grey square
+      for (let i = 0; i < N * N; i++) L[i] = Math.pow(Math.min(1, Math.max(0, (L[i] - lo) / span)), 1.35);   // a little more contrast: the shapes, not a grey square
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-        const i = y * N + x, v = L[i], q = v < .16 ? -1 : v < .5 ? 0 : v < .8 ? 1 : 2, back = q < 0 ? 0 : [.33, .66, 1][q], err = v - back;
+        const i = y * N + x, v = Math.min(1.5, Math.max(-.5, L[i] || 0)), q = v < .16 ? -1 : v < .5 ? 0 : v < .8 ? 1 : 2, back = q < 0 ? 0 : [.33, .66, 1][q], err = v - back;
         if (x + 1 < N) L[i + 1] += err * 7 / 16;
         if (y + 1 < N) { if (x > 0) L[i + N - 1] += err * 3 / 16; L[i + N] += err * 5 / 16; if (x + 1 < N) L[i + N + 1] += err / 16; }
         if (q >= 0) paths[q] += `M${(X + x * P).toFixed(1)} ${(Y + y * P).toFixed(1)}h${S}v${S}h-${S}z`;

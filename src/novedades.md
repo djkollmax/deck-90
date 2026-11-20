@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.10.26 — 2026-11-20
+
+### Arreglos
+- La tapa en puntitos del DM-90 salía como un triángulo blanco con algunas tapas (las que tienen partes muy oscuras). Ahora se ve la tapa.
+
 ## 7.10.25 — 2026-11-19
 
 ### Nuevo
