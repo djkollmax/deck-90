@@ -177,6 +177,8 @@ test('the car stereo opens on the radio, on its band and dial', async () => {
   // 7.9.21: the quality at the bottom; 7.10.21: LOCAL dark on a station of the bands (red only for LOC's)
   const foot = await d.win.evaluate(() => [...document.querySelectorAll('#stDisplay text')].map(t => t.textContent + '=' + t.getAttribute('fill')));
   assert.ok(foot.includes('MP3 128=#ffdd50'), foot.join()); assert.ok(foot.includes('LOCAL=#809641'), foot.join());
+  // 7.10.29: the sharper front, twice the size (the keys and the display laid out as before, in its 2001×539 units)
+  assert.deepEqual(await d.win.evaluate(() => { const i = document.querySelector('#stereo .st-photo'); return [i.naturalWidth, i.naturalHeight]; }), [4002, 1078]);
   // 7.10.28: every cell of the dial's line has its unlit segments, the space between FM1 and 99.1 too
   const ghosts = await d.win.evaluate(() => document.querySelectorAll('#stDisplay polygon[fill="#62751e"]').length);
   assert.equal(ghosts, 16 * 'FM1 99.1'.length);

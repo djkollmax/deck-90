@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.29
+
+### Changed
+- The car stereo's front (`img/stereo/front.jpg`) is a sharper photo at twice the size, 4002×1078: redrawn by an
+  image model, then registered onto the old one (SIFT matches, a homography; 0.6 px median, 1.5 px worst at the old
+  size), so the keys and the display over the LCD sit where they did. The layout stays in 2001×539 units.
+
 ## 7.10.28
 
 ### Added

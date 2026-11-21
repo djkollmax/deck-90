@@ -1,5 +1,10 @@
 # Novedades
 
+## 7.10.29 — 2026-11-21
+
+### Mejor
+- **El frente del estéreo, más nítido:** una foto nueva al doble de definición, con los botones, las letras y el plástico mucho más limpios. Todo queda en el mismo lugar: las teclas y el display andan igual. Se nota sobre todo en pantallas grandes y en la tablet.
+
 ## 7.10.28 — 2026-11-20
 
 ### Nuevo
