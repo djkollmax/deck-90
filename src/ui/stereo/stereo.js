@@ -9,6 +9,7 @@
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
 //    1–6     the band's memories, held 7–12 (BAND held, A.MEM, then a number keeps the station there)  BAND  FM1 · FM2 · FM3 · FM4 · FM5 · HIFI · AM
 //    HDB     the display's brightness   SDM  its colour (or the whole front)   PWR  back to the rack   ⏏  the tray
+//    PWR held (7.10.30)  the other front: the DP940 or the double DIN, with its bigger display (ddin-display.js)
 //  CD mode (7.8, Windows): the PC's CD/DVD drive, through the program's bridge (electron/media.ps1). An audio CD
 //  plays from the drive (Windows' own CD audio); a disc of MP3s and the like plays its files here. TRACK ◀▶ and
 //  SEL work on it; the display shows TRACK 03 and its time, or the file's name.
@@ -64,12 +65,85 @@ const STEREO_LOOKS = [
 const STEREO_COLORS = STEREO_HUES.length + STEREO_LOOKS.length;   // SDM: six lights, then the looks
 const stereoLook = () => STEREO_LOOKS[stereoCfg.color - STEREO_HUES.length - 1] || null;
 let stereoMode = false, stereoDisplay = null, stereoTextAt = 0, stereoShown = '';
-let stereoCfg = { disp: 'song', color: 1, dim: 0, mode: 'pc' };
+let stereoCfg = { disp: 'song', color: 1, dim: 0, mode: 'pc', front: 'dp940' };
 {
   const c = store.section('stereo');
   if (c) stereoCfg = {
     disp: STEREO_DISP.includes(c.disp) ? c.disp : 'song', color: c.color >= 1 && c.color <= STEREO_COLORS ? c.color | 0 : 1,
-    dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd', 'music'].includes(c.mode) ? c.mode : 'pc' };
+    dim: c.dim >= 0 && c.dim < STEREO_DIM.length ? c.dim | 0 : 0, mode: ['radio', 'cd', 'music'].includes(c.mode) ? c.mode : 'pc',
+    front: c.front === 'ddin' ? 'ddin' : 'dp940' };
+}
+
+// ── the fronts (7.10.30): the DP940, one DIN (its photo and keys in index.html), and the double DIN, the same family
+// twice as tall with a bigger glass (img/stereo/front-ddin.jpg, 1683 × 935; its keys are made here, from the
+// photo's pixels). PWR held changes from one to the other; the window takes the front's shape (main.js).
+const STEREO_DDIN = { img: 'img/stereo/front-ddin.jpg', w: 1683, h: 935, display: [466, 297, 934, 382], aux: [1556, 432, 22, 22],
+  keys: [['volup', 55, 285, 95, 135], ['voldown', 55, 560, 95, 130], ['sel', 78, 428, 170, 125, 1], ['mode', 178, 290, 138, 102, 1],
+    ['disp', 265, 440, 118, 105, 1], ['band', 178, 578, 138, 107, 1], ['hdb', 325, 315, 107, 105, 1], ['sdm', 325, 562, 107, 106, 1],
+    ['pwr', 58, 782, 122, 73], ['att', 190, 782, 115, 73], ['scan', 315, 782, 125, 73], ['loc', 440, 782, 125, 73],
+    ['prev', 582, 782, 124, 73], ['next', 706, 782, 126, 73], ['m1', 843, 782, 112, 78], ['m2', 958, 782, 112, 78],
+    ['m3', 1073, 782, 112, 78], ['m4', 1190, 782, 112, 78], ['m5', 1308, 782, 112, 78], ['m6', 1425, 782, 115, 78],
+    ['slot', 150, 118, 1380, 87], ['eject', 1513, 207, 101, 101, 1]] };
+let stereoDp940 = null;                                        // the DP940's places, as index.html has them
+function stereoFrontApply() {
+  const face = document.querySelector('#stereo .st-face'); if (!face) return;
+  const disp = document.getElementById('stDisplay'), aux = face.querySelector('.st-aux'), img = face.querySelector('.st-photo');
+  if (!stereoDp940) stereoDp940 = { display: disp.getAttribute('style'), aux: aux.getAttribute('style') };
+  const dd = stereoCfg.front === 'ddin', D = STEREO_DDIN;
+  const at = ([x, y, w, h]) => `left:${(x / D.w * 100).toFixed(3)}%;top:${(y / D.h * 100).toFixed(3)}%;width:${(w / D.w * 100).toFixed(3)}%;height:${(h / D.h * 100).toFixed(3)}%`;
+  if (dd && !face.querySelector('.st-hot.dd')) for (const [k, x, y, w, h, round] of D.keys) {
+    const b = document.createElement('button'), same = face.querySelector('.st-hot:not(.dd)[data-st="' + k + '"]');
+    b.className = 'st-hot dd' + (round ? ' round' : ''); b.dataset.st = k; b.setAttribute('style', at([x, y, w, h]));
+    b.title = same ? same.title : k.toUpperCase();
+    if (k === 'pwr') b.title = 'PWR · apagar el estéreo y volver al rack (E) · apretado: el otro frente (DP940)';
+    face.append(b);
+  }
+  face.dataset.front = dd ? 'ddin' : 'dp940';
+  img.src = dd ? D.img : 'img/stereo/front.jpg';
+  disp.setAttribute('style', dd ? at(D.display) : stereoDp940.display);
+  aux.setAttribute('style', dd ? at(D.aux) : stereoDp940.aux);
+  if (window.winCtl && window.winCtl.stereoShape) window.winCtl.stereoShape(dd ? D.w / D.h : 2001 / 539);
+}
+// the display for the front: the DP940's (vendor/dp940-display.js) or the double DIN's (ddin-display.js)
+function stereoDisplayMake() {
+  if (stereoDisplay) { stereoDisplay.destroy(); stereoDisplay = null; }
+  const root = document.getElementById('stDisplay'), radio = { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 };
+  if (stereoCfg.front === 'ddin' && typeof Deck90DoubleDin === 'function') {
+    stereoDisplay = new Deck90DoubleDin(root, { attackMs: 35, releaseMs: 140, radio, glyphs: typeof Deck90Music === 'function' ? Deck90Music.GLYPHS : null });
+    stereoDisplay.svg.setAttribute('preserveAspectRatio', 'none');
+  } else if (typeof Deck90Display === 'function') {
+    stereoDisplay = new Deck90Display(root, { attackMs: 35, releaseMs: 140, radio });
+    const svg = stereoDisplay.svg;                             // only its glass, over the photo's own LCD
+    svg.setAttribute('viewBox', '23 24 1141 156'); svg.setAttribute('preserveAspectRatio', 'none');
+    svg.removeAttribute('width'); svg.removeAttribute('height');
+  }
+  stereoShown = ''; stereoText(true);
+}
+// the window knows the front's shape from the start (it opens as the stereo in that shape)
+if (stereoCfg.front === 'ddin' && window.winCtl && window.winCtl.stereoShape) window.winCtl.stereoShape(STEREO_DDIN.w / STEREO_DDIN.h);
+function stereoFrontNext() {
+  stereoCfg.front = stereoCfg.front === 'ddin' ? 'dp940' : 'ddin'; savePrefs();
+  stereoFrontApply();
+  if (stereoDisplay) stereoDisplayMake();
+  stereoPaint();
+  toast('FRENTE · <span>' + (stereoCfg.front === 'ddin' ? 'DOBLE DIN' : 'DP940') + '</span> · PWR apretado: el otro', 2000);
+}
+// what the double DIN's bigger glass adds: the clock and the temperature always, and the spectrum on the sound
+const stereoDd = () => !!(stereoDisplay && typeof stereoDisplay.setSpectrum === 'function');
+const stSpec = { fd: null, out: new Float32Array(20) };
+function stereoSpectrum() {
+  const a = capture.aMain; if (!a || !capture.actx) return null;
+  if (!stSpec.fd || stSpec.fd.length !== a.frequencyBinCount) stSpec.fd = new Float32Array(a.frequencyBinCount);
+  a.getFloatFrequencyData(stSpec.fd);
+  const fd = stSpec.fd, nyq = capture.actx.sampleRate / 2, bins = a.frequencyBinCount, F0 = 40, F1 = 16000, N = stSpec.out.length;
+  for (let b = 0; b < N; b++) {
+    const f1 = F0 * Math.pow(F1 / F0, b / N), f2 = F0 * Math.pow(F1 / F0, (b + 1) / N);
+    const i1 = Math.max(1, Math.floor(f1 / nyq * bins)), i2 = Math.min(bins, Math.max(i1 + 1, Math.ceil(f2 / nyq * bins)));
+    let db = -140; for (let i = i1; i < i2; i++) if (fd[i] > db) db = fd[i];
+    db += 3 * Math.log2((f1 + f2) / 2 / 1000);                  // tilted up to the highs, as the rack's spectrum
+    stSpec.out[b] = Math.max(0, Math.min(1, (db + 72) / 60));
+  }
+  return stSpec.out;
 }
 
 // ── the display ──
@@ -79,12 +153,9 @@ function stereoOpen(on) {
   if (on && radioPlaying() && stereoCfg.mode !== 'radio') { stereoCfg.mode = 'radio'; savePrefs(); }   // the tuner's radio goes on here
   else if (on && cdPlaying() && stereoCfg.mode !== 'cd') { stereoCfg.mode = 'cd'; savePrefs(); }        // and the DC-90's CD
   else if (on && musicPlaying() && stereoCfg.mode !== 'music') { stereoCfg.mode = 'music'; savePrefs(); }   // and the DM-90's music (7.10.4)
-  if (on && !stereoDisplay && typeof Deck90Display === 'function') {
-    stereoDisplay = new Deck90Display(document.getElementById('stDisplay'), { attackMs: 35, releaseMs: 140, radio: { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 } });
-    const svg = stereoDisplay.svg;                             // only its glass, over the photo's own LCD
-    svg.setAttribute('viewBox', '23 24 1141 156'); svg.setAttribute('preserveAspectRatio', 'none');
-    svg.removeAttribute('width'); svg.removeAttribute('height');
-    stereoShown = ''; stereoText(true);
+  if (on) stereoFrontApply();
+  if (on && !stereoDisplay && (typeof Deck90Display === 'function' || typeof Deck90DoubleDin === 'function')) {
+    stereoDisplayMake();
     if (stereoCfg.mode === 'cd' && !cdPlaying()) cdAsk();       // (a disc already playing in the rack's DC-90 goes on)
   }
   if (!on) {
@@ -134,7 +205,7 @@ function stereoPaint() {
   d.className = d.className.replace(/\s*\blook(-[a-z]+)?\b/g, '') + (look ? ' look look-' + look.id + (look.light ? ' look-light' : '') : '');
   p.querySelector('.st-face').dataset.face = look && look.face || '';   // 7.9.21: the looks that change the whole front
   p.style.setProperty('--st-dim', STEREO_DIM[stereoCfg.dim]);
-  p.classList.toggle('aux-on', !!capture.running || radioPlaying() || cdPlaying());
+  p.classList.toggle('aux-on', !!capture.running || radioPlaying() || cdPlaying() || musicPlaying());   // 7.10.30: the DM-90's music too
 }
 // DISP's words, and the line under them: what's playing in this mode
 function stereoTemp() {
@@ -200,6 +271,8 @@ const stereoPlaying = () => capture.running && (np ? npPlaying() : audible());
 function stereoText(force) {
   if (!stereoDisplay) return;
   let key;
+  const dd = stereoDd();
+  if (dd) { const t = new Date(); stereoDisplay.setClock(String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0')); stereoDisplay.setTemp(stereoTemp()); }
   const extra = stereoDispText();
   if (extra) {                                                 // DISP: the time, the temperature, BPM or loudness
     key = 'disp|' + stereoCfg.mode + '|' + extra + '|' + stereoContext() + '|' + radioPlaying() + '|' + JSON.stringify(stereoInfo());
@@ -218,14 +291,16 @@ function stereoText(force) {
     const m = musicNow(), info = stereoInfo();
     const ready = musicSourceReady(), src = musicModes.source;
     const title = m ? m.name : ready ? musicSourceName() : { server: 'NO SERVER', pc: 'NO FOLDERS', usb: 'NO USB' }[src];
-    const artist = m ? [m.artists || m.artist, m.album].filter(Boolean).join(' · ') + (musicPaused() ? ' · PAUSE' : '')
+    const artist = m ? (dd ? m.artists || m.artist || '' : [m.artists || m.artist, m.album].filter(Boolean).join(' · ')) + (musicPaused() ? ' · PAUSE' : '')
       : ready ? 'DM-90 · SEL PLAYS IT ALL AT RANDOM · BAND: SERVER, PC, USB' : src === 'usb' ? 'PLUG IN A PENDRIVE · BAND: SERVER, PC, USB' : 'DM-90 · SETUP IN THE RACK · BAND: SERVER, PC, USB';
-    key = 'music|' + title + '|' + artist + '|' + JSON.stringify(info);
-    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing: true, ...info }); }
+    // 7.10.30: the double DIN's second line: the album, its year, and where the song is in the queue
+    const album = m ? [m.album, m.year || '', musicQueue.length > 1 ? (musicPos + 1) + '/' + musicQueue.length : ''].filter(Boolean).join(' · ') : '';
+    key = 'music|' + title + '|' + artist + '|' + album + '|' + JSON.stringify(info);
+    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, album, playing: true, ...info }); }
     stereoDisplay.setElapsed(musicAudio.currentTime || 0);
     if (!musicPlaying()) stereoDisplay.setLevels(0, 0);
   } else if (stereoCfg.mode === 'cd') {
-    let title, artist = '', playing = true;
+    let title, artist = '', album = '', playing = true;
     const tr = cdAudioTracks(), files = cdFiles();
     if (!cdInfo) title = 'READING';
     else if (cdInfo.none === 'windows') { title = 'WINDOWS ONLY'; artist = 'THE CD DRIVE WORKS ON WINDOWS'; }
@@ -236,12 +311,13 @@ function stereoText(force) {
       title = f || 'MP3'; artist = 'DISC · ' + (cdFile + 1) + '/' + files.length;
     } else if (tr.length) {
       const n = cdState.track || tr[0].n, total = tr.reduce((a, t) => a + (t.len || 0), 0), song = cdSongName(n);
-      if (song) { title = song.title; artist = song.artist + ' · ' + String(n).padStart(2, '0') + (cdState.state === 'paused' ? ' · PAUSE' : ''); }
+      if (song) { title = song.title; artist = song.artist + (dd ? '' : ' · ' + String(n).padStart(2, '0')) + (cdState.state === 'paused' ? ' · PAUSE' : ''); }
       else { title = 'TRACK ' + String(n).padStart(2, '0'); artist = 'CD · ' + tr.length + ' TRACKS · ' + mmss(total) + (cdState.state === 'paused' ? ' · PAUSE' : ''); }
+      album = [cdNames && cdNames.album, tr.length + ' TRACKS · ' + mmss(total)].filter(Boolean).join(' · ');   // 7.10.30: the double DIN's second line
     } else { title = 'NO AUDIO'; artist = 'THIS DISC HAS NO MUSIC'; }
     const info = stereoInfo();
-    key = 'cd|' + title + '|' + artist + '|' + JSON.stringify(info);
-    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, playing, ...info }); }
+    key = 'cd|' + title + '|' + artist + '|' + album + '|' + JSON.stringify(info);
+    if (key !== stereoShown || force) { stereoShown = key; stereoDisplay.setTrack({ title, artist, album, playing, ...info }); }
     stereoDisplay.setElapsed(cdPosition());
     if (!cdPlaying()) stereoDisplay.setLevels(0, 0);
   } else if (stereoCfg.mode === 'radio') {
@@ -252,12 +328,14 @@ function stereoText(force) {
     // the line under the frequency is short: the song, and every few seconds the station (7.9.21: the quality is
     // at the bottom now; a station that dropped says so)
     const trouble = radioNow && radioTrouble === 'retry' ? 'RECONNECTING…' : radioNow && radioTrouble === 'lost' ? 'NO SIGNAL' : '';
-    const line = trouble || (!live ? '' : song && Math.floor(Date.now() / 4000) % 3 !== 2 ? song : st.name);
-    key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot + '|' + line + '|' + q;
+    // 7.10.30: the double DIN has two lines: the song (or the station), and under it the station and its country
+    const line = trouble || (!live ? '' : dd ? song || st.name : song && Math.floor(Date.now() / 4000) % 3 !== 2 ? song : st.name);
+    const line2 = dd && live ? [song || trouble ? st.name : '', st.cc, stereoLocal() ? 'LOCAL' : ''].filter(Boolean).join(' · ') : '';
+    key = 'radio|' + radioMem.band + '|' + freq + '|' + live + '|' + radioMem.slot + '|' + line + '|' + line2 + '|' + q;
     if (key !== stereoShown || force) {
       stereoShown = key;
       stereoDisplay.setPlayback(false);
-      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, mono: radioMem.band === 'AM', local: stereoLocal(), quality: q });
+      stereoDisplay.setRadio({ band: radioMem.band, frequency: freq, preset: radioMem.slot || 1, live, name: line, line2, mono: radioMem.band === 'AM', local: stereoLocal(), quality: q });
     }
   } else {
     const playing = stereoPlaying();
@@ -270,7 +348,7 @@ function stereoText(force) {
     key = 'pc|' + playing + '|' + title + '|' + artist;
     if (key !== stereoShown || force) {
       stereoShown = key;
-      if (playing) stereoDisplay.setTrack({ title, artist, playing: true });
+      if (playing) stereoDisplay.setTrack({ title, artist, album: np && [np.album, np.year].filter(Boolean).join(' · ') || '', playing: true });
       else { stereoDisplay.setRadio({ band: 'FM1', frequency: '102.3', preset: 12, live: false, name: '', mono: false, quality: '' }); stereoDisplay.setPlayback(false); }
     }
     if (playing) stereoDisplay.setElapsed(np ? npPosition() : 0);
@@ -293,6 +371,7 @@ function stereoLevels(now) {
 function stereoFeed(now) {
   if (!stereoDisplay) return;
   if (stereoLive()) stereoLevels(now);
+  if (stereoDd()) stereoDisplay.setSpectrum(stereoLive() ? stereoSpectrum() : null);   // 7.10.30
   if (now - stereoTextAt > 250) { stereoTextAt = now; stereoText(); }
 }
 setInterval(() => { if (stereoMode && !capture.running) stereoText(); }, 500);   // the loop sleeps with nothing running
@@ -310,7 +389,7 @@ function phoneStereoView() {
     kind: rec.kind, radio: rec.radio || null, track: rec.track || null, elapsed: Math.floor(rec.elapsed || 0),
     live: stereoLive(),
     hue: look ? 0 : STEREO_HUES[stereoCfg.color - 1], dim: STEREO_DIM[stereoCfg.dim],
-    look: look ? look.id : '', light: !!(look && look.light), face: look && look.face || '', aux: !!capture.running || radioPlaying() || cdPlaying(),
+    look: look ? look.id : '', light: !!(look && look.light), face: look && look.face || '', aux: !!capture.running || radioPlaying() || cdPlaying() || musicPlaying(),
   };
 }
 const PHONE_STEREO_KEYS = ['volup', 'voldown', 'att', 'sel', 'mode', 'disp', 'band', 'hdb', 'sdm', 'scan', 'prev', 'next', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'slot', 'eject'];
@@ -355,7 +434,7 @@ function stereoKey(k, hold) {
   if (k === 'volup') return stereoVolume(1);
   if (k === 'voldown') return stereoVolume(-1);
   if (k === 'att') return stereoVolume(0);
-  if (k === 'pwr') return toggleStereo();
+  if (k === 'pwr') return hold ? stereoFrontNext() : toggleStereo();   // 7.10.30: held, the other front
   if (k === 'eject') {
     if (!window.cdrom) { toast('La bandeja se abre desde el programa en Windows.', 2400); return; }
     // 7.10.14: ⏏ again (or SLOT) closes it, and the disc that comes in plays (core/cd.js reads it once it has spun up)
@@ -475,7 +554,7 @@ function stereoKey(k, hold) {
       volT = setTimeout(function rep() { stereoKey(b.dataset.st, false); volT = setTimeout(rep, 100); }, 350);
       return;
     }
-    if (/^(m[1-6]|sdm|band|scan|loc)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
+    if (/^(m[1-6]|sdm|band|scan|loc|pwr)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
   const up = e => { clearTimeout(holdT); clearTimeout(volT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);

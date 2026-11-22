@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('winCtl', {
   fs:    () => ipcRenderer.send('win', 'fs'),
   mini:  () => ipcRenderer.send('win', 'mini'),
   stereo: () => ipcRenderer.send('win', 'stereo'),
+  stereoShape: ratio => ipcRenderer.send('stereo-shape', Number(ratio)),   // 7.10.30: the front's shape, for the window
   quit:  () => ipcRenderer.send('win', 'quit'),
   ready: () => ipcRenderer.send('win', 'ready'),
   onMini: cb => ipcRenderer.on('mini', (e, on, style) => cb(!!on, style === 'stereo' ? 'stereo' : 'strip')),

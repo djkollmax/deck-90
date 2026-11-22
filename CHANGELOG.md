@@ -1,5 +1,23 @@
 # Changelog
 
+## 7.10.30
+
+### Added
+- **The double-DIN stereo** (PWR held, kept in the stereo's prefs as `front`): a second front,
+  `img/stereo/front-ddin.jpg` (1683×935, an image model's double DIN of the DP940, its eject and the labels 9–12
+  moved a few pixels onto their keys), with its keys made by stereo.js from the photo's pixels (`STEREO_DDIN`), and
+  its own display, `ui/stereo/ddin-display.js` (`Deck90DoubleDin`): the DP940's calls (setRadio, setTrack, setPlayback,
+  setElapsed, setLevels) and colours, so every SDM look applies, on a glass twice as tall: nine fixed 16-segment cells
+  scrolling a long text a letter at a time (the DP940's font, `Deck90Display.FONT`), two 5×7 dot-matrix lines (the
+  DM-90's glyphs, `Deck90Music.GLYPHS`: `setRadio({ line2 })`, `setTrack({ album })`), a 20-band spectrum analyser on
+  `capture.aMain` (`setSpectrum`), the song's progress in segments, the clock and temperature always (`setClock`,
+  `setTemp`), taller curved L/R meters. The window takes the front's shape (`winCtl.stereoShape`, `stereo-shape`).
+- On it the radio shows the song and, under it, the station and its country; the DM-90 the artist and, under it, the
+  album, its year and the place in the queue; the CD the disc's name, its tracks and length.
+
+### Fixed
+- The stereo's AUX lamp stayed dark while the DM-90's music played.
+
 ## 7.10.29
 
 ### Changed

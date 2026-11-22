@@ -17,7 +17,8 @@
    it takes MONO's off colour. It sits a little to the right, centred under the STEREO/MONO box.
    7.10.22, marked "source": setTrack({ source }) names what plays under PLAY (CD unless told: USB for Deck 90 for
    Android's pendrive).
-   7.10.28, marked "blank cells": a space between words shows its cell's unlit segments, as every other cell does. */
+   7.10.28, marked "blank cells": a space between words shows its cell's unlit segments, as every other cell does.
+   7.10.30, marked "ddin": Deck90Display.FONT, the 16-segment font, for Deck 90's double-DIN display. */
 (function(globalThis){
 'use strict';
 /** Original DECK 90 16-segment geometry. Coordinates use SVG y-down. */
@@ -411,5 +412,6 @@ class Deck90Display {
 
 
 
+Deck90Display.FONT = FONT_DATA;   // Deck 90 7.10.30, "ddin": the font, for the double-DIN display (ui/stereo/ddin-display.js)
 globalThis.Deck90Display = Deck90Display;
 })(globalThis);

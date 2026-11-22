@@ -1,5 +1,20 @@
 # Novedades
 
+## 7.10.30 — 2026-11-22
+
+### Nuevo
+- **El estéreo en versión doble DIN** (**PWR** apretado un segundo): el doble de alto, con un display mucho más grande que aprovecha todo el lugar:
+  - el tema o la frecuencia en letras grandes de 16 segmentos (si es largo, pasa letra por letra, como en un equipo de verdad);
+  - **dos líneas de puntitos** abajo: en la radio, el tema y debajo la radio y su país; en el DM-90, el artista y debajo el disco, su año y el lugar en la cola (3/12); en el CD, el nombre del disco, cuántos temas tiene y cuánto dura;
+  - un **analizador de espectro** de 20 bandas sobre el sonido;
+  - el avance del tema como una barra de segmentos;
+  - **la hora y la temperatura siempre a la vista**, con la calidad y el tiempo que le queda al tema;
+  - los vúmetros L/R más altos.
+  Todos los colores de SDM le quedan. **PWR apretado otra vez** vuelve al DP940, y el estéreo se acuerda de cuál dejaste.
+
+### Arreglos
+- La luz de AUX del estéreo quedaba apagada mientras sonaba la música del DM-90.
+
 ## 7.10.29 — 2026-11-21
 
 ### Mejor

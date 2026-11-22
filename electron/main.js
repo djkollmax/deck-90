@@ -103,7 +103,8 @@ app.whenReady().then(() => {
   const MINI_MAX_H = 300;
   // 7.10.8: the car stereo's window has the shape of its face (2001 × 539, stereo-face.css), so no black shows
   // round it at any size: from 480 wide up to the widest screen, the height always following the width
-  const ST_RATIO = 2001 / 539, ST_MIN_W = 480;
+  // 7.10.30: or the double DIN's (1683 × 935): the page says which front shows (stereo-shape)
+  let ST_RATIO = 2001 / 539; const ST_MIN_W = 480;
   const stereoMaxW = () => Math.max(...screen.getAllDisplays().map(d => d.workArea.width));
   const miniMaxW = () => miniStyle === 'stereo' ? stereoMaxW() : 900;
   const fitStereo = (b, wa, byHeight) => {
@@ -393,6 +394,20 @@ app.whenReady().then(() => {
     win.on('show', trayMenu); win.on('hide', trayMenu);
     trayMenu();
   } catch (e) { mlog('tray: ' + e.message); tray = null; }
+  ipcMain.on('stereo-shape', (e, ratio) => {
+    if (!ours(e.sender)) return;
+    ratio = Number(ratio);
+    if (!(ratio >= 1.2 && ratio <= 5) || Math.abs(ratio - ST_RATIO) < .001 || win.isDestroyed()) return;
+    ST_RATIO = ratio;
+    if (!miniOn || miniStyle !== 'stereo') return;
+    miniBusy = true;
+    try {
+      const c = win.getContentBounds(), wa = screen.getDisplayMatching(c).workArea;
+      win.setAspectRatio(0); miniLimits('stereo');
+      const f = fitStereo(c, wa); stereoWas = f; win.setContentBounds(f);
+      mlog('stereo: the front is ' + ratio.toFixed(3) + ' wide to its height, ' + f.width + '×' + f.height);
+    } finally { miniBusy = false; }
+  });
   ipcMain.on('win', async (e, what) => {
     if (!ours(e.sender)) return;
     if (what === 'ready') return firstShow();

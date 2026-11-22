@@ -659,5 +659,6 @@ class Deck90Music {
   }
 }
 
+Deck90Music.GLYPHS = DOT_GLYPHS;                 // 7.10.30: the dots' letters, for the stereo's double-DIN display
 global.Deck90Music = Deck90Music;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

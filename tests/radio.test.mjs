@@ -222,6 +222,52 @@ test('the stereo window keeps its face shape at any size: no black round it', as
   assert.ok((await look()).h >= 600, 'the rack comes back at its own size');
 });
 
+// 7.10.30
+test('PWR held turns the stereo into the double DIN: its shape, its keys, its bigger display; held again, the DP940', async () => {
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2000);
+  await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
+  const hold = async sel => { const b = await d.win.locator(sel).boundingBox(); await d.win.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await d.win.mouse.down(); await d.wait(1200); await d.win.mouse.up(); await d.wait(1500); };
+  const shape = () => d.win.evaluate(() => { const f = document.querySelector('.st-face'); const r = f.getBoundingClientRect(); return { front: f.dataset.front, w: innerWidth, h: innerHeight, fw: r.width, fh: r.height }; });
+  await hold('.st-hot:not(.dd)[data-st="pwr"]');
+  let s = await shape();
+  assert.equal(s.front, 'ddin');
+  assert.ok(Math.abs(s.w / s.h - 1683 / 935) < .02, 'the window takes its shape: ' + JSON.stringify(s));
+  assert.ok(Math.abs(s.fw - s.w) <= 2 && Math.abs(s.fh - s.h) <= 2, 'the front fills it: ' + JSON.stringify(s));
+  assert.deepEqual(await d.win.evaluate(() => { const i = document.querySelector('#stereo .st-photo'); return [i.naturalWidth, i.naturalHeight]; }), [1683, 935]);
+  // its display: the dial in the big cells, the station's song and the station on the dot lines, the clock, the spectrum
+  const v = await d.win.evaluate(() => ({
+    label: document.querySelector('#stDisplay svg').getAttribute('aria-label'),
+    lines: [...document.querySelectorAll('#stDisplay path[data-dm]')].map(p => p.getAttribute('d').length),
+    cells: document.querySelectorAll('#stDisplay g[data-role="spectrum"] > g').length,
+    clock: (document.querySelector('#stDisplay [data-role="clock"]') || {}).textContent,
+    line2: stereoDisplay.state.radio.line2, line1: stereoDisplay.state.radio.name,
+  }));
+  assert.match(v.label, /Radio FM1 99\.1/);
+  assert.ok(v.lines[0] > 100 && v.lines[1] > 100, 'both dot lines lit: ' + v.lines);
+  assert.equal(v.cells, 20 * 14);
+  assert.match(v.clock, /^\d\d:\d\d$/);
+  assert.match(v.line1, / - /, 'the song on the first line');
+  assert.match(v.line2, /^Test FM/, 'the station under it');
+  // its keys: a memory, the volume; the spectrum lights with the sound
+  await d.click('.st-hot.dd[data-st="m2"]', 2500);
+  assert.equal(await d.win.evaluate(() => radioMem.slot), 2);
+  await d.win.evaluate(() => { window.specT = setInterval(() => stereoDisplay.setSpectrum(Array(20).fill(.8)), 30); });
+  await d.wait(600);
+  const lit = await d.win.evaluate(() => document.querySelectorAll('#stDisplay g[data-role="spectrum"] > g[fill="#c5f4df"]').length);
+  await d.win.evaluate(() => clearInterval(window.specT));
+  assert.ok(lit >= 20 * 10, 'the spectrum lit: ' + lit);
+  // kept: the stereo opens again as the double DIN
+  await d.win.evaluate(() => toggleStereo()); await d.wait(1500);
+  await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
+  assert.equal((await shape()).front, 'ddin');
+  await hold('.st-hot.dd[data-st="pwr"]');
+  s = await shape();
+  assert.equal(s.front, 'dp940');
+  assert.ok(Math.abs(s.w / s.h - 2001 / 539) < .03, 'back to its shape: ' + JSON.stringify(s));
+  assert.equal(await d.win.evaluate(() => document.querySelectorAll('#stDisplay path[data-dm]').length), 0, 'the DP940 display again');
+  await d.win.evaluate(() => toggleStereo()); await d.wait(1500);
+});
+
 test('the phone shows the stereo and its keys work the PC', async () => {
   const { chromium } = await import('./lib/app.mjs').then(m => m.playwrightModule());
   const st = await d.win.evaluate(() => new Promise(ok => { window.phoneDisplay.on(s => { if (s.on && s.urls.length) ok(s); }); window.phoneDisplay.set(true); }));
