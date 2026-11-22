@@ -9,7 +9,7 @@
 //    TUNE ◀▶ the previous / next radio station, or song                      SCAN  8 s of each station
 //    1–6     the band's memories, held 7–12 (BAND held, A.MEM, then a number keeps the station there)  BAND  FM1 · FM2 · FM3 · FM4 · FM5 · HIFI · AM
 //    HDB     the display's brightness   SDM  its colour (or the whole front)   PWR  back to the rack   ⏏  the tray
-//    PWR held (7.10.30)  the other front: the DP940 or the double DIN, with its bigger display (ddin-display.js)
+//    PWR or HDB held (7.10.30, 7.10.31)  the other front: the DP940 or the double DIN, with its bigger display (ddin-display.js)
 //  CD mode (7.8, Windows): the PC's CD/DVD drive, through the program's bridge (electron/media.ps1). An audio CD
 //  plays from the drive (Windows' own CD audio); a disc of MP3s and the like plays its files here. TRACK ◀▶ and
 //  SEL work on it; the display shows TRACK 03 and its time, or the file's name.
@@ -109,7 +109,7 @@ function stereoDisplayMake() {
   if (stereoDisplay) { stereoDisplay.destroy(); stereoDisplay = null; }
   const root = document.getElementById('stDisplay'), radio = { band: radioMem.band, frequency: '102.3', preset: radioMem.slot || 1 };
   if (stereoCfg.front === 'ddin' && typeof Deck90DoubleDin === 'function') {
-    stereoDisplay = new Deck90DoubleDin(root, { attackMs: 35, releaseMs: 140, radio, glyphs: typeof Deck90Music === 'function' ? Deck90Music.GLYPHS : null });
+    stereoDisplay = new Deck90DoubleDin(root, { attackMs: 35, releaseMs: 140, radio});
     stereoDisplay.svg.setAttribute('preserveAspectRatio', 'none');
   } else if (typeof Deck90Display === 'function') {
     stereoDisplay = new Deck90Display(root, { attackMs: 35, releaseMs: 140, radio });
@@ -126,7 +126,7 @@ function stereoFrontNext() {
   stereoFrontApply();
   if (stereoDisplay) stereoDisplayMake();
   stereoPaint();
-  toast('FRENTE · <span>' + (stereoCfg.front === 'ddin' ? 'DOBLE DIN' : 'DP940') + '</span> · PWR apretado: el otro', 2000);
+  toast('FRENTE · <span>' + (stereoCfg.front === 'ddin' ? 'DOBLE DIN' : 'DP940') + '</span> · PWR o HDB apretado: el otro', 2000);
 }
 // what the double DIN's bigger glass adds: the clock and the temperature always, and the spectrum on the sound
 const stereoDd = () => !!(stereoDisplay && typeof stereoDisplay.setSpectrum === 'function');
@@ -460,6 +460,7 @@ function stereoKey(k, hold) {
     toast('DISP · <span>' + STEREO_DISP_NAME[stereoCfg.disp] + '</span>' + (stereoCfg.disp === 'temp' && !stereoTemp() ? ' · prendé el clima en ⚙ PANTALLA → RELOJ' : ''), stereoCfg.disp === 'temp' && !stereoTemp() ? 3200 : 1500);
     return stereoText(true);
   }
+  if (k === 'hdb' && hold) return stereoFrontNext();            // 7.10.31: held, the other front too (as on Android, where PWR held is SLEEP)
   if (k === 'hdb') { stereoCfg.dim = (stereoCfg.dim + 1) % STEREO_DIM.length; savePrefs(); toast('HDB · brillo <span>' + STEREO_DIM_NAME[stereoCfg.dim] + '</span>', 1200); return stereoPaint(); }
   if (k === 'sdm') {
     stereoCfg.color = (stereoCfg.color - 1 + (hold ? STEREO_COLORS - 1 : 1)) % STEREO_COLORS + 1; savePrefs();   // held: the one before
@@ -554,7 +555,7 @@ function stereoKey(k, hold) {
       volT = setTimeout(function rep() { stereoKey(b.dataset.st, false); volT = setTimeout(rep, 100); }, 350);
       return;
     }
-    if (/^(m[1-6]|sdm|band|scan|loc|pwr)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
+    if (/^(m[1-6]|sdm|band|scan|loc|pwr|hdb)$/.test(b.dataset.st)) holdT = setTimeout(() => { held = true; stereoKey(b.dataset.st, true); }, 1000);
   });
   const up = e => { clearTimeout(holdT); clearTimeout(volT); p.querySelectorAll('.st-hot.down').forEach(b => b.classList.remove('down')); };
   p.addEventListener('pointerup', up); p.addEventListener('pointerleave', up); p.addEventListener('pointercancel', up);

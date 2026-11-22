@@ -41,7 +41,7 @@ wants it done then (see Shared names).
     window; `stereo-face.css` is shared with the phone; `ddin-display.js` the double DIN's display, Deck 90's own, on the
     DP940's calls), `tuner/` (the DT-90; `units.css` styles it and the
     DC-90), `cdunit/` (the DC-90), `jukebox/` (the DM-90: `dm90.js` its faceplate, Deck 90's own in the units'
-    style, and `jukebox.js` its lists and keys), `volume/` (the DV-90: `dv90.js` its faceplate, `volume.js` Windows' volume
+    style, `jukebox.js` its lists and keys, `dot-glyphs.js` the units' 5×7 letters, shared with the stereo and the Android app), `volume/` (the DV-90: `dv90.js` its faceplate, `volume.js` Windows' volume
     through the bridge's `vol-*` commands), `eq/` (the DE-90: `de90.js` its faceplate on dv90.js's kit, `eq.js` its
     keys). `app/saved.js` keeps the songs saved with G; `app/lastfm.js` scrobbles.
 - `src/index.html` loads every script as a classic script and every stylesheet, in order. The stylesheets are

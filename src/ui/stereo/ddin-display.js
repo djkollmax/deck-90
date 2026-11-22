@@ -5,7 +5,7 @@
 //  setPlayback, setElapsed, setLevels, destroy …), so stereo.js drives either, and draws with the same colours, so
 //  every SDM look (stereo-face.css) colours it too. On the bigger glass, as a high-end unit of the late 90s:
 //    · the big 16-segment line, nine fixed cells that scroll a longer text one letter at a time (the DP940's font)
-//    · two dot-matrix lines under it (5 × 7 dots, 34 characters): the song or the station, then the album, the
+//    · two dot-matrix lines under it (5 × 7 dots, 28 characters, the units' letters: dot-glyphs.js): the song or the station, then the album, the
 //      station's country, the disc: setRadio({ line2 }), setTrack({ album })
 //    · a 20-band spectrum analyser on the sound (setSpectrum), the song's progress as a bar of segments
 //    · the clock and the temperature always at the bottom (setClock, setTemp), with the quality and the time
@@ -52,7 +52,7 @@
       this.root = root;
       this.options = { attackMs: 35, releaseMs: 140, ...options };
       this.font = options.font || globalThis.Deck90Display?.FONT;
-      this.glyphs = options.glyphs || {};
+      this.glyphs = options.glyphs || globalThis.Deck90DotGlyphs || {};   // ui/jukebox/dot-glyphs.js
       if (!this.font) throw new Error('The DP940 font (Deck90Display.FONT) is needed.');
       this.id = 'd2d-' + (++nextId);
       this.state = {

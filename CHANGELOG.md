@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.31
+
+### Changed
+- HDB held also changes the stereo's front (PWR held still does), as on the Android app, where PWR held is SLEEP.
+- The units' 5×7 dot letters moved out of dm90.js into `ui/jukebox/dot-glyphs.js` (`Deck90DotGlyphs`), shared by
+  the DM-90, the stereo's double-DIN display (its default letters) and the Android app's face.
+
 ## 7.10.30
 
 ### Added

@@ -260,7 +260,7 @@ test('PWR held turns the stereo into the double DIN: its shape, its keys, its bi
   await d.win.evaluate(() => toggleStereo()); await d.wait(1500);
   await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
   assert.equal((await shape()).front, 'ddin');
-  await hold('.st-hot.dd[data-st="pwr"]');
+  await hold('.st-hot.dd[data-st="hdb"]');                       // 7.10.31: HDB held too, as on Android
   s = await shape();
   assert.equal(s.front, 'dp940');
   assert.ok(Math.abs(s.w / s.h - 2001 / 539) < .03, 'back to its shape: ' + JSON.stringify(s));

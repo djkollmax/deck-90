@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.31 — 2026-11-22
+
+### Mejor
+- El estéreo cambia de frente también con **HDB apretado**, igual que en Android (PWR apretado sigue andando).
+- El estéreo doble DIN llega a la app de Android (0.1.14).
+
 ## 7.10.30 — 2026-11-22
 
 ### Nuevo
