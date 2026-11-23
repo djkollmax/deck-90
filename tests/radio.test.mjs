@@ -256,6 +256,12 @@ test('PWR held turns the stereo into the double DIN: its shape, its keys, its bi
   const lit = await d.win.evaluate(() => document.querySelectorAll('#stDisplay g[data-role="spectrum"] > g[fill="#c5f4df"]').length);
   await d.win.evaluate(() => clearInterval(window.specT));
   assert.ok(lit >= 20 * 10, 'the spectrum lit: ' + lit);
+  // 7.10.34: AUX: the computer's own sound, the radio stopped; MODE goes on from there to the radio
+  await d.click('.st-hot.dd[data-st="aux"]', 1500);
+  assert.deepEqual(await d.win.evaluate(() => [stereoCfg.mode, radioPlaying()]), ['pc', false]);
+  assert.match(await d.win.evaluate(() => document.getElementById('toast').textContent), /AUX · PC/);
+  await d.click('.st-hot.dd[data-st="mode"]', 2500);
+  assert.equal(await d.win.evaluate(() => stereoCfg.mode), 'radio');
   // kept: the stereo opens again as the double DIN
   await d.win.evaluate(() => toggleStereo()); await d.wait(1500);
   await d.win.evaluate(() => toggleStereo()); await d.wait(2000);
@@ -265,6 +271,8 @@ test('PWR held turns the stereo into the double DIN: its shape, its keys, its bi
   assert.equal(s.front, 'dp940');
   assert.ok(Math.abs(s.w / s.h - 2001 / 539) < .03, 'back to its shape: ' + JSON.stringify(s));
   assert.equal(await d.win.evaluate(() => document.querySelectorAll('#stDisplay path[data-dm]').length), 0, 'the DP940 display again');
+  await d.click('.st-hot:not(.dd)[data-st="aux"]', 1500);           // AUX on the DP940 too
+  assert.equal(await d.win.evaluate(() => stereoCfg.mode), 'pc');
   await d.win.evaluate(() => toggleStereo()); await d.wait(1500);
 });
 

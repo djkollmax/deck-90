@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.10.34
+
+### Added
+- AUX on the stereo (both fronts: a hotspot over the AUX lamp's ring) switches straight to PC mode, what plays on the
+  computer, through `stereoSwitch` like MODE (the source left is paused or stopped).
+
+### Changed
+- The double-DIN photo again, its buttons in the DP940's style (smooth acrylic lenses in thin dark rims, black keys
+  below): registered onto the last one, every key within 1 px.
+
 ## 7.10.33
 
 ### Changed

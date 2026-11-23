@@ -1,5 +1,15 @@
 # Novedades
 
+## 7.10.34 — 2026-11-22
+
+### Nuevo
+- **AUX en el estéreo:** tocás el botón de AUX (en los dos frentes) y pasa directo a lo que suena en la computadora
+  (Spotify, el navegador…), como la entrada auxiliar de un estéreo de auto. MODE sigue desde ahí.
+
+### Mejor
+- **El doble DIN con los botones del single DIN:** lentes de acrílico lisas con borde fino oscuro y teclas negras
+  abajo. Todo en el mismo lugar.
+
 ## 7.10.33 — 2026-11-22
 
 ### Mejor

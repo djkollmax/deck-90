@@ -83,7 +83,7 @@ const STEREO_DDIN = { img: 'img/stereo/front-ddin.jpg', w: 1683, h: 935, display
     ['pwr', 58, 782, 122, 73], ['att', 190, 782, 115, 73], ['scan', 315, 782, 125, 73], ['loc', 440, 782, 125, 73],
     ['prev', 582, 782, 124, 73], ['next', 706, 782, 126, 73], ['m1', 843, 782, 112, 78], ['m2', 958, 782, 112, 78],
     ['m3', 1073, 782, 112, 78], ['m4', 1190, 782, 112, 78], ['m5', 1308, 782, 112, 78], ['m6', 1425, 782, 115, 78],
-    ['slot', 150, 118, 1380, 87], ['eject', 1513, 207, 101, 101, 1]] };
+    ['slot', 150, 118, 1380, 87], ['eject', 1513, 207, 101, 101, 1], ['aux', 1522, 398, 90, 90, 1]] };
 let stereoDp940 = null;                                        // the DP940's places, as index.html has them
 function stereoFrontApply() {
   const face = document.querySelector('#stereo .st-face'); if (!face) return;
@@ -440,6 +440,13 @@ function stereoKey(k, hold) {
     // 7.10.14: ⏏ again (or SLOT) closes it, and the disc that comes in plays (core/cd.js reads it once it has spun up)
     if (stereoTray) { stereoTray = false; cdClose(); toast('⏏ · <span>cerrando</span> y leyendo el disco…', 1800); return stereoText(true); }
     stereoTray = true; cdEject(); toast('⏏ · <span>bandeja abierta</span> (⏏ otra vez la cierra)', 1800); return stereoText(true);
+  }
+  // 7.10.34: AUX, as in a car: the other source, here what plays on the computer (Spotify, the browser…), straight
+  if (k === 'aux') {
+    if (stereoCfg.mode === 'pc') { toast('AUX · <span>PC</span>: ya suena lo de la computadora', 1400); return; }
+    stereoSwitch('pc');
+    toast('AUX · <span>PC</span>: lo que suena en la computadora (MODE: radio, CD, música)', 2000);
+    return stereoText(true);
   }
   if (k === 'mode' || k === 'slot') {
     const next = k === 'slot' ? 'cd' : { pc: 'radio', radio: 'cd', cd: 'music', music: 'pc' }[stereoCfg.mode];
