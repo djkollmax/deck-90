@@ -44,3 +44,8 @@ body.is-app .rack-unit > .s-tl{ top:3px; left:4px; }
 body.is-app .rack-unit > .s-tr{ top:3px; right:4px; left:auto; }
 body.is-app .rack-unit > .s-bl{ bottom:3px; left:4px; top:auto; }
 body.is-app .rack-unit > .s-br{ bottom:3px; right:4px; top:auto; left:auto; }
+
+/* 7.10.35: dark while the window changes shape (rack ⇄ stereo, strip): drawn over everything, it fades out once
+   the new view is drawn at its size (controls.js miniCover / miniUncover) */
+html::after{ content:''; position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; z-index:2147483647; transition:opacity .18s ease-out; }
+html.switching::after{ opacity:1; transition:none; pointer-events:auto; }

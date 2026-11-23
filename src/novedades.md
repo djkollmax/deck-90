@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.10.35 — 2026-11-23
+
+### Arreglado
+- **El paso del rack al estéreo (y de vuelta) ya no muestra una imagen rara:** antes, por un instante, se veía el
+  rack apretado en la forma del estéreo o el estéreo en una esquina del rack. Ahora la ventana se oscurece mientras
+  cambia de forma y el estéreo (o el rack) aparece de a poco, ya dibujado. Lo mismo al pasar de un frente al otro
+  con PWR o HDB apretado, y con la tira (P).
+
 ## 7.10.34 — 2026-11-22
 
 ### Nuevo

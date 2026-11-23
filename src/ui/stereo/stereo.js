@@ -123,10 +123,16 @@ function stereoDisplayMake() {
 if (stereoCfg.front === 'ddin' && window.winCtl && window.winCtl.stereoShape) window.winCtl.stereoShape(STEREO_DDIN.w / STEREO_DDIN.h);
 function stereoFrontNext() {
   stereoCfg.front = stereoCfg.front === 'ddin' ? 'dp940' : 'ddin'; savePrefs();
-  stereoFrontApply();
-  if (stereoDisplay) stereoDisplayMake();
-  stereoPaint();
-  toast('FRENTE · <span>' + (stereoCfg.front === 'ddin' ? 'DOBLE DIN' : 'DP940') + '</span> · PWR o HDB apretado: el otro', 2000);
+  // 7.10.35: the window changes shape too: dark first, as from the rack (controls.js), the new front lit once drawn
+  const swap = () => {
+    stereoFrontApply();
+    if (stereoDisplay) stereoDisplayMake();
+    stereoPaint();
+    toast('FRENTE · <span>' + (stereoCfg.front === 'ddin' ? 'DOBLE DIN' : 'DP940') + '</span> · PWR o HDB apretado: el otro', 2000);
+  };
+  if (!(window.winCtl && window.winCtl.stereoShape && stereoMode)) return swap();
+  document.documentElement.classList.add('switching');
+  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => { swap(); miniUncover(); }, 60)));
 }
 // what the double DIN's bigger glass adds: the clock and the temperature always, and the spectrum on the sound
 const stereoDd = () => !!(stereoDisplay && typeof stereoDisplay.setSpectrum === 'function');

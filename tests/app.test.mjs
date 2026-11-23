@@ -100,3 +100,24 @@ test('the stereo\'s display: the song\'s number, the time left and CD 16/44; DIS
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(d.errors(), []);
 });
+
+// 7.10.35: the rack squeezed into the stereo's shape, or the stereo in a corner of the rack's, showed for a moment
+test('the window changes shape behind a dark cover: rack to stereo, front to front, and back, lit again after', async () => {
+  // every size the page gets while it switches, and whether it was dark then
+  await d.win.evaluate(() => { window.sizes = []; addEventListener('resize', () => sizes.push([innerWidth, innerHeight, document.documentElement.classList.contains('switching')])); });
+  const dark = () => d.win.evaluate(() => getComputedStyle(document.documentElement, '::after').opacity);
+  await d.win.keyboard.press('e'); await d.wait(1500);
+  assert.equal(await d.win.evaluate(() => stereoMode), true);
+  const hold = async sel => { const b = await d.win.locator(sel).boundingBox(); await d.win.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await d.win.mouse.down(); await d.wait(1200); await d.win.mouse.up(); await d.wait(1500); };
+  await hold('.st-hot:not(.dd)[data-st="pwr"]');                     // the double DIN: taller
+  assert.equal(await d.win.evaluate(() => document.querySelector('.st-face').dataset.front), 'ddin');
+  await hold('.st-hot.dd[data-st="pwr"]');                           // and back
+  await d.win.keyboard.press('e'); await d.wait(1500);
+  assert.equal(await d.win.evaluate(() => stereoMode), false);
+  const sizes = await d.win.evaluate(() => sizes);
+  assert.ok(sizes.length >= 4, 'the window changed shape: ' + JSON.stringify(sizes));
+  assert.deepEqual(sizes.filter(s => !s[2]), [], 'every new size came while dark');
+  assert.equal(await dark(), '0', 'lit again');
+  assert.equal(await d.win.evaluate(() => document.documentElement.classList.contains('switching')), false);
+  assert.deepEqual(d.errors(), []);
+});

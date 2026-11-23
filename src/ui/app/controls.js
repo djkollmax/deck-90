@@ -178,7 +178,30 @@ function toggleMini() {
   if (window.winCtl && window.winCtl.mini) window.winCtl.mini();
   else setMini(!miniMode);
 }
-if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini((on, style) => { showSkinMenu(false); setMini(on, style); });
+if (window.winCtl && window.winCtl.onMini) window.winCtl.onMini((on, style) => { showSkinMenu(false); setMini(on, style); miniUncover(); });
+// 7.10.35: the window is about to change shape: dark first (main.js waits for it), lit again once the new view is
+// drawn at the new size (its size steady for two frames, the stereo's photo decoded), at most 700 ms later
+let miniCoverT = 0;
+function miniCover() {
+  document.documentElement.classList.add('switching');
+  clearTimeout(miniCoverT); miniCoverT = setTimeout(miniUncoverNow, 1500);   // never left dark
+  // two frames and a moment: the dark frame on screen (not just drawn) before the window changes
+  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => window.winCtl.coverOk(), 60)));
+}
+function miniUncoverNow() { clearTimeout(miniCoverT); document.documentElement.classList.remove('switching'); }
+function miniUncover() {
+  if (!document.documentElement.classList.contains('switching')) return;
+  const t0 = performance.now(), photo = document.querySelector('#stereo .st-photo');
+  const ready = stereoMode && photo && photo.decode ? photo.decode().catch(() => {}) : Promise.resolve();
+  let w = -1, h = -1, same = 0;
+  const look = () => {
+    if (innerWidth === w && innerHeight === h) same++; else { same = 0; w = innerWidth; h = innerHeight; }
+    if (same >= 2 || performance.now() - t0 > 700) ready.then(() => requestAnimationFrame(miniUncoverNow));
+    else requestAnimationFrame(look);
+  };
+  requestAnimationFrame(look);
+}
+if (window.winCtl && window.winCtl.onCover) window.winCtl.onCover(miniCover);
 window.addEventListener('resize', () => { if (skinMenu.classList.contains('show')) showSkinMenu(false); });
 document.querySelector('.mini-panel').addEventListener('dblclick', toggleMini);
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.10.35
+
+### Fixed
+- Switching between the rack and the stereo (or the strip), and between the stereo's two fronts, showed for a moment
+  the old view at the new window size: the rack squeezed into the stereo's shape, the stereo in a corner of the
+  rack's. Before the window changes shape the main process now asks the page to go dark (`mini-cover`, an
+  `html::after` cover) and waits for it to be on screen (`cover-ok`, at most 300 ms); the page fades it out once the
+  new view is drawn at a steady size, the stereo's photo decoded (`miniUncover`). PWR or HDB held does the same in
+  the page before `stereo-shape`.
+
 ## 7.10.34
 
 ### Added

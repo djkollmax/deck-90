@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld('winCtl', {
   quit:  () => ipcRenderer.send('win', 'quit'),
   ready: () => ipcRenderer.send('win', 'ready'),
   onMini: cb => ipcRenderer.on('mini', (e, on, style) => cb(!!on, style === 'stereo' ? 'stereo' : 'strip')),
+  onCover: cb => ipcRenderer.on('mini-cover', () => cb()),          // 7.10.35: dark while the window changes shape
+  coverOk: () => ipcRenderer.send('win', 'cover-ok'),
   onShown: cb => ipcRenderer.on('shown', (e, on) => cb(!!on)),   // false in the tray or minimized: no drawing then
 });
 contextBridge.exposeInMainWorld('phoneDisplay', {

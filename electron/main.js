@@ -133,6 +133,16 @@ app.whenReady().then(() => {
   const miniDefault = wa => miniStyle === 'stereo'
     ? { width: Math.min(980, wa.width - 40), height: Math.round(Math.min(980, wa.width - 40) / ST_RATIO), x: wa.x + Math.round((wa.width - Math.min(980, wa.width - 40)) / 2), y: wa.y + wa.height - 300 }
     : { width: 600, height: 132, x: wa.x + wa.width - 620, y: wa.y + 20 };
+  // 7.10.35: before the window changes shape the page goes dark (and says so once it's drawn), so neither the rack
+  // squeezed into the stereo's shape nor the stereo in a corner of the rack's ever shows; the page lights again
+  // when the new view is drawn at its size
+  let coverWait = null;
+  const cover = () => new Promise(ok => {
+    if (win.isDestroyed() || !win.isVisible() || win.isMinimized()) return ok();
+    const t = setTimeout(() => { coverWait = null; ok(); }, 300);
+    coverWait = () => { clearTimeout(t); coverWait = null; ok(); };
+    win.webContents.send('mini-cover');
+  });
   const miniKey = () => miniStyle === 'stereo' ? 'stereo' : 'mini';
   const saveMini = () => { if (!win.isMaximized()) saved[miniKey()] = win.getBounds(); saveState(); };
   async function setMini(on, style) {
@@ -141,6 +151,7 @@ app.whenReady().then(() => {
     if (on && miniOn && style !== miniStyle) {            // from one style straight to the other: its own place and size
       miniBusy = true;
       try {
+        await cover();
         saveMini(); miniStyle = style;
         const wa = screen.getDisplayMatching(win.getBounds()).workArea;
         miniLimits(style);
@@ -153,6 +164,7 @@ app.whenReady().then(() => {
     if (on === miniOn) return;
     miniBusy = true;
     try {
+      await cover();
       if (on) {
         miniStyle = style;
         if (win.isFullScreen()) await leaveFullScreen();
@@ -411,6 +423,7 @@ app.whenReady().then(() => {
   ipcMain.on('win', async (e, what) => {
     if (!ours(e.sender)) return;
     if (what === 'ready') return firstShow();
+    if (what === 'cover-ok') { if (coverWait) coverWait(); return; }
     if (what === 'mini') return setMini(!(miniOn && miniStyle === 'strip'), 'strip');
     if (what === 'stereo') return setMini(!(miniOn && miniStyle === 'stereo'), 'stereo');
     if (what === 'min') { await leaveFullScreen(); win.minimize(); }
