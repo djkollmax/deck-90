@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.33
+
+### Changed
+- The double-DIN front's photo (`img/stereo/front-ddin.jpg`) redrawn: a generative render registered onto the old one
+  (SIFT + RANSAC homography; median residual 0.8 px, every key within 3 px by phase correlation), same 1683 × 935, so
+  `STEREO_DDIN`'s keys and display stay where they were.
+
 ## 7.10.32
 
 ### Fixed

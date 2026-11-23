@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.33 — 2026-11-22
+
+### Mejor
+- **El frente del doble DIN, redibujado:** botones con más profundidad y brillo, letras nítidas y sin ruido. Las
+  teclas y el display quedan en el mismo lugar.
+
 ## 7.10.32 — 2026-11-22
 
 ### Arreglado
