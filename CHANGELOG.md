@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.32
+
+### Fixed
+- The DM-90's Jellyfin works with Jellyfin 12, which turns the legacy authorization off: a song's address carries
+  the token as `ApiKey` (not `api_key`), and requests send only the `Authorization: MediaBrowser … Token=` header
+  (no `X-Emby-Authorization`). The tests' pretend Jellyfin takes only those now.
+
 ## 7.10.31
 
 ### Changed

@@ -26,7 +26,7 @@ function createJellyfin({ net, dir, log, version, seal }) {
     const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait);
     try {
       const r = await net.fetch(u.href, { method, signal: ac.signal, body: body ? JSON.stringify(body) : undefined,
-        headers: { Authorization: auth(token), 'X-Emby-Authorization': auth(token), Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) } });
+        headers: { Authorization: auth(token), Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) } });
       if (r.status === 401) { const e = new Error('unauthorized'); e.code = 401; throw e; }
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.status === 204 ? null : await r.json();
@@ -118,7 +118,7 @@ function createJellyfin({ net, dir, log, version, seal }) {
         if (!it || !ID.test(String(it))) continue;
         const ac = new AbortController(), t = setTimeout(() => ac.abort(), 8000);
         try {
-          const r = await net.fetch(cfg.server + '/Items/' + it + '/Images/Primary?maxHeight=128&quality=85', { signal: ac.signal, headers: { Authorization: auth(cfg.token), 'X-Emby-Authorization': auth(cfg.token) } });
+          const r = await net.fetch(cfg.server + '/Items/' + it + '/Images/Primary?maxHeight=128&quality=85', { signal: ac.signal, headers: { Authorization: auth(cfg.token) } });
           const type = r.headers.get('content-type') || '';
           if (r.ok && /^image\/(jpeg|png|webp|gif)/.test(type)) {
             const b = Buffer.from(await r.arrayBuffer());
@@ -131,12 +131,14 @@ function createJellyfin({ net, dir, log, version, seal }) {
       return out;
     },
     // where a song's sound comes from: the file as it is (static) when Chromium plays its codec, or made FLAC
-    // by the server when it doesn't (ALAC, WMA, APE, DSD…)
+    // by the server when it doesn't (ALAC, WMA, APE, DSD…). 7.10.32: the token as ApiKey (an <audio> sends no
+    // header): Jellyfin 12 turns the old api_key off, and X-Emby-Authorization with it (the requests send only
+    // Authorization now)
     stream(id, playable) {
       if (!cfg.token || !ID.test(String(id || ''))) return '';
       const base = cfg.server + '/Audio/' + id;
-      return playable ? base + '/stream?static=true&api_key=' + cfg.token
-        : base + '/stream.flac?AudioCodec=flac&api_key=' + cfg.token;
+      return playable ? base + '/stream?static=true&ApiKey=' + cfg.token
+        : base + '/stream.flac?AudioCodec=flac&ApiKey=' + cfg.token;
     },
   };
 }

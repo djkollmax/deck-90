@@ -1,5 +1,13 @@
 # Novedades
 
+## 7.10.32 — 2026-11-22
+
+### Arreglado
+- **El DM-90 anda con Jellyfin 12:** la clave va como Jellyfin pide ahora. Con la forma vieja, que la 12 apaga, los
+  temas del servidor no sonaban.
+- En Android (0.1.15), el SERVER ya no dice "no contesta" por un error viejo y pregunta de nuevo cuando se corta la
+  conexión.
+
 ## 7.10.31 — 2026-11-22
 
 ### Mejor

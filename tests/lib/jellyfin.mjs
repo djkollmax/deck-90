@@ -46,7 +46,8 @@ export function library() {
 export function startJellyfin() {
   const lib = library(), log = [];
   const strip = it => { const o = Object.assign({}, it); delete o._flac; return o; };
-  const authed = (req, u) => /Token="tok-123"/.test(req.headers.authorization || '') || u.searchParams.get('api_key') === TOKEN;
+  // as Jellyfin 12: the Authorization header or ApiKey; the old api_key and X-Emby-Authorization no longer count
+  const authed = (req, u) => /Token="tok-123"/.test(req.headers.authorization || '') || u.searchParams.get('ApiKey') === TOKEN;
   const page = (items, q) => {
     const start = Number(q.get('StartIndex') || 0), limit = Number(q.get('Limit') || 1e9);
     return { Items: items.slice(start, start + limit).map(strip), TotalRecordCount: items.length };
