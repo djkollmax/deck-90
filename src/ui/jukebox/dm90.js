@@ -93,9 +93,11 @@ const LAYOUT = Object.freeze({
     repeat: { x: 705, y: 446, w: 74, h: 29, label: 'REPEAT' }, shuffle: { x: 787, y: 446, w: 74, h: 29, label: 'SHUFFLE' },
     all: { x: 869, y: 446, w: 92, h: 29, label: 'SHUFFLE ALL' },
     dimmer: { x: 969, y: 446, w: 60, h: 29, label: 'DIMMER' },
-    artists: { x: 145, y: 493, w: 85, h: 29, label: 'ARTISTS' }, albums: { x: 238, y: 493, w: 86, h: 29, label: 'ALBUMS' },
-    songs: { x: 332, y: 493, w: 85, h: 29, label: 'SONGS' }, folders: { x: 425, y: 493, w: 86, h: 29, label: 'FOLDERS' },
-    list: { x: 519, y: 493, w: 85, h: 29, label: 'QUEUE' }, search: { x: 612, y: 493, w: 85, h: 29, label: 'SEARCH' },
+    // 7.10.36: seven view keys (LISTS joined them)
+    artists: { x: 145, y: 493, w: 72, h: 29, label: 'ARTISTS' }, albums: { x: 225, y: 493, w: 72, h: 29, label: 'ALBUMS' },
+    songs: { x: 305, y: 493, w: 72, h: 29, label: 'SONGS' }, folders: { x: 385, y: 493, w: 72, h: 29, label: 'FOLDERS' },
+    lists: { x: 465, y: 493, w: 72, h: 29, label: 'LISTS' },
+    list: { x: 545, y: 493, w: 72, h: 29, label: 'QUEUE' }, search: { x: 625, y: 493, w: 72, h: 29, label: 'SEARCH' },
     back: { x: 705, y: 493, w: 74, h: 29, label: '◀ BACK' }, enter: { x: 787, y: 493, w: 74, h: 29, label: 'ENTER ▶' },
     queue: { x: 869, y: 493, w: 92, h: 29, label: 'Q · PLAY NEXT' },
     color: { x: 969, y: 493, w: 60, h: 29, label: 'COLOR' },
@@ -103,10 +105,11 @@ const LAYOUT = Object.freeze({
   knob: { cx: 1100, cy: 484, r: 40 },
 });
 const NAMES = { power: 'POWER', source: 'SOURCE: servidor, PC o USB', setup: 'SETUP: el servidor, las carpetas de la PC y el pendrive', prev: 'Tema anterior', play: 'PLAY', pause: 'PAUSA', stop: 'STOP', next: 'Tema siguiente',
-  repeat: 'REPEAT: toda la cola, un tema o apagado', shuffle: 'SHUFFLE: al azar', queue: 'Q: lo marcado suena después de este (en la cola: sostenido lo saca)',
+  repeat: 'REPEAT: toda la cola, un tema o apagado', shuffle: 'SHUFFLE: al azar', queue: 'Q: lo marcado suena después de este · sostenido: + a la lista (en la cola y en una lista: lo saca)',
+  lists: 'Tus listas: cada una sigue donde la dejaste',
   artists: 'Artistas', albums: 'Álbumes', songs: 'Todos los temas', folders: 'Carpetas (PC y USB)', list: 'La cola', search: 'Buscar', back: 'Atrás', enter: 'ENTER: abrir o tocar lo marcado',
   dimmer: 'DIMMER: el brillo del display', all: 'SHUFFLE ALL: toda la biblioteca al azar', color: 'COLOR: el color de los displays del rack' };
-const VIEW_KEYS = ['artists', 'albums', 'songs', 'folders', 'list', 'search'];
+const VIEW_KEYS = ['artists', 'albums', 'songs', 'folders', 'lists', 'list', 'search'];
 
 function grainMarkup(label) {
   let seed = 904031, paths = '';

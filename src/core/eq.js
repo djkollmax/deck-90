@@ -25,12 +25,15 @@ let eqState = (() => {
 })();
 const eqSave = () => store.write('deck90-eq', { on: eqState.on, preset: eqState.preset, user: eqState.user });
 let eqGraph = null;                                               // { ctx, input, pre, filters, limit, wet, dry, tap }
+// 7.10.36: the DM-90's music in a chain of its own (its own output: SETUP → SALIDA, music.js's musicSinkSet); the
+// radio and a data CD's files in the first one. eqGraph is the first, eqGraphs both (the same bands on each)
+const eqGraphs = {};
 const eqJoined = new Set();
 // input → dry ─────────────────────────────────────────→ out → the speakers (and tap)
 //       → pre → 31 Hz … 16 kHz → limit → wet ──────────↗
 // off, only dry sounds (the sound exactly as it came); on, only wet: crossed over smoothly
-function eqBuild() {
-  if (eqGraph) return eqGraph;
+function eqBuild(group = 'main') {
+  if (eqGraphs[group]) return eqGraphs[group];
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return null;
   const ctx = new Ctx({ latencyHint: 'playback' }), g = () => ctx.createGain();
@@ -51,32 +54,37 @@ function eqBuild() {
   out.connect(ctx.destination);
   const tap = ctx.createAnalyser(); tap.fftSize = 2048; out.connect(tap);   // what comes out (eqLevel)
   wet.gain.value = 0; dry.gain.value = 1;
-  eqGraph = { ctx, input, pre, filters, limit, wet, dry, tap };
-  return eqGraph;
+  const graph = { ctx, input, pre, filters, limit, wet, dry, tap };
+  eqGraphs[group] = graph; if (group === 'main') eqGraph = graph;
+  if (group === 'music' && typeof musicSinkApply === 'function') musicSinkApply();   // its output, if one was chosen
+  return graph;
 }
+const eqGroup = el => typeof musicAudios !== 'undefined' && musicAudios.includes(el) ? 'music' : 'main';
 // a player into the chain (once); the context wakes whenever one of them plays
 function eqJoin(el) {
-  if (eqJoined.has(el) || !eqBuild()) return;
-  try { eqGraph.ctx.createMediaElementSource(el).connect(eqGraph.input); eqJoined.add(el); }
+  const g = !eqJoined.has(el) && eqBuild(eqGroup(el)); if (!g) return;
+  try { g.ctx.createMediaElementSource(el).connect(g.input); eqJoined.add(el); }
   catch (e) { if (typeof appLog === 'function') appLog('eq: ' + e.message); return; }
-  el.addEventListener('play', () => { if (eqGraph.ctx.state !== 'running') eqGraph.ctx.resume().catch(() => {}); });
-  if (!el.paused && eqGraph.ctx.state !== 'running') eqGraph.ctx.resume().catch(() => {});
+  el.addEventListener('play', () => { if (g.ctx.state !== 'running') g.ctx.resume().catch(() => {}); });
+  if (!el.paused && g.ctx.state !== 'running') g.ctx.resume().catch(() => {});
+  eqApply();
 }
-const eqPlayers = () => [radioAudio, musicAudio, cdAudio];
+const eqPlayers = () => [radioAudio, ...(typeof musicAudios !== 'undefined' ? musicAudios : [musicAudio]), cdAudio];
 // the gains into the chain, smoothly (no click); on or off crosses between the bands and the sound as it came
 function eqApply() {
-  if (!eqGraph) return;
-  const t = eqGraph.ctx.currentTime, g = eqState.gains;
-  eqGraph.filters.forEach((f, i) => f.gain.setTargetAtTime(g[i], t, .03));
-  // half the highest boost taken off first (the limiter keeps the rest from clipping): a boost still sounds as one
-  eqGraph.pre.gain.setTargetAtTime(Math.pow(10, -Math.max(0, ...g) * .5 / 20), t, .03);
-  eqGraph.wet.gain.setTargetAtTime(eqState.on ? 1 : 0, t, .04);
-  eqGraph.dry.gain.setTargetAtTime(eqState.on ? 0 : 1, t, .04);
+  for (const gr of Object.values(eqGraphs)) {
+    const t = gr.ctx.currentTime, g = eqState.gains;
+    gr.filters.forEach((f, i) => f.gain.setTargetAtTime(g[i], t, .03));
+    // half the highest boost taken off first (the limiter keeps the rest from clipping): a boost still sounds as one
+    gr.pre.gain.setTargetAtTime(Math.pow(10, -Math.max(0, ...g) * .5 / 20), t, .03);
+    gr.wet.gain.setTargetAtTime(eqState.on ? 1 : 0, t, .04);
+    gr.dry.gain.setTargetAtTime(eqState.on ? 0 : 1, t, .04);
+  }
 }
 // the level coming out of the chain, in dBFS (-Infinity silent): proof the sound really passes through it
-function eqLevel() {
-  if (!eqGraph) return -Infinity;
-  const a = new Float32Array(eqGraph.tap.fftSize); eqGraph.tap.getFloatTimeDomainData(a);
+function eqLevel(group = 'main') {
+  const gr = eqGraphs[group]; if (!gr) return -Infinity;
+  const a = new Float32Array(gr.tap.fftSize); gr.tap.getFloatTimeDomainData(a);
   let s = 0; for (const v of a) s += v * v;
   return 10 * Math.log10(s / a.length || 1e-20);
 }

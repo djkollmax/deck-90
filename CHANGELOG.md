@@ -1,5 +1,24 @@
 # Changelog
 
+## 7.10.36
+
+### Added
+- DM-90 LISTS (`src/core/lists.js`, a seventh view key): the person's lists, each remembering where it was left
+  (song, place, second). SERVER lists are Jellyfin playlists (`jellyfin.lists`: all, songs, create, add, remove,
+  delete, places, place); the place goes in the user's DisplayPreferences for client `deck90` (`list:<id>`), so the
+  Android app goes on from the same song and the other way round. PC and USB lists live in `deck90-lists`. + NEW LIST
+  types its name on the display; Q held adds the marked item to the list in use (`listCur`); in a list Q held (or
+  Delete) removes a song; in LISTS Q held twice deletes the list.
+- Gapless: two players (`musicAudios`; `musicAudio` is the one sounding, `musicSpare` loads the next song as soon as
+  one plays). A 5 ms watch in the last 1.5 s starts the spare 45 ms before the end and they swap; the old one finishes
+  its last moment, then loads the one after. If the spare isn't ready, 'ended' starts the next as before.
+- SETUP → SALIDA DE LA MÚSICA: the DM-90's output device (`musicSinkSet`, `setSinkId` on both players and on the
+  equalizer's music chain), kept by id and label. The equalizer now has two chains (`eqGraphs`): the DM-90's music
+  in its own, so its output can differ; `eqGraph` stays the first (radio, data CD).
+- `?` opens the full key list, unit by unit (rack, stereo, DT-90, DC-90, DM-90, DE-90 and DV-90).
+- Tests: LISTS against the pretend Jellyfin (now with playlists, preferences and byte ranges), gapless timing, the
+  output kept by name, the key list, PC lists kept and resumed after a restart.
+
 ## 7.10.35
 
 ### Fixed

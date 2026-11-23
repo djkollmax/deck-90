@@ -228,7 +228,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (aboutOpen()) {
-    if (k === 'escape' || k === 'i') { e.preventDefault(); showAbout(false); }
+    if (k === 'escape' || k === 'i' || k === '?') { e.preventDefault(); showAbout(false); }
     if (/^f[1-8]$/.test(k)) e.preventDefault();
     return;
   }
@@ -253,6 +253,7 @@ document.addEventListener('keydown', e => {
     (e.shiftKey || presetSaveArmed ? savePreset : applyPreset)(id); return;
   }
   if (k === 'escape' && presetSaveArmed) { presetSaveArmed = false; syncConsole(); return; }
+  if (k === '?') { e.preventDefault(); showAbout(true, 'keys'); return; }   // 7.10.36: every key of the program
   const act = {
     s: () => { closeSplash(); startAudio('sys'); },
     m: () => { closeSplash(); startAudio('mic'); },

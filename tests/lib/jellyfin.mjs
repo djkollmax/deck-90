@@ -45,6 +45,9 @@ export function library() {
 
 export function startJellyfin() {
   const lib = library(), log = [];
+  // 7.10.36: playlists (each entry with its own PlaylistItemId) and the user's display preferences for "deck90"
+  const lists = [], prefs = {}; let nextList = 1, nextEntry = 1;
+  const songOf = id => lib.songs.concat(lib.two.songs).find(s => s.Id === id);
   const strip = it => { const o = Object.assign({}, it); delete o._flac; return o; };
   // as Jellyfin 12: the Authorization header or ApiKey; the old api_key and X-Emby-Authorization no longer count
   const authed = (req, u) => /Token="tok-123"/.test(req.headers.authorization || '') || u.searchParams.get('ApiKey') === TOKEN;
@@ -67,6 +70,28 @@ export function startJellyfin() {
     }
     if (!authed(req, u)) return json(401);
     let m;
+    const bodyOf = () => new Promise(ok => { let b = ''; req.on('data', c => { b += c; }); req.on('end', () => { try { ok(JSON.parse(b)); } catch (_) { ok({}); } }); });
+    if (u.pathname === `/Users/${USER}/Items` && q.get('IncludeItemTypes') === 'Playlist')
+      return json(200, { Items: lists.map(l => ({ Id: l.Id, Name: l.Name, Type: 'Playlist', MediaType: 'Audio', ChildCount: l.entries.length })) });
+    if (req.method === 'POST' && u.pathname === '/Playlists') {
+      bodyOf().then(b => { const l = { Id: 'f1' + String(nextList++).padStart(6, '0'), Name: b.Name, entries: [] };
+        for (const id of b.Ids || []) if (songOf(id)) l.entries.push({ entry: 'e' + nextEntry++, id });
+        lists.push(l); json(200, { Id: l.Id }); });
+      return;
+    }
+    if ((m = /^\/Playlists\/([0-9a-z]+)\/Items$/.exec(u.pathname))) {
+      const l = lists.find(x => x.Id === m[1]); if (!l) return json(404);
+      if (req.method === 'GET') return json(200, { Items: l.entries.map(e => Object.assign(strip(songOf(e.id)), { PlaylistItemId: e.entry })), TotalRecordCount: l.entries.length });
+      if (req.method === 'POST') { for (const id of (q.get('Ids') || '').split(',')) if (songOf(id)) l.entries.push({ entry: 'e' + nextEntry++, id }); return json(204); }
+      if (req.method === 'DELETE') { const out = (q.get('EntryIds') || '').split(','); l.entries = l.entries.filter(e => !out.includes(e.entry)); return json(204); }
+    }
+    if (req.method === 'DELETE' && (m = /^\/Items\/([0-9a-z]+)$/.exec(u.pathname))) { const i = lists.findIndex(x => x.Id === m[1]); if (i < 0) return json(404); lists.splice(i, 1); return json(204); }
+    if (u.pathname === '/DisplayPreferences/deck90') {
+      if (q.get('userId') !== USER || q.get('client') !== 'deck90') return json(400);
+      if (req.method === 'GET') return json(200, { Id: 'deck90', Client: 'deck90', SortBy: 'SortName', CustomPrefs: Object.assign({}, prefs) });
+      bodyOf().then(b => { Object.assign(prefs, b.CustomPrefs || {}); json(204); });
+      return;
+    }
     if (u.pathname === `/Users/${USER}/Views`) return json(200, { Items: [{ Id: MOVIES, Name: 'Películas', CollectionType: 'movies' }, { Id: LIB, Name: 'Música', CollectionType: 'music' }, { Id: LIB2, Name: 'Más música', CollectionType: 'music' }] });
     if (u.pathname === '/Artists/AlbumArtists') {
       if (q.get('ParentId') === LIB2) return json(200, page(lib.two.artists, q));
@@ -105,14 +130,21 @@ export function startJellyfin() {
     if ((m = /^\/Audio\/([0-9a-z-]+)\/stream(\.flac)?$/.exec(u.pathname))) {
       const s = lib.songs.concat(lib.two.songs).find(x => x.Id === m[1]);
       if (!s) return json(404);
-      const buf = s._flac || m[2] ? FLAC : MP3;
-      res.writeHead(200, { 'Content-Type': s._flac || m[2] ? 'audio/flac' : 'audio/mpeg', 'Content-Length': buf.length, 'Accept-Ranges': 'none' });
+      const buf = s._flac || m[2] ? FLAC : MP3, type = s._flac || m[2] ? 'audio/flac' : 'audio/mpeg';
+      // 7.10.36: byte ranges, as Jellyfin answers them: a song can be seeked (a list goes on from its second)
+      const r = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
+      if (r) {
+        const from = Number(r[1]), to = r[2] ? Math.min(Number(r[2]), buf.length - 1) : buf.length - 1;
+        res.writeHead(206, { 'Content-Type': type, 'Content-Length': to - from + 1, 'Content-Range': `bytes ${from}-${to}/${buf.length}`, 'Accept-Ranges': 'bytes' });
+        return res.end(buf.subarray(from, to + 1));
+      }
+      res.writeHead(200, { 'Content-Type': type, 'Content-Length': buf.length, 'Accept-Ranges': 'bytes' });
       return res.end(buf);
     }
     json(404);
   });
   return new Promise(ok => server.listen(0, '127.0.0.1', () => {
     const base = 'http://127.0.0.1:' + server.address().port;
-    ok({ base, lib, log, close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }) });
+    ok({ base, lib, log, lists, prefs, close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }) });
   }));
 }

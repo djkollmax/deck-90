@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld('jellyfin', {
   read: (kind, id, query) => ipcRenderer.invoke('jf-read', String(kind), id == null ? '' : String(id), query || {}),
   stream: (id, playable) => ipcRenderer.invoke('jf-stream', String(id), !!playable),
   cover: (id, albumId) => ipcRenderer.invoke('jf-cover', String(id || ''), String(albumId || '')),   // 7.10.17: the header's cover
+  lists: (op, id, arg) => ipcRenderer.invoke('jf-lists', String(op), id == null ? '' : String(id), arg),   // 7.10.36: the playlists
 });
 // 7.10.24: the DM-90's PC and USB sources (electron/localmusic.js): kind is 'pc' or 'usb'
 contextBridge.exposeInMainWorld('localMusic', {

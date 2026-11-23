@@ -758,6 +758,7 @@ ipcMain.handle('jf-sign-in', (e, server, user, pw) => fromWin(e) ? jf().signIn(S
 ipcMain.handle('jf-sign-out', e => fromWin(e) ? jf().signOut() : null);
 ipcMain.handle('jf-read', (e, kind, id, query) => fromWin(e) ? jf().read(String(kind), id, query && typeof query === 'object' ? query : {}) : null);
 ipcMain.handle('jf-stream', (e, id, playable) => fromWin(e) ? jf().stream(String(id || ''), !!playable) : '');
+ipcMain.handle('jf-lists', (e, op, id, arg) => fromWin(e) ? jf().lists(String(op), id == null ? '' : String(id), arg) : null);   // 7.10.36
 ipcMain.handle('jf-cover', (e, id, albumId) => fromWin(e) ? jf().cover(String(id || ''), String(albumId || '')) : '');   // 7.10.17
 // 7.10.24: the DM-90's PC and USB sources (localmusic.js): the person's folders and the pendrives plugged in
 let localMusic = null;

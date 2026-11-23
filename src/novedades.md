@@ -1,5 +1,19 @@
 # Novedades
 
+## 7.10.36 — 2026-11-23
+
+### Nuevo
+- **LISTS en el DM-90:** tus listas, cada una sigue donde la dejaste (el tema y el segundo). **+ NEW LIST** hace una
+  (escribís el nombre en el display) y **Q sostenido** sobre un tema, un disco, un artista o una carpeta lo suma a la
+  lista en uso. Las del servidor son las listas de Jellyfin: el celular las tiene también y sigue en el mismo tema
+  donde la dejaste en la PC, y al revés. Las de PC y USB quedan en la PC. En una lista, Q sostenido (o Supr) saca el
+  tema; en LISTS, Q sostenido dos veces borra la lista.
+- **Sin silencio entre temas (gapless):** el tema siguiente ya está cargado y arranca justo cuando termina el
+  anterior. Un disco en vivo o un mix siguen de corrido.
+- **La salida de la música:** en SETUP del DM-90 elegís por dónde suena (auriculares o parlantes), solo su música; la
+  radio, el CD y lo que suena en la PC siguen por la de Windows.
+- **?** muestra todas las teclas del programa, unidad por unidad.
+
 ## 7.10.35 — 2026-11-23
 
 ### Arreglado

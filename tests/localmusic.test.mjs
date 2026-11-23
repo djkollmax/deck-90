@@ -226,3 +226,27 @@ test('closed and opened again, the queue is there, at the same song', async () =
   assert.equal(await d.win.evaluate(() => musicPlaying() && musicNow().name), 'Tramo 3', 'PLAY goes on with it');
   assert.deepEqual(d.errors(), []);
 });
+
+// 7.10.36: a list of the PC's own music: kept in this PC, played, and after a restart it goes on from its song
+test('LISTS of the PC: kept in this PC, and after a restart a list goes on from where it was left', async () => {
+  await use();
+  await d.click(K('lists'), 900);
+  assert.deepEqual(await d.win.evaluate(() => jbView.items.map(i => i.kind === 'newlist' ? [i.kind, jbRow(i).sub] : i.kind)), [['newlist', 'KEPT IN THIS PC']]);
+  const n = await d.win.evaluate(async () => { const l = await musicListCreate('Viaje', 'pc'); return musicListAdd(l, (await musicSongs()).slice(0, 3)); });
+  assert.equal(n, 3);
+  await d.click(K('lists'), 900); await press('Enter', 1000); await press('ArrowDown'); await press('Enter', 2500);
+  const playing = await d.win.evaluate(() => musicNow().name);
+  await d.wait(1500); await d.click(K('pause'), 800);
+  const kept = await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-lists')).pc[0]);
+  assert.equal(kept.name, 'Viaje'); assert.equal(kept.songs.length, 3);
+  assert.equal(kept.place.i, 1, 'the place: its second song');
+  await d.win.reload();
+  await d.win.waitForFunction(() => typeof jbKey === 'function' && typeof musicLists === 'function', null, { timeout: 20000 });
+  await d.wait(1500);
+  await d.click(K('power'), 1000); await use();
+  await d.click(K('lists'), 900); await press('Enter', 1000);
+  const v = await view();
+  assert.equal(v.title, 'Viaje'); assert.equal(await d.win.evaluate(() => jbView.cursor), 1, 'its song marked');
+  assert.equal(v.marked, playing);
+  assert.deepEqual(d.errors(), []);
+});

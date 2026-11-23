@@ -26,7 +26,8 @@ wants it done then (see Shared names).
 - `src/core/`: what works with no screen. `events.js` is the hub (`deck.on`, `deck.emit`, `deck.notice` for a
   line to the person); `radio.js` (memories, tuning through the proxy, the song and quality, SCAN) and `cd.js`
   (the drive, the disc's names, quick skips, REPEAT and SHUFFLE) and `music.js` (the library of SOURCE's server, PC or USB, the queue,
-  Q, REPEAT and SHUFFLE, the player) and `eq.js` (the equalizer's Web Audio chain for those players) say what
+  Q, REPEAT and SHUFFLE, the player, two of them for gapless) and `lists.js` (the DM-90's LISTS: Jellyfin playlists or
+  the PC's, each with where it was left) and `eq.js` (the equalizer's Web Audio chain for those players) say what
   changed through it and never touch a screen. The screens call
   their functions and listen. `store.js` reads and writes what's saved (localStorage).
 - `src/ui/<module>/`: the screens, each folder with its scripts and its CSS.

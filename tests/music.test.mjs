@@ -288,3 +288,100 @@ test('touching the time switches it between the time left and the time played, r
   assert.equal(await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-prefs')).jukebox.remain), !was);
   await d.click(K('stop'), 600);
 });
+
+// 7.10.36: LISTS: made on the display, filled with Q held, played from where it was left (the place kept in Jellyfin,
+// so the phone can go on from it, and the other way round), a song taken out, the list deleted
+test('LISTS: a list made, filled with Q held, played from where it was left (kept in Jellyfin), a song out, deleted', async () => {
+  await use();
+  await d.click(K('lists'), 900);
+  let v = await view();
+  assert.equal(v.kind, 'lists'); assert.equal(v.count, 1); assert.equal(v.marked, '+ NEW LIST');
+  await press('Enter');
+  for (const ch of 'Ruta') await press(ch, 60);
+  assert.match((await view()).list.header, /^NEW LIST: Ruta_/);
+  await press('Enter', 1200);
+  assert.deepEqual(jf.lists.map(l => [l.Name, l.entries.length]), [['Ruta', 0]], 'a Jellyfin playlist');
+  v = await view(); assert.equal(v.kind, 'lists'); assert.equal(v.marked, 'Ruta');
+  // an album of the first artist into it, with Q held
+  await d.click(K('artists'), 900); await press('Enter', 900);
+  assert.equal((await view()).kind, 'artist');
+  await d.hold(K('queue'));
+  assert.equal(jf.lists[0].entries.length, 8, 'the album\'s eight songs');
+  assert.match(d.toasts().join(' '), /\+ Ruta · 8 temas/);
+  // into the list: ENTER on the third plays it from there
+  await d.click(K('lists'), 900); await press('Enter', 1200);
+  v = await view(); assert.equal(v.kind, 'plist'); assert.equal(v.count, 8);
+  await press('ArrowDown', 100); await press('ArrowDown', 100); await press('Enter', 2500);
+  const third = jf.lists[0].entries[2].id;
+  assert.equal(await d.win.evaluate(() => musicNow().id), third);
+  await press(' ', 1200);                                          // paused: the place goes to Jellyfin
+  const id = jf.lists[0].Id;
+  assert.equal(JSON.parse(jf.prefs['list:' + id]).song, third);
+  // the phone left it on the fifth song (one of a minute), 20 s in: the PC goes on from there
+  jf.prefs['list:' + id] = JSON.stringify({ song: jf.lists[0].entries[4].id, i: 4, t: 20, at: Date.now() });
+  await d.click(K('lists'), 900); await press('Enter', 1500);
+  assert.equal((await view()).cursor, 4, 'the song it was left on, marked');
+  await press('Enter', 2500);
+  const at = await d.win.evaluate(() => [musicNow().id, musicAudio.currentTime]);
+  assert.equal(at[0], jf.lists[0].entries[4].id); assert.ok(at[1] >= 20, 'from its second: ' + at[1]);
+  // Q held takes the marked song out of the list
+  await press('ArrowUp', 100);
+  await d.hold(K('queue'));
+  assert.equal(jf.lists[0].entries.length, 7);
+  assert.equal((await view()).count, 7);
+  // in LISTS, Q held twice deletes it
+  await d.click(K('lists'), 900);
+  await d.hold(K('queue'));
+  assert.equal(jf.lists.length, 1, 'once only asks');
+  await d.hold(K('queue'));
+  assert.equal(jf.lists.length, 0);
+  assert.deepEqual((await view()).count, 1, 'only + NEW LIST');
+  await d.click(K('stop'), 600);
+  assert.deepEqual(d.errors(), []);
+});
+
+// 7.10.36: gapless: the next song is loaded ahead in the other player and starts as this one runs out
+test('gapless: the next song starts as the last one runs out, from a player loaded ahead', async () => {
+  await d.win.evaluate(async () => { musicPlay(await musicTracks('b000000'), 1); }); await d.wait(2500);
+  const r = await d.win.evaluate(() => new Promise(ok => {
+    const first = musicAudio, log = [];
+    for (const a of musicAudios) for (const ev of ['ended', 'playing']) a.addEventListener(ev, () => log.push([a === first ? 'old' : 'new', ev, performance.now(), first.duration - first.currentTime]));
+    const spare = musicSpare.getAttribute('src') || '';
+    first.currentTime = Math.max(0, first.duration - 1.3);
+    setTimeout(() => ok({ log, spare, pos: musicPos, swapped: musicAudio !== first, playing: !musicAudio.paused, then: musicSpare.getAttribute('src') || '' }), 2600);
+  }));
+  assert.match(r.spare, /\/Audio\/c000002\//, 'the next song loaded ahead');
+  assert.equal(r.pos, 2); assert.ok(r.swapped && r.playing, 'the other player plays it');
+  assert.match(r.then, /\/Audio\/c000003\//, 'and the old one, done, loads the one after');
+  // the next one sounding as the last one runs out: what was left of it then (a few ms; or, if it ended first, how long after)
+  const ended = r.log.find(x => x[0] === 'old' && x[1] === 'ended'), started = r.log.find(x => x[0] === 'new' && x[1] === 'playing');
+  assert.ok(started, JSON.stringify(r.log));
+  assert.ok(started[3] < .25, 'it started with ' + started[3].toFixed(3) + ' s of the last one left');
+  if (ended) assert.ok(started[2] - ended[2] < 40, 'no gap: ' + (started[2] - ended[2]).toFixed(0) + ' ms after the end');
+  await d.click(K('stop'), 600);
+});
+
+// 7.10.36: the music's own output, chosen in SETUP; a device that isn't there now is kept by its name
+test('SETUP: the music\'s output, Windows\' own or a device, kept by its name', async () => {
+  await d.win.evaluate(() => musicSinkSet('no-such-device', 'Auriculares de prueba'));
+  await d.click(K('setup'), 900);
+  const opts = await d.win.evaluate(() => [...document.querySelectorAll('#jbOut option')].map(o => o.textContent));
+  assert.equal(opts[0], 'La de Windows (la misma que todo)');
+  assert.ok(opts.includes('Auriculares de prueba (no está conectada)'), opts.join(' | '));
+  await d.win.selectOption('#jbOut', '');
+  await d.wait(400);
+  assert.deepEqual(await d.win.evaluate(() => JSON.parse(localStorage.getItem('deck90-music-sink'))), { id: '', label: '' });
+  await d.win.keyboard.press('Escape'); await d.wait(300);
+});
+
+// 7.10.36: ? shows every key of the program, unit by unit
+test('? shows every key of the program, unit by unit', async () => {
+  await d.win.mouse.click(5, 5); await d.wait(100);
+  await d.win.keyboard.press('?'); await d.wait(500);
+  assert.equal(await d.win.evaluate(() => aboutOpen() && aboutTab), 'keys');
+  const heads = await d.win.evaluate(() => [...document.querySelectorAll('.about-keys-head th')].map(t => t.textContent));
+  assert.deepEqual(heads, ['EL RACK', 'EL ESTÉREO (E)', 'LA RADIO (DT-90)', 'EL CD (DC-90)', 'LA MÚSICA (DM-90)', 'ECUALIZADOR (DE-90) Y VOLUMEN (DV-90)']);
+  assert.match(await d.win.textContent('#aboutBody'), /LISTS.*Tus listas/);
+  await d.win.keyboard.press('?'); await d.wait(300);
+  assert.equal(await d.win.evaluate(() => aboutOpen()), false);
+});

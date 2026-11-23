@@ -146,6 +146,10 @@ function jbRow(it, i) {
     end: jbView.kind === 'search' ? ['ALBUM', it.year || ''].filter(Boolean).join(' · ') : [it.year || '', it.count ? it.count + ' SONGS' : ''].filter(Boolean).join(' · ') };
   if (it.kind === 'folder') return { text: '▣ ' + it.name, sub: '', end: it.count ? jbPlural(it.count, 'SONG', 'SONGS') : '' };   // 7.10.28
   if (it.kind === 'more') return { text: it.name, sub: '', end: '', dim: true };
+  // 7.10.36: the lists, and the row to make one (the one Q held adds to says so)
+  if (it.kind === 'plist') return { text: '▣ ' + it.name, sub: listSame(listCur, it) ? 'Q HELD ADDS HERE' : '', end: jbPlural(it.count || 0, 'SONG', 'SONGS'),
+    playing: !!listPlaying && listSame(listPlaying.list, it) && listPlaying.queue === musicQueue };
+  if (it.kind === 'newlist') return { text: '+ NEW LIST', sub: musicIsLocal() ? 'KEPT IN THIS PC' : 'SHARED WITH THE PHONE', end: '', dim: true };
   if (it.kind === 'head') return { text: '── ' + it.name + ' ──', sub: '', end: '', dim: true };   // a search's groups
   const n = jbView.kind === 'album' && it.n ? String(it.n).padStart(2, '0') + ' ' : '';
   return { text: n + it.name, sub: jbView.kind === 'album' && it.artist === jbView.artist ? '' : it.artist,
@@ -162,12 +166,13 @@ function jbRenderList() {
   const count = v.items.length, found = v.kind === 'search' ? v.items.filter(i => i.kind !== 'head').length : count, fmt = n => n.toLocaleString('es-AR');
   let header = (musicIsLocal() && v.kind !== 'list' && v.kind !== 'home' ? musicSourceName() + ' · ' : '') + v.title + (found && v.kind !== 'home' ? ' · ' + fmt(found) : '') + (musicLibraryName() && ['artists', 'albums', 'songs', 'folders', 'search'].includes(v.kind) ? ' · ' + musicLibraryName().toUpperCase() : ''), right = '';   // 7.10.10; 7.10.24: PC · ARTISTS · 120
   if (jbSearchText !== null) { header = 'SEARCH: ' + jbSearchText + '_'; right = jbLoading || jbFound(); }
+  else if (jbNameText !== null) { header = 'NEW LIST: ' + jbNameText + '_'; right = 'ENTER MAKES IT · ESC: NO'; }
   else if (jbLoading) right = jbLoading;
   else if (jbJump.text && performance.now() - jbJump.at < 1500) right = '→ ' + jbJump.text;
   else if (musicIsLocal() && musicLocal && musicLocal[musicModes.source].scanning) { const L = musicLocal[musicModes.source]; right = 'READING ' + (L.found ? fmt(L.read) + '/' + fmt(L.found) : '…'); }
   else right = musicQueue.length ? 'QUEUE ' + (musicPos >= 0 ? musicPos + 1 + '/' : '') + musicQueue.length : '';
   jb.setList({ header, right, rows: v.items.slice(v.top, v.top + rows).map((it, k) => jbRow(it, v.top + k)), cursor: v.cursor, top: v.top, count });
-  jb.setView(jbSearchText !== null || v.kind === 'search' ? 'search' : { artists: 'artists', albums: 'albums', songs: 'songs', folders: 'folders', folder: 'folders', list: 'list' }[v.kind] || '');
+  jb.setView(jbSearchText !== null || v.kind === 'search' ? 'search' : { artists: 'artists', albums: 'albums', songs: 'songs', folders: 'folders', folder: 'folders', list: 'list', lists: 'lists', plist: 'lists' }[v.kind] || '');
 }
 function jbHome(text) { jbView = { kind: 'home', items: (text || []).map(name => ({ kind: 'more', name })), cursor: 0, top: 0, title: 'DM-90' }; jbStack = []; jbRenderList(); }
 // load a list: what the server says goes on screen when it arrives (a slower answer for an older ask is dropped)
@@ -201,6 +206,29 @@ function jbOpen(kind) {
   if (kind === 'songs') return jbLoad({ kind: 'songs', title: 'SONGS' }, async () => (await musicSongs()).map(s => Object.assign({ kind: 'song' }, s)));
   if (kind === 'list') { ++jbAsk; jbLoading = ''; jbStack = []; jbView = { kind: 'list', title: 'QUEUE', items: musicQueue.map(s => Object.assign({ kind: 'song' }, s)), cursor: Math.max(0, musicPos), top: 0 }; return jbRenderList(); }
   if (kind === 'search') return jbSearchStart();
+  if (kind === 'lists') return jbLoad({ kind: 'lists', title: 'LISTS' }, async () => [...(await musicLists()).map(l => Object.assign({ kind: 'plist' }, l)), { kind: 'newlist', name: '+ NEW LIST' }]);
+}
+// 7.10.36: a list opened: its songs, the marked one where it was left (ENTER there goes on from the same second)
+async function jbListOpen(list, again) {
+  listCurSet(list);
+  const before = jbView.kind === 'plist' ? jbStack.slice() : null;
+  await jbLoad({ kind: 'plist', title: list.name, list }, async () => (await musicListSongs(list)).map(s => Object.assign({ kind: 'song' }, s)), !again);
+  if (again && before) jbStack = before;                           // the same list read again: BACK still goes where it did
+  if (again || jbView.kind !== 'plist' || jbView.list !== list) return;
+  const place = await musicListPlace(list).catch(() => null), items = jbView.items;
+  if (place && jbView.list === list) {
+    const i = items[place.i] && items[place.i].id === place.song ? place.i : items.findIndex(x => x.id === place.song);
+    if (i >= 0) { jbView.cursor = i; jbRenderList(); }
+  }
+  toast('LISTS · <span>' + jbEsc(list.name) + '</span>' + (place ? ' · ENTER sigue donde quedó' : '') + ' · Q sostenido en otra parte suma acá', 2200);
+}
+// + NEW LIST: its name typed on the display (ENTER makes it, ESC doesn't)
+let jbNameText = null;
+async function jbListMake() {
+  const name = (jbNameText || '').trim() || 'LISTA ' + ((jbView.items || []).filter(x => x.kind === 'plist').length + 1);
+  jbNameText = null; jbRenderList();
+  try { const list = await musicListCreate(name); toast('LISTS · <span>' + jbEsc(list.name) + '</span> hecha · Q sostenido sobre un disco, un tema o un artista la llena', 2600); jbOpen('lists'); }
+  catch (e) { toast('LISTS · <span>' + (e.message === 'signed out' ? 'sin sesión: SETUP' : jbNoAnswer()) + '</span>', 2200); }
 }
 function jbReady() {
   if (!jbPower) { jbOn(true); return false; }
@@ -253,15 +281,40 @@ async function jbEnter() {
   if (it.kind === 'artist') return jbLoad({ kind: 'artist', title: it.name + ' › ALBUMS', artistId: it.id }, async () => (await musicAlbums(it.id)).map(a => Object.assign({ kind: 'album' }, a)), true);
   if (it.kind === 'album') return jbLoad({ kind: 'album', title: it.name + (it.year ? ' (' + it.year + ')' : ''), artist: it.artist, albumId: it.id }, async () => (await musicTracks(it.id)).map(s => Object.assign({ kind: 'song' }, s)), true);
   if (it.kind === 'folder') return jbLoad({ kind: 'folder', title: it.name, folderId: it.id }, async () => (await musicFolder(it.id)).items, true);
+  if (it.kind === 'plist') return jbListOpen(it);
+  if (it.kind === 'newlist') { jbNameText = ''; return jbRenderList(); }
   if (it.kind !== 'song') return;
   if (jbView.kind === 'list') { musicJump(jbView.cursor); return; }
+  if (jbView.kind === 'plist') {                                   // 7.10.36: the list plays, from here (or where it was left)
+    await musicListPlay(jbView.list, jbSongs(), jbView.cursor);
+    toast('▶ · <span>' + jbEsc(jbView.list.name) + '</span> · ' + it.name.replace(/[<>&]/g, ''), 1600);
+    return jbRenderList();
+  }
   const songs = jbSongs();
   await musicPlay(songs, songs.indexOf(it));
   toast('▶ · <span>' + it.name.replace(/[<>&]/g, '') + '</span>' + (songs.length > 1 ? ' · ' + songs.length + ' en la cola' : ''), 1600);
 }
 // Q: the marked song (or all of an album or an artist) plays next
+let jbDelArm = null;
 async function jbQueue(hold) {
   const it = jbView.items[jbView.cursor]; if (!it || !jbReady()) return;
+  // 7.10.36: the lists. In LISTS, held twice deletes the marked one; in a list, held takes the song out of it;
+  // anywhere else, held adds what's marked (a song, an album, an artist, a folder) to the list in use
+  if (jbView.kind === 'lists') {
+    if (it.kind !== 'plist') return;
+    if (!hold) return toast('LISTS · Q sostenido dos veces borra <span>' + jbEsc(it.name) + '</span>', 1800);
+    if (!jbDelArm || !listSame(jbDelArm.list, it) || Date.now() - jbDelArm.at > 6000) { jbDelArm = { list: it, at: Date.now() }; return toast('LISTS · ¿borrar <span>' + jbEsc(it.name) + '</span>? Q sostenido otra vez la borra' + (it.src === 'server' ? ' (también de Jellyfin y del teléfono)' : ''), 3000); }
+    jbDelArm = null;
+    try { await musicListDelete(it); toast('LISTS · <span>' + jbEsc(it.name) + '</span> borrada', 1600); } catch (_) { toast('LISTS · <span>' + jbNoAnswer() + '</span>', 2000); }
+    return jbOpen('lists');
+  }
+  if (jbView.kind === 'plist' && hold && it.kind === 'song') {
+    const i = jbView.cursor, list = jbView.list;
+    try { await musicListRemove(list, i, it); } catch (_) { return toast('LISTS · <span>' + jbNoAnswer() + '</span>', 2000); }
+    toast('LISTS · <span>' + jbEsc(it.name) + '</span> fuera de ' + jbEsc(list.name), 1600);
+    await jbListOpen(list, true); jbView.cursor = Math.min(i, jbView.items.length - 1); return jbRenderList();
+  }
+  if (hold && jbView.kind !== 'list') return jbListAdd(it);
   // 7.10.28: in the QUEUE, Q moves the marked song to play next (no copy of it), held takes it out
   if (jbView.kind === 'list') {
     const name = jbEsc(it.name), i = jbView.cursor;
@@ -284,6 +337,22 @@ async function jbQueue(hold) {
   toast('Q · <span>' + (songs.length === 1 ? songs[0].name.replace(/[<>&]/g, '') : songs.length + ' temas') + '</span> ' + (wasIdle ? 'en la cola: ▶ la empieza' : 'después de este'), 1800);
   if (jbView.kind === 'list') jbOpen('list');
   if (jbView.kind !== 'list' && jbView.cursor < jbView.items.length - 1) jbView.cursor++;   // the next one, ready for another Q
+  jbRenderList();
+}
+// 7.10.36: Q held: what's marked into the list in use (the last one opened or made, of this source)
+async function jbListAdd(it) {
+  const src = musicModes.source;
+  if (!listCur || listCur.src !== src) return toast('LISTS · <span>elegí una lista</span>: LISTS, entrá a una (o + NEW LIST) y volvé a sostener Q', 2600);
+  let songs = [];
+  try {
+    if (it.kind === 'song') songs = [it];
+    else if (it.kind === 'album') songs = await musicTracks(it.id);
+    else if (it.kind === 'artist') songs = await musicArtistSongs(it.id);
+    else if (it.kind === 'folder') songs = await musicFolderSongs(it.id);
+    const n = await musicListAdd(listCur, songs);
+    toast('+ <span>' + jbEsc(listCur.name) + '</span> · ' + (n === 1 ? jbEsc(songs[0].name) : n + ' temas'), 1800);
+  } catch (e) { toast('LISTS · <span>' + (e.message === 'ya no está' ? 'la lista ya no está' : jbNoAnswer()) + '</span>', 2000); }
+  if (jbView.cursor < jbView.items.length - 1) jbView.cursor++;
   jbRenderList();
 }
 // SHUFFLE ALL (7.10.4): every song of the library, at random; the queue shows them
@@ -371,7 +440,7 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
     jbView.top = top; jbView.cursor = top + off; jbRenderList(); return;
   }
   if (k === 'row') { jbView.cursor = jbView.top + index; jbRenderList(); if (double) jbEnter(); return; }
-  if (['artists', 'albums', 'songs', 'folders', 'list', 'search'].includes(k)) return jbOpen(k);
+  if (['artists', 'albums', 'songs', 'folders', 'lists', 'list', 'search'].includes(k)) return jbOpen(k);
   if (k === 'back') return jbBack();
   if (k === 'enter') return jbEnter();
   if (k === 'queue') return jbQueue(hold);
@@ -403,13 +472,20 @@ function jbKey(k, { hold, index, double, delta, fraction } = {}) {
 function jbKbd(on) { jbActive = on; jbPanel.classList.toggle('kbd', on); }
 document.addEventListener('pointerdown', e => {
   if (jbPanel.contains(e.target)) { jbKbd(true); return; }
-  jbKbd(false); if (jbSearchText !== null) { jbSearchText = null; jbRenderList(); }
+  jbKbd(false); if (jbSearchText !== null || jbNameText !== null) { jbSearchText = null; jbNameText = null; jbRenderList(); }
 }, true);
 document.addEventListener('keydown', e => {
   if (!jb || !jbActive || !jbShown() || !jbPower || e.ctrlKey || e.altKey || e.metaKey) return;
   if (e.target && e.target.closest && e.target.closest('input, textarea, select')) return;
   if (document.querySelector('#jbSetup.show, #phoneModal.show, #histModal.show')) return;
   const k = e.key, take = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+  if (jbNameText !== null) {                                     // 7.10.36: a new list's name
+    if (k === 'Enter') { take(); jbListMake(); }
+    else if (k === 'Escape') { take(); jbNameText = null; jbRenderList(); }
+    else if (k === 'Backspace') { take(); jbNameText = jbNameText.slice(0, -1); jbRenderList(); }
+    else if (k.length === 1) { take(); jbNameText = (jbNameText + k).slice(0, 40); jbRenderList(); }
+    return;
+  }
   if (jbSearchText !== null) {                                   // typing a search: the results follow each letter
     const step = { ArrowDown: 1, ArrowUp: -1, PageDown: jb.rows(), PageUp: -jb.rows() }[k];
     if (step) { take(); jbMove(step); }
@@ -427,7 +503,7 @@ document.addEventListener('keydown', e => {
   if (k === ' ') { take(); if (!e.repeat) jbKey(musicPlaying() ? 'pause' : 'play'); return; }
   if (k === '/') { take(); return jbOpen('search'); }
   if (k.toLowerCase() === 'q') { take(); if (!e.repeat) jbQueue(); return; }
-  if (k === 'Delete' && jbView.kind === 'list') { take(); if (!e.repeat) jbQueue(true); return; }   // 7.10.28: out of the queue
+  if (k === 'Delete' && (jbView.kind === 'list' || jbView.kind === 'plist')) { take(); if (!e.repeat) jbQueue(true); return; }   // 7.10.28: out of the queue (7.10.36: or the list)
   // 7.10.6: E (the stereo), P (the strip) and J (this unit) stay the program's even here; Shift + a letter jumps
   // with any letter (Shift+E: the first name with E)
   if (!e.shiftKey && /^[epjg]$/i.test(k)) return;                 // 7.10.11: G too (keep the song)
@@ -468,6 +544,7 @@ function jbSetup(on, tab) {
   m.classList.toggle('show', on);
   if (!on) return;
   jbTabShow(tab || musicModes.source);
+  jbOutPaint();
   document.getElementById('jbServer').value = musicServer.server || 'http://localhost:8096';
   document.getElementById('jbUser').value = musicServer.name || '';
   document.getElementById('jbPass').value = '';
@@ -476,6 +553,22 @@ function jbSetup(on, tab) {
   jbLibraryList();
   if (jbTab === 'server') setTimeout(() => document.getElementById(musicServer.signedIn ? 'jbServer' : document.getElementById('jbUser').value ? 'jbPass' : 'jbUser').focus(), 50);
 }
+// 7.10.36: the music's output: Windows' own, or one of the devices (kept by name if its id changes)
+async function jbOutPaint() {
+  const sel = document.getElementById('jbOut'), outs = await musicOutputs();
+  sel.replaceChildren();
+  const add = (id, label) => { const o = document.createElement('option'); o.value = id; o.textContent = label; sel.append(o); };
+  add('', 'La de Windows (la misma que todo)');
+  for (const o of outs) add(o.id, o.label);
+  const cur = outs.find(o => o.id === musicSink.id) || outs.find(o => musicSink.label && o.label === musicSink.label);
+  if (musicSink.id && !cur) add(musicSink.id, musicSink.label + ' (no está conectada)');
+  sel.value = cur ? cur.id : musicSink.id;
+}
+document.getElementById('jbOut').addEventListener('change', async e => {
+  const sel = e.target, label = sel.value ? sel.selectedOptions[0].textContent : '';
+  await musicSinkSet(sel.value, label);
+  toast('DM-90 · SALIDA <span>' + jbEsc(sel.value ? label : 'la de Windows') + '</span>', 1800);
+});
 function jbTabShow(tab) {
   jbTab = MUSIC_SOURCES.includes(tab) ? tab : 'server';
   for (const el of document.querySelectorAll('#jbSetup [data-tab]')) el.classList.toggle('on', el.dataset.tab === jbTab);

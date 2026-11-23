@@ -130,6 +130,43 @@ function createJellyfin({ net, dir, log, version, seal }) {
       covers.set(key, out);
       return out;
     },
+    // 7.10.36: the DM-90's lists are the person's Jellyfin playlists (so the phone, and Jellyfin's own apps, have the
+    // same ones), and where each list was left goes in Jellyfin too (the user's display preferences for "deck90"),
+    // so the other device goes on from the same song. ops: all · songs id · create name ids · add id ids ·
+    // remove id entryIds · delete id · places · place id json
+    async lists(op, id, arg) {
+      if (!cfg.token) return { error: 'signed out' };
+      const ids = a => (Array.isArray(a) ? a : []).map(String).filter(x => ID.test(x)).slice(0, 5000);
+      const prefs = '/DisplayPreferences/deck90', who = { userId: cfg.user, client: 'deck90' };
+      try {
+        if (op === 'all') {
+          const r = await call('GET', '/Users/' + cfg.user + '/Items', { IncludeItemTypes: 'Playlist', Recursive: 'true', SortBy: 'SortName', Fields: 'ChildCount', EnableImages: 'false' });
+          return { Items: (r && r.Items || []).filter(i => !i.MediaType || i.MediaType === 'Audio').map(i => ({ id: i.Id, name: i.Name, count: i.ChildCount || 0 })) };
+        }
+        if (op === 'places') { const r = await call('GET', prefs, who); return { places: r && r.CustomPrefs || {} }; }
+        if (op === 'create') {
+          const first = ids(arg), r = await call('POST', '/Playlists', null, { Name: String(id || 'LISTA').slice(0, 100), Ids: first.slice(0, 100), UserId: cfg.user, MediaType: 'Audio' });
+          const pid = r && (r.Id || r.id);
+          for (let i = 100; i < first.length; i += 100) await call('POST', '/Playlists/' + pid + '/Items', { Ids: first.slice(i, i + 100).join(','), UserId: cfg.user });
+          return { id: pid };
+        }
+        if (!ID.test(String(id || ''))) return { error: 'bad id' };
+        if (op === 'songs') return await call('GET', '/Playlists/' + id + '/Items', { UserId: cfg.user, Fields: 'MediaSources', EnableImages: 'false' }, null, cfg.token, 60000);
+        if (op === 'add') { const a = ids(arg); for (let i = 0; i < a.length; i += 100) await call('POST', '/Playlists/' + id + '/Items', { Ids: a.slice(i, i + 100).join(','), UserId: cfg.user }); return { ok: true }; }
+        if (op === 'remove') { await call('DELETE', '/Playlists/' + id + '/Items', { EntryIds: ids(arg).join(',') }); return { ok: true }; }
+        if (op === 'delete') { await call('DELETE', '/Items/' + id); return { ok: true }; }
+        if (op === 'place') {                                      // read, change this list's, write back whole
+          const r = (await call('GET', prefs, who)) || {}, place = String(arg || '').slice(0, 300);
+          r.Id = r.Id || 'deck90'; r.Client = 'deck90'; r.CustomPrefs = Object.assign({}, r.CustomPrefs, { ['list:' + id]: place });
+          await call('POST', prefs, who, r);
+          return { ok: true };
+        }
+        return { error: 'bad op' };
+      } catch (e) {
+        log('jellyfin: lists ' + op + ' failed: ' + e.message);
+        return { error: e.code === 401 ? 'signed out' : e.message };
+      }
+    },
     // where a song's sound comes from: the file as it is (static) when Chromium plays its codec, or made FLAC
     // by the server when it doesn't (ALAC, WMA, APE, DSD…). 7.10.32: the token as ApiKey (an <audio> sends no
     // header): Jellyfin 12 turns the old api_key off, and X-Emby-Authorization with it (the requests send only

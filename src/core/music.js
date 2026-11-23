@@ -9,9 +9,16 @@
 //  plugged in), the last two from electron/localmusic.js, which answers as Jellyfin does: the same lists and the same
 //  player for the three. Each song knows its source (src), so a queue goes on playing when the source changes.
 // ═══════════════════════════════════════════════════════════
-const musicAudio = new Audio();
-musicAudio.crossOrigin = 'anonymous';   // 7.10.14: so the equalizer (core/eq.js) may take its sound (main.js lets media answers allow it)
-musicAudio.preload = 'auto';
+// 7.10.36: two players: musicAudio is the one that sounds, musicSpare loads the next song ahead and takes over the
+// moment this one ends (gapless: a live album or a mix flows on, no silence between songs); they swap each time
+const musicAudios = [new Audio(), new Audio()];
+for (const a of musicAudios) {
+  a.crossOrigin = 'anonymous';   // 7.10.14: so the equalizer (core/eq.js) may take its sound (main.js lets media answers allow it)
+  a.preload = 'auto';
+}
+let musicAudio = musicAudios[0], musicSpare = musicAudios[1], musicAhead = null;   // { s, pos }: what the spare holds
+// a listener on both players that hears only the one sounding
+const musicOn = (ev, fn) => musicAudios.forEach(a => a.addEventListener(ev, e => { if (a === musicAudio) fn(e); }));
 let musicServer = { server: '', name: '', signedIn: false };
 let musicLocal = null;                                             // 7.10.24: the PC's and USB's libraries (localmusic.js's status)
 const MUSIC_SOURCES = ['server', 'pc', 'usb'];
@@ -279,6 +286,7 @@ function musicQueueMoveNext(i) {
 async function musicStart() {
   const s = musicNow(); if (!s) { deck.emit('music'); return; }
   musicTakeSound();
+  musicAheadDrop();
   musicNowInfo = s.media ? s : null;
   if (!s.media) {                                                  // its quality: the server's details of it
     musicRead('item', s.id, null, s.src).then(i => { const full = musicSong(i, s.src); s.media = full.media; if (!s.len) s.len = full.len; if (musicNow() === s) { musicNowInfo = s; deck.emit('music'); } }).catch(() => {});
@@ -313,20 +321,20 @@ function musicToggle() {
   else if (musicAudio.getAttribute('src')) { musicTakeSound(); musicAudio.play().catch(() => {}); }
   else if (musicQueue.length) { if (musicPos < 0) musicPos = musicNextAt > 0 ? (musicModes.shuffle ? musicShuf[0] : 0) : musicModes.shuffle ? (musicShuffleDeal(), musicShuf[0]) : 0; musicStart(); }
 }
-function musicStop() { musicAudio.pause(); musicAudio.removeAttribute('src'); musicAudio.load(); deck.emit('music'); }
+function musicStop() { musicAheadDrop(); musicAudio.pause(); musicAudio.removeAttribute('src'); musicAudio.load(); deck.emit('music'); }
 function musicPauseHere() { if (musicPlaying()) musicAudio.pause(); }
-musicAudio.addEventListener('ended', () => {
+musicOn('ended', () => {
   const n = musicAfter(musicPos, false);
   if (n === null) { musicAudio.currentTime = 0; musicStop(); musicPos = musicModes.shuffle ? -1 : 0; deck.emit('music'); }
   else if (n === musicPos) { musicAudio.currentTime = 0; musicAudio.play().catch(() => {}); }
   else musicJump(n);
 });
-['play', 'pause', 'loadedmetadata', 'error'].forEach(ev => musicAudio.addEventListener(ev, () => deck.emit('music')));
+['play', 'pause', 'loadedmetadata', 'error'].forEach(ev => musicOn(ev, () => deck.emit('music')));
 // 7.10.13: a song that won't play as it is (ALAC, WMA… whose format the list didn't say) is asked again as FLAC; one
 // that won't play at all is skipped, so a long SHUFFLE ALL goes on (five in a row stop it)
 let musicTry = { s: null, flac: false }, musicFails = 0;
-musicAudio.addEventListener('playing', () => { musicFails = 0; });
-musicAudio.addEventListener('error', async () => {
+musicOn('playing', () => { musicFails = 0; musicAheadLoad(); });
+musicOn('error', async () => {
   if (!musicAudio.getAttribute('src')) return;
   const s = musicNow(); if (!s) return;
   if (musicTry.s === s && !musicTry.flac && !musicIsLocal(s.src)) {
@@ -393,4 +401,84 @@ function musicKeep() {
     if (musicModes.shuffle) musicShuffleDeal();
   } }
 deck.on('music', musicKeep);
-musicAudio.addEventListener('timeupdate', () => { if (!musicAudio.paused) musicKeep(); });
+musicOn('timeupdate', () => { if (!musicAudio.paused) { musicKeep(); musicNearEnd(); } });
+
+// ── 7.10.36: gapless. Once a song plays, the one after it (as REPEAT and SHUFFLE say) loads in the spare player; in
+// the song's last moments a fine watch starts the spare exactly as this one runs out, and the two swap. If the
+// spare isn't ready (a slow server), 'ended' starts the next one as before ──
+const MUSIC_LEAD = .045;                                           // s before the end: what play() takes to sound
+let musicTail = null;                                              // the player finishing the last song's last moment
+async function musicAheadLoad() {
+  if (musicSpare === musicTail) return;                            // it loads the next one once it's done (musicGapless)
+  const n = musicAfter(musicPos, false);
+  if (n === null || n === musicPos) return musicAheadDrop();       // the end, or REPEAT one (the same song again)
+  const s = musicQueue[n];
+  if (musicAhead && musicAhead.s === s && musicAhead.pos === n) return;
+  musicAheadDrop();
+  const api = musicApiOf(s.src), ahead = { s, pos: n };
+  musicAhead = ahead;
+  const url = api ? await api.stream(s.id, musicIsLocal(s.src) || musicPlayable(s.media)).catch(() => '') : '';
+  if (musicAhead !== ahead || !url) { if (musicAhead === ahead) musicAhead = null; return; }
+  musicSpare.src = url; musicSpare.load();
+}
+function musicAheadDrop() {
+  musicAhead = null; clearInterval(musicNearT); musicNearT = 0;
+  if (musicSpare !== musicTail && musicSpare.getAttribute('src')) { musicSpare.pause(); musicSpare.removeAttribute('src'); musicSpare.load(); }
+}
+let musicNearT = 0;
+function musicNearEnd() {
+  const left = (musicAudio.duration || 0) - musicAudio.currentTime;
+  if (musicNearT || !musicAhead || !isFinite(left) || left > 1.5) return;
+  musicNearT = setInterval(() => {
+    const l = (musicAudio.duration || 0) - musicAudio.currentTime;
+    if (musicAudio.paused || !musicAhead) { clearInterval(musicNearT); musicNearT = 0; return; }
+    if (l <= MUSIC_LEAD) { clearInterval(musicNearT); musicNearT = 0; musicGapless(); }
+  }, 5);
+}
+function musicGapless() {
+  const a = musicAhead;
+  if (!a || musicQueue[a.pos] !== a.s || musicAfter(musicPos, false) !== a.pos || musicSpare.readyState < 3) return false;
+  const old = musicAudio;
+  musicAudio = musicSpare; musicSpare = old; musicAhead = null;
+  musicAudio.volume = old.volume; musicAudio.muted = old.muted;
+  musicPos = a.pos; musicTry = { s: a.s, flac: false }; musicNowInfo = a.s.media ? a.s : null;
+  musicTail = old;
+  musicAudio.play().catch(() => {});
+  if (!a.s.media) musicRead('item', a.s.id, null, a.s.src).then(i => { const full = musicSong(i, a.s.src); a.s.media = full.media; if (!a.s.len) a.s.len = full.len; if (musicNow() === a.s) { musicNowInfo = a.s; deck.emit('music'); } }).catch(() => {});
+  setTimeout(() => {                                               // its last moment, then quiet, and ready for the next one
+    if (musicTail === old) musicTail = null;
+    if (old !== musicAudio) { old.pause(); old.removeAttribute('src'); old.load(); }
+    if (musicPlaying()) musicAheadLoad();
+  }, 400);
+  deck.emit('music');
+  return true;
+}
+// REPEAT, SHUFFLE or the queue changed: what comes next may be another song
+deck.on('music', () => { if (musicAhead && (musicQueue[musicAhead.pos] !== musicAhead.s || musicAfter(musicPos, false) !== musicAhead.pos)) { musicAheadDrop(); if (musicPlaying()) musicAheadLoad(); } });
+
+// ── 7.10.36: the DM-90's own output (SETUP → SALIDA DE LA MÚSICA): headphones or the speakers, only for its music;
+// '' is Windows' own. Kept with the device's name, so it's found again if its id changes ──
+let musicSink = (() => { const k = store.read('deck90-music-sink', null); return k && typeof k.id === 'string' ? { id: k.id, label: String(k.label || '') } : { id: '', label: '' }; })();
+async function musicOutputs() {
+  try { return (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default' && d.deviceId !== 'communications').map(d => ({ id: d.deviceId, label: d.label || 'Salida ' + d.deviceId.slice(0, 6) })); }
+  catch (_) { return []; }
+}
+async function musicSinkApply() {
+  let id = musicSink.id;
+  if (id) {                                                        // the device still there (or found by its name)
+    const outs = await musicOutputs(), same = outs.find(o => o.id === id) || outs.find(o => musicSink.label && o.label === musicSink.label);
+    id = same ? same.id : '';
+  }
+  for (const a of musicAudios) if (a.setSinkId) await a.setSinkId(id).catch(() => {});
+  const g = typeof eqGraphs !== 'undefined' && eqGraphs.music;     // the equalizer's chain plays it, when it's joined
+  if (g && g.ctx.setSinkId) await g.ctx.setSinkId(id).catch(() => {});
+  return id;
+}
+async function musicSinkSet(id, label) {
+  musicSink = { id: String(id || ''), label: String(label || '') };
+  store.write('deck90-music-sink', musicSink);
+  const used = await musicSinkApply();
+  deck.emit('music');
+  return used;
+}
+if (musicSink.id) setTimeout(musicSinkApply, 0);

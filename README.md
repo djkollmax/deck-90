@@ -101,6 +101,10 @@ Toca MP3, FLAC (hasta 24 bit / 192 kHz), AAC y M4A, OGG, Opus y WAV en su calida
 - **COLOR** cambia el color de los displays de todo el rack (24 colores) y **DIMMER** su brillo; también están en el DV-90 y en ⚙ PANTALLA → DISPLAYS, y tocando la hora de arriba se pasa al color siguiente.
 - El estéreo (`E`) lo toca en el modo SERVER (BAND pasa por servidor, PC y USB, y abajo del display dice SRV, PC o USB), y el encabezado muestra lo que suena con su tapa (el mouse sobre la tapa la muestra grande). El display del DM-90 también dibuja la tapa, con sus puntitos.
 - La cola queda guardada: cerrás Deck 90, lo abrís y está en el mismo tema; ▶ sigue desde el segundo donde quedó.
+- **LISTS:** tus listas. **+ NEW LIST** hace una (escribís el nombre), **Q sostenido** sobre un tema, un disco, un artista o una carpeta lo suma a la lista en uso, y cada lista sigue donde la dejaste. Las del servidor son las listas de Jellyfin: el celular (Deck 90 para Android) las tiene también y sigue en el mismo tema, y al revés. Las de PC y USB quedan en la PC. En una lista, Q sostenido saca el tema; en LISTS, Q sostenido dos veces borra la lista.
+- Sin silencio entre temas (gapless): el tema siguiente ya está cargado y arranca justo cuando termina el anterior, así un disco en vivo o un mix siguen de corrido.
+- **SETUP → SALIDA DE LA MÚSICA:** los auriculares o los parlantes, solo para la música del DM-90 (la radio, el CD y lo que suena en la PC siguen por la salida de Windows).
+- **?** muestra todas las teclas del programa, unidad por unidad.
 - Toca el archivo en su calidad original; del servidor, lo que la ventana no puede tocar (ALAC, por ejemplo) se lo pide a Jellyfin convertido a FLAC. Se turna con la radio y el CD.
 - Si el servidor tiene varias bibliotecas de música (o la PC varias carpetas, o hay dos pendrives), **SETUP apretado un segundo** pasa por todas juntas y cada una.
 

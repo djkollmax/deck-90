@@ -391,6 +391,10 @@
 <div id="jbSetup" role="dialog" aria-label="DM-90 · SETUP">
   <div class="phone-card jb-card">
     <div class="phone-head">DM-90 · SETUP <button type="button" id="jbClose" title="Cerrar (Esc)">✕</button></div>
+    <!-- 7.10.36: where the DM-90's music sounds (music.js musicSinkSet), whatever the source -->
+    <label class="jb-out">SALIDA DE LA MÚSICA<select id="jbOut"></select></label>
+    <div class="phone-help jb-out-help">Los auriculares o los parlantes, solo para la música del DM-90: la radio, el CD y lo que suena en la
+      PC siguen por la salida de Windows. Por otra salida, el VU y el espectro no la ven (miran la de Windows).</div>
     <!-- 7.10.24: the three sources, one tab each (SETUP opens the one SOURCE has) -->
     <div class="jb-tabs" role="tablist">
       <button type="button" role="tab" data-tab="server">SERVIDOR</button><button type="button" role="tab" data-tab="pc">PC</button><button type="button" role="tab" data-tab="usb">USB</button>
@@ -588,6 +592,7 @@
 <script src="core/radio.js"></script>
 <script src="core/cd.js"></script>
 <script src="core/music.js"></script>
+<script src="core/lists.js"></script>
 <script src="core/eq.js"></script>
 <script src="ui/stereo/stereo.js"></script>
 <script src="vendor/dt90-tuner.js"></script>
