@@ -31,7 +31,7 @@
     node.textContent = text;
     return node;
   };
-  const safeText = value => String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 512);
+  const safeText = value => (globalThis.Deck90DotText || String)(String(value ?? '').replace(/[\u0000-\u001f]/g, ' ')).slice(0, 512);   // 7.10.38: ½ → 1/2
   const safeSeconds = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
   const clamp = value => Number.isNaN(Number(value)) ? 0 : Math.max(0, Math.min(1, Number(value) || 0));
   const mmss = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');

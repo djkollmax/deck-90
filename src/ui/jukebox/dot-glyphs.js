@@ -60,6 +60,8 @@ const DOT_GLYPHS = {
   ']': [14, 2, 2, 2, 2, 2, 14],
   '?': [14, 17, 1, 2, 4, 0, 4],
   '!': [4, 4, 4, 4, 4, 0, 4],
+  '¿': [4, 0, 4, 8, 16, 17, 14],                                       // 7.10.38: Spanish titles (they showed '?')
+  '¡': [4, 0, 4, 4, 4, 4, 4],
   '&': [12, 18, 20, 8, 21, 18, 13],
   "'": [4, 4, 8, 0, 0, 0, 0],
   '"': [10, 10, 10, 0, 0, 0, 0],
@@ -101,4 +103,24 @@ for (const character of 'abcdefghijklmnopqrstuvwxyzáéíóúüñç') {
   DOT_GLYPHS[character] = DOT_GLYPHS[character.toUpperCase()];
 }
 global.Deck90DotGlyphs = DOT_GLYPHS;
+
+// 7.10.38: a song's name made writable on the displays, before it's drawn: what has no letter of its own becomes
+// the plain characters it stands for (½ → 1/2, ² → 2, ﬁ → fi, full-width letters → ASCII; Ø → O, ß → SS), so
+// Pearl Jam's "½ Full" reads 1/2 FULL and not ? FULL. What has a letter (…, ·, accents) is left as it is.
+const SWAP = { 'Ø': 'O', 'ø': 'o', 'Æ': 'AE', 'æ': 'ae', 'Œ': 'OE', 'œ': 'oe', 'ß': 'SS', 'ẞ': 'SS', 'Ł': 'L', 'ł': 'l',
+  'Đ': 'D', 'đ': 'd', 'Þ': 'TH', 'þ': 'th', '×': 'X', '⁄': '/', '∕': '/', '‐': '-', '‑': '-', '‒': '-', '„': '"', '«': '"', '»': '"',
+  '′': "'", '″': '"', '´': "'", '`': "'" };
+function dotText(value) {
+  const s = String(value ?? '');
+  if (/^[\x20-\x7e]*$/.test(s)) return s;
+  let out = '';
+  for (const c of s) {
+    if (c <= '\x7e' || DOT_GLYPHS[c] || DOT_GLYPHS[c.toUpperCase()]) { out += c; continue; }
+    if (SWAP[c] !== undefined) { out += SWAP[c]; continue; }
+    const k = c.normalize('NFKC');
+    out += k === c ? c : [...k].map(x => SWAP[x] ?? x).join('');
+  }
+  return out;
+}
+global.Deck90DotText = dotText;
 })(globalThis);

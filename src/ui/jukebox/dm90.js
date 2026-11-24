@@ -46,7 +46,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const LIT = 'var(--vfd,#80ffe5)', DIM = 'var(--vfd-dim,#193e34)';
 const METER_LIT = i => i >= 21 ? '#ff4a3d' : i >= 18 ? '#ffd23a' : LIT, METER_DIM = i => i >= 21 ? '#40171299' : i >= 18 ? '#3d331299' : DIM;
 const css = (name, fallback) => `var(--${name},var(--_d90-${name},${fallback}))`;
-const clean = v => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC').slice(0, 300);
+const clean = v => (global.Deck90DotText || String)(String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC')).slice(0, 300);   // 7.10.38: ½ → 1/2
 const clamp = v => Number.isNaN(Number(v)) ? 0 : Math.min(1, Math.max(0, Number(v) || 0));
 function node(name, attrs = {}) { const el = document.createElementNS(SVG_NS, name); for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v)); return el; }
 // a character the glyphs don't have: its letter without the accent (Ö → O, È → E), or '?'

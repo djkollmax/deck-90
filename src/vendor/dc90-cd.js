@@ -20,6 +20,7 @@
  * One change: a long title scrolls even when Windows says "reduced motion" (animations off).
  * Deck 90 7.10.9: bigger key letters fitted to each key (keyFont); accented capitals full height, the accent above
  * (the title and artist viewports a little taller for it).
+ * Deck 90 7.10.38: text goes through Deck90DotText (ui/jukebox/dot-glyphs.js) first: ½ → 1/2, ² → 2, Ø → O.
  * Deck 90 7.9.22: setTrack({ quality }) writes the disc's quality under the track count ("CD 16/44", "FLAC 24/96",
  * "MP3 320"), and the artist line scrolls too when it doesn't fit. 7.9.23: track 0 (no disc) and the tray open show
  * dashes and no count.
@@ -332,7 +333,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const LIT = 'var(--vfd,#80ffe5)', DIM = 'var(--vfd-dim,#193e34)';
 // Deck 90 7.9.13: the meters end in yellow (19-21) and red (22-24) like the VUs, the zones faintly visible unlit
 const METER_LIT = i => i >= 21 ? '#ff4a3d' : i >= 18 ? '#ffd23a' : LIT, METER_DIM = i => i >= 21 ? '#40171299' : i >= 18 ? '#3d331299' : DIM;
-const clean = value => String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC').slice(0,256);
+const clean = value => (global.Deck90DotText || String)(String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC')).slice(0,256);   /* Deck 90 7.10.38 */
 const clamp = value => Number.isNaN(Number(value)) ? 0 : Math.min(1,Math.max(0,Number(value)||0));
 const safeNumber = (value, fallback=0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 function node(name,attributes={}){const el=document.createElementNS(SVG_NS,name);for(const[key,value]of Object.entries(attributes))el.setAttribute(key,String(value));return el;}

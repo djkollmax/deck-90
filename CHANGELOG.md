@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.10.38
+
+### Fixed
+- Characters with no dot letter showed `?` on the units' displays (Pearl Jam's "½ Full" read "? FULL"):
+  `Deck90DotText` (ui/jukebox/dot-glyphs.js) turns them into what they stand for before drawing, NFKC for the
+  compatibility characters (½ → 1/2, ² → 2, ﬁ → fi, full-width → ASCII) and a small table for the rest (Ø → O,
+  ß → SS, Æ → AE); characters with a glyph (…, ·, accented letters) are left alone. Used by the DM-90, the DT-90, the
+  DC-90, the double DIN and the DP940 (vendor patches marked 7.10.38). New glyphs `¿` and `¡`.
+
 ## 7.10.37
 
 ### Fixed

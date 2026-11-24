@@ -9,6 +9,7 @@
    right (where the radio's memory goes) and, with a length, the time left counting down at the bottom; the quality
    ("MP3 128", "CD 16/44", "FLAC") at the bottom; LOCAL in red.
    7.10.14: the track number up to 9999, smaller from 100.
+   7.10.38: text goes through Deck90DotText (ui/jukebox/dot-glyphs.js) first, when it's there: ½ → 1/2, ² → 2, Ø → O.
    7.10.5, marked "disc logo": the real unit's ▽△ and round DISC mark above the R meter; setTrack({ disc }) lights DISC.
    7.10.19, marked "steady": setPlayback(false) on a display already showing the radio changes nothing (it used to clear
    the meters, and the stereo calls it before every radio update, so they dropped every few seconds), and setRadio
@@ -41,7 +42,7 @@ const label = (text, x, y, options = {}) => {
   node.textContent = text;
   return node;
 };
-const safeText = value => String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 512);
+const safeText = value => (globalThis.Deck90DotText || String)(String(value ?? '').replace(/[\u0000-\u001f]/g, ' ')).slice(0, 512);   // Deck 90 7.10.38: ½ → 1/2
 const safeSeconds = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
 
 /** Framework-free DECK 90 display. No network, dependencies or automatic playback. */

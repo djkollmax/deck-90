@@ -385,3 +385,14 @@ test('? shows every key of the program, unit by unit', async () => {
   await d.win.keyboard.press('?'); await d.wait(300);
   assert.equal(await d.win.evaluate(() => aboutOpen()), false);
 });
+
+test('7.10.38: the displays write what has no letter of its own as what it stands for (½ Full is 1/2 FULL, not ? FULL)', async () => {
+  const r = await d.win.evaluate(() => {
+    const titles = ['½ Full', '¿Dónde estás? ¡Ya!', 'Sinfonía Nº 9 · ²', 'Øresund', 'ﬁnal ＡＢＣ', 'Mötley Crüe…'];
+    const missing = t => [...Deck90DotText(t).toUpperCase()].filter(c => !Deck90DotGlyphs[c] && !Deck90DotGlyphs[c.normalize('NFD')[0]]).join('');
+    return { half: Deck90DotText('½ Full'), dots: Deck90DotText('Mötley Crüe…'), missing: titles.map(missing).join('') };
+  });
+  assert.equal(r.half, '1/2 Full');
+  assert.equal(r.dots, 'Mötley Crüe…', 'what has a letter stays as it is');
+  assert.equal(r.missing, '', 'no ? in their place');
+});

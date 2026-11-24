@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.38 — 2026-11-24
+
+### Arreglado
+- **Los displays ya no ponen "?" en lugar de un signo que no tienen:** "½ Full" de Pearl Jam se lee 1/2 FULL, ² es 2,
+  Ø es O, ß es SS. Los títulos en castellano muestran bien ¿ y ¡. Vale para el DM-90, el DT-90, el DC-90 y el estéreo.
+
 ## 7.10.37 — 2026-11-24
 
 ### Arreglado

@@ -31,6 +31,7 @@
  * Deck 90 7.10.11: a seventh band key, FM5 (band-fm5); the band keys and the memories narrower.
  * Deck 90 7.10.23: band 'LOCAL' (the car stereo's LOC), shown as the others, no band key lit.
  * Deck 90 7.10.9: bigger key letters, fitted to each key (keyFont); accented capitals full height, the accent above.
+ * Deck 90 7.10.38: text goes through Deck90DotText (ui/jukebox/dot-glyphs.js) first: ½ → 1/2, ² → 2, Ø → O.
  */
 (function (global) {
 'use strict';
@@ -485,7 +486,7 @@ const METER_LIT = i => i >= 21 ? '#ff4a3d' : i >= 18 ? '#ffd23a' : VFD, METER_DI
 const NEEDLE = 'var(--needle,#ff5445)';
 const normalized = value => Number.isNaN(Number(value)) ? 0 : Math.min(1, Math.max(0, Number(value) || 0));
 const finite = value => Number.isFinite(Number(value));
-const clean = value => String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC').slice(0, 256);
+const clean = value => (global.Deck90DotText || String)(String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').normalize('NFC')).slice(0, 256);   // Deck 90 7.10.38
 function node(name, attributes = {}) {
   const el = document.createElementNS(SVG_NS, name);
   for (const [key, value] of Object.entries(attributes)) el.setAttribute(key, String(value));
