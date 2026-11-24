@@ -7,7 +7,7 @@
 ![Linux](https://img.shields.io/badge/Linux-x64-444)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-3c9)](LICENSE)
 
-**Deck 90 es un programa gratis y de código abierto que muestra lo que suena en tu computadora como un equipo de audio de los 90:** vúmetros de aguja, analizador de espectro, medidor de loudness (LUFS, true peak, LRA), BPM, goniómetro, osciloscopio y caseteras cuyas cintas giran de verdad. Funciona con Spotify, YouTube, Tidal, Apple Music o cualquier reproductor, **sin cables virtuales ni configuración**, y además muestra el tema que está sonando y maneja el reproductor desde las teclas de la casetera.
+**Deck 90 es un programa gratis y de código abierto que muestra lo que suena en tu computadora como un equipo de audio de los 90:** vúmetros de aguja, analizador de espectro, medidor de loudness (LUFS, true peak, LRA), BPM, goniómetro, osciloscopio y caseteras cuyas cintas giran de verdad. Funciona con Spotify, YouTube, Tidal, Apple Music o cualquier reproductor, **sin cables virtuales ni configuración**, y además muestra el tema que está sonando y maneja el reproductor desde las teclas de la casetera. Y suma unidades para escuchar: un sintonizador de radio por internet, una compactera, tu música (de Jellyfin, de la PC o de un pendrive, con listas que se comparten con el celular), volumen, ecualizador y un estéreo de auto.
 
 ![Deck 90 en funcionamiento: la consola, el vúmetro elegido por su foto y los looks que cambian solos](docs/screenshots/demo.gif)
 
@@ -77,6 +77,12 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 
 ![Los doce estilos de espectro](docs/screenshots/spectrums.jpg)
 
+### Las unidades del rack
+
+Debajo de los medidores se suman unidades con el mismo frente, para escuchar y no solo medir: el sintonizador DT-90, la compactera DC-90, el servidor de música DM-90, el ecualizador DE-90 y el volumen DV-90. Cada una se prende y se apaga desde VER.
+
+![Las cinco unidades: sintonizador, compactera, servidor de música con sus listas, ecualizador y volumen](docs/screenshots/units.jpg)
+
 ### Sintonizador de radio en el rack
 
 **VER → RADIO** (o la tecla `9`) muestra el DT-90, un sintonizador hi-fi con display VFD y dial analógico que se suma al rack. Toca la misma radio por internet que el estéreo de auto de abajo: las mismas emisoras, bandas y memorias. Tiene **POWER**, **BAND** y una tecla para cada banda (**FM1 FM2 FM3 FM4 FM5 HI-FI AM**), **◀ ▶** y la perilla, **1–6** (manteniéndolos apretados, **7–12**: doce memorias por banda), **MEMO** (y después el número, para guardar la que suena), **SCAN**, **MODE** (qué sigue a la radio en la línea: el tema, de dónde es, la calidad o todo junto; apretado, NIVEL PAREJO) y **DISP** (la línea: la radio, el tema solo, la temperatura o el tiempo al aire; apretado, **SLEEP** de 15 a 90 minutos). Arriba a la derecha, la hora y debajo SLEEP, NIVEL PAREJO o el sonido guardado. Una radio solo por internet escribe su nombre en grande donde van los números.
@@ -92,6 +98,8 @@ Del display fluorescente de un minicomponente al analizador de tercio de octava 
 - **SERVER:** tu servidor [Jellyfin](https://jellyfin.org) (solo música, no películas). **SETUP** pide la dirección del servidor, el usuario y la contraseña; Deck 90 guarda el permiso que da Jellyfin, no la contraseña.
 - **PC:** las carpetas de la PC donde tenés música (F:\Música, D:\Audio…). En **SETUP → PC** tocás **+ AGREGAR CARPETA** y elegís una o varias. Deck 90 lee los datos de cada tema (artista, álbum, número, año, tapa, calidad) y arma la biblioteca igual que la de Jellyfin. La segunda vez abre al toque y, si agregás o cambiás temas, se pone al día solo. Los temas sin datos toman los nombres de sus carpetas (Artista\Álbum\01 - Tema).
 - **USB:** un pendrive o una tarjeta de memoria con música. Lo enchufás y aparece solo; si el DM-90 está prendido sin sonar, pasa a USB. Cuando lo sacás, desaparece (y SOURCE lo saltea hasta que enchufás otro).
+
+![El DM-90 con sus listas: la que suena, cuántos temas tiene cada una y + NEW LIST](docs/screenshots/dm90-lists.jpg)
 
 Toca MP3, FLAC (hasta 24 bit / 192 kHz), AAC y M4A, OGG, Opus y WAV en su calidad original. ALAC, WMA, APE y AIFF no se pueden tocar en la PC: se cuentan en SETUP y se pueden pasar a FLAC.
 
@@ -134,7 +142,7 @@ La tecla `E` (o el botón de la radio en las herramientas) cierra el rack y la v
 - **Doble DIN** (**PWR** o **HDB** apretado un segundo): el mismo estéreo en versión doble DIN, el doble de alto, con un display más grande. Muestra la frecuencia o el tema en letras grandes; abajo, en dos líneas de puntitos, el tema y la radio (o el artista y el disco con su año y el lugar en la cola); un analizador de espectro de 20 bandas sobre el sonido; el avance del tema; la calidad; y siempre la hora y la temperatura. Todos los colores de SDM le quedan. PWR o HDB apretado otra vez vuelve al DP940, y el estéreo se acuerda de cuál dejaste.
 - **Modo CD** (MODE, o tocar la ranura): la lectora de CD/DVD de la PC, en Windows. Un CD de audio suena desde la lectora con TRACK ◀ ▶, SEL y los números (1–6, y 7–12 manteniéndolos), y el display muestra TRACK 03 y su tiempo; un disco con MP3 reproduce sus archivos con el nombre de cada uno. **⏏** abre la bandeja.
 
-![El estéreo DP940: un tema de la PC arriba, la radio Aspen 102.3 abajo](docs/screenshots/stereo.jpg)
+![El estéreo DP940 con la radio, y abajo el doble DIN con su display grande y el espectro](docs/screenshots/stereo.jpg)
 
 ### Diez looks listos y tres tuyos
 
@@ -166,15 +174,23 @@ Activás CELULAR, escaneás el código QR y el celular o la tablet (en el mismo 
 
 ![Deck 90 en el celular](docs/screenshots/phone.png)
 
-### Deck 90 para Android: la radio, el pendrive y el CD sin la PC
+### Deck 90 para Android: el estéreo sin la PC
 
 Una app aparte, [Deck 90 para Android](https://github.com/djkollmax/deck-90-android), lleva el estéreo al celular, la
-tablet y el auto (Android Auto) sin necesidad de la PC: la radio con las mismas bandas y memorias, más LOCAL (las
-radios de donde estés); la música de un pendrive (USB) y los CD de una lectora por USB, con los nombres de los temas;
-el frente del estéreo con sus teclas y looks, VU y espectro, la búsqueda de radios del mundo y el apagado automático.
+tablet y el auto (Android Auto) sin necesidad de la PC:
+
+- **La radio**, con las mismas bandas y memorias, más LOCAL (las radios de donde estés) y la búsqueda de radios del
+  mundo.
+- **Tu música**: tu servidor Jellyfin, la música del teléfono, un pendrive (USB) y los CD de una lectora por USB. Las
+  **listas** son las mismas del DM-90 y cada una sigue en el tema donde la dejaste, en la PC o en el celular.
+- **AUX**: lo que suena en otra app (Spotify, YouTube Music) en el display, manejado con las teclas del estéreo.
+- **El frente del estéreo**, DP940 o doble DIN, con sus teclas y looks, VU, espectro y el apagado automático.
+
 Se instala y se actualiza con Obtainium.
 
 ![Deck 90 para Android](https://raw.githubusercontent.com/djkollmax/deck-90-android/main/docs/celular.jpg)
+
+![Deck 90 para Android: las listas de Jellyfin, AUX con Spotify y el doble DIN](https://raw.githubusercontent.com/djkollmax/deck-90-android/main/docs/musica-aux.jpg)
 
 ### Historial de temas y modo mini
 

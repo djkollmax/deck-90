@@ -7,15 +7,15 @@
 ![Linux](https://img.shields.io/badge/Linux-x64-444)
 [![MIT license](https://img.shields.io/badge/license-MIT-3c9)](LICENSE)
 
-**Deck 90 is a free, open-source desktop audio analyzer with a '90s hi‑fi look.** It listens to whatever your computer is playing and shows it on needle VU meters, a spectrum analyzer, a loudness meter (LUFS, true peak, LRA), BPM, a goniometer, an oscilloscope and cassette decks whose tape actually turns. It works with Spotify, YouTube, Tidal, Apple Music or any player, **with no virtual cable and no setup**; it also shows the track that's playing and drives the player from the deck's keys. It pairs well with [Spotless](https://github.com/nix-codes/spotless).
+**Deck 90 is a free, open-source desktop audio analyzer with a '90s hi‑fi look.** It listens to whatever your computer is playing and shows it on needle VU meters, a spectrum analyzer, a loudness meter (LUFS, true peak, LRA), BPM, a goniometer, an oscilloscope and cassette decks whose tape actually turns. It works with Spotify, YouTube, Tidal, Apple Music or any player, **with no virtual cable and no setup**; it also shows the track that's playing and drives the player from the deck's keys. And it adds units to listen with: an internet radio tuner, a CD player, your music (from Jellyfin, the PC or a pendrive, with lists shared with the phone), volume, an equalizer and a car stereo. It pairs well with [Spotless](https://github.com/nix-codes/spotless).
 
 ![Deck 90 running: the console, a VU face picked by its picture and the looks changing by themselves](docs/screenshots/demo.gif)
 
 ### ⬇️ [Download Deck 90 (Windows or Linux)](https://github.com/djkollmax/deck-90/releases/latest)
 
-1. On the latest release, grab `Deck-90-…-win32-x64.zip` (Windows) or `Deck-90-…-linux-x64.zip` (Linux).
-2. Unzip it anywhere. Nothing needs to be installed.
-3. Run `Deck 90.exe` (or `deck-90` on Linux), play music in any player, and it starts measuring.
+1. **Windows:** on the latest release, grab `Deck-90-…-setup.exe` and open it. It installs for your user (no administrator rights), with a Start menu entry and an uninstaller in Settings → Apps. Or take `Deck-90-…-win32-x64.zip`, unzip it anywhere and run `Deck 90.exe`.
+2. **Linux:** grab `Deck-90-…-linux-x64.zip`, unzip it and run `deck-90`.
+3. Play music in any player and it starts measuring. On the first start, a three-step welcome shows the main things.
 
 From then on it **updates itself**: when a new release is out it says so, and one click on **INSTALAR** brings it up to date.
 
@@ -61,6 +61,12 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 ![Deck 90 — TITANIO frame, CREMA VU meters, the Spotify badge, FL 90s spectrum and the DECK 90 cassette deck](docs/screenshots/main.jpg)
 
+**The rack's units:** below the meters, units with the same face for listening, not only measuring: the DT-90 tuner, the DC-90 CD player, the DM-90 music server, the DE-90 equalizer and the DV-90 volume. Each is switched on and off in VER.
+
+![The five units: tuner, CD player, music server with its lists, equalizer and volume](docs/screenshots/units.jpg)
+
+![The DM-90 with its lists: the one playing, how many songs each holds and + NEW LIST](docs/screenshots/dm90-lists.jpg)
+
 **One console** for everything: the VU face and spectrum style are picked from pictures, and ⚙ opens the finer settings in four blocks (SONIDO, PANTALLA, CASETERA Y CINTA, EXTRAS).
 
 ![The console with its settings drawer open](docs/screenshots/console.jpg)
@@ -71,9 +77,13 @@ From then on it **updates itself**: when a new release is out it says so, and on
 
 **Deck 90 for Android:** a separate app, [deck-90-android](https://github.com/djkollmax/deck-90-android), takes the
 car stereo to the phone, the tablet and the car (Android Auto) with no PC: the radio with the same bands and
-memories, plus LOCAL (the stations where you are); the music on a pendrive (USB) and CDs in a USB drive, with the
-songs' names; the stereo's face with its keys and looks, VU meters and a spectrum, the world station search and a
-sleep timer. It installs and updates with Obtainium.
+memories, plus LOCAL (the stations where you are) and the world station search; your music from your Jellyfin server,
+the phone, a pendrive (USB) or CDs in a USB drive, with the DM-90's lists going on from the same song on either side;
+AUX, another app's music (Spotify, YouTube Music) on the display and under the stereo's keys; and the stereo's face,
+DP940 or double DIN, with its keys and looks, VU meters, a spectrum and a sleep timer. It installs and updates with
+Obtainium.
+
+![Deck 90 for Android: Jellyfin's lists, AUX with Spotify and the double DIN](https://raw.githubusercontent.com/djkollmax/deck-90-android/main/docs/musica-aux.jpg)
 
 **Track history** with the Spotify change for each track, exported to Excel.
 
@@ -128,7 +138,7 @@ sleep timer. It installs and updates with Obtainium.
 - **Last.fm** (⚙ → EXTRAS → LAST.FM; SCROBBLING by SIG while connected): the radio's, the CD's and the DM-90's songs scrobbled to your profile (now playing, then the scrobble after half the song or 4 minutes; 90 s on the radio; a station that sends "Song - Artist" is turned round, Last.fm saying which is the artist). It uses your own free API account (last.fm/api/account/create): paste its key and secret and allow Deck 90 on Last.fm's page. What the PC plays isn't sent: Spotify and other players scrobble their own.
 - **A car stereo, with internet radio** (`E`, or the radio button in the tools): the rack closes and the window becomes a car stereo's front, the DP940 display live and its keys working. PC mode shows the song in 16-segment letters with the L/R meters on the real sound (DISP, in any mode: normal, time, temperature, time and temperature taking turns, and TIEMPO, what's left of the song counting down; at the bottom the quality: "MP3 128" on the radio, "CD 16/44" on an audio CD, the format on a disc of files); RADIO mode (MODE) plays Argentine stations over the internet: FM1 comes with Aspen 102.3, 80s80s (Hamburg, internet only), Metro 95.1, Rock & Pop 95.9, La 100 99.9 and Vorterix 92.1, FM2 is Buenos Aires by genre (Con Vos 89.9, Nacional Clásica 96.7, Blackie 89.1 jazz, Delta 90.3 electronic, Blue 100.7 80s, Nacional Rock 93.7) and FM3 the same genres from the world (Radio Swiss Classic, Radio Swiss Jazz, Ibiza Global Radio, Heart 80s, Groove Salad, Radio Paradise) FM4 hi-fi stations (FIP, FIP Jazz, KEXP, Linn Jazz, Linn Classical, Linn Radio) and FM5 Mother Earth's four FLAC channels, Naim Radio and Jazz24, and HI-FI lossless ones (FLAC: Radio Paradise's four mixes, Intense Radio, Hi On Line), TUNE steps through the country's most heard, SCAN tries each for 8 s, 1–6 are the memories and held 7–12, BAND held (A.MEM) then a number keeps the station there, and BAND gives FM1–FM5, HI-FI and AM (Mitre 790, Radio 10 710, Continental 590, Rivadavia 630, Nacional 870, La Red 910). Stream addresses come from [Radio Browser](https://www.radio-browser.info) (only the name looked for is sent). Each station plays its best stream (FLAC, then AAC or Opus, then MP3); a few seconds are kept ahead and a broken connection is picked up again without a gap. VOL (or the mouse wheel) is Windows' volume, shown big on the display ("VOL 24"), ATT mutes, SDM sets the display's colour (36 looks: six colours, HD black with yellow letters, amber, ice, night green, red sport, white, light LCD, Miami, gold, aqua, cobalt, lime, rose, violet, fire, Matrix, sunset, nixie, OLED, blue LCD, amber LCD, two-tone, carbon, neon, emerald, plasma, ORIGINAL (the real DP940's colours), and three that change the whole front: TOKIO with blue-lit keys, ESTUDIO matte black and TITANIO silver; held, the one before) and HDB its brightness (normal, high, medium, low), AUX goes straight to what plays on the computer (Spotify, the browser…), PWR goes back to the rack; PWR or HDB held turns it into the double DIN, twice as tall with a bigger display: the frequency or the song big, two dot-matrix lines (the song and the station, or the artist and the album with its year and the place in the queue), a 20-band spectrum analyser, the song's progress, the quality, and the clock and temperature always (every SDM colour on it; held again, the DP940). CD mode (MODE, or the slot) plays the PC's CD/DVD drive on Windows: an audio CD from the drive (TRACK, SEL, the numbers 1–6 and held 7–12, TRACK 03 and its time on the display), or a disc of MP3s from its files; ⏏ opens the tray.
 
-![The DP940 car stereo](docs/screenshots/stereo.jpg)
+![The DP940 car stereo on the radio, and below it the double DIN with its big display and spectrum](docs/screenshots/stereo.jpg)
 
 - **Showroom mode** (↻ ROTAR in LOOKS, or `R`): the looks change by themselves every 1, 3, 5 or 10 minutes of music, with a short fade: the ten favourites, your C1–C3 or all of them. It holds still while the music is paused.
 - **A welcome on the first start** (where it listens, which look, the weather and the phone) and **a copy of your settings** in a file to take to another PC (⚙ → EXTRAS → AJUSTES).
