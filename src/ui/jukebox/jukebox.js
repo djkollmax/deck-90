@@ -624,8 +624,10 @@ document.getElementById('jbAddFolder').addEventListener('click', async () => {
 document.getElementById('jbRescan').addEventListener('click', async () => { musicLocal = await window.localMusic.rescan('pc').catch(() => musicLocal); jbLocalPaint(); });
 async function jbSignInNow() {
   const msg = document.getElementById('jbSetupMsg'), go = document.getElementById('jbGo');
+  if (go.disabled) return;                                         // 7.10.37: Enter while it connects: once
   msg.textContent = 'Conectando…'; go.disabled = true;
-  const r = await musicSignIn(document.getElementById('jbServer').value, document.getElementById('jbUser').value, document.getElementById('jbPass').value);
+  const r = await musicSignIn(document.getElementById('jbServer').value, document.getElementById('jbUser').value, document.getElementById('jbPass').value)
+    .catch(e => ({ error: e && e.message }));                      // 7.10.37: never left on "Conectando…"
   go.disabled = false; document.getElementById('jbPass').value = '';
   if (!r.ok) { msg.textContent = '⚠ ' + (r.error || 'No pude conectar'); return; }
   if (!r.library) { msg.textContent = '⚠ Conectado, pero ese usuario no tiene una biblioteca de música'; return; }

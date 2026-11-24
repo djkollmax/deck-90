@@ -11,6 +11,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { launch } from './lib/app.mjs';
 import { mp3, flac, plain, fixture } from './lib/musicfiles.mjs';
+import { startJellyfin } from './lib/jellyfin.mjs';
 const require = createRequire(import.meta.url);
 const { readTags } = require('../electron/tags.js');
 
@@ -249,4 +250,20 @@ test('LISTS of the PC: kept in this PC, and after a restart a list goes on from 
   assert.equal(v.title, 'Viaje'); assert.equal(await d.win.evaluate(() => jbView.cursor), 1, 'its song marked');
   assert.equal(v.marked, playing);
   assert.deepEqual(d.errors(), []);
+});
+
+test('7.10.37: on PC, the SERVIDOR tab of SETUP signs in to Jellyfin (it stayed on "Conectando…")', async () => {
+  const jf = await startJellyfin();
+  try {
+    assert.equal(await d.win.evaluate(() => musicModes.source), 'pc');
+    await d.click(K('setup'), 800);
+    await d.win.click('.jb-tabs button[data-tab="server"]'); await d.wait(300);
+    await d.win.fill('#jbServer', jf.base); await d.win.fill('#jbUser', 'damian'); await d.win.fill('#jbPass', 'secreto');
+    await d.win.click('#jbGo');
+    const ok = await until(() => d.win.evaluate(() => musicServer.signedIn && !document.getElementById('jbSetup').classList.contains('show')));
+    assert.ok(ok, 'signed in: ' + await d.win.textContent('#jbSetupMsg'));
+    assert.equal(await d.win.evaluate(() => musicModes.source), 'server', 'and the DM-90 goes to the server');
+    assert.equal(await d.win.evaluate(() => document.getElementById('jbGo').disabled), false);
+    assert.deepEqual(d.errors(), []);
+  } finally { await jf.close(); }
 });

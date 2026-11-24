@@ -60,7 +60,10 @@ async function musicStatus() {
   deck.emit('music'); return musicServer;
 }
 async function musicSignIn(server, user, pw) {
-  const r = await musicApi().signIn(server, user, pw).catch(e => ({ error: e.message }));
+  // 7.10.37: always Jellyfin's, whatever SOURCE is on (on PC or USB it went to the PC's library, which has no
+  // sign-in, and SETUP stayed on "Conectando…")
+  if (!window.jellyfin) return { error: 'sin servidor' };
+  const r = await Promise.resolve().then(() => window.jellyfin.signIn(server, user, pw)).catch(e => ({ error: e.message }));
   if (r && r.ok) { musicForget('server'); await musicStatus(); }
   return r || { error: 'sin respuesta' };
 }

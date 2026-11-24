@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.37 — 2026-11-24
+
+### Arreglado
+- **El DM-90 no conectaba con Jellyfin** si estaba en PC o USB: en SETUP → SERVIDOR, CONECTAR se quedaba en
+  "Conectando…" y no pasaba nada. Ahora conecta, y el DM-90 pasa al servidor.
+
 ## 7.10.36 — 2026-11-23
 
 ### Nuevo

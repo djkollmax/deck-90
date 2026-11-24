@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.10.37
+
+### Fixed
+- Signing in to Jellyfin from SETUP's SERVIDOR tab while SOURCE was PC or USB: `musicSignIn` called the source's API
+  (`musicApi()`, the PC's library, which has no `signIn`), the call threw before its `.catch`, and SETUP stayed on
+  "Conectando…" with CONECTAR disabled. It always goes to `window.jellyfin` now, and `jbSignInNow` catches anything
+  left; Enter while it connects no longer starts a second sign-in. Test: localmusic.test.mjs signs in while on PC.
+
 ## 7.10.36
 
 ### Added
