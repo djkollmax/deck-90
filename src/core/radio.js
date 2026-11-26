@@ -16,11 +16,14 @@ const RADIO_DEFAULTS = [
   { name: 'Metro', freq: '95.1', q: 'Metro 95', cc: 'AR' }, { name: 'Rock & Pop', freq: '95.9', q: 'Rock & Pop', cc: 'AR' },
   { name: 'La 100', freq: '99.9', q: 'La 100', cc: 'AR' }, { name: 'Vorterix', freq: '92.1', q: 'Vorterix', cc: 'AR' },
 ];
-// FM2 (7.8.4): Buenos Aires by genre: Con Vos, classical, jazz, electronic, the 80s, rock
+// FM2 (7.8.4): Buenos Aires by genre: talk, classical, jazz, electronic, the 80s, rock. 7.10.39: Urbana Play instead
+// of Con Vos (its stream now answers only its own site's player); Delta's stream is HLS now; Blue is "Blue FM 100.7"
 const RADIO_FM2 = [
-  { name: 'Con Vos', freq: '89.9', q: 'Con Vos', cc: 'AR' }, { name: 'Clásica', freq: '96.7', q: 'Nacional Clasica', cc: 'AR' },
-  { name: 'Blackie', freq: '89.1', q: 'Blackie', cc: 'AR' }, { name: 'Delta', freq: '90.3', q: 'Delta 90.3', cc: 'AR' },
-  { name: 'Blue', freq: '100.7', q: 'Blue 100.7', cc: 'AR' }, { name: 'Nac Rock', freq: '93.7', q: 'Nacional Rock', cc: 'AR' },
+  { name: 'Urbana', freq: '104.3', q: 'Urbana Play 104.3', cc: 'AR', url: 'https://live-ar1.cdnrad.com/hls/radio-285/live.m3u8' },
+  { name: 'Clásica', freq: '96.7', q: 'Nacional Clasica', cc: 'AR' },
+  { name: 'Blackie', freq: '89.1', q: 'Blackie', cc: 'AR' },
+  { name: 'Delta', freq: '90.3', q: 'Delta 90.3', cc: 'AR', url: 'https://live-ar1.cdnrad.com/hls/radio-1781/live.m3u8' },
+  { name: 'Blue', freq: '100.7', q: 'Blue FM 100.7', cc: 'AR' }, { name: 'Nac Rock', freq: '93.7', q: 'Nacional Rock', cc: 'AR' },
 ];
 // FM3 (7.8.4): the same genres from the world, internet only: classical, jazz, electronic, the 80s, chill, eclectic
 const RADIO_FM3 = [
@@ -28,10 +31,11 @@ const RADIO_FM3 = [
   { name: 'Ibiza Global', freq: '', q: 'Ibiza Global Radio', cc: 'ES' }, { name: 'Heart 80s', freq: '', q: 'Heart 80s', cc: 'GB' },
   { name: 'Groove Salad', freq: '', q: 'Groove Salad', cc: 'US' }, { name: 'Paradise', freq: '', q: 'Radio Paradise', cc: 'US' },
 ];
-// AM (7.8): the Buenos Aires AM stations, over the internet too
+// AM (7.8): the Buenos Aires AM stations, over the internet too. 7.10.39: AM 750 instead of Radio 10 (its stream now
+// answers only its own site's player); Continental is "Continental 590" in Radio Browser
 const RADIO_AM = [
-  { name: 'Mitre', freq: '790', q: 'Radio Mitre', cc: 'AR' }, { name: 'Radio 10', freq: '710', q: 'Radio 10', cc: 'AR' },
-  { name: 'Continental', freq: '590', q: 'Radio Continental', cc: 'AR' }, { name: 'Rivadavia', freq: '630', q: 'Rivadavia', cc: 'AR' },
+  { name: 'Mitre', freq: '790', q: 'Radio Mitre', cc: 'AR' }, { name: 'AM 750', freq: '750', q: 'AM750', cc: 'AR' },
+  { name: 'Continental', freq: '590', q: 'Continental 590', cc: 'AR' }, { name: 'Rivadavia', freq: '630', q: 'Rivadavia', cc: 'AR' },
   { name: 'Radio Nacional', freq: '870', q: 'Radio Nacional', cc: 'AR' }, { name: 'La Red', freq: '910', q: 'La Red', cc: 'AR' },
 ];
 // FM4 (7.9.2): hi-fi stations, internet only: FIP and FIP Jazz (Paris, AAC 192), KEXP (Seattle), Linn's three (320)
@@ -53,13 +57,13 @@ const RADIO_HIFI = [
   { name: 'Intense', freq: '', q: 'Intense Radio', cc: 'NL', url: 'http://secure.live-streams.nl/flac.flac' },
   { name: 'Hi On Line', freq: '', q: 'Hi On Line Radio', cc: 'NL', url: 'http://mscp2.live-streams.nl:8100/flac.flac' },
 ];
-// FM5 (7.10.11): Mother Earth (Hamburg; four channels in FLAC from vinyl and hi-res, up to 24/192), Naim Radio and
-// Jazz24. Addresses that stop answering are looked up again by name
+// FM5 (7.10.11): Naim Radio and Jazz24. 7.10.39: Mother Earth closed; in its four places, all at 320 kbps, FluxFM and
+// Jazzradio (Berlin), Venice Classic Radio and FluxFM's ChillHop. Addresses that stop answering are looked up by name
 const RADIO_FM5 = [
-  { name: 'Mother Earth', freq: '', q: 'Mother Earth Radio', cc: 'DE', url: 'https://motherearth.streamserver24.com/listen/motherearth/motherearth' },
-  { name: 'ME Jazz', freq: '', q: 'Mother Earth Jazz', cc: 'DE', url: 'https://motherearth.streamserver24.com/listen/motherearth_jazz/motherearth.jazz' },
-  { name: 'ME Klassik', freq: '', q: 'Mother Earth Klassik', cc: 'DE', url: 'http://server9.streamserver24.com:18910/motherearth.klassik' },
-  { name: 'ME Instrum.', freq: '', q: 'Mother Earth Instrumental', cc: 'DE', url: 'https://motherearth.streamserver24.com:18920/motherearth.instrumental' },
+  { name: 'FluxFM', freq: '', q: 'FluxFM', cc: 'DE', url: 'https://streams.fluxfm.de/live/mp3-320/audio/' },
+  { name: 'Jazzradio', freq: '', q: 'Jazzradio Berlin', cc: 'DE', url: 'https://streams.fluxfm.de/jazzradio/mp3-320/audio/' },
+  { name: 'VeniceClassic', freq: '', q: 'Venice Classic Radio', cc: 'IT', url: 'https://uk2.streamingpulse.com/ssl/vcr1' },
+  { name: 'ChillHop', freq: '', q: 'FluxFM ChillHop', cc: 'DE', url: 'https://streams.fluxfm.de/Chillhop/mp3-320/audio/' },
   { name: 'Naim Radio', freq: '', q: 'Naim Radio', cc: 'GB' },
   { name: 'Jazz24', freq: '', q: 'Jazz24', cc: 'US' },
 ];
@@ -67,7 +71,8 @@ const RADIO_BANDS = ['FM1', 'FM2', 'FM3', 'FM4', 'FM5', 'HIFI', 'AM'];
 // where a station is (7.9.21, under the memory on the DT-90; 7.9.23: in English, as the displays): the city of the ones that come with Deck 90, the
 // country of any other (Radio Browser's code). short: as it fits there; long: for MODE's line
 const RADIO_CITY = { Aspen: 'BS AS', Metro: 'BS AS', 'Rock & Pop': 'BS AS', 'La 100': 'BS AS', Vorterix: 'BS AS', 'Con Vos': 'BS AS',
-  'Clásica': 'BS AS', Blackie: 'BS AS', Delta: 'BS AS', Blue: 'BS AS', 'Nac Rock': 'BS AS', Mitre: 'BS AS', 'Radio 10': 'BS AS',
+  Urbana: 'BS AS', 'Clásica': 'BS AS', Blackie: 'BS AS', Delta: 'BS AS', Blue: 'BS AS', 'Nac Rock': 'BS AS', Mitre: 'BS AS', 'Radio 10': 'BS AS',
+  'AM 750': 'BS AS', FluxFM: 'BERLIN', Jazzradio: 'BERLIN', ChillHop: 'BERLIN', VeniceClassic: 'VENICE',
   Continental: 'BS AS', Rivadavia: 'BS AS', 'Radio Nacional': 'BS AS', 'La Red': 'BS AS', 'Ibiza Global': 'IBIZA',
   'Heart 80s': 'LONDON', 'Groove Salad': 'S. FRANCISCO', FIP: 'PARIS', 'FIP Jazz': 'PARIS', KEXP: 'SEATTLE',
   'Mother Earth': 'HAMBURG', 'ME Jazz': 'HAMBURG', 'ME Klassik': 'HAMBURG', 'ME Instrum.': 'HAMBURG', 'Jazz24': 'SEATTLE' };
@@ -94,6 +99,20 @@ let radioMem = { v: 2, even: true, band: 'FM1', slot: 1, FM1: radioSlots(RADIO_D
 // they are a few days old. Not one of BAND's bands: LOC goes to it and back to the band before (lastBand, lastSlot),
 // and MEMO there keeps a station in that band
 const RADIO_LOCAL = 'LOCAL';
+// 7.10.39: the stations Deck 90 came with that changed or stopped (by the name and search they came with) → what
+// takes their place: Con Vos and Radio 10 answer only their own sites' players now, Mother Earth closed, Delta moved
+// to HLS, Blue and Continental are named otherwise in Radio Browser
+const RADIO_RETIRED = [
+  ['Con Vos', 'Con Vos', RADIO_FM2[0]], ['Delta', 'Delta 90.3', RADIO_FM2[3]], ['Blue', 'Blue 100.7', RADIO_FM2[4]],
+  ['Radio 10', 'Radio 10', RADIO_AM[1]], ['Continental', 'Radio Continental', RADIO_AM[2]],
+  ['Mother Earth', 'Mother Earth Radio', RADIO_FM5[0]], ['ME Jazz', 'Mother Earth Jazz', RADIO_FM5[1]],
+  ['ME Klassik', 'Mother Earth Klassik', RADIO_FM5[2]], ['ME Instrum.', 'Mother Earth Instrumental', RADIO_FM5[3]],
+];
+function radioRetired(st) {
+  if (!st) return null;
+  const r = RADIO_RETIRED.find(([name, q, now]) => st.name === name && (st.q || st.name) === q && !(st.url && st.url === now.url));
+  return r ? Object.assign({}, r[2]) : null;
+}
 const radioKeepBand = () => radioMem.band === RADIO_LOCAL ? radioMem.lastBand : radioMem.band;
 try {
   const r = store.read(RADIO_KEY);
@@ -108,6 +127,9 @@ try {
     if (r.slot >= 0 && r.slot <= RADIO_SLOTS) radioMem.slot = r.slot | 0;
     if (typeof r.even === 'boolean') radioMem.even = r.even;
   }
+  // 7.10.39: the memories that came with Deck 90 and stopped working become their replacements, wherever they are
+  // (one the person searched and kept, with another search, stays as it is)
+  for (const b of [...RADIO_BANDS, RADIO_LOCAL]) radioMem[b] = radioMem[b].map(st => radioRetired(st) || st);
   // 7.8: FM1-6 is Vorterix 92.1 instead of Los 40 (kept if it was stored there by hand)
   if (radioMem.FM1[5] && radioMem.FM1[5].name === 'Los 40' && radioMem.FM1[5].q === 'Los 40') radioMem.FM1[5] = Object.assign({}, RADIO_DEFAULTS[5]);
   // 7.8.4: FM2 and FM3 come filled; their empty memories take the new stations once (one stored by hand stays)
@@ -143,22 +165,41 @@ const RADIO_WORTH = { FLAC: 20, OPUS: 1.7, 'AAC+': 1.6, AAC: 1.5, OGG: 1.3, MP3:
 const radioScore = (codec, kbps) => (kbps || 64) * (RADIO_WORTH[String(codec || '').toUpperCase()] || 1);
 const radioBase = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/\b(\d+\s*k(bps)?|aac\+?|mp3|flac|ogg|opus|hq|hd|hi-?fi|lossless|stream|low|high|quality)\b/g, '').replace(/[^a-z0-9]+/g, '');
+// 7.10.39: a station found by name is that station: every word of what was searched is a word of its name ("Radio
+// 10" found "La Radio 104.7" of Chaco, and played it; radio, FM, AM and the articles don't count), or what was searched
+// is some of its words written together ("AM750" is "AM 750")
+const radioTokens = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(Boolean);
+const radioWords = s => radioTokens(s).filter(w => !/^(radio|fm|am|the|la|el|los|las|de|del)$/.test(w));
+function radioFits(q, name) {
+  const ws = radioWords(q); if (!ws.length) return true;
+  const nw = radioTokens(name);
+  if (ws.every(w => nw.includes(w))) return true;
+  const glued = radioTokens(q).join('');
+  for (let i = 0; i < nw.length; i++) { let run = ''; for (let j = i; j < nw.length && run.length < glued.length; j++) { run += nw[j]; if (run === glued) return true; } }
+  return false;
+}
 function radioBest(found) {
   if (!found.length) return found;
   const same = f => radioBase(f.name) === radioBase(found[0].name);
   const group = found.filter(same).sort((a, b) => radioScore(b.codec, b.bitrate) - radioScore(a.codec, a.bitrate));
   return [...group, ...found.filter(f => !same(f))];
 }
+function radioOnly(st, found) {
+  if (!found) return found;
+  const fit = found.filter(f => radioFits(st.q || st.name, f.name));
+  if (fit.length < found.length) radioLog(st.name + ': left out ' + found.filter(f => !fit.includes(f)).map(f => f.name).slice(0, 4).join(', ') + ' (another name)');
+  return fit;
+}
 async function radioResolve(st, failed) {
   if (failed && st.url && window.radio) {                          // 7.10.13: the saved address failed: the others
-    const found = await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc).catch(() => null);
+    const found = radioOnly(st, await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc).catch(() => null));
     if (!found) return null;
     radioFound = {}; found.forEach(f => { radioFound[f.url] = f; });
     return radioBest(found).map(f => f.url).filter(u => u !== st.url);
   }
   if (st.url && (st.hq || !window.radio)) return [st.url];
   if (!window.radio) return null;
-  const found = await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc);
+  const found = radioOnly(st, await window.radio.find(st.q || st.name, st.cc === undefined ? 'AR' : st.cc));
   if (!found) return st.url ? [st.url] : null;
   radioFound = {}; found.forEach(f => { radioFound[f.url] = f; });   // Radio Browser's format and bitrate, for each address
   const best = radioBest(found).map(f => f.url);
@@ -218,7 +259,9 @@ async function radioTune(st, label, retry, again) {
   radioMeta = { id: t, codec: '', kbps: 0, title: '' };
   for (const u of urls) {
     // through the local proxy first (the station's song and bitrate), straight when that can't play it
-    const proxied = !/\.m3u8?(\?|$)/i.test(u) && window.radio && window.radio.proxy ? await window.radio.proxy(u, t).catch(() => null) : null;
+    // 7.10.39: HLS (a list of short pieces, .m3u8) plays straight: Chromium plays it itself
+    const hls = /\.m3u8?(\?|$)/i.test(u) || !!(radioFound[u] && radioFound[u].hls);
+    const proxied = !hls && window.radio && window.radio.proxy ? await window.radio.proxy(u, t).catch(() => null) : null;
     if (t !== radioTry) return;
     for (const src of proxied ? [proxied, u] : [u]) {
     try {

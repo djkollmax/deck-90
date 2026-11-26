@@ -2,6 +2,7 @@
 //   /tone.mp3  the tone, as a plain file
 //   /s         an ICY stream of the tone in a loop (its first 4 s at once), a song title every 8 KiB, changing every 3 s, icy-br 128
 //   /nobr      the same stream without icy-br (the program measures the rate itself)
+//   /hls/live.m3u8  an HLS station (7.10.39): a live list of 2-second pieces of a tone
 //   /gone      404: a station that's gone
 //   /ogg       an Ogg FLAC stream with no ICY titles, each song a new stream in it whose comments name it (7.10.28)
 //   /flac      an Ogg FLAC stream that names nothing, as Radio Paradise's; /rp?chan=n says its song, as RP's page does
@@ -17,6 +18,8 @@ export const SONGS = ['Los Pericos - Párrafo', 'Soda Stereo - De Música Ligera
 export const OGG = fs.readFileSync(path.join(here, '..', 'fixtures', 'chained-flac.ogg'));   // "Banda Inventada - Tema 1", then "Tema 2"
 export const PLAIN_OGG = fs.readFileSync(path.join(here, '..', 'fixtures', 'plain-flac.ogg'));
 export const RP_SONG = { artist: 'Grupo Imaginario', title: 'Canción del Paraíso' };
+// 7.10.39: an HLS station: three pieces of 2 s of a tone (AAC in MPEG-TS), served as a live list that moves on
+const HLS = [0, 1, 2].map(i => fs.readFileSync(path.join(here, '..', 'fixtures', 'hls', 'seg' + i + '.ts')));
 
 
 export function startStation() {
@@ -25,6 +28,15 @@ export function startStation() {
   const server = http.createServer((req, res) => {
     if (Date.now() < downUntil) { res.writeHead(503); res.end(); return; }
     if (req.url.startsWith('/gone')) { res.writeHead(404); res.end(); return; }   // a station that's gone (7.10.13)
+    if (req.url.startsWith('/hls/')) {                        // 7.10.39: /hls/live.m3u8 and its pieces /hls/<n>.ts
+      const m = req.url.match(/^\/hls\/(\d+)\.ts/);
+      if (m) { res.writeHead(200, { 'Content-Type': 'video/mp2t', 'Access-Control-Allow-Origin': '*' }); res.end(HLS[Number(m[1]) % 3]); return; }
+      const now = Math.floor(Date.now() / 2000);
+      const list = ['#EXTM3U', '#EXT-X-VERSION:3', '#EXT-X-TARGETDURATION:2', '#EXT-X-MEDIA-SEQUENCE:' + (now - 2)];
+      for (let n = now - 2; n <= now; n++) list.push('#EXTINF:2.0,', n + '.ts');
+      res.writeHead(200, { 'Content-Type': 'application/vnd.apple.mpegurl', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
+      res.end(list.join('\n') + '\n'); return;
+    }
     if (req.url.startsWith('/tone.mp3')) {
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': TONE.length });
       res.end(TONE); return;

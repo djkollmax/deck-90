@@ -160,6 +160,33 @@ test('Last.fm gets a radio song the right way round: "Song - Artist" stations ar
   await d.win.evaluate(() => lfmStatus());
 });
 
+test('7.10.39: an HLS station (a list of short pieces, as Delta sends now) plays, straight, not through the proxy', async () => {
+  await d.app.evaluate(() => { global.findAnswer = (q, base) => [{ name: q, url: base + '/hls/live.m3u8', codec: 'AAC', bitrate: 48, hls: 1 }]; });
+  await d.win.evaluate(() => { radioMem.FM1[4] = { name: 'Delta', freq: '90.3', q: 'Delta 90.3', cc: 'AR', url: '' }; tunerKey('m5'); });
+  let on = false;
+  for (const t0 = Date.now(); Date.now() - t0 < 15000 && !(on = await d.win.evaluate(() => radioPlaying() && radioAudio.currentTime > 1)); await d.wait(300));
+  assert.ok(on, 'it plays');
+  assert.match(await d.win.evaluate(() => radioAudio.src), /\/hls\/live\.m3u8$/, 'straight, without the proxy');
+  assert.match((await tunerShows()).name, /^Delta/);
+  await d.app.evaluate(() => { global.findAnswer = null; });
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
+});
+
+test('7.10.39: a search that finds only other stations plays none of them ("Radio 10" found a radio of Chaco)', async () => {
+  await d.app.evaluate(() => { global.findAnswer = (q, base) => [{ name: 'La Radio 104.7 FM. Resistencia Chaco', url: base + '/s?chaco', codec: 'AAC+', bitrate: 64 },
+    { name: 'Radio 10 Mar del Plata FM 105.5', url: base + '/s?mdq', codec: 'AAC', bitrate: 112 }]; });
+  await d.win.evaluate(() => { radioMem.FM1[4] = { name: 'Diez', freq: '710', q: 'Radio Diez', cc: 'AR', url: '' }; tunerKey('m5'); });
+  await d.wait(2500);
+  assert.equal(await d.win.evaluate(() => radioPlaying()), false, 'nothing else plays in its place');
+  assert.equal((await tunerShows()).text, 'NO SIGNAL');
+  // what fits: every word searched in its name ("AM750" fits "AM 750"), the words radio, FM and AM not counting
+  assert.deepEqual(await d.win.evaluate(() => [radioFits('Radio 10', 'La Radio 104.7 FM'), radioFits('AM750', 'Radio AM 750'),
+    radioFits('Nacional Clasica', 'Radio Nacional Clásica 96.7 FM'), radioFits('Rock & Pop', 'Rock And Pop FM 95.9'), radioFits('La 100', 'La 100 - 99.9 FM')]),
+    [false, true, true, true, true]);
+  await d.app.evaluate(() => { global.findAnswer = null; });
+  await d.win.evaluate(() => tunerKey('m1')); await d.wait(2500);
+});
+
 test('a station that can\'t be found says NO SIGNAL', async () => {
   await d.app.evaluate(({ ipcMain }) => { ipcMain.removeHandler('radio-find'); ipcMain.handle('radio-find', () => []); });
   await d.win.evaluate(() => { radioMem.FM1[2] = { name: 'Muda', freq: '', q: 'Muda', cc: 'AR', url: '' }; tunerKey('m3'); });

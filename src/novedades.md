@@ -1,5 +1,20 @@
 # Novedades
 
+## 7.10.39 — 2026-11-26
+
+### Cambiado
+- **Revisé una por una las radios que vienen con Deck 90.** Mother Earth cerró: en FM5 1 a 4 ahora están FluxFM,
+  Jazzradio, Venice Classic Radio y FluxFM ChillHop, todas a 320 kbps. Con Vos y Radio 10 ya solo se escuchan desde
+  sus páginas: en su lugar van Urbana Play 104.3 (FM2 1) y AM 750 (AM 2). Delta, Blue y Continental vuelven a sonar.
+  Si las tenías guardadas, se cambian solas; las que guardaste vos buscándolas quedan como están.
+
+### Nuevo
+- **Radios en HLS:** suenan también las que transmiten de a pedacitos, como Delta y Urbana.
+
+### Arreglado
+- **Una memoria ya no toca otra radio:** "Radio 10" ponía una radio de Chaco. Ahora, si la radio que busca no aparece,
+  muestra NO SIGNAL en vez de poner cualquier otra.
+
 ## 7.10.38 — 2026-11-24
 
 ### Arreglado

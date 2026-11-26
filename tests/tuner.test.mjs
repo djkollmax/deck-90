@@ -285,3 +285,25 @@ test('the car stereo: SCAN and LOC are two keys; LOC is the LOCAL band of the we
   await d.win.keyboard.press('e'); await d.wait(1200);
   assert.deepEqual(d.errors(), []);
 });
+
+test('7.10.39: the stations that came with Deck 90 and stopped working become their replacements in the memories kept', async () => {
+  await d.win.evaluate(() => {
+    const r = JSON.parse(localStorage.getItem('deck90-radio') || JSON.stringify(radioMem));
+    r.FM2[0] = { name: 'Con Vos', freq: '89.9', q: 'Con Vos', cc: 'AR', url: 'https://example.invalid/convos', hq: 1 };
+    r.FM2[3] = { name: 'Delta', freq: '90.3', q: 'Delta 90.3', cc: 'AR', url: 'https://cdn.instream.audio/:9069/stream' };
+    r.AM[1] = { name: 'Radio 10', freq: '710', q: 'Radio 10', cc: 'AR' };
+    r.FM5[0] = { name: 'Mother Earth', freq: '', q: 'Mother Earth Radio', cc: 'DE', url: 'https://motherearth.streamserver24.com/listen/motherearth/motherearth' };
+    r.FM1[7] = { name: 'Mother Earth', freq: '', q: 'Mother Earth Radio', cc: 'DE', url: 'x' };   // moved by the person: replaced too
+    r.FM1[8] = { name: 'Con Vos', freq: '', q: 'Radio Con Vos 89.9', cc: 'AR', url: 'y' };       // found and kept by hand: stays
+    localStorage.setItem('deck90-radio', JSON.stringify(r));
+  });
+  await d.win.reload(); await d.wait(2500);
+  const m = await d.win.evaluate(() => ({ fm2: [radioMem.FM2[0].name, radioMem.FM2[3].url, radioMem.FM2[4].q], am: [radioMem.AM[1].name, radioMem.AM[2].q],
+    fm5: radioMem.FM5.slice(0, 4).map(s => s.name), moved: radioMem.FM1[7].name, kept: radioMem.FM1[8].q }));
+  assert.deepEqual(m.fm2, ['Urbana', 'https://live-ar1.cdnrad.com/hls/radio-1781/live.m3u8', 'Blue FM 100.7']);
+  assert.deepEqual(m.am, ['AM 750', 'Continental 590']);
+  assert.deepEqual(m.fm5, ['FluxFM', 'Jazzradio', 'VeniceClassic', 'ChillHop']);
+  assert.equal(m.moved, 'FluxFM');
+  assert.equal(m.kept, 'Radio Con Vos 89.9');
+  assert.deepEqual(d.errors(), []);
+});

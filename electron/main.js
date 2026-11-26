@@ -664,14 +664,15 @@ async function radioBrowser(query) {
   }
   throw lastErr || new Error('sin respuesta');
 }
-// 7.10.20: what the player can't play is left out: playlists of segments (HLS), video, TV
-const radioUnplayable = r => Number(r.hls) === 1 || /H\.?26[45]|VIDEO|MP4V/i.test(String(r.codec || '')) || /\b(720p|1080p|tv)\b/i.test(String(r.name || ''));
+// 7.10.20: what the player can't play is left out: video, TV. 7.10.39: HLS (playlists of segments) plays now (the page
+// plays it straight, Chromium knows it); it's marked so the page doesn't send it through the proxy
+const radioUnplayable = r => /H\.?26[45]|VIDEO|MP4V/i.test(String(r.codec || '')) || /\b(720p|1080p|tv)\b/i.test(String(r.name || ''));
 const radioList = list => (Array.isArray(list) ? list : []).filter(r => r && !radioUnplayable(r)).map(r => ({
   name: String(r.name || '').trim().slice(0, 80),
   url: String(r.url_resolved || r.url || ''),
   codec: String(r.codec || '').slice(0, 12), bitrate: num(r.bitrate) || 0,
   cc: /^[A-Z]{2}$/.test(r.countrycode || '') ? r.countrycode : '', place: String(r.state || '').trim().slice(0, 40),   // 7.10.10
-  clicks: num(r.clickcount) || 0,
+  clicks: num(r.clickcount) || 0, hls: Number(r.hls) === 1 ? 1 : 0,
 })).filter(r => r.name && /^https?:\/\//i.test(r.url) && r.url.length < 600);
 // 7.10.10: any station in the world, by name and/or country (the radio's search): the most heard first, 60 at most
 ipcMain.handle('radio-search', async (e, q, cc) => {

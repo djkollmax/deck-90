@@ -1,5 +1,23 @@
 # Changelog
 
+## 7.10.39
+
+### Changed
+- The stations that came with Deck 90, checked one by one: Mother Earth closed (FM5 1–4 are FluxFM, Jazzradio, Venice
+  Classic Radio and FluxFM ChillHop, 320 kbps); Con Vos and Radio 10 now answer only their own sites' players (FM2 1
+  is Urbana Play 104.3, AM 2 is AM 750); Delta moved to HLS (its address is saved); Blue and Continental are looked
+  up as "Blue FM 100.7" and "Continental 590". The memories people kept with the old ones are replaced on load
+  (`RADIO_RETIRED`, by the name and search they came with; one found by hand stays).
+
+### Added
+- HLS stations: `radioList` no longer leaves them out, marks them (`hls`), and the page plays them straight
+  (Chromium plays HLS itself), never through the proxy. Test: a live HLS station served by the pretend station.
+
+### Fixed
+- A memory looked up by name played whatever came first ("Radio 10" played a station of Chaco): `radioFits` keeps
+  only the answers whose name has every word searched (radio, FM, AM and articles left out) or the search's words
+  together ("AM750" = "AM 750"); none fitting is NO SIGNAL.
+
 ## 7.10.38
 
 ### Fixed
