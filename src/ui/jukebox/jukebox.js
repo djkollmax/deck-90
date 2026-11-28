@@ -625,6 +625,12 @@ document.getElementById('jbRescan').addEventListener('click', async () => { musi
 async function jbSignInNow() {
   const msg = document.getElementById('jbSetupMsg'), go = document.getElementById('jbGo');
   if (go.disabled) return;                                         // 7.10.37: Enter while it connects: once
+  // 7.10.40: CONECTAR with no password, already signed in to that server as that user: nothing to do (it asked the
+  // server again, which said no, as if something were wrong)
+  const srv = document.getElementById('jbServer').value, user = document.getElementById('jbUser').value, same = (a, b) => String(a || '').trim().replace(/\/+$/, '').toLowerCase() === String(b || '').trim().replace(/\/+$/, '').toLowerCase();
+  if (musicServer.signedIn && !document.getElementById('jbPass').value && same(srv, musicServer.server) && same(user, musicServer.name)) {
+    msg.textContent = 'Ya estás conectado como ' + musicServer.name + '. Para entrar de nuevo, escribí la contraseña.'; return;
+  }
   msg.textContent = 'Conectando…'; go.disabled = true;
   const r = await musicSignIn(document.getElementById('jbServer').value, document.getElementById('jbUser').value, document.getElementById('jbPass').value)
     .catch(e => ({ error: e && e.message }));                      // 7.10.37: never left on "Conectando…"

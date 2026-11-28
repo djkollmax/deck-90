@@ -1,5 +1,11 @@
 # Novedades
 
+## 7.10.40 — 2026-11-27
+
+### Arreglado
+- **DM-90, SETUP:** si ya estás conectado al servidor y apretás CONECTAR sin poner la contraseña, ahora te dice "Ya
+  estás conectado" en vez de intentar entrar de nuevo y mostrar un error. Para volver a entrar, escribí la contraseña.
+
 ## 7.10.39 — 2026-11-26
 
 ### Cambiado

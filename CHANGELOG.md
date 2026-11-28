@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.10.40
+
+### Fixed
+- SETUP's CONECTAR with the password empty, already signed in to that server as that user, asked Jellyfin again and
+  showed its "unauthorized" as if the session were wrong (it wasn't: the one before stays). Now it says it's
+  connected and asks nothing; to sign in again, the password. Test in music.test.mjs.
+
 ## 7.10.39
 
 ### Changed

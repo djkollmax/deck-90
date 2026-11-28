@@ -396,3 +396,14 @@ test('7.10.38: the displays write what has no letter of its own as what it stand
   assert.equal(r.dots, 'Mötley Crüe…', 'what has a letter stays as it is');
   assert.equal(r.missing, '', 'no ? in their place');
 });
+
+test('7.10.40: CONECTAR with no password, already signed in, says so instead of asking the server again', async () => {
+  await d.win.evaluate(() => jbSetup(true, 'server')); await d.wait(400);
+  assert.equal(await d.win.inputValue('#jbUser'), 'damian');
+  const asked = jf.log.filter(l => /AuthenticateByName/.test(l)).length;
+  await d.win.click('#jbGo'); await d.wait(800);
+  assert.match(await d.win.textContent('#jbSetupMsg'), /Ya estás conectado como damian/);
+  assert.equal(jf.log.filter(l => /AuthenticateByName/.test(l)).length, asked, 'the server was not asked');
+  assert.equal(await d.win.evaluate(() => musicServer.signedIn), true);
+  await d.win.keyboard.press('Escape'); await d.wait(200);
+});
